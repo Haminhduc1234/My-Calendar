@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Lịch Âm Dương</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="public/icons8-new-year-calendar-48.png">
+</head>
+<body>
+
+<div class="calendar-container">
+    <div class="header">
+        <button onclick="changeMonth(-1)">◀</button>
+        <h2 id="monthYear"></h2>
+        <button onclick="changeMonth(1)">▶</button>
+    </div>
+
+    <div class="weekdays">
+        <div>CN</div><div>T2</div><div>T3</div><div>T4</div>
+        <div>T5</div><div>T6</div><div>T7</div>
+    </div>
+
+    <div class="days" id="calendar"></div>
+</div>
+
+<!-- MODAL -->
+<div id="eventModal" class="modal">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">×</button>
+
+    <h3>Sự kiện</h3>
+    <div class="date-label" id="selectedDate"></div>
+
+    <textarea id="eventText" placeholder="Nhập nội dung sự kiện..."></textarea>
+
+    <div class="modal-actions">
+      <button id="saveBtn" onclick="saveEvent()">Lưu</button>
+      <button id="closeBtn" onclick="closeModal()">Đóng</button>
+    </div>
+  </div>
+</div>
+<img src="public/peach-branch.png" class="peach-branch peach-top-right">
+<img src="public/peach-branch.png" class="peach-branch peach-bottom-left">
+<script src="script.js"></script>
+</body>
+</html>

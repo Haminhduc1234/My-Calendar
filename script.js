@@ -188,7 +188,6 @@ function renderCalendar() {
     if (localStorage.getItem(key)) div.classList.add("has-event");
     if (SOLAR_HOLIDAYS[`${d}-${m}`] || LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`])
       div.classList.add("holiday");
-
     div.innerHTML = `<div class="solar">${d}</div><div class="lunar">${lunar.lunarDay}/${lunar.lunarMonth}${lunar.lunarLeap?"N":""}</div>`;
     div.onclick = ()=>openModal(key,d,m,y);
 

@@ -79,59 +79,73 @@ body {
 
 /* =================== DAYS GRID =================== */
 .days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
     grid-template-rows: repeat(6, 1fr);
     gap: 6px;
 }
 
 /* =================== DAY CELL =================== */
 .day {
-    min-height: 66px;
-    padding: 6px 6px 4px;
-    border-radius: 12px;
-    background: #f8fafc;
+    min-height: 72px;
+    padding: 8px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff, #f6f8fb);
     cursor: pointer;
     position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    transition: all 0.15s ease;
+    box-shadow: 76px 44px 61px rgba(0, 0, 0, 0.05), inset 0 26px 0 rgba(255, 255, 255, 0.6);
+    transition: all 0.25s ease;
 }
 
 .day:hover {
-    background: #eef3fb;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow:
+        0 8px 20px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    background: #ffffff;
 }
 
 /* Ngày khác tháng */
 .day.other-month {
-    opacity: 0.35;
+    opacity: 0.45;
+    background: #f2f4f7;
 }
 
 /* =================== SOLAR / LUNAR =================== */
 .solar {
-    font-weight: 600;
-    font-size: 14px;
+    font-weight: 700;
+    font-size: 15px;
 }
 
 .lunar {
     font-size: 11px;
-    color: #8a94a6;
+    color: #9aa0a6;
+    margin-top: 2px;
 }
+
 
 /* =================== TODAY =================== */
 .today {
-    background: linear-gradient(145deg, #e8f0ff, #f4f8ff);
+    background: linear-gradient(180deg, #edf3ff, #dbe7ff);
     border: 2px solid #4f8cff;
+
+    box-shadow:
+        0 8px 22px rgba(79, 140, 255, 0.35);
 }
+
 
 .today .solar {
     color: #2f6fff;
 }
 
 /* =================== HOLIDAY =================== */
+.holiday {
+    background: linear-gradient(180deg, #fff5f5, #ffecec);
+}
+
 .holiday .solar {
-    color: #e53935;
+    color: #d32f2f;
+    font-weight: 700;
 }
 
 .holiday .lunar {
@@ -143,12 +157,15 @@ body {
     content: "";
     width: 8px;
     height: 8px;
-    background: linear-gradient(135deg, #ffb347, #ff9800);
+    background: #ff9800;
     border-radius: 50%;
     position: absolute;
-    bottom: 6px;
-    right: 6px;
+    bottom: 8px;
+    right: 10px;
+
+    box-shadow: 0 0 6px rgba(255, 152, 0, 0.9);
 }
+
 
 /* =================== MODAL OVERLAY =================== */
 .modal {

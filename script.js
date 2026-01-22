@@ -286,23 +286,46 @@ function requestLocationPermission() {
     );
 }
 
-
-function handleWeather(lat, lon) {
-    fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`
+function getAddressFromCoords(lat, lon) {
+    return fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`,
+        {
+            headers: {
+                "Accept-Language": "vi"
+            }
+        }
     )
     .then(res => res.json())
     .then(data => {
-        const w = data.current_weather;
+      const detailAddr = data.display_name || "";
+        const addr = data.address || {};
+        if(detailAddr)
+          return detailAddr;
+        else
+        return `${addr.suburb || addr.county || ""}${addr.city ? ", " + addr.city : ""}`;
+
+    })
+    .catch(() => "Vị trí hiện tại");
+}
+
+function handleWeather(lat, lon) {
+    Promise.all([
+        fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`
+        ).then(res => res.json()),
+        getAddressFromCoords(lat, lon)
+    ])
+    .then(([weatherData, locationName]) => {
+        const w = weatherData.current_weather;
+
         document.getElementById("todayWeather").innerText =
-            `🌤️ ${Math.round(w.temperature)}°C – ${weatherCodeToText(w.weathercode)}`;
+            `🌤️ ${Math.round(w.temperature)}°C – ${weatherCodeToText(w.weathercode)} | 📍 ${locationName}`;
     })
     .catch(() => {
         document.getElementById("todayWeather").innerText =
-            "Không lấy được thời tiết";
+            "🌤️ Không lấy được thời tiết";
     });
 }
-
 
 function getWeather() {
     navigator.geolocation.getCurrentPosition(position => {

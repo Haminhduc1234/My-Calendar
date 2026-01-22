@@ -252,40 +252,115 @@ function renderToday() {
     document.getElementById("todayMonthYear").innerText =
         `Tháng ${today.getMonth() + 1} năm ${today.getFullYear()}`;
 }
-const quotes = [
-    "Mỗi ngày mới là một cơ hội mới.",
-    "Kiên trì hôm nay, thành công ngày mai.",
-    "Bình tĩnh – Tập trung – Chiến thắng.",
-    "Hãy sống trọn vẹn cho hiện tại.",
-    "Đi chậm cũng được, miễn là đừng dừng lại."
+
+const vietnameseQuotes = [
+  "Mỗi ngày mới là một cơ hội mới.",
+  "Kiên trì hôm nay, thành công ngày mai.",
+  "Bình tĩnh – Tập trung – Chiến thắng.",
+  "Hãy sống trọn vẹn cho hiện tại.",
+  "Đi chậm cũng được, miễn là đừng dừng lại.",
+  "Hạnh phúc không phải là đích đến, mà là hành trình.",
+  "Cười nhiều hơn, lo ít đi.",
+  "Mỗi thử thách là một cơ hội để trưởng thành.",
+  "Thành công bắt đầu từ sự kiên nhẫn.",
+  "Biết ơn hôm nay là cách để hạnh phúc.",
+  "Đừng bao giờ bỏ cuộc trước khi thử.",
+  "Sống tích cực, mọi thứ sẽ tốt hơn.",
+  "Không có gì là không thể nếu bạn cố gắng.",
+  "Hãy tin vào bản thân mình.",
+  "Mỗi bước nhỏ đều đưa bạn đến thành công.",
+  "Học hỏi từ thất bại để vươn lên.",
+  "Giữ bình tĩnh trong mọi tình huống.",
+  "Hạnh phúc là khi bạn biết đủ.",
+  "Chăm chỉ hôm nay, tự do ngày mai.",
+  "Sống với đam mê và nhiệt huyết.",
+  "Hãy làm những gì bạn yêu thích.",
+  "Đừng sợ thay đổi, nó giúp bạn trưởng thành.",
+  "Mỗi khó khăn là cơ hội để học hỏi.",
+  "Giữ lòng biết ơn với mọi điều xung quanh.",
+  "Hãy dành thời gian cho những gì quan trọng.",
+  "Cơ hội không đến hai lần, hãy nắm bắt.",
+  "Mỗi ngày đều đáng sống trọn vẹn.",
+  "Sự kiên nhẫn sẽ đem lại thành công.",
+  "Hãy lan tỏa năng lượng tích cực.",
+  "Thử thách làm bạn mạnh mẽ hơn.",
+  "Đừng để quá khứ chi phối hiện tại.",
+  "Mỗi ngày đều có thể bắt đầu lại.",
+  "Làm việc chăm chỉ, nghỉ ngơi hợp lý.",
+  "Sống chân thành và tử tế với mọi người.",
+  "Tin vào khả năng của chính mình.",
+  "Hãy biến ước mơ thành mục tiêu.",
+  "Đừng ngại thất bại, hãy ngại không thử.",
+  "Sự tự tin là chìa khóa thành công.",
+  "Hãy lắng nghe và thấu hiểu mọi người.",
+  "Mỗi ngày là một cơ hội để yêu thương.",
+  "Học hỏi mỗi ngày, trưởng thành mỗi ngày.",
+  "Giữ sức khỏe để tận hưởng cuộc sống.",
+  "Sống có mục tiêu sẽ không bị lạc hướng.",
+  "Hãy làm những điều bạn chưa dám thử.",
+  "Chia sẻ niềm vui để niềm vui nhân đôi.",
+  "Không ai có thể thay bạn sống cuộc đời này.",
+  "Hãy luôn mỉm cười dù khó khăn.",
+  "Mỗi thất bại là bước đệm cho thành công.",
+  "Đừng so sánh mình với người khác.",
+  "Tập trung vào giải pháp, không than phiền.",
+  "Hãy trân trọng những điều nhỏ bé.",
+  "Sống cho hiện tại, nhưng chuẩn bị cho tương lai.",
+  "Hãy cho đi mà không mong nhận lại.",
+  "Sức mạnh nằm trong chính bản thân bạn.",
+  "Học cách tha thứ để nhẹ nhõm tâm hồn.",
+  "Cảm ơn hôm nay vì đã cho bạn cơ hội.",
+  "Hãy biến khó khăn thành động lực.",
+  "Mỗi ngày là một món quà.",
+  "Hãy tận hưởng những khoảnh khắc bình yên.",
+  "Chăm sóc bản thân là cách yêu thương chính mình.",
+  "Không gì quý hơn thời gian và sức khỏe.",
+  "Hãy để tâm trí bạn được tự do sáng tạo.",
+  "Tin vào những điều tốt đẹp sẽ đến.",
+  "Đam mê là động lực để vượt qua khó khăn.",
+  "Hãy học cách yêu thương bản thân.",
+  "Cách bạn nghĩ quyết định cách bạn sống.",
+  "Hãy trân trọng mỗi khoảnh khắc bên gia đình.",
+  "Mỗi ngày là một trang mới để viết câu chuyện.",
+  "Sống thật với bản thân là hạnh phúc nhất.",
+  "Hãy theo đuổi giấc mơ của bạn mỗi ngày.",
+  "Sự tử tế sẽ tạo ra vòng lặp tích cực.",
+  "Hãy cho đi để nhận lại.",
+  "Không bao giờ là quá muộn để bắt đầu lại.",
+  "Học từ quá khứ, sống cho hiện tại, hướng tới tương lai.",
+  "Mỗi khó khăn là một bài học quý giá.",
+  "Hãy dũng cảm đối mặt với thử thách.",
+  "Sống có trách nhiệm với bản thân và người khác.",
+  "Hãy tin rằng mọi thứ đều có lý do.",
+  "Hãy cười thật nhiều, lo ít đi.",
+  "Mỗi ngày đều có thể trở thành tuyệt vời.",
+  "Đừng ngại mơ ước lớn.",
+  "Thành công là sự tích lũy từ những nỗ lực nhỏ.",
+  "Hãy bắt đầu từ hôm nay, không chần chừ.",
+  "Niềm vui đến từ những điều giản đơn.",
+  "Hãy trân trọng sức khỏe và thời gian.",
+  "Sống tích cực, mọi thứ sẽ theo sau.",
+  "Mỗi ngày đều là một cơ hội học hỏi.",
+  "Hãy sống đúng với giá trị của bạn.",
+  "Hãy yêu thương và biết ơn những người xung quanh.",
+  "Sự kiên nhẫn sẽ mang lại kết quả.",
+  "Đừng lo lắng về những điều không thể kiểm soát.",
+  "Hãy làm việc chăm chỉ và thông minh.",
+  "Mỗi ngày đều có thể thay đổi cuộc đời bạn.",
+  "Hãy giữ bình tĩnh trong mọi hoàn cảnh.",
+  "Mỗi ngày là một cơ hội để trở thành tốt hơn.",
+  "Hãy sống như hôm nay là ngày cuối cùng.",
+  "Hạnh phúc là khi biết đủ và cho đi.",
+  "Hãy làm những gì bạn thích và yêu thương bạn bè.",
+  "Mỗi khó khăn đều có bài học riêng.",
+  "Hãy tận hưởng từng khoảnh khắc trong cuộc sống.",
+  "Sống trọn vẹn, cười thật nhiều, yêu thương thật sâu.",
+  "Mỗi ngày đều là một phép màu."
 ];
 
 function loadQuote() {
-    const today = new Date().toDateString();
-    const saved = localStorage.getItem("dailyQuote");
-
-    if (saved) {
-        const data = JSON.parse(saved);
-        if (data.date === today) {
-            document.getElementById("quoteText").innerText = data.text;
-            return;
-        }
-    }
-
-    fetch("https://api.quotable.io/random")
-        .then(res => res.json())
-        .then(q => {
-            const text = `“${q.content}”`;
-            document.getElementById("quoteText").innerText = text;
-            localStorage.setItem("dailyQuote", JSON.stringify({
-                date: today,
-                text
-            }));
-        })
-        .catch(() => {
-            document.getElementById("quoteText").innerText =
-                "Hôm nay sẽ là một ngày tốt lành 🌼";
-        });
+    const rand = Math.floor(Math.random() * vietnameseQuotes.length);
+    document.getElementById("quoteText").innerText = `💬 ${vietnameseQuotes[rand]}`;
 }
 
 

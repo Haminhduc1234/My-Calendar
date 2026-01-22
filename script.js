@@ -307,7 +307,8 @@ const vietnameseQuotes = [
 
 function loadQuote() {
     const rand = Math.floor(Math.random() * vietnameseQuotes.length);
-    document.getElementById("quoteText").innerText = `💬 ${vietnameseQuotes[rand]}`;
+    document.getElementById("quoteText").innerHTML =
+        `<img src="public/quote.png" alt="quote">${vietnameseQuotes[rand]}`;
 }
 
 
@@ -415,11 +416,11 @@ function handleWeather(lat, lon) {
                       ${icon} ${Math.round(w.temperature)}°C – ${weatherCodeToText(w.weathercode)}
                   </div>
                   <div class="sun-time">
-                      🌅 ${sunrise} &nbsp;&nbsp; 🌇 ${sunset}
+                      <img src="public/mostly-sunny.png" alt="icon"> ${sunrise} &nbsp;&nbsp; <img src="public/sun.png" alt="quote"> ${sunset}
                   </div>
               </div>
-              <div style="font-size:14px;margin-top:4px;color:${color}">
-                  📍 ${locationName}
+              <div class="gg-maps" style="font-size:14px;margin-top:4px;color:${color}">
+                  <img src="public/google-maps.png" alt="icon"> ${locationName}
               </div>
           `;
     })

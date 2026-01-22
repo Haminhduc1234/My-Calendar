@@ -435,7 +435,17 @@ body {
     font-style: italic;
     color: #444;
     margin-bottom: 6px;
+        display: flex;
+    align-items: center;
+    gap: 8px;
 }
+
+.quote img {
+    width: 18px;
+    height: 18px;
+    opacity: 0.85;
+}
+
 
 .weather {
     color: #1976d2;
@@ -458,6 +468,24 @@ body {
     font-size: 14px;
     font-weight: 600;
     white-space: nowrap;
+}
+
+.weather-row img {
+    width: 18px;
+    height: 18px;
+    opacity: 0.85;
+}
+
+.gg-maps {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+.gg-maps img {
+    width: 18px;
+    height: 18px;
+    opacity: 0.85;
 }
 
 .sun-time {

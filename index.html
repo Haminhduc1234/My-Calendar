@@ -1,58 +1,85 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#d32f2f">
+    <meta name="theme-color" content="#d32f2f">
 
-<link rel="manifest" href="manifest.json">
-<link rel="icon" href="favicon.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="favicon.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
 
     <title>Lịch Âm Dương</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="public/favicon.png">
 </head>
+
 <body>
+    <div class="app-wrapper">
 
-<div class="calendar-container">
-    <div class="header">
-        <button onclick="changeMonth(-1)">◀</button>
-        <h2 id="monthYear"></h2>
-        <button onclick="changeMonth(1)">▶</button>
+
+        <div class="today-panel">
+            <div class="today-date">
+                <div class="weekday" id="todayWeekday"></div>
+                <div class="date-number" id="todayDate"></div>
+                <div class="month-year" id="todayMonthYear"></div>
+                <div class="lunar-today" id="todayLunar"></div>
+            </div>
+
+            <div class="today-extra">
+                <div class="quote" id="todayQuote"></div>
+                <div class="weather" id="todayWeather">
+                    Đang tải thời tiết...
+                </div>
+            </div>
+        </div>
+
+        <div class="calendar-container">
+            <div class="header">
+                <button onclick="changeMonth(-1)">◀</button>
+                <h2 id="monthYear"></h2>
+                <button onclick="changeMonth(1)">▶</button>
+            </div>
+
+            <div class="weekdays">
+                <div>CN</div>
+                <div>T2</div>
+                <div>T3</div>
+                <div>T4</div>
+                <div>T5</div>
+                <div>T6</div>
+                <div>T7</div>
+            </div>
+
+            <div class="days" id="calendar"></div>
+        </div>
+
+        <!-- MODAL -->
+        <div id="eventModal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeModal()">×</button>
+
+                <h3>Note</h3>
+                <div class="date-label" id="selectedDate"></div>
+
+                <textarea id="eventText" placeholder="Nhập nội dung..."></textarea>
+
+                <div class="modal-actions">
+                    <button id="saveBtn" onclick="saveEvent()">Lưu</button>
+                    <button id="closeBtn" onclick="closeModal()">Đóng</button>
+                </div>
+            </div>
+        </div>
+        <img src="public/peach-branch.png" class="peach-branch peach-top-right">
+        <img src="public/peach-branch.png" class="peach-branch peach-bottom-left">
     </div>
-
-    <div class="weekdays">
-        <div>CN</div><div>T2</div><div>T3</div><div>T4</div>
-        <div>T5</div><div>T6</div><div>T7</div>
-    </div>
-
-    <div class="days" id="calendar"></div>
-</div>
-
-<!-- MODAL -->
-<div id="eventModal" class="modal">
-  <div class="modal-content">
-    <button class="modal-close" onclick="closeModal()">×</button>
-
-    <h3>Note</h3>
-    <div class="date-label" id="selectedDate"></div>
-
-    <textarea id="eventText" placeholder="Nhập nội dung..."></textarea>
-
-    <div class="modal-actions">
-      <button id="saveBtn" onclick="saveEvent()">Lưu</button>
-      <button id="closeBtn" onclick="closeModal()">Đóng</button>
-    </div>
-  </div>
-</div>
-<img src="public/peach-branch.png" class="peach-branch peach-top-right">
-<img src="public/peach-branch.png" class="peach-branch peach-bottom-left">
-<script src="script.js"></script>
-<script>
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./service-worker.js');
-}
-</script>
+    <script src="script.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./service-worker.js');
+        }
+    </script>
 </body>
+
 </html>

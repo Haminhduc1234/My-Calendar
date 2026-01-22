@@ -235,6 +235,152 @@ function createPeachBlossom() {
 if (new Date().getMonth() <= 1) {
     setInterval(createPeachBlossom, 700);
 }
+function renderToday() {
+    const today = new Date();
 
-/* ========================== INIT ========================== */
+    const weekdays = [
+        "Chủ nhật", "Thứ Hai", "Thứ Ba",
+        "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"
+    ];
+
+    document.getElementById("todayWeekday").innerText =
+        weekdays[today.getDay()];
+
+    document.getElementById("todayDate").innerText =
+        today.getDate();
+
+    document.getElementById("todayMonthYear").innerText =
+        `Tháng ${today.getMonth() + 1} năm ${today.getFullYear()}`;
+}
+const quotes = [
+    "Mỗi ngày mới là một cơ hội mới.",
+    "Kiên trì hôm nay, thành công ngày mai.",
+    "Bình tĩnh – Tập trung – Chiến thắng.",
+    "Hãy sống trọn vẹn cho hiện tại.",
+    "Đi chậm cũng được, miễn là đừng dừng lại."
+];
+
+function renderQuote() {
+    const index = new Date().getDate() % quotes.length;
+    document.getElementById("todayQuote").innerText =
+        "💬 " + quotes[index];
+}
+
+function requestLocationPermission() {
+    if (!navigator.geolocation) {
+        document.getElementById("todayWeather").innerText =
+            "Thiết bị không hỗ trợ định vị";
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        position => {
+            localStorage.setItem("geoPermission", "granted");
+            handleWeather(position.coords.latitude, position.coords.longitude);
+        },
+        () => {
+            localStorage.setItem("geoPermission", "denied");
+            document.getElementById("todayWeather").innerText =
+                "📍 Bạn đã tắt định vị";
+        }
+    );
+}
+
+
+function handleWeather(lat, lon) {
+    fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`
+    )
+    .then(res => res.json())
+    .then(data => {
+        const w = data.current_weather;
+        document.getElementById("todayWeather").innerText =
+            `🌤️ ${Math.round(w.temperature)}°C – ${weatherCodeToText(w.weathercode)}`;
+    })
+    .catch(() => {
+        document.getElementById("todayWeather").innerText =
+            "Không lấy được thời tiết";
+    });
+}
+
+
+function getWeather() {
+    navigator.geolocation.getCurrentPosition(position => {
+        handleWeather(position.coords.latitude, position.coords.longitude);
+    });
+}
+
+function fetchWeatherByLocation() {
+    const permission = localStorage.getItem("geoPermission");
+
+    console.log(permission);
+    
+    // Đã từng từ chối → không hỏi nữa
+    if (permission === "denied") {
+        document.getElementById("todayWeather").innerText =
+            "📍 Thời tiết: chưa bật định vị";
+        return;
+    }
+
+    // Đã cho phép trước đó → lấy vị trí luôn
+    if (permission === "granted") {
+        getWeather();
+        return;
+    }
+
+    // Chưa hỏi lần nào → hỏi 1 lần
+    requestLocationPermission();
+}
+
+function weatherCodeToText(code) {
+    const map = {
+        0: "Trời quang",
+        1: "Ít mây",
+        2: "Mây rải rác",
+        3: "Nhiều mây",
+        45: "Sương mù",
+        48: "Sương mù dày",
+        51: "Mưa phùn nhẹ",
+        53: "Mưa phùn",
+        55: "Mưa phùn dày",
+        61: "Mưa nhỏ",
+        63: "Mưa vừa",
+        65: "Mưa to",
+        71: "Tuyết nhẹ",
+        73: "Tuyết",
+        75: "Tuyết dày",
+        80: "Mưa rào nhẹ",
+        81: "Mưa rào",
+        82: "Mưa rào mạnh",
+        95: "Dông",
+        99: "Dông mạnh"
+    };
+    return map[code] || "Thời tiết không xác định";
+}
+function getCanChiYear(year) {
+    const can = ["Giáp","Ất","Bính","Đinh","Mậu","Kỷ","Canh","Tân","Nhâm","Quý"];
+    const chi = ["Tý","Sửu","Dần","Mão","Thìn","Tỵ","Ngọ","Mùi","Thân","Dậu","Tuất","Hợi"];
+    return `${can[(year + 6) % 10]} ${chi[(year + 8) % 12]}`;
+}
+
+function renderTodayLunar() {
+    const today = new Date();
+
+    const lunar = convertSolarToLunar(
+        today.getDate(),
+        today.getMonth() + 1,
+        today.getFullYear()
+    );
+
+    const canChiYear = getCanChiYear(lunar.lunarYear);
+
+    document.getElementById("todayLunar").innerText =
+        `Âm lịch: ${lunar.lunarDay} tháng ${lunar.lunarMonth} năm ${canChiYear}`;
+}
+
+/* ========================== INIT ========================= */
 renderCalendar();
+renderToday();
+renderQuote();
+fetchWeatherByLocation();
+renderTodayLunar();

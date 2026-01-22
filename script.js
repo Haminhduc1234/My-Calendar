@@ -260,11 +260,34 @@ const quotes = [
     "Đi chậm cũng được, miễn là đừng dừng lại."
 ];
 
-function renderQuote() {
-    const index = new Date().getDate() % quotes.length;
-    document.getElementById("todayQuote").innerText =
-        "💬 " + quotes[index];
+function loadQuote() {
+    const today = new Date().toDateString();
+    const saved = localStorage.getItem("dailyQuote");
+
+    if (saved) {
+        const data = JSON.parse(saved);
+        if (data.date === today) {
+            document.getElementById("quoteText").innerText = data.text;
+            return;
+        }
+    }
+
+    fetch("https://api.quotable.io/random")
+        .then(res => res.json())
+        .then(q => {
+            const text = `“${q.content}”`;
+            document.getElementById("quoteText").innerText = text;
+            localStorage.setItem("dailyQuote", JSON.stringify({
+                date: today,
+                text
+            }));
+        })
+        .catch(() => {
+            document.getElementById("quoteText").innerText =
+                "Hôm nay sẽ là một ngày tốt lành 🌼";
+        });
 }
+
 
 function requestLocationPermission() {
     if (!navigator.geolocation) {
@@ -320,22 +343,67 @@ function getAddressFromCoords(lat, lon) {
     .catch(() => "Vị trí hiện tại");
 }
 
+function getWeatherIcon(code) {
+    if (code === 0) return "☀️";
+    if ([1, 2].includes(code)) return "🌤️";
+    if (code === 3) return "☁️";
+    if ([45, 48].includes(code)) return "🌫️";
+    if ([51, 53, 55].includes(code)) return "🌦️";
+    if ([61, 63, 65].includes(code)) return "🌧️";
+    if ([66, 67].includes(code)) return "🌧️❄️";
+    if ([71, 73, 75].includes(code)) return "❄️";
+    if (code === 77) return "🌨️";
+    if ([80, 81, 82].includes(code)) return "🌧️";
+    if ([85, 86].includes(code)) return "❄️";
+    if ([95, 96, 99].includes(code)) return "⛈️";
+    return "🌤️";
+}
+
+function getWeatherColor(code) {
+    if (code === 0) return "#f9a825";        // nắng
+    if ([1,2].includes(code)) return "#fbc02d";
+    if (code === 3) return "#90a4ae";
+    if ([45,48].includes(code)) return "#78909c";
+    if ([61,63,65,80,81,82].includes(code)) return "#42a5f5";
+    if ([71,73,75,85,86].includes(code)) return "#90caf9";
+    if ([95,96,99].includes(code)) return "#ab47bc";
+    return "#555";
+}
+
 function handleWeather(lat, lon) {
     Promise.all([
         fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`
+            `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=sunrise,sunset&timezone=auto`
         ).then(res => res.json()),
         getAddressFromCoords(lat, lon)
     ])
-    .then(([weatherData, locationName]) => {
-        const w = weatherData.current_weather;
+    .then(([data, locationName]) => {
+        const w = data.current_weather;
+        const icon = getWeatherIcon(w.weathercode);
+        const color = getWeatherColor(w.weathercode);
 
-        document.getElementById("todayWeather").innerText =
-            `🌤️ ${Math.round(w.temperature)}°C – ${weatherCodeToText(w.weathercode)} | 📍 ${locationName}`;
+        const sunrise = data.daily.sunrise[0].slice(11,16);
+        const sunset  = data.daily.sunset[0].slice(11,16);
+
+        const weatherEl = document.getElementById("todayWeather");
+
+        weatherEl.innerHTML = `
+              <div class="weather-row">
+                  <div class="weather-main">
+                      ${icon} ${Math.round(w.temperature)}°C – ${weatherCodeToText(w.weathercode)}
+                  </div>
+                  <div class="sun-time">
+                      🌅 ${sunrise} &nbsp;&nbsp; 🌇 ${sunset}
+                  </div>
+              </div>
+              <div style="font-size:14px;margin-top:4px;color:${color}">
+                  📍 ${locationName}
+              </div>
+          `;
     })
     .catch(() => {
         document.getElementById("todayWeather").innerText =
-            "🌤️ Không lấy được thời tiết";
+            "Không lấy được dữ liệu thời tiết";
     });
 }
 
@@ -416,6 +484,6 @@ function renderTodayLunar() {
 /* ========================== INIT ========================= */
 renderCalendar();
 renderToday();
-renderQuote();
+loadQuote();
 fetchWeatherByLocation();
 renderTodayLunar();

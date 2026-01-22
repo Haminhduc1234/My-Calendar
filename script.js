@@ -297,13 +297,25 @@ function getAddressFromCoords(lat, lon) {
     )
     .then(res => res.json())
     .then(data => {
-      const detailAddr = data.display_name || "";
         const addr = data.address || {};
-        if(detailAddr)
-          return detailAddr;
-        else
-        return `${addr.suburb || addr.county || ""}${addr.city ? ", " + addr.city : ""}`;
 
+        const ward =
+            addr.suburb ||
+            addr.quarter ||
+            addr.city ||
+            addr.town ||
+            addr.village ||
+            "";
+
+        const province = (addr.state || "")
+            .replace("Tỉnh ", "")
+            .replace("Thành phố ", "");
+
+        if (ward && province) {
+            return `${ward}, ${province}`;
+        }
+
+        return ward || province || "Vị trí hiện tại";
     })
     .catch(() => "Vị trí hiện tại");
 }

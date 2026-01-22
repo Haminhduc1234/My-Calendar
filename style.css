@@ -435,8 +435,8 @@ body {
     font-style: italic;
     color: #444;
     margin-bottom: 6px;
-        display: flex;
-    align-items: center;
+    display: flex;
+    align-items: start;
     gap: 8px;
 }
 

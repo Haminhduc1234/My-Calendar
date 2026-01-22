@@ -365,8 +365,8 @@ body {
 }
 
 .peach-bottom-left {
-    bottom: 0px;
-    left: 0px;
+    bottom: -28px;
+    left: -25px;
     transform: rotate(40deg);
 }
 

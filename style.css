@@ -8,7 +8,7 @@ body {
     background: linear-gradient(135deg, #eef1f6, #f7f9fc);
     height: 100vh;
     margin: 0;
-    padding: 20px 0;
+    padding: 10px;
     color: #2c3e50;
 }
 .app-wrapper {
@@ -19,7 +19,7 @@ body {
 @media (max-width: 480px) {
     .today-panel,
     .calendar-container {
-        width: calc(100% - 24px);
+        max-width: calc(100% - 10px);
     }
 }
 /* =================== CALENDAR CONTAINER =================== */
@@ -359,8 +359,8 @@ body {
 }
 
 .peach-top-right {
-    top: 0;
-    right: 0;
+    top: -28px;
+    right: -25px;
     transform: rotate(227deg) scaleX(-1);
 }
 

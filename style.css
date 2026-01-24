@@ -355,7 +355,13 @@ body {
   margin-top: 2px;
 }
 
-
+#clock {
+  font-size: 22px;
+  font-weight: bold;
+  color: #1976d2;
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
 /* ================= HOA ĐÀO RƠI ================= */
 @keyframes fall {
     0% {

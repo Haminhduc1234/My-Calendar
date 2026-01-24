@@ -343,6 +343,19 @@ body {
 .holiday.today .solar {
     color: #be123c;
 }
+.day.holiday {
+  background: linear-gradient(135deg, #ffefba, #ffd54f);
+  box-shadow: 0 0 8px rgba(255,152,0,0.6);
+}
+
+.holiday-name {
+  font-size: 10px;
+  color: #d84315;
+  font-weight: bold;
+  margin-top: 2px;
+}
+
+
 /* ================= HOA ĐÀO RƠI ================= */
 @keyframes fall {
     0% {

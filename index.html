@@ -56,6 +56,29 @@
             <div class="days" id="calendar"></div>
         </div>
 
+        <div class="overtime-box">
+            <div>
+               <span class="title">Ngày thường</span>
+                <b id="otWeekdayBase">0</b><span class="text-hour">h</span>
+                <span class="bonus">(+<b id="otWeekdayBonus">0</b>h)</span>
+            </div>
+
+            <div>
+                <span class="title">Chủ nhật</span>
+                <b id="otSundayBase">0</b><span class="text-hour">h</span>
+                <span class="bonus">(+<b id="otSundayBonus">0</b>h)</span>
+            </div>
+
+            <hr>
+
+            <div>
+                <span class="title">Tổng cộng</span>
+                <b id="otTotalBase">0</b><span class="text-hour">h</span>
+                <span class="bonus">(+<b id="otTotalBonus">0</b>h)</span>
+                = <b id="otTotalSum">0</b><span class="text-hour">h</span>
+            </div>
+        </div>
+
         <!-- MODAL -->
         <div id="eventModal" class="modal">
             <div class="modal-content">

@@ -527,6 +527,70 @@ function updateClock() {
   document.getElementById("clock").innerText = `${h}:${m}:${s}`;
 }
 
+function calcOvertimeSummary() {
+  let weekday = { base: 0, bonus: 0 };
+  let sunday = { base: 0, bonus: 0 };
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    let note = localStorage.getItem(key);
+
+    if (!note) continue;
+    note = note.trim();
+
+    if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(key)) continue;
+    if (!/^\d+$/.test(note)) continue;
+
+    const baseHours = parseInt(note, 10);
+    const bonusHours = baseHours >= 2 ? 0.5 : 0;
+
+    const [y, m, d] = key.split("-").map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d));
+    const dayOfWeek = date.getUTCDay();
+
+    if (dayOfWeek === 0) {
+      sunday.base += baseHours;
+      sunday.bonus += bonusHours;
+    } else {
+      weekday.base += baseHours;
+      weekday.bonus += bonusHours;
+    }
+  }
+
+  return {
+    weekday,
+    sunday,
+    total: {
+      base: weekday.base + sunday.base,
+      bonus: weekday.bonus + sunday.bonus,
+      sum:
+        weekday.base +
+        sunday.base +
+        weekday.bonus +
+        sunday.bonus
+    }
+  };
+}
+
+
+function renderOvertime() {
+  const ot = calcOvertimeSummary();
+
+  otWeekdayBase.innerText = ot.weekday.base;
+  otWeekdayBonus.innerText = ot.weekday.bonus;
+
+  otSundayBase.innerText = ot.sunday.base;
+  otSundayBonus.innerText = ot.sunday.bonus;
+
+  otTotalBase.innerText = ot.total.base;
+  otTotalBonus.innerText = ot.total.bonus;
+  otTotalSum.innerText = ot.total.sum;
+}
+
+
+renderOvertime();
+
+
 // cập nhật mỗi giây
 setInterval(updateClock, 1000);
 updateClock();

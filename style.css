@@ -549,3 +549,28 @@ body {
 .app-footer .author:hover {
     color: #4f8cff;
 }
+.overtime-box {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff7ed;
+  font-size: 14px;
+}
+
+.overtime-box b {
+  color: #e65100;
+}
+.overtime-box .title {
+    display: inline-block;
+    min-width: 100px;
+    font-weight: 600;
+}
+.bonus {
+  color: #ff9800;
+  font-size: 13px;
+  margin-left: 6px;
+}
+.text-hour {
+  color: #ff9800;
+  font-size: 13px;
+}

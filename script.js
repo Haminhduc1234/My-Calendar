@@ -631,18 +631,18 @@ function calcOvertimeSalary(viewYear, viewMonth, hourlyRate) {
     const date = new Date(y, m - 1, d);
     const dow = date.getDay(); // 0 = Chủ nhật
 
-if (dow === 0) {
-  // 🟥 CHỦ NHẬT – tách 2 mốc
-  const firstPart = Math.min(totalHours, 8);
-  const extraPart = Math.max(totalHours - 8, 0);
+    if (dow === 0) {
+      // 🟥 CHỦ NHẬT – tách 2 mốc
+      const firstPart = Math.min(totalHours, 8);
+      const extraPart = Math.max(totalHours - 8, 0);
 
-  sunday.hours += totalHours;
+      sunday.hours += totalHours;
 
-  sunday.salary +=
-    firstPart * hourlyRate * 2 +
-    extraPart * hourlyRate * 3;
-}
- else {
+      sunday.salary +=
+        firstPart * hourlyRate * 2 +
+        extraPart * hourlyRate * 3;
+    }
+    else {
       // 🟦 NGÀY THƯỜNG
       weekday.hours += totalHours;
       weekday.salary += totalHours * hourlyRate * 1.5;
@@ -698,7 +698,7 @@ function renderOvertimeSalary() {
     return;
   }
 
-const otSalary = calcOvertimeSalary(currentDate.getFullYear(), currentDate.getMonth(), salaryPerHour);
+  const otSalary = calcOvertimeSalary(currentDate.getFullYear(), currentDate.getMonth(), salaryPerHour);
 
   const totalMoney = otSalary.total.salary;
 
@@ -721,7 +721,7 @@ function initMap(lat, lon) {
     }).addTo(map);
 
     marker = L.marker([lat, lon]).addTo(map)
-      
+
   } else {
     map.setView([lat, lon], 15);
     marker.setLatLng([lat, lon]);
@@ -749,6 +749,163 @@ function loadCurrentLocationOnce() {
   });
 }
 
+
+document.addEventListener("DOMContentLoaded", loadCurrentLocationOnce);
+
+
+let userMarker;
+let destMarker;
+let routeControl;
+let userLocation = null;
+
+function initMap(lat, lon) {
+  userLocation = [lat, lon];
+
+  if (!map) {
+    map = L.map("map").setView(userLocation, 15);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(map);
+
+    userMarker = L.marker(userLocation)
+      .addTo(map)
+  } else {
+    map.setView(userLocation, 15);
+    userMarker.setLatLng(userLocation);
+  }
+}
+function loadCurrentLocationOnce() {
+  const saved = localStorage.getItem("savedLocation");
+  if (saved) {
+    const { lat, lon } = JSON.parse(saved);
+    initMap(lat, lon);
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+
+      localStorage.setItem(
+        "savedLocation",
+        JSON.stringify({ lat, lon })
+      );
+
+      initMap(lat, lon);
+    },
+    (err) => alert("Không lấy được vị trí")
+  );
+}
+
+function debounce(fn, delay = 400) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+
+async function searchAddress(query) {
+  if (!query || query.length < 3) {
+    document.getElementById("searchResults").style.display = "none";
+    return;
+  }
+
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&limit=8&q=${encodeURIComponent(query)}`
+  );
+
+  const data = await res.json();
+  renderSearchResults(data);
+}
+
+const debouncedSearch = debounce((e) => {
+  searchAddress(e.target.value.trim());
+}, 500);
+
+document
+  .getElementById("addressInput")
+  .addEventListener("input", debouncedSearch);
+
+document.getElementById("addressInput").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    const first = document.querySelector(".search-item");
+    if (first) first.click();
+  }
+});
+
+
+function renderSearchResults(results) {
+  const box = document.getElementById("searchResults");
+  box.innerHTML = "";
+
+  if (!results.length) {
+    box.style.display = "none";
+    alert("Không tìm thấy địa điểm");
+    return;
+  }
+
+  results.forEach((item) => {
+    const div = document.createElement("div");
+    div.className = "search-item";
+    div.innerText = item.display_name;
+
+    div.onclick = () => {
+      showDestination(
+        parseFloat(item.lat),
+        parseFloat(item.lon),
+        item.display_name
+      );
+      box.style.display = "none";
+    };
+
+    box.appendChild(div);
+  });
+
+  box.style.display = "block";
+}
+
+document.addEventListener("click", (e) => {
+  if (
+    !e.target.closest(".map-search") &&
+    !e.target.closest(".search-results")
+  ) {
+    document.getElementById("searchResults").style.display = "none";
+  }
+});
+
+
+function showDestination(lat, lon, name) {
+  if (destMarker) map.removeLayer(destMarker);
+  if (routeControl) map.removeControl(routeControl);
+
+  destMarker = L.marker([lat, lon])
+    .addTo(map)
+    .bindPopup("📍 " + name)
+    .openPopup();
+
+  routeControl = L.Routing.control({
+    waypoints: [
+      L.latLng(userLocation[0], userLocation[1]),
+      L.latLng(lat, lon)
+    ],
+    routeWhileDragging: false,
+    addWaypoints: false,
+    draggableWaypoints: false,
+    show: false,
+    lineOptions: {
+      styles: [{ color: "#ff7a18", weight: 5 }]
+    }
+  }).addTo(map);
+
+  map.fitBounds([
+    userLocation,
+    [lat, lon]
+  ]);
+}
 
 document.addEventListener("DOMContentLoaded", loadCurrentLocationOnce);
 

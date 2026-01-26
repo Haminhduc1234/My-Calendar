@@ -209,7 +209,11 @@ function renderCalendar() {
 }
 
 /* ========================== THÁNG ========================== */
-function changeMonth(step) { currentDate.setMonth(currentDate.getMonth() + step); renderCalendar(); }
+function changeMonth(step) {
+  currentDate.setMonth(currentDate.getMonth() + step);
+  renderCalendar();
+  renderOvertime();
+}
 
 /* ========================== SỰ KIỆN ========================== */
 function openModal(key, d, m, y) {
@@ -528,7 +532,7 @@ function updateClock() {
   document.getElementById("clock").innerText = `${h}:${m}:${s}`;
 }
 
-function calcOvertimeSummary() {
+function calcOvertimeSummary(viewYear, viewMonth) {
   let weekday = { base: 0, bonus: 0 };
   let sunday = { base: 0, bonus: 0 };
 
@@ -542,12 +546,16 @@ function calcOvertimeSummary() {
     if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(key)) continue;
     if (!/^\d+$/.test(note)) continue;
 
+    const [y, m, d] = key.split("-").map(Number);
+
+    // ✅ LỌC THEO THÁNG ĐANG XEM TRÊN LỊCH
+    if (y !== viewYear || m !== viewMonth + 1) continue;
+
     const baseHours = parseInt(note, 10);
     const bonusHours = baseHours >= 2 ? 0.5 : 0;
 
-    const [y, m, d] = key.split("-").map(Number);
-    const date = new Date(Date.UTC(y, m - 1, d));
-    const dayOfWeek = date.getUTCDay();
+    const date = new Date(y, m - 1, d);
+    const dayOfWeek = date.getDay(); // 0 = Chủ nhật
 
     if (dayOfWeek === 0) {
       sunday.base += baseHours;
@@ -573,9 +581,8 @@ function calcOvertimeSummary() {
   };
 }
 
-
 function renderOvertime() {
-  const ot = calcOvertimeSummary();
+  const ot = calcOvertimeSummary(currentDate.getFullYear(), currentDate.getMonth());
 
   otWeekdayBase.innerText = ot.weekday.base;
   otWeekdayBonus.innerText = ot.weekday.bonus;
@@ -587,6 +594,99 @@ function renderOvertime() {
   otTotalBonus.innerText = ot.total.bonus;
   otTotalSum.innerText = ot.total.sum;
 }
+
+function calcOvertimeSalary() {
+  let weekdayOT = 0;
+  let sundayOT = 0;
+
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    let note = localStorage.getItem(key);
+
+    if (!note) continue;
+    note = note.trim();
+
+    if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(key)) continue;
+    if (!/^\d+$/.test(note)) continue;
+
+    let base = parseInt(note, 10);
+    let bonus = base >= 2 ? 0.5 : 0;
+    let totalHours = base + bonus;
+
+    const [y, m, d] = key.split("-").map(Number);
+    const date = new Date(Date.UTC(y, m - 1, d));
+    const dow = date.getUTCDay();
+
+    if (dow === 0) {
+      sundayOT += totalHours;
+    } else {
+      weekdayOT += totalHours;
+    }
+  }
+
+  // Quy đổi hệ số
+  const weekdayPayHours = weekdayOT * 1.5;
+
+  let sundayPayHours = 0;
+  if (sundayOT <= 8) {
+    sundayPayHours = sundayOT * 2;
+  } else {
+    sundayPayHours = sundayOT * 3;
+  }
+
+  return {
+    weekdayOT,
+    sundayOT,
+    totalPayHours: weekdayPayHours + sundayPayHours
+  };
+}
+
+function formatCurrencyInput(input) {
+  // Lấy vị trí con trỏ
+  const cursorPos = input.selectionStart;
+
+  // Chỉ giữ số
+  let raw = input.value.replace(/\D/g, "");
+  if (!raw) {
+    input.value = "";
+    return;
+  }
+
+  // Format tiền VN
+  const formatted = Number(raw).toLocaleString("vi-VN");
+
+  // Tính lại vị trí con trỏ
+  const diff = formatted.length - input.value.length;
+  input.value = formatted;
+  input.setSelectionRange(cursorPos + diff, cursorPos + diff);
+}
+
+const salaryInput = document.getElementById("hourSalary");
+
+salaryInput.addEventListener("input", () => {
+  formatCurrencyInput(salaryInput);
+  renderOvertimeSalary();
+});
+
+
+function renderOvertimeSalary() {
+  const salaryPerHour = parseInt(
+    hourSalary.value.replace(/\D/g, ""),
+    10
+  );
+  if (!salaryPerHour || salaryPerHour <= 0) {
+    document.getElementById("otSalary").innerText = "0";
+    return;
+  }
+
+  const ot = calcOvertimeSalary();
+  const totalMoney = ot.totalPayHours * salaryPerHour;
+
+  document.getElementById("otSalary").innerText =
+    totalMoney.toLocaleString("vi-VN");
+}
+
+hourSalary.addEventListener("input", renderOvertimeSalary);
 
 
 renderOvertime();

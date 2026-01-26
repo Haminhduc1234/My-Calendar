@@ -574,3 +574,25 @@ body {
   color: #ff9800;
   font-size: 13px;
 }
+.salary-box {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f0f7ff;
+  font-size: 14px;
+}
+
+.salary-box input {
+  width: 120px;
+  padding: 4px 6px;
+  margin-left: 6px;
+}
+
+.salary-result {
+  margin-top: 8px;
+  font-size: 15px;
+}
+
+.salary-result b {
+  color: #d32f2f;
+}

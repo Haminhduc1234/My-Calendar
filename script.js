@@ -213,6 +213,7 @@ function changeMonth(step) {
   currentDate.setMonth(currentDate.getMonth() + step);
   renderCalendar();
   renderOvertime();
+  renderOvertimeSalary();
 }
 
 /* ========================== SỰ KIỆN ========================== */

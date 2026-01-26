@@ -809,22 +809,25 @@ function debounce(fn, delay = 400) {
 
 
 async function searchAddress(query) {
-  if (!query || query.length < 3) {
-    document.getElementById("searchResults").style.display = "none";
-    return;
+  try {
+    await searchPhoton(query);
+  } catch (e) {
+    console.warn("Photon fail → fallback Nominatim");
+    await searchNominatim(query);
   }
-
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&limit=8&q=${encodeURIComponent(query)}`
-  );
-
-  const data = await res.json();
-  renderSearchResults(data);
 }
 
-const debouncedSearch = debounce((e) => {
-  searchAddress(e.target.value.trim());
-}, 500);
+function debounce(fn, delay = 400) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+}
+
+const debouncedSearch = debounce(e => {
+  searchAddress(e.target.value);
+});
 
 document
   .getElementById("addressInput")
@@ -844,14 +847,29 @@ function renderSearchResults(results) {
 
   if (!results.length) {
     box.style.display = "none";
-    alert("Không tìm thấy địa điểm");
     return;
   }
 
   results.forEach((item) => {
+    const addr = item.address || {};
+
+    const title = [
+      addr.road,
+      addr.suburb || addr.village,
+      addr.city || addr.county,
+      addr.state
+    ]
+      .filter(Boolean)
+      .join(", ");
+
     const div = document.createElement("div");
     div.className = "search-item";
-    div.innerText = item.display_name;
+    div.innerHTML = `
+      <strong>${addr.road || item.display_name}</strong>
+      <div style="font-size:12px;color:#666;">
+        ${title}
+      </div>
+    `;
 
     div.onclick = () => {
       showDestination(
@@ -868,6 +886,72 @@ function renderSearchResults(results) {
   box.style.display = "block";
 }
 
+async function searchPhoton(query) {
+  if (!query || query.length < 3) {
+    hideResults();
+    return;
+  }
+
+  if (!userLocation) return;
+
+  const [lat, lon] = userLocation;
+
+  const url =
+    `https://photon.komoot.io/api/?` +
+    `q=${encodeURIComponent(query)}` +
+    `&lat=${lat}` +
+    `&lon=${lon}` +
+    `&limit=8`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  renderPhotonResults(data.features);
+}
+function renderPhotonResults(features) {
+  const box = document.getElementById("searchResults");
+  box.innerHTML = "";
+
+  if (!features || !features.length) {
+    hideResults();
+    return;
+  }
+
+  features.forEach(f => {
+    const p = f.properties;
+
+    const title = p.name || p.street || p.city || "Không tên";
+
+    const detail = [
+      p.street,
+      p.district,
+      p.city,
+      p.state
+    ].filter(Boolean).join(", ");
+
+    const div = document.createElement("div");
+    div.className = "search-item";
+    div.innerHTML = `
+      <strong>${title}</strong>
+      <div style="font-size:12px;color:#666;">${detail}</div>
+    `;
+
+    div.onclick = () => {
+      const [lon, lat] = f.geometry.coordinates;
+      showDestination(lat, lon, detail || title);
+      hideResults();
+    };
+
+    box.appendChild(div);
+  });
+
+  box.style.display = "block";
+}
+
+function hideResults() {
+  document.getElementById("searchResults").style.display = "none";
+}
+
 document.addEventListener("click", (e) => {
   if (
     !e.target.closest(".map-search") &&
@@ -877,6 +961,14 @@ document.addEventListener("click", (e) => {
   }
 });
 
+
+document.getElementById("addressInput").addEventListener("focus", () => {
+  if (document.getElementById("addressInput").value.length >= 3) {
+    debouncedSearch({
+      target: { value: document.getElementById("addressInput").value }
+    });
+  }
+});
 
 function showDestination(lat, lon, name) {
   if (destMarker) map.removeLayer(destMarker);

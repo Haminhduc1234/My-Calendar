@@ -623,6 +623,7 @@ function calcOvertimeSalary(viewYear, viewMonth, hourlyRate) {
     // 🚫 BỎ QUA NẾU KHÔNG PHẢI THÁNG ĐANG XEM
     if (y !== viewYear || m !== viewMonth + 1) continue;
 
+
     const baseHours = parseInt(note, 10);
     const bonusHours = baseHours >= 2 ? 0.5 : 0;
     const totalHours = baseHours + bonusHours;
@@ -630,12 +631,18 @@ function calcOvertimeSalary(viewYear, viewMonth, hourlyRate) {
     const date = new Date(y, m - 1, d);
     const dow = date.getDay(); // 0 = Chủ nhật
 
-    if (dow === 0) {
-      // 🟥 CHỦ NHẬT
-      let multiplier = totalHours <= 8 ? 2 : 3;
-      sunday.hours += totalHours;
-      sunday.salary += totalHours * hourlyRate * multiplier;
-    } else {
+if (dow === 0) {
+  // 🟥 CHỦ NHẬT – tách 2 mốc
+  const firstPart = Math.min(totalHours, 8);
+  const extraPart = Math.max(totalHours - 8, 0);
+
+  sunday.hours += totalHours;
+
+  sunday.salary +=
+    firstPart * hourlyRate * 2 +
+    extraPart * hourlyRate * 3;
+}
+ else {
       // 🟦 NGÀY THƯỜNG
       weekday.hours += totalHours;
       weekday.salary += totalHours * hourlyRate * 1.5;

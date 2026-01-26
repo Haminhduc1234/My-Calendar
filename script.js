@@ -709,6 +709,51 @@ const otSalary = calcOvertimeSalary(currentDate.getFullYear(), currentDate.getMo
 hourSalary.addEventListener("input", renderOvertimeSalary);
 
 
+let map;
+let marker;
+
+function initMap(lat, lon) {
+  if (!map) {
+    map = L.map("map").setView([lat, lon], 15);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap"
+    }).addTo(map);
+
+    marker = L.marker([lat, lon]).addTo(map)
+      .bindPopup("📍 Vị trí của bạn")
+      .openPopup();
+  } else {
+    map.setView([lat, lon], 15);
+    marker.setLatLng([lat, lon]);
+  }
+}
+
+function loadCurrentLocationOnce() {
+  const saved = localStorage.getItem("savedLocation");
+  if (saved) {
+    const { lat, lon } = JSON.parse(saved);
+    initMap(lat, lon);
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+
+    localStorage.setItem(
+      "savedLocation",
+      JSON.stringify({ lat, lon })
+    );
+
+    initMap(lat, lon);
+  });
+}
+
+
+document.addEventListener("DOMContentLoaded", loadCurrentLocationOnce);
+
+
 renderOvertime();
 
 

@@ -596,3 +596,25 @@ body {
 .salary-result b {
   color: #d32f2f;
 }
+
+.map-section {
+  margin-top: 16px;
+  width: 100%;
+  background: #ffffff;
+  padding: 12px;
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.map-section h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+#map {
+  width: 100%;
+  height: 450px;
+  border-radius: 12px;
+  overflow: hidden;
+}

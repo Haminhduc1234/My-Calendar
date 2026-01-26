@@ -13,6 +13,12 @@
     <title>Lịch Âm Dương</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="public/favicon.png">
+    <!-- Leaflet -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 
 <body>
@@ -92,7 +98,10 @@
 
         </div>
         
-
+        <div class="map-section">
+            <h3>📍 Vị trí hiện tại</h3> 
+            <div id="map"></div>
+        </div>
         <!-- MODAL -->
         <div id="eventModal" class="modal">
             <div class="modal-content">

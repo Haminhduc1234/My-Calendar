@@ -721,8 +721,7 @@ function initMap(lat, lon) {
     }).addTo(map);
 
     marker = L.marker([lat, lon]).addTo(map)
-      .bindPopup("📍 Vị trí của bạn")
-      .openPopup();
+      
   } else {
     map.setView([lat, lon], 15);
     marker.setLatLng([lat, lon]);

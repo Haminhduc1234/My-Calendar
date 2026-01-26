@@ -600,10 +600,8 @@ body {
 .map-section {
   margin-top: 16px;
   width: 100%;
-  background: #ffffff;
   padding: 12px;
   border-radius: 14px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
 .map-section h3 {
@@ -614,7 +612,9 @@ body {
 
 #map {
   width: 100%;
+  max-width: 800px;
   height: 450px;
   border-radius: 12px;
+  margin: 0 auto;
   overflow: hidden;
 }

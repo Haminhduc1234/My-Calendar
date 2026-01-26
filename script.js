@@ -227,6 +227,7 @@ document.getElementById("eventModal").addEventListener("click", function (e) {
 function saveEvent() {
   const t = document.getElementById("eventText").value;
   t ? localStorage.setItem(selectedKey, t) : localStorage.removeItem(selectedKey);
+  renderOvertime();
   closeModal();
   renderCalendar();
 }

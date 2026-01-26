@@ -595,9 +595,16 @@ function renderOvertime() {
   otTotalSum.innerText = ot.total.sum;
 }
 
-function calcOvertimeSalary() {
-  let weekdayOT = 0;
-  let sundayOT = 0;
+function calcOvertimeSalary(viewYear, viewMonth, hourlyRate) {
+  let weekday = {
+    hours: 0,
+    salary: 0
+  };
+
+  let sunday = {
+    hours: 0,
+    salary: 0
+  };
 
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -606,40 +613,44 @@ function calcOvertimeSalary() {
     if (!note) continue;
     note = note.trim();
 
+    // chỉ xử lý key ngày hợp lệ
     if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(key)) continue;
     if (!/^\d+$/.test(note)) continue;
 
-    let base = parseInt(note, 10);
-    let bonus = base >= 2 ? 0.5 : 0;
-    let totalHours = base + bonus;
-
     const [y, m, d] = key.split("-").map(Number);
-    const date = new Date(Date.UTC(y, m - 1, d));
-    const dow = date.getUTCDay();
+
+    // 🚫 BỎ QUA NẾU KHÔNG PHẢI THÁNG ĐANG XEM
+    if (y !== viewYear || m !== viewMonth + 1) continue;
+
+    const baseHours = parseInt(note, 10);
+    const bonusHours = baseHours >= 2 ? 0.5 : 0;
+    const totalHours = baseHours + bonusHours;
+
+    const date = new Date(y, m - 1, d);
+    const dow = date.getDay(); // 0 = Chủ nhật
 
     if (dow === 0) {
-      sundayOT += totalHours;
+      // 🟥 CHỦ NHẬT
+      let multiplier = totalHours <= 8 ? 2 : 3;
+      sunday.hours += totalHours;
+      sunday.salary += totalHours * hourlyRate * multiplier;
     } else {
-      weekdayOT += totalHours;
+      // 🟦 NGÀY THƯỜNG
+      weekday.hours += totalHours;
+      weekday.salary += totalHours * hourlyRate * 1.5;
     }
   }
 
-  // Quy đổi hệ số
-  const weekdayPayHours = weekdayOT * 1.5;
-
-  let sundayPayHours = 0;
-  if (sundayOT <= 8) {
-    sundayPayHours = sundayOT * 2;
-  } else {
-    sundayPayHours = sundayOT * 3;
-  }
-
   return {
-    weekdayOT,
-    sundayOT,
-    totalPayHours: weekdayPayHours + sundayPayHours
+    weekday,
+    sunday,
+    total: {
+      hours: weekday.hours + sunday.hours,
+      salary: weekday.salary + sunday.salary
+    }
   };
 }
+
 
 function formatCurrencyInput(input) {
   // Lấy vị trí con trỏ
@@ -679,8 +690,9 @@ function renderOvertimeSalary() {
     return;
   }
 
-  const ot = calcOvertimeSalary();
-  const totalMoney = ot.totalPayHours * salaryPerHour;
+const otSalary = calcOvertimeSalary(currentDate.getFullYear(), currentDate.getMonth(), salaryPerHour);
+
+  const totalMoney = otSalary.total.salary;
 
   document.getElementById("otSalary").innerText =
     totalMoney.toLocaleString("vi-VN");

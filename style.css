@@ -572,6 +572,7 @@ body {
 }
 
 .overtime-box {
+    display: none;
     margin-top: 10px;
     padding: 12px;
     border-radius: 12px;
@@ -701,4 +702,77 @@ body {
 
 .search-item:hover {
     background: #fff3e0;
+}
+
+.weather-forecast {
+  display: flex;
+  gap: 14px;
+  margin-top: 14px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.weather-forecast::-webkit-scrollbar {
+  height: 6px;
+}
+.weather-forecast::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+.forecast-card {
+  min-width: 180px;
+  background: linear-gradient(180deg, #ffffff, #f3f6fb);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.forecast-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
+}
+
+.fc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fc-day {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.fc-icon {
+  font-size: 26px;
+}
+
+.fc-desc {
+  margin: 6px 0;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.fc-temp {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 8px 0;
+}
+
+.fc-temp .max {
+  color: #ff5722;
+  margin-right: 6px;
+}
+
+.fc-temp .min {
+  color: #2196f3;
+}
+
+.fc-extra {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  opacity: 0.85;
 }

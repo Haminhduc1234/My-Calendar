@@ -415,7 +415,11 @@ function getWeatherColor(code) {
 function handleWeather(lat, lon) {
   Promise.all([
     fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=sunrise,sunset&timezone=auto`
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}
+&current_weather=true
+&hourly=relativehumidity_2m
+&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,sunrise,sunset
+&timezone=auto`
     ).then(res => res.json()),
     getAddressFromCoords(lat, lon)
   ])
@@ -426,7 +430,7 @@ function handleWeather(lat, lon) {
 
       const sunrise = data.daily.sunrise[0].slice(11, 16);
       const sunset = data.daily.sunset[0].slice(11, 16);
-
+      
       const weatherEl = document.getElementById("todayWeather");
 
       weatherEl.innerHTML = `
@@ -442,12 +446,77 @@ function handleWeather(lat, lon) {
                   <img src="public/google-maps.png" alt="icon"> ${locationName}
               </div>
           `;
+
+      renderForecast(data.daily, data.hourly);
     })
     .catch(() => {
       document.getElementById("todayWeather").innerText =
         "Không lấy được dữ liệu thời tiết";
     });
 }
+
+function getDailyHumidity(hourly, dateStr) {
+  const day = dateStr;
+  let sum = 0, count = 0;
+
+  hourly.time.forEach((t, i) => {
+    if (t.startsWith(day)) {
+      sum += hourly.relativehumidity_2m[i];
+      count++;
+    }
+  });
+
+  return count ? Math.round(sum / count) : "--";
+}
+
+
+function renderForecast(daily, hourly) {
+  const forecastEl = document.getElementById("weatherForecast");
+  forecastEl.innerHTML = "";
+
+  for (let i = 1; i < daily.time.length; i++) {
+    const date = new Date(daily.time[i]);
+    const day = date.toLocaleDateString("vi-VN", {
+      weekday: "long",
+      day: "2-digit",
+      month: "2-digit"
+    });
+
+    const icon = getWeatherIcon(daily.weathercode[i]);
+    const desc = weatherCodeToText(daily.weathercode[i]);
+
+    const max = Math.round(daily.temperature_2m_max[i]);
+    const min = Math.round(daily.temperature_2m_min[i]);
+    const rain = daily.precipitation_probability_max[i] ?? 0;
+    const wind = Math.round(daily.windspeed_10m_max[i]);
+
+    // Tính độ ẩm trung bình trong ngày
+    const humidity = getDailyHumidity(hourly, daily.time[i]);
+
+    forecastEl.innerHTML += `
+      <div class="forecast-card">
+        <div class="fc-header">
+          <div class="fc-day">${day}</div>
+          <div class="fc-icon">${icon}</div>
+        </div>
+
+        <div class="fc-desc">${desc}</div>
+
+        <div class="fc-temp">
+          <span class="max">${max}°</span>
+          <span class="min">${min}°</span>
+        </div>
+
+        <div class="fc-extra">
+          <div>💧 ${humidity}%</div>
+          <div>🌧 ${rain}%</div>
+          <div>💨 ${wind} km/h</div>
+        </div>
+      </div>
+    `;
+  }
+}
+
 
 function getWeather() {
   navigator.geolocation.getCurrentPosition(position => {

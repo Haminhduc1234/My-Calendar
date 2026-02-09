@@ -622,10 +622,22 @@ function calcOvertimeSummary(viewYear, viewMonth) {
     if (y !== viewYear || m !== viewMonth + 1) continue;
 
     const baseHours = parseInt(note, 10);
-    const bonusHours = baseHours >= 2 ? 0.5 : 0;
-
     const date = new Date(y, m - 1, d);
     const dayOfWeek = date.getDay(); // 0 = Chủ nhật
+
+    let bonusHours = 0;
+
+    if (dayOfWeek === 0) {
+      // Chủ nhật phải > 10 tiếng
+      if (baseHours > 10) {
+        bonusHours = 0.5;
+      }
+    } else {
+      // Ngày thường ≥ 2 tiếng
+      if (baseHours >= 2) {
+        bonusHours = 0.5;
+      }
+    }
 
     if (dayOfWeek === 0) {
       sunday.base += baseHours;

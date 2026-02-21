@@ -704,13 +704,14 @@ function calcOvertimeSalary(viewYear, viewMonth, hourlyRate) {
     // 🚫 BỎ QUA NẾU KHÔNG PHẢI THÁNG ĐANG XEM
     if (y !== viewYear || m !== viewMonth + 1) continue;
 
-
-    const baseHours = parseInt(note, 10);
-    const bonusHours = baseHours >= 2 ? 0.5 : 0;
-    const totalHours = baseHours + bonusHours;
-
     const date = new Date(y, m - 1, d);
     const dow = date.getDay(); // 0 = Chủ nhật
+
+    const baseHours = parseInt(note, 10);
+    const bonusHours = dow === 0 ? (baseHours >= 10 ? 0.5 : 0) : (baseHours >= 2 ? 0.5 : 0);
+    const totalHours = baseHours + bonusHours;
+
+
 
     if (dow === 0) {
       // 🟥 CHỦ NHẬT – tách 2 mốc

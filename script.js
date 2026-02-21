@@ -629,7 +629,7 @@ function calcOvertimeSummary(viewYear, viewMonth) {
 
     if (dayOfWeek === 0) {
       // Chủ nhật phải > 10 tiếng
-      if (baseHours > 10) {
+      if (baseHours >= 10) {
         bonusHours = 0.5;
       }
     } else {

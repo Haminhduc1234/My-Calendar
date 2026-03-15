@@ -1,11 +1,11 @@
 {
   "name": "Lịch Âm Dương Việt Nam",
   "short_name": "Lịch Việt",
-  "description": "Lịch âm dương Việt Nam – Sự kiện – Tết",
+  "description": "Lịch âm dương Việt Nam - giao diện hiện đại navy - ghi chú - OT",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#fffaf0",
-  "theme_color": "#d32f2f",
+  "background_color": "#03060f",
+  "theme_color": "#07142b",
   "icons": [
     {
       "src": "public/favicon.png",

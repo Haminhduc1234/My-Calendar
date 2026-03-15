@@ -1,11 +1,15 @@
-const CACHE_NAME = "calendar-pwa-v1";
+const CACHE_NAME = "calendar-pwa-v2";
 const FILES_TO_CACHE = [
     "./",
     "./index.html",
     "./style.css",
     "./script.js",
     "./manifest.json",
-    "./favicon.png"
+    "./public/favicon.png",
+    "./public/quote.png",
+    "./public/google-maps.png",
+    "./public/mostly-sunny.png",
+    "./public/sun.png"
 ];
 
 self.addEventListener("install", e => {

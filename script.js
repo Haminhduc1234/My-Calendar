@@ -1,6 +1,8 @@
 /* ========================== CẤU HÌNH ========================== */
 let currentDate = new Date();
 let selectedKey = "";
+let geoPromptRequestedThisLoad = false;
+const TOOLBOX_STATE_KEY = "quickToolboxState";
 
 // Lễ dương lịch
 const SOLAR_HOLIDAYS = {
@@ -229,6 +231,60 @@ document.getElementById("eventModal").addEventListener("click", function (e) {
   if (e.target === this) closeModal();
 });
 
+function openOvertimeModal() {
+  document.getElementById("overtimeModal").style.display = "flex";
+}
+
+function closeOvertimeModal() {
+  document.getElementById("overtimeModal").style.display = "none";
+}
+
+function openGoldModal() {
+  document.getElementById("goldModal").style.display = "flex";
+  loadGoldMarketData();
+}
+
+function closeGoldModal() {
+  document.getElementById("goldModal").style.display = "none";
+}
+
+function toggleToolbox() {
+  const toolbox = document.getElementById("quickToolbox");
+  const toggleBtn = document.getElementById("toolboxToggle");
+
+  const isCollapsed = toolbox.classList.toggle("is-collapsed");
+  localStorage.setItem(TOOLBOX_STATE_KEY, isCollapsed ? "collapsed" : "expanded");
+  toggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
+  toggleBtn.setAttribute(
+    "aria-label",
+    isCollapsed ? "Mở thanh công cụ" : "Thu gọn thanh công cụ"
+  );
+}
+
+function applyStoredToolboxState() {
+  const toolbox = document.getElementById("quickToolbox");
+  const toggleBtn = document.getElementById("toolboxToggle");
+  if (!toolbox || !toggleBtn) return;
+
+  const savedState = localStorage.getItem(TOOLBOX_STATE_KEY);
+  const isCollapsed = savedState === "collapsed";
+
+  toolbox.classList.toggle("is-collapsed", isCollapsed);
+  toggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
+  toggleBtn.setAttribute(
+    "aria-label",
+    isCollapsed ? "Mở thanh công cụ" : "Thu gọn thanh công cụ"
+  );
+}
+
+document.getElementById("overtimeModal").addEventListener("click", function (e) {
+  if (e.target === this) closeOvertimeModal();
+});
+
+document.getElementById("goldModal").addEventListener("click", function (e) {
+  if (e.target === this) closeGoldModal();
+});
+
 function saveEvent() {
   const t = document.getElementById("eventText").value;
   t ? localStorage.setItem(selectedKey, t) : localStorage.removeItem(selectedKey);
@@ -236,24 +292,7 @@ function saveEvent() {
   closeModal();
   renderCalendar();
 }
-function createPeachBlossom() {
-  const flower = document.createElement("div");
-  flower.className = "peach-blossom";
-  flower.innerText = "🌸";
 
-  flower.style.left = Math.random() * 100 + "vw";
-  flower.style.animationDuration = (6 + Math.random() * 4) + "s";
-  flower.style.opacity = Math.random();
-
-  document.body.appendChild(flower);
-
-  setTimeout(() => flower.remove(), 10000);
-}
-
-// Chỉ bật dịp Tết (tháng 1-2)
-if (new Date().getMonth() <= 1) {
-  setInterval(createPeachBlossom, 700);
-}
 function renderToday() {
   const today = new Date();
 
@@ -351,6 +390,24 @@ function requestLocationPermission() {
   );
 }
 
+function showLocationDisabledMessage() {
+  document.getElementById("todayWeather").innerText =
+    "📍 Thời tiết: chưa bật định vị";
+}
+
+function loadWeatherFromCurrentPosition() {
+  navigator.geolocation.getCurrentPosition(
+    position => {
+      localStorage.setItem("geoPermission", "granted");
+      handleWeather(position.coords.latitude, position.coords.longitude);
+    },
+    () => {
+      localStorage.setItem("geoPermission", "denied");
+      showLocationDisabledMessage();
+    }
+  );
+}
+
 function getAddressFromCoords(lat, lon) {
   return fetch(
     `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`,
@@ -402,14 +459,14 @@ function getWeatherIcon(code) {
 }
 
 function getWeatherColor(code) {
-  if (code === 0) return "#f9a825";        // nắng
-  if ([1, 2].includes(code)) return "#fbc02d";
-  if (code === 3) return "#90a4ae";
-  if ([45, 48].includes(code)) return "#78909c";
-  if ([61, 63, 65, 80, 81, 82].includes(code)) return "#42a5f5";
-  if ([71, 73, 75, 85, 86].includes(code)) return "#90caf9";
-  if ([95, 96, 99].includes(code)) return "#ab47bc";
-  return "#555";
+  if (code === 0) return "#e3efff";
+  if ([1, 2].includes(code)) return "#c9dcff";
+  if (code === 3) return "#b7c9e6";
+  if ([45, 48].includes(code)) return "#9bb1d3";
+  if ([61, 63, 65, 80, 81, 82].includes(code)) return "#8cb2ee";
+  if ([71, 73, 75, 85, 86].includes(code)) return "#abc3e6";
+  if ([95, 96, 99].includes(code)) return "#7ea7df";
+  return "#d0e2ff";
 }
 
 function handleWeather(lat, lon) {
@@ -518,32 +575,62 @@ function renderForecast(daily, hourly) {
 }
 
 
-function getWeather() {
-  navigator.geolocation.getCurrentPosition(position => {
-    handleWeather(position.coords.latitude, position.coords.longitude);
-  });
-}
-
-function fetchWeatherByLocation() {
-  const permission = localStorage.getItem("geoPermission");
-
-  console.log(permission);
-
-  // Đã từng từ chối → không hỏi nữa
-  if (permission === "denied") {
+async function fetchWeatherByLocation() {
+  if (!navigator.geolocation) {
     document.getElementById("todayWeather").innerText =
-      "📍 Thời tiết: chưa bật định vị";
+      "Thiết bị không hỗ trợ định vị";
     return;
   }
 
-  // Đã cho phép trước đó → lấy vị trí luôn
+  if (!window.isSecureContext) {
+    document.getElementById("todayWeather").innerText =
+      "📍 Cần mở bằng HTTPS hoặc localhost để dùng định vị";
+    return;
+  }
+
+  // Ưu tiên trạng thái quyền thật của trình duyệt thay vì chỉ dựa localStorage.
+  if (navigator.permissions && navigator.permissions.query) {
+    try {
+      const status = await navigator.permissions.query({ name: "geolocation" });
+
+      if (status.state === "granted") {
+        localStorage.setItem("geoPermission", "granted");
+        loadWeatherFromCurrentPosition();
+        return;
+      }
+
+      if (status.state === "denied") {
+        localStorage.setItem("geoPermission", "denied");
+        showLocationDisabledMessage();
+        return;
+      }
+
+      // Trạng thái prompt: tự động xin quyền đúng yêu cầu.
+      if (!geoPromptRequestedThisLoad) {
+        geoPromptRequestedThisLoad = true;
+        requestLocationPermission();
+      }
+      return;
+    } catch {
+      // Fallback cho trình duyệt không hỗ trợ đầy đủ Permissions API.
+    }
+  }
+
+  const permission = localStorage.getItem("geoPermission");
+  if (permission === "denied") {
+    showLocationDisabledMessage();
+    return;
+  }
+
   if (permission === "granted") {
-    getWeather();
+    loadWeatherFromCurrentPosition();
     return;
   }
 
-  // Chưa hỏi lần nào → hỏi 1 lần
-  requestLocationPermission();
+  if (!geoPromptRequestedThisLoad) {
+    geoPromptRequestedThisLoad = true;
+    requestLocationPermission();
+  }
 }
 
 function weatherCodeToText(code) {
@@ -762,6 +849,224 @@ function formatCurrencyInput(input) {
   input.setSelectionRange(cursorPos + diff, cursorPos + diff);
 }
 
+function formatVnd(value) {
+  return Math.round(value).toLocaleString("vi-VN");
+}
+
+function parseVietnamPrice(valueText) {
+  if (!valueText) return null;
+  const normalized = valueText.replace(/\./g, "").replace(/,/g, ".");
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : null;
+}
+
+function parseCurrentVietnamGold(content) {
+  const updatedMatch =
+    content.match(/Cập nhật lúc\s+([^\n]+)/i) ||
+    content.match(/Cập nhật:\s*([^\n]+)/i) ||
+    content.match(/Giá vàng tại thời điểm\s+([^\n]+?)\s+như sau:/i) ||
+    content.match(/Published Time:\s*([^\n]+)/i);
+
+  const headlineMatch = content.match(
+    /Giá vàng SJC hôm nay[\s\S]{0,600}?Mua vào\s+([0-9.,]+)[\s\S]{0,220}?Bán ra\s+([0-9.,]+)/i
+  );
+  const tableMatch = content.match(
+    /\|\s*Hồ Chí Minh\s*\|\s*Vàng SJC 1L, 10L, 1KG\s*\|\s*([0-9.,]+)\s*\|\s*([0-9.,]+)\s*\|/i
+  );
+  const fallbackBuy = content.match(/Mua vào\s+([0-9.,]+)/i);
+  const fallbackSell = content.match(/Bán ra\s+([0-9.,]+)/i);
+
+  const buyRaw = headlineMatch?.[1] || tableMatch?.[1] || fallbackBuy?.[1] || null;
+  const sellRaw = headlineMatch?.[2] || tableMatch?.[2] || fallbackSell?.[1] || null;
+
+  const buyThousand = parseVietnamPrice(buyRaw);
+  const sellThousand = parseVietnamPrice(sellRaw);
+  if (!Number.isFinite(buyThousand) || !Number.isFinite(sellThousand)) return null;
+
+  return {
+    updatedAt: updatedMatch ? updatedMatch[1].trim() : "--",
+    buyThousand,
+    sellThousand
+  };
+}
+
+function parseVietnamHistoryDates(content) {
+  const matches = content.match(/\d{4}-\d{2}-\d{2}\.html/g) || [];
+  const uniqueDates = [...new Set(matches.map(x => x.replace(".html", "")))];
+  return uniqueDates.sort((a, b) => b.localeCompare(a));
+}
+
+function parseDailyVietnamGold(content, date) {
+  const buyMatch = content.match(/Mua vào\s+([0-9.,]+)\s+x1000đ\/lượng/i);
+  const sellMatch = content.match(/Bán ra\s+([0-9.,]+)\s+x1000đ\/lượng/i);
+
+  if (!buyMatch || !sellMatch) return null;
+
+  const buyThousand = parseVietnamPrice(buyMatch[1]);
+  const sellThousand = parseVietnamPrice(sellMatch[1]);
+  if (!buyThousand || !sellThousand) return null;
+
+  const parts = date.split("-");
+  const label = parts.length === 3 ? `${parts[2]}/${parts[1]}` : date;
+
+  return {
+    label,
+    buyValue: buyThousand * 1000,
+    sellValue: sellThousand * 1000
+  };
+}
+
+function drawGoldChart(canvasId, points) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !points.length) return;
+
+  const ratio = window.devicePixelRatio || 1;
+  const width = canvas.clientWidth || 680;
+  const height = 240;
+  canvas.width = Math.floor(width * ratio);
+  canvas.height = Math.floor(height * ratio);
+
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+
+  const pad = { top: 16, right: 12, bottom: 30, left: 12 };
+  const chartW = width - pad.left - pad.right;
+  const chartH = height - pad.top - pad.bottom;
+
+  const values = points.flatMap(p => [p.buyValue, p.sellValue]);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = Math.max(max - min, 1);
+
+  ctx.strokeStyle = "rgba(183,208,255,0.22)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) {
+    const y = pad.top + (chartH / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(width - pad.right, y);
+    ctx.stroke();
+  }
+
+  const toXY = (value, idx) => {
+    const x = pad.left + (chartW * idx) / Math.max(points.length - 1, 1);
+    const y = pad.top + ((max - value) / range) * chartH;
+    return { x, y };
+  };
+
+  const drawLine = (key, color) => {
+    ctx.beginPath();
+    points.forEach((point, idx) => {
+      const { x, y } = toXY(point[key], idx);
+      if (idx === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  };
+
+  drawLine("buyValue", "#7fd3ff");
+  drawLine("sellValue", "#ffe39c");
+
+  // Dots on every point
+  points.forEach((p, idx) => {
+    const buy = toXY(p.buyValue, idx);
+    const sell = toXY(p.sellValue, idx);
+
+    ctx.fillStyle = "#7fd3ff";
+    ctx.beginPath();
+    ctx.arc(buy.x, buy.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffe39c";
+    ctx.beginPath();
+    ctx.arc(sell.x, sell.y, 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Labels for all 7 points
+  ctx.fillStyle = "#bdd0ee";
+  ctx.font = "11px Be Vietnam Pro";
+  points.forEach((p, idx) => {
+    const { x } = toXY(p.buyValue, idx);
+    ctx.textAlign = "center";
+    ctx.fillText(p.label, x, height - 6);
+  });
+
+  // Legend
+  ctx.font = "12px Be Vietnam Pro";
+  ctx.fillStyle = "#7fd3ff";
+  ctx.textAlign = "left";
+  ctx.fillText("● Mua", pad.left + 4, pad.top + 12);
+  ctx.fillStyle = "#ffe39c";
+  ctx.fillText("● Bán", pad.left + 60, pad.top + 12);
+}
+
+async function fetchTextWithCorsFallback(url) {
+  const proxyUrl = `https://r.jina.ai/http://${url.replace(/^https?:\/\//, "")}`;
+  const res = await fetch(proxyUrl);
+  if (!res.ok) throw new Error("Không thể tải dữ liệu do CORS");
+
+  const raw = await res.text();
+  const marker = "Markdown Content:";
+  const markerIndex = raw.indexOf(marker);
+
+  if (markerIndex === -1) return raw.trim();
+  return raw.slice(markerIndex + marker.length).trim();
+}
+
+async function getRecentVietnamGoldHistory(limit = 7) {
+  const indexContent = await fetchTextWithCorsFallback("https://giavang.org/trong-nuoc/sjc/lich-su");
+  const candidateDates = parseVietnamHistoryDates(indexContent).slice(0, 10);
+  const points = [];
+
+  for (const date of candidateDates) {
+    if (points.length >= limit) break;
+
+    try {
+      const dayContent = await fetchTextWithCorsFallback(`https://giavang.org/trong-nuoc/sjc/lich-su/${date}.html`);
+      const point = parseDailyVietnamGold(dayContent, date);
+      if (point) points.push(point);
+    } catch {
+      // bỏ qua ngày lỗi mạng hoặc thiếu dữ liệu
+    }
+  }
+
+  return points.reverse();
+}
+
+async function loadGoldMarketData() {
+  const updatedEl = document.getElementById("goldUpdatedAt");
+  const buyEl = document.getElementById("goldBuyLuong");
+  const sellEl = document.getElementById("goldSellLuong");
+  const noteEl = document.getElementById("goldSourceNote");
+
+  updatedEl.innerText = "Đang tải dữ liệu giá vàng Việt Nam...";
+  buyEl.innerText = "--";
+  sellEl.innerText = "--";
+
+  try {
+    const currentContent = await fetchTextWithCorsFallback("https://giavang.org/trong-nuoc/sjc");
+    const current = parseCurrentVietnamGold(currentContent);
+    if (!current) {
+      throw new Error("Thiếu dữ liệu giá vàng Việt Nam hiện tại");
+    }
+
+    const buyVnd = current.buyThousand * 1000;
+    const sellVnd = current.sellThousand * 1000;
+
+    buyEl.innerText = formatVnd(buyVnd);
+    sellEl.innerText = formatVnd(sellVnd);
+    updatedEl.innerText = `Giá vàng SJC hôm nay Cập nhật lúc ${current.updatedAt}`;
+
+    noteEl.innerText = "Nguồn: giavang.org (giá vàng trong nước SJC toàn quốc hiện tại) qua proxy r.jina.ai.";
+  } catch {
+    noteEl.innerText = "Nguồn nội địa đang lỗi mạng hoặc bị chặn. Vui lòng thử lại sau.";
+  }
+}
+
 const salaryInput = document.getElementById("hourSalary");
 
 salaryInput.addEventListener("input", () => {
@@ -801,6 +1106,7 @@ updateClock();
 
 
 /* ========================== INIT ========================= */
+applyStoredToolboxState();
 renderCalendar();
 renderToday();
 loadQuote();

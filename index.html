@@ -4,13 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#d32f2f">
+    <meta name="theme-color" content="#07142b">
 
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="favicon.png">
     <link rel="apple-touch-icon" href="public/favicon.png">
 
     <title>Lịch Âm Dương</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="public/favicon.png">
     <!-- Leaflet -->
@@ -62,40 +65,28 @@
 
             <div class="days" id="calendar"></div>
         </div>
-        <div class="overtime-box">
-            <div>
-                <span class="title">Ngày thường</span>
-                <b id="otWeekdayBase">0</b><span class="text-hour">h</span>
-                <span class="bonus">(+<b id="otWeekdayBonus">0</b>h)</span>
-            </div>
-
-            <div>
-                <span class="title">Chủ nhật</span>
-                <b id="otSundayBase">0</b><span class="text-hour">h</span>
-                <span class="bonus">(+<b id="otSundayBonus">0</b>h)</span>
-            </div>
-
-            <hr>
-
-            <div>
-                <span class="title">Tổng cộng</span>
-                <b id="otTotalBase">0</b><span class="text-hour">h</span>
-                <span class="bonus">(+<b id="otTotalBonus">0</b>h)</span>
-                = <b id="otTotalSum">0</b><span class="text-hour">h</span>
-            </div>
-
-            <div class="salary-box">
-                <label>
-                    💰 Lương 1 giờ:
-                    <input type="text" id="hourSalary" placeholder="VD: 50.000" inputmode="numeric" />
-                </label>
-
-                <div class="salary-result">
-                    💵 Tổng lương OT:
-                    <b id="otSalary">0</b> đ
+        <div id="quickToolbox" class="quick-toolbox">
+            <div class="toolbox-panel">
+                <div class="toolbox-actions">
+                    <button class="overtime-fab tool-btn glow" onclick="openOvertimeModal()" aria-label="Mở bảng tăng ca">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M12 3a9 9 0 1 0 9 9 9.01 9.01 0 0 0-9-9Zm0 16.2A7.2 7.2 0 1 1 19.2 12 7.21 7.21 0 0 1 12 19.2Zm.9-11.1h-1.8v4.5l3.9 2.34.9-1.53-3-1.71Z" />
+                        </svg>
+                        <span class="fab-label">OT</span>
+                    </button>
+                    <button class="gold-fab tool-btn glow" onclick="openGoldModal()" aria-label="Xem giá vàng toàn quốc">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M3 15.2 9.7 5h4.5L7.5 15.2Zm8.5 3.8L18.2 8.8h2.7L14.2 19Zm-7 0h5.2l6.7-10.2h-5.2Z" />
+                        </svg>
+                        <span class="fab-label">Gold</span>
+                    </button>
                 </div>
             </div>
-
+            <button id="toolboxToggle" class="toolbox-toggle" onclick="toggleToolbox()" aria-label="Thu gọn thanh công cụ" aria-expanded="true">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+                </svg>
+            </button>
         </div>
 
         <!-- <div class="map-section">
@@ -125,8 +116,76 @@
                 </div>
             </div>
         </div>
-        <img src="public/peach-branch.png" class="peach-branch peach-top-right">
-        <img src="public/peach-branch.png" class="peach-branch peach-bottom-left">
+
+        <div id="overtimeModal" class="modal">
+            <div class="overtime-modal-content">
+                <button class="modal-close" onclick="closeOvertimeModal()">×</button>
+                <h3>Thống kê tăng ca</h3>
+                <div class="overtime-box">
+                    <div>
+                        <span class="title">Ngày thường</span>
+                        <b id="otWeekdayBase">0</b><span class="text-hour">h</span>
+                        <span class="bonus">(+<b id="otWeekdayBonus">0</b>h)</span>
+                    </div>
+
+                    <div>
+                        <span class="title">Chủ nhật</span>
+                        <b id="otSundayBase">0</b><span class="text-hour">h</span>
+                        <span class="bonus">(+<b id="otSundayBonus">0</b>h)</span>
+                    </div>
+
+                    <hr>
+
+                    <div>
+                        <span class="title">Tổng cộng</span>
+                        <b id="otTotalBase">0</b><span class="text-hour">h</span>
+                        <span class="bonus">(+<b id="otTotalBonus">0</b>h)</span>
+                        = <b id="otTotalSum">0</b><span class="text-hour">h</span>
+                    </div>
+
+                    <div class="salary-box">
+                        <label>
+                            💰 Lương 1 giờ:
+                            <input type="text" id="hourSalary" placeholder="VD: 50.000" inputmode="numeric" />
+                        </label>
+
+                        <div class="salary-result">
+                            💵 Tổng lương OT:
+                            <b id="otSalary">0</b> đ
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="goldModal" class="modal">
+            <div class="gold-modal-content">
+                <button class="modal-close" onclick="closeGoldModal()">×</button>
+                <h3>Giá vàng toàn quốc</h3>
+                <div id="goldUpdatedAt" class="gold-updated">Đang tải dữ liệu...</div>
+
+                <div class="gold-summary-grid">
+                    <div class="gold-card">
+                        <div class="gold-card-title">Giá mua (tham khảo)</div>
+                        <div class="gold-card-value" id="goldBuyLuong">--</div>
+                        <div class="gold-card-sub">VNĐ/lượng</div>
+                    </div>
+                    <div class="gold-card">
+                        <div class="gold-card-title">Giá bán (tham khảo)</div>
+                        <div class="gold-card-value" id="goldSellLuong">--</div>
+                        <div class="gold-card-sub">VNĐ/lượng</div>
+                    </div>
+                </div>
+
+                <!-- <div class="gold-chart-wrap">
+                    <canvas id="goldChart" width="680" height="240"></canvas>
+                </div> -->
+
+                <!-- <div class="gold-note" id="goldSourceNote">
+                    Nguồn: Stooq (XAUUSD) + open.er-api (USD/VND), quy đổi tham khảo toàn quốc.
+                </div> -->
+            </div>
+        </div>
     </div>
     <footer class="app-footer">
         <div class="footer-content">

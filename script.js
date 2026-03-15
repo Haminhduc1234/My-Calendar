@@ -3,6 +3,7 @@ let currentDate = new Date();
 let selectedKey = "";
 let geoPromptRequestedThisLoad = false;
 const TOOLBOX_STATE_KEY = "quickToolboxState";
+const GEO_PROMPT_ASKED_KEY = "geoPromptAsked";
 
 // Lễ dương lịch
 const SOLAR_HOLIDAYS = {
@@ -377,6 +378,9 @@ function requestLocationPermission() {
     return;
   }
 
+  // Chỉ tự động xin quyền 1 lần giữa các lần truy cập.
+  localStorage.setItem(GEO_PROMPT_ASKED_KEY, "1");
+
   navigator.geolocation.getCurrentPosition(
     position => {
       localStorage.setItem("geoPermission", "granted");
@@ -592,6 +596,7 @@ async function fetchWeatherByLocation() {
   if (navigator.permissions && navigator.permissions.query) {
     try {
       const status = await navigator.permissions.query({ name: "geolocation" });
+      const askedBefore = localStorage.getItem(GEO_PROMPT_ASKED_KEY) === "1";
 
       if (status.state === "granted") {
         localStorage.setItem("geoPermission", "granted");
@@ -606,9 +611,11 @@ async function fetchWeatherByLocation() {
       }
 
       // Trạng thái prompt: tự động xin quyền đúng yêu cầu.
-      if (!geoPromptRequestedThisLoad) {
+      if (!askedBefore && !geoPromptRequestedThisLoad) {
         geoPromptRequestedThisLoad = true;
         requestLocationPermission();
+      } else {
+        showLocationDisabledMessage();
       }
       return;
     } catch {
@@ -617,6 +624,7 @@ async function fetchWeatherByLocation() {
   }
 
   const permission = localStorage.getItem("geoPermission");
+  const askedBefore = localStorage.getItem(GEO_PROMPT_ASKED_KEY) === "1";
   if (permission === "denied") {
     showLocationDisabledMessage();
     return;
@@ -627,10 +635,13 @@ async function fetchWeatherByLocation() {
     return;
   }
 
-  if (!geoPromptRequestedThisLoad) {
+  if (!askedBefore && !geoPromptRequestedThisLoad) {
     geoPromptRequestedThisLoad = true;
     requestLocationPermission();
+    return;
   }
+
+  showLocationDisabledMessage();
 }
 
 function weatherCodeToText(code) {

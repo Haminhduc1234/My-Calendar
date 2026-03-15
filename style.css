@@ -506,6 +506,12 @@ body {
 .toolbox-panel {
     padding: 10px;
     max-width: 240px;
+    border: none;
+    border-radius: 16px;
+    background: rgba(113, 115, 121, 0.24);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+    backdrop-filter: blur(8px) saturate(120%);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.24);
     opacity: 1;
     transition: max-width 0.28s ease, opacity 0.2s ease, padding 0.25s ease, border-color 0.25s ease;
 }

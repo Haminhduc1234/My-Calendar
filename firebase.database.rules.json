@@ -1,0 +1,20 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "calendarEvents": {
+      "$eventId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['date','title','text','overtimeHours','createdAt','senderId','notifyAt','notifyAtMs']) && newData.child('date').isString() && newData.child('date').val().matches(/^\\d{4}-\\d{1,2}-\\d{1,2}$/) && newData.child('title').isString() && newData.child('title').val().length <= 80 && newData.child('text').isString() && newData.child('text').val().length <= 2000 && newData.child('overtimeHours').isNumber() && newData.child('overtimeHours').val() >= 0 && newData.child('overtimeHours').val() <= 24 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() <= now + 60000 && newData.child('senderId').isString() && newData.child('senderId').val() === auth.uid && newData.child('notifyAt').isString() && newData.child('notifyAt').val().length >= 16 && newData.child('notifyAtMs').isNumber() && newData.child('notifyAtMs').val() > now - 86400000"
+      }
+    },
+    "notificationTokens": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['token','updatedAt']) && newData.child('token').isString() && newData.child('token').val().length > 20 && newData.child('updatedAt').isNumber() && newData.child('updatedAt').val() <= now + 60000 && (!newData.child('userAgent').exists() || (newData.child('userAgent').isString() && newData.child('userAgent').val().length <= 240))"
+      }
+    }
+  }
+}

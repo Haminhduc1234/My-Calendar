@@ -68,6 +68,12 @@
         <div id="quickToolbox" class="quick-toolbox">
             <div class="toolbox-panel">
                 <div class="toolbox-actions">
+                    <button class="event-fab tool-btn glow" onclick="openAddEventModalForToday()" aria-label="Thêm sự kiện nhanh hôm nay">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z" />
+                        </svg>
+                        <span class="fab-label">Event</span>
+                    </button>
                     <button class="overtime-fab tool-btn glow" onclick="openOvertimeModal()" aria-label="Mở bảng tăng ca">
                         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                             <path d="M12 3a9 9 0 1 0 9 9 9.01 9.01 0 0 0-9-9Zm0 16.2A7.2 7.2 0 1 1 19.2 12 7.21 7.21 0 0 1 12 19.2Zm.9-11.1h-1.8v4.5l3.9 2.34.9-1.53-3-1.71Z" />
@@ -105,10 +111,36 @@
             <div class="modal-content">
                 <button class="modal-close" onclick="closeModal()">×</button>
 
-                <h3>Note</h3>
+                <h3>Thêm sự kiện</h3>
                 <div class="date-label" id="selectedDate"></div>
 
-                <textarea id="eventText" placeholder="Nhập nội dung..."></textarea>
+                <div class="event-form-grid">
+                    <label class="field-label" for="eventTitle">Tiêu đề</label>
+                    <input id="eventTitle" type="text" maxlength="80" placeholder="Ví dụ: Họp dự án" />
+
+                    <label class="field-label" for="eventText">Nội dung</label>
+                    <textarea id="eventText" placeholder="Nhập nội dung..."></textarea>
+
+                    <label class="checkbox-row" for="eventHasOvertime">
+                        <input id="eventHasOvertime" type="checkbox" />
+                        <span>Có tăng ca</span>
+                    </label>
+
+                    <div class="ot-inline" id="overtimeInputWrap">
+                        <label class="field-label" for="eventOvertimeHours">Giờ tăng ca</label>
+                        <input id="eventOvertimeHours" type="number" min="0" step="1" inputmode="numeric" placeholder="VD: 3" />
+                    </div>
+
+                    <label class="checkbox-row" for="eventRealtimeNotify">
+                        <input id="eventRealtimeNotify" type="checkbox" checked />
+                        <span>Bắn thông báo realtime</span>
+                    </label>
+
+                    <div class="notify-inline" id="notifyInputWrap">
+                        <label class="field-label" for="eventNotifyAt">Giờ thông báo sự kiện</label>
+                        <input id="eventNotifyAt" type="datetime-local" />
+                    </div>
+                </div>
 
                 <div class="modal-actions">
                     <button id="saveBtn" onclick="saveEvent()">Lưu</button>
@@ -194,6 +226,11 @@
             <span class="author">Ha Vu Phuong Linh</span>
         </div>
     </footer>
+    <script src="firebase-config.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
     <script src="script.js"></script>
     <!-- <script src="MapSearch.js"></script> -->
     <script>

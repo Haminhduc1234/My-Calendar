@@ -352,7 +352,7 @@ body {
 
 .modal-content textarea {
     width: 100%;
-    height: 100px;
+    height: 96px;
     resize: none;
     font: inherit;
     border-radius: 12px;
@@ -370,6 +370,73 @@ body {
 .modal-content textarea:focus {
     border-color: rgba(190, 214, 255, 0.68);
     box-shadow: 0 0 0 3px rgba(115, 162, 240, 0.2);
+}
+
+.event-form-grid {
+    display: grid;
+    gap: 8px;
+}
+
+.field-label {
+    font-size: 13px;
+    color: #cadcfb;
+    font-weight: 600;
+}
+
+.modal-content input[type="text"],
+.modal-content input[type="number"],
+.modal-content input[type="datetime-local"] {
+    width: 100%;
+    font: inherit;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: rgba(6, 16, 34, 0.72);
+    color: var(--text);
+    padding: 9px 10px;
+    outline: none;
+}
+
+.modal-content input[type="text"]:focus,
+.modal-content input[type="number"]:focus,
+.modal-content input[type="datetime-local"]:focus {
+    border-color: rgba(190, 214, 255, 0.68);
+    box-shadow: 0 0 0 3px rgba(115, 162, 240, 0.2);
+}
+
+.checkbox-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+    color: #d9e8ff;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.checkbox-row input {
+    width: 16px;
+    height: 16px;
+}
+
+.ot-inline {
+    display: none;
+    grid-template-columns: 1fr;
+    gap: 6px;
+}
+
+.ot-inline.show {
+    display: grid;
+}
+
+.notify-inline {
+    display: none;
+    grid-template-columns: 1fr;
+    gap: 6px;
+}
+
+.notify-inline.show {
+    display: grid;
 }
 
 .modal-actions {
@@ -578,6 +645,41 @@ body {
     position: relative;
     display: grid;
     place-items: center;
+}
+
+.event-fab {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 1px solid rgba(157, 255, 202, 0.45);
+    background: linear-gradient(145deg, #1c7a5a, #125640);
+    color: #f1fff8;
+    cursor: pointer;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+    transition: transform 0.2s ease, filter 0.2s ease;
+    position: relative;
+    display: grid;
+    place-items: center;
+}
+
+.event-fab svg {
+    width: 26px;
+    height: 26px;
+    fill: #e7fff4;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.28));
+}
+
+.event-fab:hover {
+    transform: translateY(-2px) scale(1.02);
+    filter: brightness(1.1);
+}
+
+.event-fab.glow::before {
+    border-color: rgba(157, 255, 202, 0.56);
+}
+
+.event-fab.glow::after {
+    border-color: rgba(114, 243, 181, 0.3);
 }
 
 .gold-fab {
@@ -986,6 +1088,11 @@ body {
     }
 
     .overtime-fab {
+        width: 52px;
+        height: 52px;
+    }
+
+    .event-fab {
         width: 52px;
         height: 52px;
     }

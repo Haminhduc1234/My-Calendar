@@ -6,6 +6,8 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
     firebase.initializeApp(self.FIREBASE_WEB_CONFIG);
 
     const messaging = firebase.messaging();
+    console.log(messaging);
+    
 
     messaging.onBackgroundMessage((payload) => {
         const title = payload.notification?.title || payload.data?.title || "Sự kiện mới";

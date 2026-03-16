@@ -242,22 +242,7 @@
     </script>
     <script src="script.js"></script>
     <!-- <script src="MapSearch.js"></script> -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./service-worker.js');
-        }
-        // Trong file index.html hoặc main.js của bạn
-        if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./firebase-messaging-sw.js') // Nhớ thêm tên repo nếu dùng GitHub Pages
-            .then((registration) => {
-            console.log('Service Worker đã đăng ký thành công:', registration.scope);
-            })
-            .catch((err) => {
-            console.log('Đăng ký Service Worker thất bại:', err);
-            });
-        }
-    </script>
-    
+
     <!-- <script>
         MapSearch.init({
             mapId: "map",

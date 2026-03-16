@@ -832,11 +832,8 @@ function requestLocationPermission() {
       localStorage.setItem("geoPermission", "granted");
       handleWeather(position.coords.latitude, position.coords.longitude);
     },
-    () => {
-      localStorage.setItem("geoPermission", "denied");
-      document.getElementById("todayWeather").innerText =
-        "📍 Bạn đã tắt định vị";
-    }
+    handleLocationError,
+    getGeolocationOptions()
   );
 }
 
@@ -845,16 +842,38 @@ function showLocationDisabledMessage() {
     "📍 Thời tiết: chưa bật định vị";
 }
 
+function showLocationUnavailableMessage() {
+  document.getElementById("todayWeather").innerText =
+    "📍 Tạm thời chưa lấy được vị trí, vui lòng thử lại";
+}
+
+function getGeolocationOptions() {
+  return {
+    enableHighAccuracy: false,
+    timeout: 12000,
+    maximumAge: 300000
+  };
+}
+
+function handleLocationError(error) {
+  if (error?.code === 1) {
+    localStorage.setItem("geoPermission", "denied");
+    showLocationDisabledMessage();
+    return;
+  }
+
+  localStorage.removeItem("geoPermission");
+  showLocationUnavailableMessage();
+}
+
 function loadWeatherFromCurrentPosition() {
   navigator.geolocation.getCurrentPosition(
     position => {
       localStorage.setItem("geoPermission", "granted");
       handleWeather(position.coords.latitude, position.coords.longitude);
     },
-    () => {
-      localStorage.setItem("geoPermission", "denied");
-      showLocationDisabledMessage();
-    }
+    handleLocationError,
+    getGeolocationOptions()
   );
 }
 
@@ -1071,12 +1090,12 @@ async function fetchWeatherByLocation() {
 
   const permission = localStorage.getItem("geoPermission");
   const askedBefore = localStorage.getItem(GEO_PROMPT_ASKED_KEY) === "1";
-  if (permission === "denied") {
-    showLocationDisabledMessage();
+  if (permission === "granted") {
+    loadWeatherFromCurrentPosition();
     return;
   }
 
-  if (permission === "granted") {
+  if (permission === "denied") {
     loadWeatherFromCurrentPosition();
     return;
   }
@@ -1087,7 +1106,7 @@ async function fetchWeatherByLocation() {
     return;
   }
 
-  showLocationDisabledMessage();
+  loadWeatherFromCurrentPosition();
 }
 
 function weatherCodeToText(code) {

@@ -486,13 +486,30 @@ async function saveMessagingToken(token) {
   });
 }
 
+async function ensureMessagingServiceWorker() {
+  if (!("serviceWorker" in navigator)) return null;
+
+  try {
+    if (window.firebaseMessagingBootstrap?.registrationPromise) {
+      return await window.firebaseMessagingBootstrap.registrationPromise;
+    }
+
+    return await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+  } catch (error) {
+    console.error("Messaging service worker registration failed", error);
+    return null;
+  }
+}
+
 async function initFirebaseMessaging() {
   if (!firebaseReady) return;
   if (getFirebaseMessagingIssues().length > 0) return;
 
   try {
     firebaseMessaging = window.firebase.messaging();
-    const serviceWorkerRegistration = await navigator.serviceWorker.ready;
+    const serviceWorkerRegistration = await ensureMessagingServiceWorker();
+    if (!serviceWorkerRegistration) return;
+
     const permission = await maybeRequestNotificationPermission();
     if (permission !== "granted") return;
 

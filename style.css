@@ -306,6 +306,7 @@ body {
 
 .modal-content {
     width: min(92vw, 360px);
+    max-width: calc(100vw - 16px);
     border-radius: 18px;
     padding: 18px;
     border: 1px solid var(--line);
@@ -317,6 +318,7 @@ body {
 
 .overtime-modal-content {
     width: min(94vw, 420px);
+    max-width: calc(100vw - 16px);
     border-radius: 18px;
     padding: 16px;
     border: 1px solid var(--line);
@@ -375,6 +377,7 @@ body {
 .event-form-grid {
     display: grid;
     gap: 8px;
+    min-width: 0;
 }
 
 .field-label {
@@ -386,7 +389,10 @@ body {
 .modal-content input[type="text"],
 .modal-content input[type="number"],
 .modal-content input[type="datetime-local"] {
+    display: block;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     font: inherit;
     border-radius: 10px;
     border: 1px solid var(--line);
@@ -405,6 +411,7 @@ body {
 
 .checkbox-row {
     display: inline-flex;
+    max-width: 100%;
     align-items: center;
     gap: 8px;
     margin-top: 2px;
@@ -423,6 +430,7 @@ body {
     display: none;
     grid-template-columns: 1fr;
     gap: 6px;
+    min-width: 0;
 }
 
 .ot-inline.show {
@@ -433,6 +441,7 @@ body {
     display: none;
     grid-template-columns: 1fr;
     gap: 6px;
+    min-width: 0;
 }
 
 .notify-inline.show {
@@ -447,6 +456,7 @@ body {
 
 .modal-actions button {
     flex: 1;
+    min-width: 0;
     border: 1px solid var(--line);
     border-radius: 12px;
     padding: 10px 0;
@@ -870,6 +880,8 @@ body {
 
 .salary-box input {
     width: 130px;
+    max-width: 100%;
+    min-width: 0;
     margin-left: 6px;
     border-radius: 9px;
     border: 1px solid var(--line);
@@ -1095,5 +1107,34 @@ body {
     .event-fab {
         width: 52px;
         height: 52px;
+    }
+
+    .modal-content,
+    .overtime-modal-content,
+    .gold-modal-content {
+        width: calc(100vw - 16px);
+        max-width: calc(100vw - 16px);
+        padding: 14px;
+    }
+
+    .modal-content input[type="text"],
+    .modal-content input[type="number"],
+    .modal-content input[type="datetime-local"],
+    .modal-content textarea {
+        font-size: 16px;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .salary-box label {
+        display: grid;
+        gap: 8px;
+    }
+
+    .salary-box input {
+        width: 100%;
+        margin-left: 0;
     }
 }

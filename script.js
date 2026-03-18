@@ -1387,7 +1387,7 @@ function initQuickNoteModal() {
   }
 }
 
-const MY_MUSIC_TRACKS = [
+let MY_MUSIC_TRACKS = [
   {
     title: "Muôn vị nhân sinh",
     artist: "Phan Mạnh Quỳnh",
@@ -1502,6 +1502,17 @@ function getMyMusicAudio() {
 
 function getTrackByIndex(index) {
   const size = MY_MUSIC_TRACKS.length;
+  if (size <= 0) {
+    return {
+      track: {
+        title: "Chưa có bài hát",
+        artist: "",
+        src: "",
+        cover: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=640&q=80"
+      },
+      index: 0
+    };
+  }
   const safe = ((Number(index) || 0) % size + size) % size;
   return { track: MY_MUSIC_TRACKS[safe], index: safe };
 }
@@ -1532,6 +1543,11 @@ function renderMyMusicPlaylist() {
   const listEl = document.getElementById("myMusicPlaylist");
   const audio = getMyMusicAudio();
   if (!listEl) return;
+
+  if (MY_MUSIC_TRACKS.length === 0) {
+    listEl.innerHTML = '<div class="quick-note-empty">Chưa tải được danh sách bài hát.</div>';
+    return;
+  }
 
   const activeIndex = getTrackByIndex(myMusicState.index).index;
   const isPlaying = Boolean(audio && !audio.paused);

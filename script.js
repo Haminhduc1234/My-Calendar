@@ -643,6 +643,182 @@ function showCloudSyncedBadge() {
   _cloudSyncedTimer = setTimeout(() => badge.classList.remove("visible"), 2200);
 }
 
+function escapeCsvValue(value) {
+  const text = String(value ?? "");
+  if (/[",\n]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function toCsvContent(headers, rows) {
+  const head = headers.map((h) => escapeCsvValue(h)).join(",");
+  const body = rows
+    .map((row) => row.map((cell) => escapeCsvValue(cell)).join(","))
+    .join("\n");
+  return `${head}\n${body}`;
+}
+
+function triggerCsvDownload(fileName, csvContent) {
+  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function getCsvDateSuffix() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  return `${y}${m}${d}_${hh}${mm}`;
+}
+
+function formatTimestampForCsv(ts) {
+  const t = Number(ts || 0);
+  if (!t) return "";
+  const dt = new Date(t);
+  if (Number.isNaN(dt.getTime())) return "";
+  return dt.toLocaleString("vi-VN");
+}
+
+async function getAllDateDataForExport() {
+  const output = {};
+
+  if (firebaseDatesRef) {
+    try {
+      const snapshot = await firebaseDatesRef.once("value");
+      const remoteData = snapshot.val() || {};
+
+      Object.keys(remoteData).forEach((dateKey) => {
+        if (!isDateKey(dateKey)) return;
+        if (!isDateRecordTrusted(remoteData[dateKey])) return;
+        output[dateKey] = normalizeDateData(remoteData[dateKey]);
+      });
+
+      if (Object.keys(output).length > 0) {
+        return output;
+      }
+    } catch {
+      // fallback to cache below
+    }
+  }
+
+  const dateKeys = getAllDateKeysFromCache();
+  dateKeys.forEach((dateKey) => {
+    output[dateKey] = getDateData(dateKey);
+  });
+
+  return output;
+}
+
+async function exportEventsCsv() {
+  const rows = [];
+  const allDateData = await getAllDateDataForExport();
+  const dateKeys = Object.keys(allDateData).sort((a, b) => {
+    const da = new Date(dateKeyToIsoDate(a));
+    const db = new Date(dateKeyToIsoDate(b));
+    return da - db;
+  });
+
+  for (const dateKey of dateKeys) {
+    const data = allDateData[dateKey];
+    for (const ev of data.events || []) {
+      rows.push([
+        dateKeyToIsoDate(dateKey),
+        ev.title || "",
+        ev.text || "",
+        ev.eventDateTime || "",
+        formatTimestampForCsv(ev.createdAt),
+        formatTimestampForCsv(ev.updatedAt)
+      ]);
+    }
+  }
+
+  if (rows.length === 0) {
+    alert("Chưa có sự kiện để xuất CSV.");
+    return;
+  }
+
+  const csv = toCsvContent(
+    ["Ngày", "Tiêu đề", "Nội dung", "Ngày giờ sự kiện", "Tạo lúc", "Cập nhật lúc"],
+    rows
+  );
+  triggerCsvDownload(`su_kien_${getCsvDateSuffix()}.csv`, csv);
+}
+
+async function exportOvertimeCsv() {
+  const rows = [];
+  const allDateData = await getAllDateDataForExport();
+  const dateKeys = Object.keys(allDateData).sort((a, b) => {
+    const da = new Date(dateKeyToIsoDate(a));
+    const db = new Date(dateKeyToIsoDate(b));
+    return da - db;
+  });
+
+  for (const dateKey of dateKeys) {
+    const baseHours = Math.max(0, parseInt(allDateData[dateKey]?.overtimeHours, 10) || 0);
+    if (baseHours <= 0) continue;
+
+    const [y, m, d] = dateKey.split("-").map(Number);
+    const dow = new Date(y, m - 1, d).getDay();
+    const bonusHours = dow === 0 ? (baseHours >= 10 ? 0.5 : 0) : (baseHours >= 2 ? 0.5 : 0);
+    const totalHours = baseHours + bonusHours;
+    const type = dow === 0 ? "Chu nhat" : "Ngay thuong";
+
+    rows.push([
+      dateKeyToIsoDate(dateKey),
+      type,
+      baseHours,
+      bonusHours,
+      totalHours
+    ]);
+  }
+
+  if (rows.length === 0) {
+    alert("Chưa có dữ liệu tăng ca để xuất CSV.");
+    return;
+  }
+
+  const csv = toCsvContent(
+    ["Ngày", "Loại ngày", "Giờ tăng ca gốc", "Giờ bonus", "Tổng giờ tính lương"],
+    rows
+  );
+  triggerCsvDownload(`tang_ca_${getCsvDateSuffix()}.csv`, csv);
+}
+
+function exportCashflowCsv() {
+  reloadCashflowEntriesFromCache();
+
+  if (cashflowEntries.length === 0) {
+    alert("Chưa có dữ liệu thu chi để xuất CSV.");
+    return;
+  }
+
+  const rows = cashflowEntries.map((entry) => [
+    entry.id,
+    normalizeIsoDateString(entry.date),
+    entry.type === "income" ? "Thu" : "Chi",
+    entry.amount,
+    entry.note || "",
+    formatTimestampForCsv(entry.createdAt),
+    formatTimestampForCsv(entry.updatedAt)
+  ]);
+
+  const csv = toCsvContent(
+    ["ID", "Ngày", "Loại", "Số tiền", "Ghi chú", "Tạo lúc", "Cập nhật lúc"],
+    rows
+  );
+  triggerCsvDownload(`thu_chi_${getCsvDateSuffix()}.csv`, csv);
+}
+
 function addEventToDate(dateKey, eventData) {
   const data = getDateData(dateKey);
   data.events.push({
@@ -1930,19 +2106,13 @@ async function loadGoldMarketData() {
 }
 
 const salaryInput = document.getElementById("hourSalary");
-const fixedSalaryInput = document.getElementById("fixedSalary");
 const OVERTIME_HOURLY_SALARY_KEY = "overtimeHourlySalary";
-const FIXED_MONTHLY_SALARY_KEY = "overtimeFixedSalary";
 
 function restoreSalaryInputs() {
   const savedHourly = parseInt(localStorage.getItem(OVERTIME_HOURLY_SALARY_KEY) || "0", 10) || 0;
-  const savedFixed = parseInt(localStorage.getItem(FIXED_MONTHLY_SALARY_KEY) || "0", 10) || 0;
 
   if (savedHourly > 0) {
     salaryInput.value = savedHourly.toLocaleString("vi-VN");
-  }
-  if (savedFixed > 0) {
-    fixedSalaryInput.value = savedFixed.toLocaleString("vi-VN");
   }
 }
 
@@ -1957,13 +2127,8 @@ function renderOvertimeSalary() {
     salaryInput.value.replace(/\D/g, ""),
     10
   ) || 0;
-  const fixedSalary = parseInt(
-    fixedSalaryInput.value.replace(/\D/g, ""),
-    10
-  ) || 0;
 
   localStorage.setItem(OVERTIME_HOURLY_SALARY_KEY, String(salaryPerHour));
-  localStorage.setItem(FIXED_MONTHLY_SALARY_KEY, String(fixedSalary));
 
   let overtimeMoney = 0;
   if (salaryPerHour > 0) {
@@ -1972,14 +2137,9 @@ function renderOvertimeSalary() {
   }
 
   document.getElementById("otSalary").innerText = overtimeMoney.toLocaleString("vi-VN");
-  document.getElementById("totalIncome").innerText = (fixedSalary + overtimeMoney).toLocaleString("vi-VN");
 }
 
 salaryInput.addEventListener("input", renderOvertimeSalary);
-fixedSalaryInput.addEventListener("input", () => {
-  formatCurrencyInput(fixedSalaryInput);
-  renderOvertimeSalary();
-});
 
 restoreSalaryInputs();
 renderOvertimeSalary();

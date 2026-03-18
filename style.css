@@ -1652,6 +1652,26 @@ body {
     filter: brightness(1.08);
 }
 
+.cashflow-export-btn,
+.csv-export-btn {
+    border: 1px solid rgba(255, 221, 148, 0.45);
+    border-radius: 10px;
+    padding: 8px 12px;
+    background: linear-gradient(140deg, #7a5b1c, #5f4514);
+    color: #fff3cf;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cashflow-export-btn:hover,
+.csv-export-btn:hover {
+    filter: brightness(1.08);
+}
+
+.csv-export-wrap {
+    margin-top: 10px;
+}
+
 .confirm-modal-content {
     width: min(92vw, 390px);
 }
@@ -1906,7 +1926,8 @@ body {
     }
 
     .cashflow-add-btn,
-    .cashflow-cancel-btn {
+    .cashflow-cancel-btn,
+    .cashflow-export-btn {
         width: 100%;
     }
 

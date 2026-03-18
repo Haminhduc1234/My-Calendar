@@ -160,6 +160,7 @@
                 </div>
 
                 <div class="modal-actions">
+                    <button onclick="exportEventsCsv()">Xuất CSV sự kiện</button>
                     <button onclick="closeDayDetailsModal()">Đóng</button>
                 </div>
             </div>
@@ -222,19 +223,13 @@
                             <input type="text" id="hourSalary" placeholder="VD: 50.000" inputmode="numeric" />
                         </label>
 
-                        <label style="margin-top: 8px;">
-                            💼 Lương cứng/tháng:
-                            <input type="text" id="fixedSalary" placeholder="VD: 8.000.000" inputmode="numeric" />
-                        </label>
-
                         <div class="salary-result">
                             💵 Tổng lương OT:
                             <b id="otSalary">0</b> đ
                         </div>
 
-                        <div class="salary-result">
-                            🧾 Tổng thu nhập tháng:
-                            <b id="totalIncome">0</b> đ
+                        <div class="salary-result csv-export-wrap">
+                            <button class="csv-export-btn" onclick="exportOvertimeCsv()">Xuất CSV tăng ca</button>
                         </div>
                     </div>
                 </div>
@@ -305,6 +300,7 @@
                 <div class="cashflow-actions">
                     <button id="cashflowSubmitBtn" class="cashflow-add-btn" onclick="addCashflowEntry()">+ Thêm giao dịch</button>
                     <button id="cashflowCancelEditBtn" class="cashflow-cancel-btn" onclick="cancelCashflowEdit()" style="display:none;">Hủy sửa</button>
+                    <button id="cashflowExportBtn" class="cashflow-export-btn" onclick="exportCashflowCsv()">Xuất CSV</button>
                 </div>
 
                 <div class="cashflow-summary-grid">

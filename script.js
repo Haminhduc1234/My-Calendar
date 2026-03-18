@@ -364,13 +364,26 @@ function ensureProfileKey() {
       resolve(true);
     }
 
+    function focusInputAt(index) {
+      if (!inputs[index]) return;
+      if (document.activeElement === inputs[index]) return;
+      requestAnimationFrame(() => inputs[index] && inputs[index].focus());
+    }
+
     function onInput(e) {
       const inp = e.target;
       const idx = inputs.indexOf(inp);
       // Chỉ giữ ký tự số cuối
       inp.value = inp.value.replace(/\D/g, "").slice(-1);
+
+      // iOS thường bỏ qua keydown khi xóa, xử lý lùi ô ngay trong input event
+      if (!inp.value && e.inputType === "deleteContentBackward" && idx > 0) {
+        focusInputAt(idx - 1);
+        return;
+      }
+
       if (inp.value && idx < inputs.length - 1) {
-        inputs[idx + 1].focus();
+        focusInputAt(idx + 1);
       }
       if (getOtpValue().length === 6) doSubmit();
     }
@@ -382,20 +395,25 @@ function ensureProfileKey() {
         if (inp.value) {
           inp.value = "";
         } else if (idx > 0) {
-          inputs[idx - 1].focus();
+          focusInputAt(idx - 1);
           inputs[idx - 1].value = "";
         }
       } else if (e.key === "ArrowLeft" && idx > 0) {
-        inputs[idx - 1].focus();
+        focusInputAt(idx - 1);
       } else if (e.key === "ArrowRight" && idx < inputs.length - 1) {
-        inputs[idx + 1].focus();
+        focusInputAt(idx + 1);
       } else if (e.key === "Enter") {
         doSubmit();
       }
     }
 
     function onFocus(e) {
-      e.target.select();
+      const target = e.target;
+      // iOS hạn chế việc select liên tục vì có thể gây giật bàn phím
+      if (typeof target.setSelectionRange === "function") {
+        const len = target.value.length;
+        target.setSelectionRange(len, len);
+      }
     }
 
     function onPaste(e) {
@@ -403,7 +421,7 @@ function ensureProfileKey() {
       const text = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 6);
       text.split("").forEach((ch, i) => { if (inputs[i]) inputs[i].value = ch; });
       const next = Math.min(text.length, inputs.length - 1);
-      inputs[next].focus();
+      focusInputAt(next);
       if (text.length === 6) doSubmit();
     }
 
@@ -956,6 +974,27 @@ function applyStoredToolboxState() {
     "aria-label",
     isCollapsed ? "Mở thanh công cụ" : "Thu gọn thanh công cụ"
   );
+}
+
+function collapseQuickToolbox() {
+  const toolbox = document.getElementById("quickToolbox");
+  const toggleBtn = document.getElementById("toolboxToggle");
+  if (!toolbox || !toggleBtn) return;
+  if (toolbox.classList.contains("is-collapsed")) return;
+
+  toolbox.classList.add("is-collapsed");
+  localStorage.setItem(TOOLBOX_STATE_KEY, "collapsed");
+  toggleBtn.setAttribute("aria-expanded", "false");
+  toggleBtn.setAttribute("aria-label", "Mở thanh công cụ");
+}
+
+function initToolboxAutoCollapse() {
+  const toolbox = document.getElementById("quickToolbox");
+  if (!toolbox) return;
+
+  toolbox.querySelectorAll(".tool-btn").forEach((btn) => {
+    btn.addEventListener("click", collapseQuickToolbox);
+  });
 }
 
 document.getElementById("dayDetailsModal").addEventListener("click", function (e) {
@@ -1843,6 +1882,7 @@ renderOvertimeSalary();
 const CASHFLOW_STORAGE_KEY = "cashflowEntriesV1";
 let cashflowEntries = [];
 let editingCashflowId = "";
+let pendingDeleteCashflowId = "";
 
 function loadCashflowEntries() {
   try {
@@ -1997,14 +2037,42 @@ function syncCashflowFormMode() {
 }
 
 function removeCashflowEntry(id) {
+  pendingDeleteCashflowId = id;
+  openCashflowDeleteConfirmModal();
+}
+
+function openCashflowDeleteConfirmModal() {
+  const modal = document.getElementById("cashflowDeleteConfirmModal");
+  if (!modal) return;
+  modal.style.display = "flex";
+}
+
+function closeCashflowDeleteConfirmModal() {
+  const modal = document.getElementById("cashflowDeleteConfirmModal");
+  if (!modal) return;
+  modal.style.display = "none";
+  pendingDeleteCashflowId = "";
+}
+
+function confirmRemoveCashflowEntry() {
+  const id = pendingDeleteCashflowId;
+  if (!id) {
+    closeCashflowDeleteConfirmModal();
+    return;
+  }
+
   const idx = cashflowEntries.findIndex((entry) => entry.id === id);
-  if (idx < 0) return;
+  if (idx < 0) {
+    closeCashflowDeleteConfirmModal();
+    return;
+  }
 
   cashflowEntries.splice(idx, 1);
   if (editingCashflowId === id) {
     resetCashflowForm();
   }
   saveCashflowEntries();
+  closeCashflowDeleteConfirmModal();
   renderCashflowDashboard();
 }
 
@@ -2229,6 +2297,13 @@ function formatCashflowDate(dateIso) {
   }
 
   syncCashflowFormMode();
+
+  const deleteConfirmModal = document.getElementById("cashflowDeleteConfirmModal");
+  if (deleteConfirmModal) {
+    deleteConfirmModal.addEventListener("click", function (e) {
+      if (e.target === this) closeCashflowDeleteConfirmModal();
+    });
+  }
 }());
 
 
@@ -2243,6 +2318,7 @@ updateClock();
 
 /* ========================== INIT ========================= */
 applyStoredToolboxState();
+initToolboxAutoCollapse();
 renderCalendar();
 renderToday();
 loadQuote();

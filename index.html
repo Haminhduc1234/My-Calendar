@@ -122,12 +122,12 @@
                 <h3>🔐 Nhập mã PIN</h3>
                 <p class="password-modal-desc">Nhập 6 chữ số để truy cập dữ liệu.<br>Mỗi mã PIN là một tài khoản riêng.</p>
                 <div class="otp-group">
-                    <input class="otp-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
-                    <input class="otp-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
-                    <input class="otp-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
-                    <input class="otp-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
-                    <input class="otp-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
-                    <input class="otp-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+                    <input class="otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" autocorrect="off" autocapitalize="off" spellcheck="false" />
+                    <input class="otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+                    <input class="otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+                    <input class="otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+                    <input class="otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+                    <input class="otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
                 </div>
                 <div id="passwordError" class="password-error">Vui lòng nhập đủ 6 chữ số.</div>
             </div>
@@ -333,6 +333,18 @@
                     <canvas id="cashflowChart"></canvas>
                 </div>
                 <div class="cashflow-chart-subtitle">Biểu đồ thu chi 12 tháng gần nhất</div>
+            </div>
+        </div>
+
+        <div id="cashflowDeleteConfirmModal" class="modal">
+            <div class="modal-content confirm-modal-content">
+                <button class="modal-close" onclick="closeCashflowDeleteConfirmModal()">×</button>
+                <h3>Xác nhận xóa</h3>
+                <p class="confirm-modal-text">Bạn có chắc muốn xóa giao dịch này không? Hành động này không thể hoàn tác.</p>
+                <div class="confirm-modal-actions">
+                    <button class="confirm-cancel-btn" onclick="closeCashflowDeleteConfirmModal()">Hủy</button>
+                    <button class="confirm-delete-btn" onclick="confirmRemoveCashflowEntry()">Xóa</button>
+                </div>
             </div>
         </div>
     </div>

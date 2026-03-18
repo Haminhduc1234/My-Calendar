@@ -40,6 +40,86 @@ body {
     margin: 0 auto;
 }
 
+.app-init-loading {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(3, 8, 20, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 900;
+}
+
+.app-init-loading.is-visible {
+    display: flex;
+}
+
+.app-init-loading-card {
+    width: min(90vw, 360px);
+    border-radius: 16px;
+    padding: 14px;
+    border: 1px solid rgba(183, 208, 255, 0.24);
+    background: linear-gradient(155deg, rgba(11, 25, 52, 0.96), rgba(9, 21, 44, 0.96));
+    box-shadow: 0 18px 34px rgba(0, 0, 0, 0.42);
+}
+
+.app-init-loading-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.app-init-loading-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #d6e5ff;
+    letter-spacing: 0.2px;
+}
+
+.app-init-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #8db8ff;
+    box-shadow: 0 0 0 0 rgba(141, 184, 255, 0.7);
+    animation: appInitPulse 1.2s ease-out infinite;
+    flex-shrink: 0;
+}
+
+.app-init-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.app-init-skeleton-line {
+    height: 10px;
+    border-radius: 999px;
+    background:
+        linear-gradient(100deg, rgba(148, 175, 224, 0.16) 20%, rgba(186, 210, 255, 0.38) 40%, rgba(148, 175, 224, 0.16) 60%),
+        rgba(99, 126, 178, 0.2);
+    background-size: 220% 100%;
+    animation: appSkeletonShimmer 1.2s linear infinite;
+}
+
+.app-init-skeleton-line.w-95 {
+    width: 95%;
+}
+
+.app-init-skeleton-line.w-88 {
+    width: 88%;
+}
+
+.app-init-skeleton-line.w-70 {
+    width: 70%;
+}
+
+.app-init-skeleton-line.w-54 {
+    width: 54%;
+}
+
 .today-panel,
 .calendar-container,
 .overtime-box {
@@ -1525,6 +1605,30 @@ body {
     }
 }
 
+@keyframes appSkeletonShimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -30% 0;
+    }
+}
+
+@keyframes appInitPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(141, 184, 255, 0.6);
+    }
+
+    80% {
+        box-shadow: 0 0 0 7px rgba(141, 184, 255, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(141, 184, 255, 0);
+    }
+}
+
 @media (max-width: 540px) {
     body {
         padding: 14px 8px 10px;
@@ -2108,6 +2212,14 @@ body {
     background: rgba(28, 22, 56, 0.84);
     color: #f6eeff;
     font-size: 16px;
+    font-family: "Segoe UI Symbol", "Noto Sans Symbols2", "Be Vietnam Pro", sans-serif;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0;
     cursor: pointer;
     transition: transform 0.2s ease, filter 0.2s ease, border-color 0.2s ease;
 }
@@ -2120,9 +2232,13 @@ body {
 .my-music-play-btn {
     width: 56px;
     height: 56px;
-    font-size: 22px;
+    font-size: 24px;
     background: linear-gradient(140deg, #7648b3, #58308e);
     border-color: rgba(224, 198, 255, 0.64);
+}
+
+#myMusicPlayBtn {
+    letter-spacing: -1px;
 }
 
 .my-music-toggle-btn.is-active {

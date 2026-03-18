@@ -28,7 +28,7 @@ const SOLAR_HOLIDAYS = {
   "1-1": "Tết Dương",
   "30-4": "30/4",
   "1-5": "1/5",
-  "2-9": "Quốc khánh"
+  "2-9": "Quốc khánh",
 };
 
 // Lễ âm lịch
@@ -36,21 +36,30 @@ const LUNAR_HOLIDAYS = {
   "1-1": "Tết Nguyên Đán",
   "15-1": "Rằm tháng Giêng",
   "10-3": "Giỗ Tổ",
-  "15-8": "Trung Thu"
+  "15-8": "Trung Thu",
 };
 
 /* ========================== HÀM HỖ TRỢ ========================== */
 const PI = Math.PI;
 const TIMEZONE = 7; // GMT+7
 
-function INT(d) { return Math.floor(d); }
+function INT(d) {
+  return Math.floor(d);
+}
 
 /* Julian Day từ ngày dương */
 function jdFromDate(dd, mm, yy) {
   let a = INT((14 - mm) / 12);
   let y = yy + 4800 - a;
   let m = mm + 12 * a - 3;
-  let jd = dd + INT((153 * m + 2) / 5) + 365 * y + INT(y / 4) - INT(y / 100) + INT(y / 400) - 32045;
+  let jd =
+    dd +
+    INT((153 * m + 2) / 5) +
+    365 * y +
+    INT(y / 4) -
+    INT(y / 100) +
+    INT(y / 400) -
+    32045;
   return jd;
 }
 
@@ -65,8 +74,8 @@ function jdToDate(jd) {
   let D = INT(365.25 * C);
   let E = INT((B - D) / 30.6001);
   let day = B - D - INT(30.6001 * E);
-  let month = (E < 14) ? E - 1 : E - 13;
-  let year = (month > 2) ? C - 4716 : C - 4715;
+  let month = E < 14 ? E - 1 : E - 13;
+  let year = month > 2 ? C - 4716 : C - 4715;
   return { day, month, year };
 }
 
@@ -76,23 +85,29 @@ function NewMoon(k) {
   let T2 = T * T;
   let T3 = T2 * T;
   let dr = PI / 180;
-  let Jd1 = 2415020.75933 + 29.53058868 * k + 0.0001178 * T2 - 0.000000155 * T3 + 0.00033 * Math.sin((166.56 + 132.87 * T - 0.009173 * T2) * dr);
+  let Jd1 =
+    2415020.75933 +
+    29.53058868 * k +
+    0.0001178 * T2 -
+    0.000000155 * T3 +
+    0.00033 * Math.sin((166.56 + 132.87 * T - 0.009173 * T2) * dr);
   let M = 359.2242 + 29.10535608 * k - 0.0000333 * T2 - 0.00000347 * T3;
   let Mpr = 306.0253 + 385.81691806 * k + 0.0107306 * T2 + 0.00001236 * T3;
   let F = 21.2964 + 390.67050646 * k - 0.0016528 * T2 - 0.00000239 * T3;
-  let C1 = (0.1734 - 0.000393 * T) * Math.sin(M * dr)
-    + 0.0021 * Math.sin(2 * M * dr)
-    - 0.4068 * Math.sin(Mpr * dr)
-    + 0.0161 * Math.sin(2 * Mpr * dr)
-    - 0.0004 * Math.sin(3 * Mpr * dr)
-    + 0.0104 * Math.sin(2 * F * dr)
-    - 0.0051 * Math.sin(M + Mpr * dr)
-    - 0.0074 * Math.sin(M - Mpr * dr)
-    + 0.0004 * Math.sin(2 * F + M * dr)
-    - 0.0004 * Math.sin(2 * F - M * dr)
-    - 0.0006 * Math.sin(2 * F + Mpr * dr)
-    + 0.0010 * Math.sin(2 * F - Mpr * dr)
-    + 0.0005 * Math.sin(2 * Mpr + M * dr);
+  let C1 =
+    (0.1734 - 0.000393 * T) * Math.sin(M * dr) +
+    0.0021 * Math.sin(2 * M * dr) -
+    0.4068 * Math.sin(Mpr * dr) +
+    0.0161 * Math.sin(2 * Mpr * dr) -
+    0.0004 * Math.sin(3 * Mpr * dr) +
+    0.0104 * Math.sin(2 * F * dr) -
+    0.0051 * Math.sin(M + Mpr * dr) -
+    0.0074 * Math.sin(M - Mpr * dr) +
+    0.0004 * Math.sin(2 * F + M * dr) -
+    0.0004 * Math.sin(2 * F - M * dr) -
+    0.0006 * Math.sin(2 * F + Mpr * dr) +
+    0.001 * Math.sin(2 * F - Mpr * dr) +
+    0.0005 * Math.sin(2 * Mpr + M * dr);
   let JdNew = Jd1 + C1;
   return INT(JdNew + 0.5 + TIMEZONE / 24);
 }
@@ -102,11 +117,12 @@ function SunLongitude(jdn) {
   let T = (jdn - 2451545.5 - TIMEZONE / 24) / 36525;
   let T2 = T * T;
   let dr = PI / 180;
-  let M = 357.52910 + 35999.05030 * T - 0.0001559 * T2 - 0.00000048 * T * T2;
+  let M = 357.5291 + 35999.0503 * T - 0.0001559 * T2 - 0.00000048 * T * T2;
   let L0 = 280.46645 + 36000.76983 * T + 0.0003032 * T2;
-  let DL = (1.914600 - 0.004817 * T - 0.000014 * T2) * Math.sin(M * dr)
-    + (0.019993 - 0.000101 * T) * Math.sin(2 * M * dr)
-    + 0.000290 * Math.sin(3 * M * dr);
+  let DL =
+    (1.9146 - 0.004817 * T - 0.000014 * T2) * Math.sin(M * dr) +
+    (0.019993 - 0.000101 * T) * Math.sin(2 * M * dr) +
+    0.00029 * Math.sin(3 * M * dr);
   let L = L0 + DL;
   L = L - 360 * Math.floor(L / 360);
   return INT(L / 30);
@@ -196,16 +212,21 @@ function renderTodayEvents() {
       </svg>
       Sự kiện hôm nay
     </div>
-    <div class="today-events-list">${events.map(ev => {
-      const timeStr = ev.eventDateTime
-        ? new Date(ev.eventDateTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-        : '';
-      return `<div class="today-event-item">
-        ${ timeStr ? `<span class="today-event-time">${timeStr}</span>` : '' }
-        <span class="today-event-title">${ev.title || '(Không có tiêu đề)'}</span>
-        ${ ev.text ? `<span class="today-event-text">${ev.text}</span>` : '' }
+    <div class="today-events-list">${events
+      .map((ev) => {
+        const timeStr = ev.eventDateTime
+          ? new Date(ev.eventDateTime).toLocaleTimeString("vi-VN", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : "";
+        return `<div class="today-event-item">
+        ${timeStr ? `<span class="today-event-time">${timeStr}</span>` : ""}
+        <span class="today-event-title">${ev.title || "(Không có tiêu đề)"}</span>
+        ${ev.text ? `<span class="today-event-text">${ev.text}</span>` : ""}
       </div>`;
-    }).join('')}</div>
+      })
+      .join("")}</div>
   `;
 }
 
@@ -217,12 +238,14 @@ function renderCalendar() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  document.getElementById("monthYear").innerText = `Tháng ${month + 1} / ${year}`;
+  document.getElementById("monthYear").innerText =
+    `Tháng ${month + 1} / ${year}`;
 
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   const startDate = new Date(year, month, 1 - firstDayOfMonth);
 
-  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   for (let i = 0; i < 42; i++) {
     const cellDate = new Date(startDate);
@@ -239,10 +262,13 @@ function renderCalendar() {
     const lunar = convertSolarToLunar(d, m, y);
     const key = `${y}-${m}-${d}`;
 
-  if (cellDate.getTime() === today.getTime()) div.classList.add("today");
+    if (cellDate.getTime() === today.getTime()) div.classList.add("today");
     if (getEventsForDate(key).length > 0) div.classList.add("has-event");
-      if (getOvertimeHoursForDateKey(key) > 0) div.classList.add("has-overtime");
-    if (SOLAR_HOLIDAYS[`${d}-${m}`] || LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`])
+    if (getOvertimeHoursForDateKey(key) > 0) div.classList.add("has-overtime");
+    if (
+      SOLAR_HOLIDAYS[`${d}-${m}`] ||
+      LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`]
+    )
       div.classList.add("holiday");
     let holidayName = "";
 
@@ -288,27 +314,27 @@ function normalizeDateData(raw) {
   const payload = raw || {};
   const rawEvents = Array.isArray(payload.events)
     ? payload.events
-    : (payload.events && typeof payload.events === "object"
+    : payload.events && typeof payload.events === "object"
       ? Object.keys(payload.events)
-        .sort((a, b) => Number(a) - Number(b))
-        .map((key) => payload.events[key])
-      : []);
+          .sort((a, b) => Number(a) - Number(b))
+          .map((key) => payload.events[key])
+      : [];
 
   const events = rawEvents.map((event) => ({
     title: String(event?.title || "").trim(),
     text: String(event?.text || "").trim(),
     eventDateTime: String(event?.eventDateTime || ""),
     createdAt: Number(event?.createdAt || Date.now()),
-    updatedAt: Number(event?.updatedAt || 0)
+    updatedAt: Number(event?.updatedAt || 0),
   }));
 
   const rawCashflowEntries = Array.isArray(payload.cashflowEntries)
     ? payload.cashflowEntries
-    : (payload.cashflowEntries && typeof payload.cashflowEntries === "object"
+    : payload.cashflowEntries && typeof payload.cashflowEntries === "object"
       ? Object.keys(payload.cashflowEntries)
-        .sort((a, b) => Number(a) - Number(b))
-        .map((key) => payload.cashflowEntries[key])
-      : []);
+          .sort((a, b) => Number(a) - Number(b))
+          .map((key) => payload.cashflowEntries[key])
+      : [];
 
   const cashflowEntries = rawCashflowEntries
     .map((entry) => {
@@ -322,7 +348,7 @@ function normalizeDateData(raw) {
         amount,
         note: String(entry?.note || "").trim(),
         createdAt: Number(entry?.createdAt || Date.now()),
-        updatedAt: Number(entry?.updatedAt || 0)
+        updatedAt: Number(entry?.updatedAt || 0),
       };
     })
     .filter((entry) => entry.id && entry.date && entry.amount > 0);
@@ -331,7 +357,7 @@ function normalizeDateData(raw) {
     events,
     overtimeHours: Math.max(0, parseInt(payload.overtimeHours, 10) || 0),
     cashflowEntries,
-    updatedAt: Number(payload.updatedAt || Date.now())
+    updatedAt: Number(payload.updatedAt || Date.now()),
   };
 }
 
@@ -353,7 +379,9 @@ function isoDateToDateKey(isoDate) {
 }
 
 function dateKeyToIsoDate(dateKey) {
-  const m = String(dateKey || "").trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  const m = String(dateKey || "")
+    .trim()
+    .match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (!m) return "";
   return `${m[1]}-${String(Number(m[2])).padStart(2, "0")}-${String(Number(m[3])).padStart(2, "0")}`;
 }
@@ -367,17 +395,22 @@ function hashProfilePassword(password) {
   for (let i = 0; i < password.length; i++) {
     hash ^= password.charCodeAt(i);
     hash +=
-      (hash << 1) +
-      (hash << 4) +
-      (hash << 7) +
-      (hash << 8) +
-      (hash << 24);
+      (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
   }
   return `u_${(hash >>> 0).toString(16).padStart(8, "0")}`;
 }
 
 function ensureProfileKey() {
   return new Promise((resolve) => {
+    const storedProfileKey = localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE);
+    if (storedProfileKey && /^u_[0-9a-f]{8}$/.test(storedProfileKey)) {
+      userProfileKey = storedProfileKey;
+      const modal = document.getElementById("passwordModal");
+      if (modal) modal.style.display = "none";
+      resolve(true);
+      return;
+    }
+
     const modal = document.getElementById("passwordModal");
     const otpGroup = document.getElementById("otpGroup");
     const masterInput = document.getElementById("otpMasterInput");
@@ -388,10 +421,10 @@ function ensureProfileKey() {
     masterInput.value = "";
     errorEl.style.display = "none";
     renderOtpSlots();
-    
+
     // Focus immediately on the input field
     masterInput.focus({ preventScroll: true });
-    
+
     // Ensure focus is properly set even if first attempt doesn't work
     requestAnimationFrame(() => {
       masterInput.focus({ preventScroll: true });
@@ -433,9 +466,7 @@ function ensureProfileKey() {
       }
       errorEl.style.display = "none";
       userProfileKey = hashProfilePassword(value);
-      if (!localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE)) {
-        localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, userProfileKey);
-      }
+      localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, userProfileKey);
       modal.style.display = "none";
       cleanup();
       resolve(true);
@@ -456,7 +487,10 @@ function ensureProfileKey() {
 
     function onPaste(e) {
       e.preventDefault();
-      const text = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 6);
+      const text = (e.clipboardData || window.clipboardData)
+        .getData("text")
+        .replace(/\D/g, "")
+        .slice(0, 6);
       masterInput.value = text;
       renderOtpSlots();
       if (text.length === 6) doSubmit();
@@ -481,6 +515,25 @@ function ensureProfileKey() {
   });
 }
 
+function logoutProfileSession() {
+  const confirmed = window.confirm(
+    "Đăng xuất phiên PIN hiện tại để nhập PIN khác?",
+  );
+  if (!confirmed) return;
+
+  localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
+  userProfileKey = "";
+  dateDataCache = {};
+
+  if (firebaseDatesRef) {
+    firebaseDatesRef.off();
+  }
+
+  window.location.reload();
+}
+
+window.logoutProfileSession = logoutProfileSession;
+
 function collectLegacyLocalDateData() {
   const localData = {};
   for (let i = 0; i < localStorage.length; i++) {
@@ -502,14 +555,16 @@ function collectLegacyLocalDateData() {
     if (!legacyEvent) continue;
 
     localData[key] = normalizeDateData({
-      events: [{
-        title: legacyEvent.title,
-        text: legacyEvent.text,
-        eventDateTime: "",
-        createdAt: Date.now()
-      }],
+      events: [
+        {
+          title: legacyEvent.title,
+          text: legacyEvent.text,
+          eventDateTime: "",
+          createdAt: Date.now(),
+        },
+      ],
       overtimeHours: legacyEvent.overtimeHours,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
   }
 
@@ -529,7 +584,9 @@ function collectLegacyCashflowEntries() {
         const type = entry?.type === "expense" ? "expense" : "income";
         const amount = Math.max(0, parseInt(entry?.amount, 10) || 0);
         const note = String(entry?.note || "").trim();
-        const id = String(entry?.id || "").trim() || `cf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const id =
+          String(entry?.id || "").trim() ||
+          `cf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const createdAt = Number(entry?.createdAt || Date.now());
 
         return {
@@ -539,7 +596,7 @@ function collectLegacyCashflowEntries() {
           amount,
           note,
           createdAt,
-          updatedAt: Number(entry?.updatedAt || 0)
+          updatedAt: Number(entry?.updatedAt || 0),
         };
       })
       .filter((entry) => entry.date && entry.amount > 0);
@@ -564,7 +621,9 @@ async function migrateLegacyCashflowEntriesIfNeeded() {
     if (!dateKey) continue;
 
     const data = getDateData(dateKey);
-    const exists = data.cashflowEntries.some((entry) => entry.id === legacyEntry.id);
+    const exists = data.cashflowEntries.some(
+      (entry) => entry.id === legacyEntry.id,
+    );
     if (exists) continue;
 
     data.cashflowEntries.push(legacyEntry);
@@ -586,7 +645,11 @@ function isDateRecordTrusted(raw) {
 
 function getDateData(dateKey) {
   if (dateDataCache[dateKey]) return normalizeDateData(dateDataCache[dateKey]);
-  return normalizeDateData({ events: [], overtimeHours: 0, cashflowEntries: [] });
+  return normalizeDateData({
+    events: [],
+    overtimeHours: 0,
+    cashflowEntries: [],
+  });
 }
 
 function saveDateData(dateKey, data) {
@@ -597,7 +660,7 @@ function saveDateData(dateKey, data) {
     events: normalized.events,
     overtimeHours: normalized.overtimeHours,
     cashflowEntries: normalized.cashflowEntries,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   };
 
   const firebaseRecord = {
@@ -606,21 +669,31 @@ function saveDateData(dateKey, data) {
     // Realtime Database xử lý mảng rỗng không ổn định; dùng object rỗng để luôn tồn tại node events.
     events: normalized.events.length > 0 ? normalized.events : {},
     overtimeHours: normalized.overtimeHours,
-    cashflowEntries: normalized.cashflowEntries.length > 0 ? normalized.cashflowEntries : {},
-    updatedAt: Date.now()
+    cashflowEntries:
+      normalized.cashflowEntries.length > 0 ? normalized.cashflowEntries : {},
+    updatedAt: Date.now(),
   };
 
-  if (normalized.events.length === 0 && normalized.overtimeHours <= 0 && normalized.cashflowEntries.length === 0) {
+  if (
+    normalized.events.length === 0 &&
+    normalized.overtimeHours <= 0 &&
+    normalized.cashflowEntries.length === 0
+  ) {
     delete dateDataCache[dateKey];
     localStorage.removeItem(dateKey);
     if (firebaseDatesRef) {
-      firebaseDatesRef.child(dateKey).remove().catch(() => {
-        console.error("Không thể xóa dữ liệu ngày khỏi Firebase.");
-        if (!syncWriteErrorShown) {
-          syncWriteErrorShown = true;
-          alert("Không thể đồng bộ dữ liệu lên Firebase. Vui lòng kiểm tra Firebase Rules và deploy rules mới.");
-        }
-      });
+      firebaseDatesRef
+        .child(dateKey)
+        .remove()
+        .catch(() => {
+          console.error("Không thể xóa dữ liệu ngày khỏi Firebase.");
+          if (!syncWriteErrorShown) {
+            syncWriteErrorShown = true;
+            alert(
+              "Không thể đồng bộ dữ liệu lên Firebase. Vui lòng kiểm tra Firebase Rules và deploy rules mới.",
+            );
+          }
+        });
     }
     return;
   }
@@ -629,13 +702,17 @@ function saveDateData(dateKey, data) {
   localStorage.setItem(dateKey, JSON.stringify(record));
 
   if (firebaseDatesRef) {
-    firebaseDatesRef.child(dateKey).set(firebaseRecord)
+    firebaseDatesRef
+      .child(dateKey)
+      .set(firebaseRecord)
       .then(() => showCloudSyncedBadge())
       .catch(() => {
         console.error("Không thể lưu dữ liệu ngày lên Firebase.");
         if (!syncWriteErrorShown) {
           syncWriteErrorShown = true;
-          alert("Không thể đồng bộ dữ liệu lên Firebase. Vui lòng kiểm tra Firebase Rules và deploy rules mới.");
+          alert(
+            "Không thể đồng bộ dữ liệu lên Firebase. Vui lòng kiểm tra Firebase Rules và deploy rules mới.",
+          );
         }
       });
   }
@@ -667,7 +744,9 @@ function toCsvContent(headers, rows) {
 }
 
 function triggerCsvDownload(fileName, csvContent) {
-  const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["\uFEFF" + csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -744,7 +823,7 @@ async function exportEventsCsv() {
         ev.text || "",
         ev.eventDateTime || "",
         formatTimestampForCsv(ev.createdAt),
-        formatTimestampForCsv(ev.updatedAt)
+        formatTimestampForCsv(ev.updatedAt),
       ]);
     }
   }
@@ -755,8 +834,15 @@ async function exportEventsCsv() {
   }
 
   const csv = toCsvContent(
-    ["Ngày", "Tiêu đề", "Nội dung", "Ngày giờ sự kiện", "Tạo lúc", "Cập nhật lúc"],
-    rows
+    [
+      "Ngày",
+      "Tiêu đề",
+      "Nội dung",
+      "Ngày giờ sự kiện",
+      "Tạo lúc",
+      "Cập nhật lúc",
+    ],
+    rows,
   );
   triggerCsvDownload(`su_kien_${getCsvDateSuffix()}.csv`, csv);
 }
@@ -771,12 +857,16 @@ async function exportOvertimeCsv() {
   });
 
   for (const dateKey of dateKeys) {
-    const baseHours = Math.max(0, parseInt(allDateData[dateKey]?.overtimeHours, 10) || 0);
+    const baseHours = Math.max(
+      0,
+      parseInt(allDateData[dateKey]?.overtimeHours, 10) || 0,
+    );
     if (baseHours <= 0) continue;
 
     const [y, m, d] = dateKey.split("-").map(Number);
     const dow = new Date(y, m - 1, d).getDay();
-    const bonusHours = dow === 0 ? (baseHours >= 10 ? 0.5 : 0) : (baseHours >= 2 ? 0.5 : 0);
+    const bonusHours =
+      dow === 0 ? (baseHours >= 10 ? 0.5 : 0) : baseHours >= 2 ? 0.5 : 0;
     const totalHours = baseHours + bonusHours;
     const type = dow === 0 ? "Chu nhat" : "Ngay thuong";
 
@@ -785,7 +875,7 @@ async function exportOvertimeCsv() {
       type,
       baseHours,
       bonusHours,
-      totalHours
+      totalHours,
     ]);
   }
 
@@ -795,8 +885,14 @@ async function exportOvertimeCsv() {
   }
 
   const csv = toCsvContent(
-    ["Ngày", "Loại ngày", "Giờ tăng ca gốc", "Giờ bonus", "Tổng giờ tính lương"],
-    rows
+    [
+      "Ngày",
+      "Loại ngày",
+      "Giờ tăng ca gốc",
+      "Giờ bonus",
+      "Tổng giờ tính lương",
+    ],
+    rows,
   );
   triggerCsvDownload(`tang_ca_${getCsvDateSuffix()}.csv`, csv);
 }
@@ -816,12 +912,12 @@ function exportCashflowCsv() {
     entry.amount,
     entry.note || "",
     formatTimestampForCsv(entry.createdAt),
-    formatTimestampForCsv(entry.updatedAt)
+    formatTimestampForCsv(entry.updatedAt),
   ]);
 
   const csv = toCsvContent(
     ["ID", "Ngày", "Loại", "Số tiền", "Ghi chú", "Tạo lúc", "Cập nhật lúc"],
-    rows
+    rows,
   );
   triggerCsvDownload(`thu_chi_${getCsvDateSuffix()}.csv`, csv);
 }
@@ -832,7 +928,7 @@ function addEventToDate(dateKey, eventData) {
     title: String(eventData.title || "").trim(),
     text: String(eventData.text || "").trim(),
     eventDateTime: String(eventData.eventDateTime || ""),
-    createdAt: Date.now()
+    createdAt: Date.now(),
   });
   saveDateData(dateKey, data);
 }
@@ -847,7 +943,7 @@ function updateEventInDate(dateKey, eventIndex, eventData) {
     text: String(eventData.text || "").trim(),
     eventDateTime: String(eventData.eventDateTime || ""),
     createdAt: previous.createdAt || Date.now(),
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   };
 
   saveDateData(dateKey, data);
@@ -890,7 +986,7 @@ function parseEventRecord(raw) {
       return {
         title: String(parsed.title || ""),
         text: String(parsed.text || ""),
-        overtimeHours: Math.max(0, parseInt(parsed.overtimeHours, 10) || 0)
+        overtimeHours: Math.max(0, parseInt(parsed.overtimeHours, 10) || 0),
       };
     }
   } catch {}
@@ -899,7 +995,7 @@ function parseEventRecord(raw) {
   return {
     title: "",
     text: legacyHours > 0 ? "" : text,
-    overtimeHours: legacyHours
+    overtimeHours: legacyHours,
   };
 }
 
@@ -912,8 +1008,6 @@ function toDatetimeLocalValue(dateInput) {
   return local.toISOString().slice(0, 16);
 }
 
-
-
 function getFirebaseConfigIssues() {
   const requiredKeys = [
     "apiKey",
@@ -922,12 +1016,12 @@ function getFirebaseConfigIssues() {
     "projectId",
     "storageBucket",
     "messagingSenderId",
-    "appId"
+    "appId",
   ];
-  return requiredKeys.filter((k) => String(FIREBASE_CONFIG[k] || "").trim().length === 0);
+  return requiredKeys.filter(
+    (k) => String(FIREBASE_CONFIG[k] || "").trim().length === 0,
+  );
 }
-
-
 
 function readEventByKey(key) {
   return parseEventRecord(localStorage.getItem(key));
@@ -951,8 +1045,6 @@ function isFirebaseConfigReady() {
   return getFirebaseConfigIssues().length === 0;
 }
 
-
-
 async function ensureFirebaseAuth() {
   if (!window.firebase?.auth) return false;
   firebaseAuth = window.firebase.auth();
@@ -967,12 +1059,9 @@ async function ensureFirebaseAuth() {
   }
 }
 
-
-
 async function initFirebaseRealtime() {
-
-    // Hiển thị PIN ngay để người dùng nhập mà không phải chờ auth Firebase.
-  if (!await ensureProfileKey()) {
+  // Hiển thị PIN ngay để người dùng nhập mà không phải chờ auth Firebase.
+  if (!(await ensureProfileKey())) {
     alert("Bạn cần nhập mật khẩu đồng bộ để sử dụng dữ liệu đa thiết bị.");
     return;
   }
@@ -986,12 +1075,16 @@ async function initFirebaseRealtime() {
 
   const signedIn = await ensureFirebaseAuth();
   if (!signedIn) {
-    alert("Không thể đăng nhập ẩn danh với Firebase. Vui lòng bật Anonymous Authentication trong Firebase Console.");
+    alert(
+      "Không thể đăng nhập ẩn danh với Firebase. Vui lòng bật Anonymous Authentication trong Firebase Console.",
+    );
     return;
   }
 
   firebaseDb = window.firebase.database();
-  firebaseDatesRef = firebaseDb.ref(`${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`);
+  firebaseDatesRef = firebaseDb.ref(
+    `${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`,
+  );
 
   // Xóa date cache localStorage của profile cũ để tránh cross-profile pollution
   for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -1019,10 +1112,16 @@ async function initFirebaseRealtime() {
       dateDataCache[dateKey] = normalizeDateData(localData[dateKey]);
       await firebaseDatesRef.child(dateKey).set({
         __type: "date_data",
-        events: dateDataCache[dateKey].events.length > 0 ? dateDataCache[dateKey].events : {},
+        events:
+          dateDataCache[dateKey].events.length > 0
+            ? dateDataCache[dateKey].events
+            : {},
         overtimeHours: dateDataCache[dateKey].overtimeHours,
-        cashflowEntries: dateDataCache[dateKey].cashflowEntries.length > 0 ? dateDataCache[dateKey].cashflowEntries : {},
-        updatedAt: Date.now()
+        cashflowEntries:
+          dateDataCache[dateKey].cashflowEntries.length > 0
+            ? dateDataCache[dateKey].cashflowEntries
+            : {},
+        updatedAt: Date.now(),
       });
     }
     localStorage.setItem(migrationFlag, "1");
@@ -1038,13 +1137,16 @@ async function initFirebaseRealtime() {
       if (!isDateKey(dateKey)) return;
       if (!isDateRecordTrusted(incoming[dateKey])) return;
       nextCache[dateKey] = normalizeDateData(incoming[dateKey]);
-      localStorage.setItem(dateKey, JSON.stringify({
-        __type: "date_data",
-        events: nextCache[dateKey].events,
-        overtimeHours: nextCache[dateKey].overtimeHours,
-        cashflowEntries: nextCache[dateKey].cashflowEntries,
-        updatedAt: Date.now()
-      }));
+      localStorage.setItem(
+        dateKey,
+        JSON.stringify({
+          __type: "date_data",
+          events: nextCache[dateKey].events,
+          overtimeHours: nextCache[dateKey].overtimeHours,
+          cashflowEntries: nextCache[dateKey].cashflowEntries,
+          updatedAt: Date.now(),
+        }),
+      );
     });
 
     dateDataCache = nextCache;
@@ -1064,21 +1166,22 @@ async function initFirebaseServices() {
   await initFirebaseRealtime();
 }
 
-
-
-
-
 function openAddEventModalForToday() {
   const today = new Date();
   const key = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
-  openAddEventModal(key, today.getDate(), today.getMonth() + 1, today.getFullYear());
+  openAddEventModal(
+    key,
+    today.getDate(),
+    today.getMonth() + 1,
+    today.getFullYear(),
+  );
 }
 
 /* ========================== MO-ĐAL ========================== */
 
 function openAddEventModalFromDayDetails() {
   if (!selectedKey) return;
-  const [y, m, d] = selectedKey.split('-').map(Number);
+  const [y, m, d] = selectedKey.split("-").map(Number);
   openAddEventModal(selectedKey, d, m, y);
 }
 
@@ -1091,11 +1194,13 @@ function openEditEventModal(eventIndex) {
 
   selectedEventIndex = eventIndex;
 
-  const [y, m, d] = selectedKey.split('-').map(Number);
+  const [y, m, d] = selectedKey.split("-").map(Number);
   document.getElementById("addEventDate").innerText = `${d}/${m}/${y}`;
   document.getElementById("newEventTitle").value = String(event.title || "");
   document.getElementById("newEventText").value = String(event.text || "");
-  document.getElementById("newEventDateTime").value = toDatetimeLocalValue(event.eventDateTime);
+  document.getElementById("newEventDateTime").value = toDatetimeLocalValue(
+    event.eventDateTime,
+  );
   document.getElementById("addEventModalTitle").innerText = "Chỉnh sửa sự kiện";
   document.getElementById("saveEventBtn").innerText = "Cập nhật";
 
@@ -1106,25 +1211,30 @@ function openEditEventModal(eventIndex) {
 function openDayDetailsModal(dateKey, d, m, y) {
   selectedKey = dateKey;
   const data = getDateData(dateKey);
-  
+
   document.getElementById("dayDetailsDate").innerText = `${d}/${m}/${y}`;
   document.getElementById("dayOvertimeHours").value = data.overtimeHours || 0;
-  
+
   // Render events list
   const eventsList = document.getElementById("dayEventsList");
   eventsList.innerHTML = "";
-  
+
   if (data.events.length === 0) {
     eventsList.innerHTML = '<div class="no-events">Chưa có sự kiện</div>';
   } else {
     data.events.forEach((event, idx) => {
       const eventDiv = document.createElement("div");
       eventDiv.className = "event-item";
-      const timeStr = event.eventDateTime ? new Date(event.eventDateTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'}) : "--:--";
+      const timeStr = event.eventDateTime
+        ? new Date(event.eventDateTime).toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "--:--";
       eventDiv.innerHTML = `
         <div class="event-time">${timeStr}</div>
         <div class="event-content">
-          <div class="event-title">${event.title || '(Không có tiêu đề)'}</div>
+          <div class="event-title">${event.title || "(Không có tiêu đề)"}</div>
           <div class="event-text">${event.text}</div>
         </div>
         <div class="event-actions">
@@ -1139,7 +1249,7 @@ function openDayDetailsModal(dateKey, d, m, y) {
       eventsList.appendChild(eventDiv);
     });
   }
-  
+
   document.getElementById("dayDetailsModal").style.display = "flex";
 }
 
@@ -1148,7 +1258,8 @@ function closeDayDetailsModal() {
 }
 
 function saveDayOvertime() {
-  const hours = parseInt(document.getElementById("dayOvertimeHours").value, 10) || 0;
+  const hours =
+    parseInt(document.getElementById("dayOvertimeHours").value, 10) || 0;
   updateOvertimeForDate(selectedKey, Math.max(0, hours));
   renderOvertime();
   renderOvertimeSalary();
@@ -1157,7 +1268,7 @@ function saveDayOvertime() {
 function deleteEventFromDateUI(eventIndex) {
   deleteEventFromDate(selectedKey, eventIndex);
   renderCalendar();
-  const [y, m, d] = selectedKey.split('-').map(Number);
+  const [y, m, d] = selectedKey.split("-").map(Number);
   openDayDetailsModal(selectedKey, d, m, y);
 }
 
@@ -1165,14 +1276,18 @@ function deleteEventFromDateUI(eventIndex) {
 function openAddEventModal(dateKey, d, m, y) {
   selectedKey = dateKey;
   selectedEventIndex = -1;
-  
+
   document.getElementById("addEventDate").innerText = `${d}/${m}/${y}`;
   document.getElementById("newEventTitle").value = "";
   document.getElementById("newEventText").value = "";
-  document.getElementById("newEventDateTime").value = toDatetimeLocalValue(new Date(`${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T09:00`));
+  document.getElementById("newEventDateTime").value = toDatetimeLocalValue(
+    new Date(
+      `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}T09:00`,
+    ),
+  );
   document.getElementById("addEventModalTitle").innerText = "Thêm sự kiện";
   document.getElementById("saveEventBtn").innerText = "Lưu";
-  
+
   document.getElementById("addEventModal").style.display = "flex";
 }
 
@@ -1184,16 +1299,16 @@ function saveNewEvent() {
   const title = document.getElementById("newEventTitle").value.trim();
   const text = document.getElementById("newEventText").value.trim();
   const eventDateTime = document.getElementById("newEventDateTime").value;
-  
+
   if (!title && !text) {
     alert("Vui lòng nhập tiêu đề hoặc nội dung sự kiện");
     return;
   }
-  
+
   const eventPayload = {
     title,
     text,
-    eventDateTime
+    eventDateTime,
   };
 
   if (selectedEventIndex >= 0) {
@@ -1201,14 +1316,14 @@ function saveNewEvent() {
   } else {
     addEventToDate(selectedKey, eventPayload);
   }
-  
+
   renderCalendar();
   renderOvertime();
   renderOvertimeSalary();
   closeAddEventModal();
-  
+
   // Tự động mở lại day details modal để hiển thị sự kiện mới
-  const [y, m, d] = selectedKey.split('-').map(Number);
+  const [y, m, d] = selectedKey.split("-").map(Number);
   openDayDetailsModal(selectedKey, d, m, y);
 }
 
@@ -1258,7 +1373,7 @@ function loadQuickNotes() {
         id: String(note?.id || "").trim(),
         text: String(note?.text || "").trim(),
         done: Boolean(note?.done),
-        createdAt: Number(note?.createdAt || Date.now())
+        createdAt: Number(note?.createdAt || Date.now()),
       }))
       .filter((note) => note.id && note.text);
   } catch {
@@ -1269,13 +1384,13 @@ function loadQuickNotes() {
 function saveQuickNotes(notes) {
   const normalized = Array.isArray(notes)
     ? notes
-      .map((note) => ({
-        id: String(note?.id || "").trim(),
-        text: String(note?.text || "").trim(),
-        done: Boolean(note?.done),
-        createdAt: Number(note?.createdAt || Date.now())
-      }))
-      .filter((note) => note.id && note.text)
+        .map((note) => ({
+          id: String(note?.id || "").trim(),
+          text: String(note?.text || "").trim(),
+          done: Boolean(note?.done),
+          createdAt: Number(note?.createdAt || Date.now()),
+        }))
+        .filter((note) => note.id && note.text)
     : [];
 
   localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(normalized));
@@ -1298,7 +1413,8 @@ function renderQuickNotes() {
   listEl.innerHTML = "";
 
   if (notes.length === 0) {
-    listEl.innerHTML = '<div class="quick-note-empty">Chưa có ghi chú nào. Hãy thêm việc cần làm.</div>';
+    listEl.innerHTML =
+      '<div class="quick-note-empty">Chưa có ghi chú nào. Hãy thêm việc cần làm.</div>';
     return;
   }
 
@@ -1307,15 +1423,17 @@ function renderQuickNotes() {
     return b.createdAt - a.createdAt;
   });
 
-  listEl.innerHTML = notes.map((note) => {
-    return `
+  listEl.innerHTML = notes
+    .map((note) => {
+      return `
       <div class="quick-note-item ${note.done ? "is-done" : ""}">
         <input type="checkbox" ${note.done ? "checked" : ""} aria-label="Đánh dấu hoàn thành" onclick="toggleQuickNoteDone('${note.id}')">
         <div class="quick-note-text">${escapeHtml(note.text)}</div>
         <button type="button" class="quick-note-delete" onclick="deleteQuickNote('${note.id}')" aria-label="Xóa ghi chú">×</button>
       </div>
     `;
-  }).join("");
+    })
+    .join("");
 }
 
 function openQuickNoteModal() {
@@ -1342,7 +1460,7 @@ function addQuickNote() {
     id: `qn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     text,
     done: false,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   });
 
   saveQuickNotes(notes);
@@ -1389,12 +1507,14 @@ function initQuickNoteModal() {
 
 let MY_MUSIC_TRACKS = Array.isArray(self.MY_LOCAL_MUSIC_TRACKS)
   ? self.MY_LOCAL_MUSIC_TRACKS.filter((track) => {
-      return track
-        && typeof track.title === "string"
-        && typeof track.artist === "string"
-        && typeof track.src === "string"
-        && typeof track.cover === "string"
-        && track.src.trim().length > 0;
+      return (
+        track &&
+        typeof track.title === "string" &&
+        typeof track.artist === "string" &&
+        typeof track.src === "string" &&
+        typeof track.cover === "string" &&
+        track.src.trim().length > 0
+      );
     })
   : [];
 
@@ -1402,7 +1522,7 @@ const myMusicState = {
   initialized: false,
   index: 0,
   shuffle: false,
-  repeatOne: false
+  repeatOne: false,
 };
 
 function getMyMusicPrefsKey() {
@@ -1422,7 +1542,7 @@ function loadMyMusicPrefs() {
     return {
       index: Number.isFinite(Number(parsed?.index)) ? Number(parsed.index) : 0,
       shuffle,
-      repeatOne: shuffle ? false : repeatOne
+      repeatOne: shuffle ? false : repeatOne,
     };
   } catch {
     return { index: 0, shuffle: false, repeatOne: false };
@@ -1430,11 +1550,14 @@ function loadMyMusicPrefs() {
 }
 
 function saveMyMusicPrefs() {
-  localStorage.setItem(getMyMusicPrefsKey(), JSON.stringify({
-    index: myMusicState.index,
-    shuffle: myMusicState.shuffle,
-    repeatOne: myMusicState.repeatOne
-  }));
+  localStorage.setItem(
+    getMyMusicPrefsKey(),
+    JSON.stringify({
+      index: myMusicState.index,
+      shuffle: myMusicState.shuffle,
+      repeatOne: myMusicState.repeatOne,
+    }),
+  );
 }
 
 function formatMusicTime(seconds) {
@@ -1456,12 +1579,13 @@ function getTrackByIndex(index) {
         title: "Chưa có bài hát",
         artist: "",
         src: "",
-        cover: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=640&q=80"
+        cover:
+          "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=640&q=80",
       },
-      index: 0
+      index: 0,
     };
   }
-  const safe = ((Number(index) || 0) % size + size) % size;
+  const safe = (((Number(index) || 0) % size) + size) % size;
   return { track: MY_MUSIC_TRACKS[safe], index: safe };
 }
 
@@ -1482,8 +1606,10 @@ function renderMyMusicMeta() {
     coverEl.alt = `${track.title} cover`;
   }
 
-  if (shuffleBtn) shuffleBtn.classList.toggle("is-active", myMusicState.shuffle);
-  if (repeatBtn) repeatBtn.classList.toggle("is-active", myMusicState.repeatOne);
+  if (shuffleBtn)
+    shuffleBtn.classList.toggle("is-active", myMusicState.shuffle);
+  if (repeatBtn)
+    repeatBtn.classList.toggle("is-active", myMusicState.repeatOne);
   renderMyMusicPlaylist();
 }
 
@@ -1493,7 +1619,8 @@ function renderMyMusicPlaylist() {
   if (!listEl) return;
 
   if (MY_MUSIC_TRACKS.length === 0) {
-    listEl.innerHTML = '<div class="quick-note-empty">Chưa tải được danh sách bài hát.</div>';
+    listEl.innerHTML =
+      '<div class="quick-note-empty">Chưa tải được danh sách bài hát.</div>';
     return;
   }
 
@@ -1525,7 +1652,8 @@ function setMyMusicPlayUI(isPlaying) {
   const playBtn = document.getElementById("myMusicPlayBtn");
   const playIcon = document.getElementById("myMusicPlayIcon");
   const disc = document.getElementById("myMusicDisc");
-  if (playBtn) playBtn.setAttribute("aria-label", isPlaying ? "Tạm dừng" : "Phát");
+  if (playBtn)
+    playBtn.setAttribute("aria-label", isPlaying ? "Tạm dừng" : "Phát");
   if (playIcon) playIcon.src = isPlaying ? "public/pause.png" : "public/ui.png";
   if (disc) disc.classList.toggle("is-spinning", isPlaying);
   renderMyMusicPlaylist();
@@ -1703,11 +1831,14 @@ function toggleToolbox() {
   const toggleBtn = document.getElementById("toolboxToggle");
 
   const isCollapsed = toolbox.classList.toggle("is-collapsed");
-  localStorage.setItem(TOOLBOX_STATE_KEY, isCollapsed ? "collapsed" : "expanded");
+  localStorage.setItem(
+    TOOLBOX_STATE_KEY,
+    isCollapsed ? "collapsed" : "expanded",
+  );
   toggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
   toggleBtn.setAttribute(
     "aria-label",
-    isCollapsed ? "Mở thanh công cụ" : "Thu gọn thanh công cụ"
+    isCollapsed ? "Mở thanh công cụ" : "Thu gọn thanh công cụ",
   );
 }
 
@@ -1723,7 +1854,7 @@ function applyStoredToolboxState() {
   toggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
   toggleBtn.setAttribute(
     "aria-label",
-    isCollapsed ? "Mở thanh công cụ" : "Thu gọn thanh công cụ"
+    isCollapsed ? "Mở thanh công cụ" : "Thu gọn thanh công cụ",
   );
 }
 
@@ -1748,17 +1879,23 @@ function initToolboxAutoCollapse() {
   });
 }
 
-document.getElementById("dayDetailsModal").addEventListener("click", function (e) {
-  if (e.target === this) closeDayDetailsModal();
-});
+document
+  .getElementById("dayDetailsModal")
+  .addEventListener("click", function (e) {
+    if (e.target === this) closeDayDetailsModal();
+  });
 
-document.getElementById("addEventModal").addEventListener("click", function (e) {
-  if (e.target === this) closeAddEventModal();
-});
+document
+  .getElementById("addEventModal")
+  .addEventListener("click", function (e) {
+    if (e.target === this) closeAddEventModal();
+  });
 
-document.getElementById("overtimeModal").addEventListener("click", function (e) {
-  if (e.target === this) closeOvertimeModal();
-});
+document
+  .getElementById("overtimeModal")
+  .addEventListener("click", function (e) {
+    if (e.target === this) closeOvertimeModal();
+  });
 
 document.getElementById("goldModal").addEventListener("click", function (e) {
   if (e.target === this) closeGoldModal();
@@ -1768,16 +1905,16 @@ function saveEvent() {
   const title = document.getElementById("newEventTitle").value.trim();
   const text = document.getElementById("newEventText").value.trim();
   const eventDateTime = document.getElementById("newEventDateTime").value;
-  
+
   if (!title && !text) {
     alert("Vui lòng nhập tiêu đề hoặc nội dung sự kiện");
     return;
   }
-  
+
   addEventToDate(selectedKey, {
     title,
     text,
-    eventDateTime
+    eventDateTime,
   });
 
   renderOvertime();
@@ -1790,15 +1927,18 @@ function renderToday() {
   const today = new Date();
 
   const weekdays = [
-    "Chủ nhật", "Thứ Hai", "Thứ Ba",
-    "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"
+    "Chủ nhật",
+    "Thứ Hai",
+    "Thứ Ba",
+    "Thứ Tư",
+    "Thứ Năm",
+    "Thứ Sáu",
+    "Thứ Bảy",
   ];
 
-  document.getElementById("todayWeekday").innerText =
-    weekdays[today.getDay()];
+  document.getElementById("todayWeekday").innerText = weekdays[today.getDay()];
 
-  document.getElementById("todayDate").innerText =
-    today.getDate();
+  document.getElementById("todayDate").innerText = today.getDate();
 
   document.getElementById("todayMonthYear").innerText =
     `Tháng ${today.getMonth() + 1} năm ${today.getFullYear()}`;
@@ -1853,7 +1993,7 @@ const vietnameseQuotes = [
   "Lời nói xuất phát từ trái tim sẽ chạm đến trái tim.",
   "Hãy khơi dậy niềm tự hào nơi người khác.",
   "Sự chân thành là chìa khóa của lòng tin.",
-  "Muốn dẫn dắt người khác, hãy hiểu họ trước."
+  "Muốn dẫn dắt người khác, hãy hiểu họ trước.",
 ];
 
 function loadQuote() {
@@ -1861,7 +2001,6 @@ function loadQuote() {
   document.getElementById("quoteText").innerHTML =
     `<img src="public/quote.png" alt="quote">${vietnameseQuotes[rand]}`;
 }
-
 
 function requestLocationPermission() {
   if (!navigator.geolocation) {
@@ -1874,12 +2013,12 @@ function requestLocationPermission() {
   localStorage.setItem(GEO_PROMPT_ASKED_KEY, "1");
 
   navigator.geolocation.getCurrentPosition(
-    position => {
+    (position) => {
       localStorage.setItem("geoPermission", "granted");
       handleWeather(position.coords.latitude, position.coords.longitude);
     },
     handleLocationError,
-    getGeolocationOptions()
+    getGeolocationOptions(),
   );
 }
 
@@ -1897,7 +2036,7 @@ function getGeolocationOptions() {
   return {
     enableHighAccuracy: false,
     timeout: 12000,
-    maximumAge: 300000
+    maximumAge: 300000,
   };
 }
 
@@ -1916,12 +2055,12 @@ function handleLocationError(error) {
 
 function loadWeatherFromCurrentPosition() {
   navigator.geolocation.getCurrentPosition(
-    position => {
+    (position) => {
       localStorage.setItem("geoPermission", "granted");
       handleWeather(position.coords.latitude, position.coords.longitude);
     },
     handleLocationError,
-    getGeolocationOptions()
+    getGeolocationOptions(),
   );
 }
 
@@ -1930,12 +2069,12 @@ function getAddressFromCoords(lat, lon) {
     `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`,
     {
       headers: {
-        "Accept-Language": "vi"
-      }
-    }
+        "Accept-Language": "vi",
+      },
+    },
   )
-    .then(res => res.json())
-    .then(data => {
+    .then((res) => res.json())
+    .then((data) => {
       const addr = data.address || {};
 
       const ward =
@@ -1993,9 +2132,9 @@ function handleWeather(lat, lon) {
 &current_weather=true
 &hourly=relativehumidity_2m
 &daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,sunrise,sunset
-&timezone=auto`
-    ).then(res => res.json()),
-    getAddressFromCoords(lat, lon)
+&timezone=auto`,
+    ).then((res) => res.json()),
+    getAddressFromCoords(lat, lon),
   ])
     .then(([data, locationName]) => {
       const w = data.current_weather;
@@ -2004,7 +2143,7 @@ function handleWeather(lat, lon) {
 
       const sunrise = data.daily.sunrise[0].slice(11, 16);
       const sunset = data.daily.sunset[0].slice(11, 16);
-      
+
       const weatherEl = document.getElementById("todayWeather");
 
       weatherEl.innerHTML = `
@@ -2031,7 +2170,8 @@ function handleWeather(lat, lon) {
 
 function getDailyHumidity(hourly, dateStr) {
   const day = dateStr;
-  let sum = 0, count = 0;
+  let sum = 0,
+    count = 0;
 
   hourly.time.forEach((t, i) => {
     if (t.startsWith(day)) {
@@ -2043,7 +2183,6 @@ function getDailyHumidity(hourly, dateStr) {
   return count ? Math.round(sum / count) : "--";
 }
 
-
 function renderForecast(daily, hourly) {
   const forecastEl = document.getElementById("weatherForecast");
   forecastEl.innerHTML = "";
@@ -2053,7 +2192,7 @@ function renderForecast(daily, hourly) {
     const day = date.toLocaleDateString("vi-VN", {
       weekday: "long",
       day: "2-digit",
-      month: "2-digit"
+      month: "2-digit",
     });
 
     const icon = getWeatherIcon(daily.weathercode[i]);
@@ -2090,7 +2229,6 @@ function renderForecast(daily, hourly) {
     `;
   }
 }
-
 
 async function fetchWeatherByLocation() {
   if (!navigator.geolocation) {
@@ -2172,13 +2310,37 @@ function weatherCodeToText(code) {
     81: "Mưa rào",
     82: "Mưa rào mạnh",
     95: "Dông",
-    99: "Dông mạnh"
+    99: "Dông mạnh",
   };
   return map[code] || "Thời tiết không xác định";
 }
 function getCanChiYear(year) {
-  const can = ["Giáp", "Ất", "Bính", "Đinh", "Mậu", "Kỷ", "Canh", "Tân", "Nhâm", "Quý"];
-  const chi = ["Tý", "Sửu", "Dần", "Mão", "Thìn", "Tỵ", "Ngọ", "Mùi", "Thân", "Dậu", "Tuất", "Hợi"];
+  const can = [
+    "Giáp",
+    "Ất",
+    "Bính",
+    "Đinh",
+    "Mậu",
+    "Kỷ",
+    "Canh",
+    "Tân",
+    "Nhâm",
+    "Quý",
+  ];
+  const chi = [
+    "Tý",
+    "Sửu",
+    "Dần",
+    "Mão",
+    "Thìn",
+    "Tỵ",
+    "Ngọ",
+    "Mùi",
+    "Thân",
+    "Dậu",
+    "Tuất",
+    "Hợi",
+  ];
   return `${can[(year + 6) % 10]} ${chi[(year + 8) % 12]}`;
 }
 
@@ -2188,7 +2350,7 @@ function renderTodayLunar() {
   const lunar = convertSolarToLunar(
     today.getDate(),
     today.getMonth() + 1,
-    today.getFullYear()
+    today.getFullYear(),
   );
 
   const canChiYear = getCanChiYear(lunar.lunarYear);
@@ -2213,7 +2375,6 @@ function calcOvertimeSummary(viewYear, viewMonth) {
 
   const dateKeys = getAllDateKeysFromCache();
   for (const key of dateKeys) {
-
     const [y, m, d] = key.split("-").map(Number);
 
     // ✅ LỌC THEO THÁNG ĐANG XEM TRÊN LỊCH
@@ -2254,17 +2415,16 @@ function calcOvertimeSummary(viewYear, viewMonth) {
     total: {
       base: weekday.base + sunday.base,
       bonus: weekday.bonus + sunday.bonus,
-      sum:
-        weekday.base +
-        sunday.base +
-        weekday.bonus +
-        sunday.bonus
-    }
+      sum: weekday.base + sunday.base + weekday.bonus + sunday.bonus,
+    },
   };
 }
 
 function renderOvertime() {
-  const ot = calcOvertimeSummary(currentDate.getFullYear(), currentDate.getMonth());
+  const ot = calcOvertimeSummary(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+  );
 
   otWeekdayBase.innerText = ot.weekday.base;
   otWeekdayBonus.innerText = ot.weekday.bonus;
@@ -2280,17 +2440,16 @@ function renderOvertime() {
 function calcOvertimeSalary(viewYear, viewMonth, hourlyRate) {
   let weekday = {
     hours: 0,
-    salary: 0
+    salary: 0,
   };
 
   let sunday = {
     hours: 0,
-    salary: 0
+    salary: 0,
   };
 
   const dateKeys = getAllDateKeysFromCache();
   for (const key of dateKeys) {
-
     const [y, m, d] = key.split("-").map(Number);
 
     // 🚫 BỎ QUA NẾU KHÔNG PHẢI THÁNG ĐANG XEM
@@ -2302,10 +2461,9 @@ function calcOvertimeSalary(viewYear, viewMonth, hourlyRate) {
     const baseHours = getOvertimeHoursForDateKey(key);
     if (baseHours <= 0) continue;
 
-    const bonusHours = dow === 0 ? (baseHours >= 10 ? 0.5 : 0) : (baseHours >= 2 ? 0.5 : 0);
+    const bonusHours =
+      dow === 0 ? (baseHours >= 10 ? 0.5 : 0) : baseHours >= 2 ? 0.5 : 0;
     const totalHours = baseHours + bonusHours;
-
-
 
     if (dow === 0) {
       // 🟥 CHỦ NHẬT – tách 2 mốc
@@ -2314,11 +2472,8 @@ function calcOvertimeSalary(viewYear, viewMonth, hourlyRate) {
 
       sunday.hours += totalHours;
 
-      sunday.salary +=
-        firstPart * hourlyRate * 2 +
-        extraPart * hourlyRate * 3;
-    }
-    else {
+      sunday.salary += firstPart * hourlyRate * 2 + extraPart * hourlyRate * 3;
+    } else {
       // 🟦 NGÀY THƯỜNG
       weekday.hours += totalHours;
       weekday.salary += totalHours * hourlyRate * 1.5;
@@ -2330,11 +2485,10 @@ function calcOvertimeSalary(viewYear, viewMonth, hourlyRate) {
     sunday,
     total: {
       hours: weekday.hours + sunday.hours,
-      salary: weekday.salary + sunday.salary
-    }
+      salary: weekday.salary + sunday.salary,
+    },
   };
 }
-
 
 function formatCurrencyInput(input) {
   // Lấy vị trí con trỏ
@@ -2375,31 +2529,34 @@ function parseCurrentVietnamGold(content) {
     content.match(/Published Time:\s*([^\n]+)/i);
 
   const headlineMatch = content.match(
-    /Giá vàng SJC hôm nay[\s\S]{0,600}?Mua vào\s+([0-9.,]+)[\s\S]{0,220}?Bán ra\s+([0-9.,]+)/i
+    /Giá vàng SJC hôm nay[\s\S]{0,600}?Mua vào\s+([0-9.,]+)[\s\S]{0,220}?Bán ra\s+([0-9.,]+)/i,
   );
   const tableMatch = content.match(
-    /\|\s*Hồ Chí Minh\s*\|\s*Vàng SJC 1L, 10L, 1KG\s*\|\s*([0-9.,]+)\s*\|\s*([0-9.,]+)\s*\|/i
+    /\|\s*Hồ Chí Minh\s*\|\s*Vàng SJC 1L, 10L, 1KG\s*\|\s*([0-9.,]+)\s*\|\s*([0-9.,]+)\s*\|/i,
   );
   const fallbackBuy = content.match(/Mua vào\s+([0-9.,]+)/i);
   const fallbackSell = content.match(/Bán ra\s+([0-9.,]+)/i);
 
-  const buyRaw = headlineMatch?.[1] || tableMatch?.[1] || fallbackBuy?.[1] || null;
-  const sellRaw = headlineMatch?.[2] || tableMatch?.[2] || fallbackSell?.[1] || null;
+  const buyRaw =
+    headlineMatch?.[1] || tableMatch?.[1] || fallbackBuy?.[1] || null;
+  const sellRaw =
+    headlineMatch?.[2] || tableMatch?.[2] || fallbackSell?.[1] || null;
 
   const buyThousand = parseVietnamPrice(buyRaw);
   const sellThousand = parseVietnamPrice(sellRaw);
-  if (!Number.isFinite(buyThousand) || !Number.isFinite(sellThousand)) return null;
+  if (!Number.isFinite(buyThousand) || !Number.isFinite(sellThousand))
+    return null;
 
   return {
     updatedAt: updatedMatch ? updatedMatch[1].trim() : "--",
     buyThousand,
-    sellThousand
+    sellThousand,
   };
 }
 
 function parseVietnamHistoryDates(content) {
   const matches = content.match(/\d{4}-\d{2}-\d{2}\.html/g) || [];
-  const uniqueDates = [...new Set(matches.map(x => x.replace(".html", "")))];
+  const uniqueDates = [...new Set(matches.map((x) => x.replace(".html", "")))];
   return uniqueDates.sort((a, b) => b.localeCompare(a));
 }
 
@@ -2419,7 +2576,7 @@ function parseDailyVietnamGold(content, date) {
   return {
     label,
     buyValue: buyThousand * 1000,
-    sellValue: sellThousand * 1000
+    sellValue: sellThousand * 1000,
   };
 }
 
@@ -2441,7 +2598,7 @@ function drawGoldChart(canvasId, points) {
   const chartW = width - pad.left - pad.right;
   const chartH = height - pad.top - pad.bottom;
 
-  const values = points.flatMap(p => [p.buyValue, p.sellValue]);
+  const values = points.flatMap((p) => [p.buyValue, p.sellValue]);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = Math.max(max - min, 1);
@@ -2525,7 +2682,9 @@ async function fetchTextWithCorsFallback(url) {
 }
 
 async function getRecentVietnamGoldHistory(limit = 7) {
-  const indexContent = await fetchTextWithCorsFallback("https://giavang.org/trong-nuoc/sjc/lich-su");
+  const indexContent = await fetchTextWithCorsFallback(
+    "https://giavang.org/trong-nuoc/sjc/lich-su",
+  );
   const candidateDates = parseVietnamHistoryDates(indexContent).slice(0, 10);
   const points = [];
 
@@ -2533,7 +2692,9 @@ async function getRecentVietnamGoldHistory(limit = 7) {
     if (points.length >= limit) break;
 
     try {
-      const dayContent = await fetchTextWithCorsFallback(`https://giavang.org/trong-nuoc/sjc/lich-su/${date}.html`);
+      const dayContent = await fetchTextWithCorsFallback(
+        `https://giavang.org/trong-nuoc/sjc/lich-su/${date}.html`,
+      );
       const point = parseDailyVietnamGold(dayContent, date);
       if (point) points.push(point);
     } catch {
@@ -2555,7 +2716,9 @@ async function loadGoldMarketData() {
   sellEl.innerText = "--";
 
   try {
-    const currentContent = await fetchTextWithCorsFallback("https://giavang.org/trong-nuoc/sjc");
+    const currentContent = await fetchTextWithCorsFallback(
+      "https://giavang.org/trong-nuoc/sjc",
+    );
     const current = parseCurrentVietnamGold(currentContent);
     if (!current) {
       throw new Error("Thiếu dữ liệu giá vàng Việt Nam hiện tại");
@@ -2568,9 +2731,11 @@ async function loadGoldMarketData() {
     sellEl.innerText = formatVnd(sellVnd);
     updatedEl.innerText = `Giá vàng SJC hôm nay Cập nhật lúc ${current.updatedAt}`;
 
-    noteEl.innerText = "Nguồn: giavang.org (giá vàng trong nước SJC toàn quốc hiện tại) qua proxy r.jina.ai.";
+    noteEl.innerText =
+      "Nguồn: giavang.org (giá vàng trong nước SJC toàn quốc hiện tại) qua proxy r.jina.ai.";
   } catch {
-    noteEl.innerText = "Nguồn nội địa đang lỗi mạng hoặc bị chặn. Vui lòng thử lại sau.";
+    noteEl.innerText =
+      "Nguồn nội địa đang lỗi mạng hoặc bị chặn. Vui lòng thử lại sau.";
   }
 }
 
@@ -2578,7 +2743,8 @@ const salaryInput = document.getElementById("hourSalary");
 const OVERTIME_HOURLY_SALARY_KEY = "overtimeHourlySalary";
 
 function restoreSalaryInputs() {
-  const savedHourly = parseInt(localStorage.getItem(OVERTIME_HOURLY_SALARY_KEY) || "0", 10) || 0;
+  const savedHourly =
+    parseInt(localStorage.getItem(OVERTIME_HOURLY_SALARY_KEY) || "0", 10) || 0;
 
   if (savedHourly > 0) {
     salaryInput.value = savedHourly.toLocaleString("vi-VN");
@@ -2590,22 +2756,23 @@ salaryInput.addEventListener("input", () => {
   renderOvertimeSalary();
 });
 
-
 function renderOvertimeSalary() {
-  const salaryPerHour = parseInt(
-    salaryInput.value.replace(/\D/g, ""),
-    10
-  ) || 0;
+  const salaryPerHour = parseInt(salaryInput.value.replace(/\D/g, ""), 10) || 0;
 
   localStorage.setItem(OVERTIME_HOURLY_SALARY_KEY, String(salaryPerHour));
 
   let overtimeMoney = 0;
   if (salaryPerHour > 0) {
-    const otSalary = calcOvertimeSalary(currentDate.getFullYear(), currentDate.getMonth(), salaryPerHour);
+    const otSalary = calcOvertimeSalary(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      salaryPerHour,
+    );
     overtimeMoney = otSalary.total.salary;
   }
 
-  document.getElementById("otSalary").innerText = overtimeMoney.toLocaleString("vi-VN");
+  document.getElementById("otSalary").innerText =
+    overtimeMoney.toLocaleString("vi-VN");
 }
 
 salaryInput.addEventListener("input", renderOvertimeSalary);
@@ -2627,7 +2794,7 @@ function getAllCashflowEntriesFromCache() {
     for (const entry of entries) {
       rows.push({
         ...entry,
-        date: normalizeIsoDateString(entry.date || dateKeyToIsoDate(dateKey))
+        date: normalizeIsoDateString(entry.date || dateKeyToIsoDate(dateKey)),
       });
     }
   }
@@ -2675,7 +2842,9 @@ function findCashflowEntryLocation(entryId) {
   const dateKeys = getAllDateKeysFromCache();
   for (const dateKey of dateKeys) {
     const data = getDateData(dateKey);
-    const idx = (data.cashflowEntries || []).findIndex((entry) => entry.id === entryId);
+    const idx = (data.cashflowEntries || []).findIndex(
+      (entry) => entry.id === entryId,
+    );
     if (idx >= 0) {
       return { dateKey, index: idx, entry: data.cashflowEntries[idx] };
     }
@@ -2726,7 +2895,7 @@ function addCashflowEntry() {
       amount,
       note,
       createdAt: located.entry.createdAt || Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
     saveDateData(targetDateKey, targetData);
   } else {
@@ -2736,7 +2905,7 @@ function addCashflowEntry() {
       type,
       amount,
       note,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     };
 
     const data = getDateData(targetDateKey);
@@ -2759,7 +2928,8 @@ function startCashflowEdit(id) {
 
   document.getElementById("cashflowDate").value = entry.date;
   document.getElementById("cashflowType").value = entry.type;
-  document.getElementById("cashflowAmount").value = entry.amount.toLocaleString("vi-VN");
+  document.getElementById("cashflowAmount").value =
+    entry.amount.toLocaleString("vi-VN");
   document.getElementById("cashflowNote").value = entry.note || "";
 
   syncCashflowFormMode();
@@ -2859,8 +3029,10 @@ function renderCashflowMonthSummary() {
   }
 
   const net = income - expense;
-  document.getElementById("cashflowIncomeMonth").innerText = `${income.toLocaleString("vi-VN")} đ`;
-  document.getElementById("cashflowExpenseMonth").innerText = `${expense.toLocaleString("vi-VN")} đ`;
+  document.getElementById("cashflowIncomeMonth").innerText =
+    `${income.toLocaleString("vi-VN")} đ`;
+  document.getElementById("cashflowExpenseMonth").innerText =
+    `${expense.toLocaleString("vi-VN")} đ`;
 
   const netEl = document.getElementById("cashflowNetMonth");
   netEl.innerText = `${net.toLocaleString("vi-VN")} đ`;
@@ -2890,7 +3062,8 @@ function renderCashflowRecentList() {
 
     const noteEl = document.createElement("div");
     noteEl.className = "cashflow-row-note";
-    noteEl.innerText = entry.note || (entry.type === "income" ? "Khoản thu" : "Khoản chi");
+    noteEl.innerText =
+      entry.note || (entry.type === "income" ? "Khoản thu" : "Khoản chi");
 
     const amountEl = document.createElement("div");
     amountEl.className = `cashflow-row-amount ${entry.type === "income" ? "is-income" : "is-expense"}`;
@@ -2930,13 +3103,15 @@ function buildCashflowByMonth() {
       month: d.getMonth() + 1,
       label: `T${d.getMonth() + 1}`,
       income: 0,
-      expense: 0
+      expense: 0,
     });
   }
 
   for (const entry of cashflowEntries) {
     const [year, month] = entry.date.split("-").map(Number);
-    const target = months.find((item) => item.year === year && item.month === month);
+    const target = months.find(
+      (item) => item.year === year && item.month === month,
+    );
     if (!target) continue;
     if (entry.type === "income") target.income += entry.amount;
     else target.expense += entry.amount;
@@ -2953,7 +3128,7 @@ function renderCashflowChart() {
   const rows = buildCashflowByMonth();
   const maxVal = Math.max(
     1,
-    ...rows.map((row) => Math.max(row.income, row.expense))
+    ...rows.map((row) => Math.max(row.income, row.expense)),
   );
 
   const dpr = window.devicePixelRatio || 1;
@@ -2978,7 +3153,7 @@ function renderCashflowChart() {
   ctx.strokeStyle = "rgba(154, 183, 231, 0.12)";
   ctx.lineWidth = 1;
   for (let i = 0; i <= 3; i++) {
-    const y = padT + chartH - (chartH * i / 3);
+    const y = padT + chartH - (chartH * i) / 3;
     ctx.beginPath();
     ctx.moveTo(padL, y);
     ctx.lineTo(padL + chartW, y);
@@ -2996,13 +3171,19 @@ function renderCashflowChart() {
     const yBottom = padT + chartH;
     const incomeH = (row.income / maxVal) * chartH;
     const expenseH = (row.expense / maxVal) * chartH;
-    const nowMonth = row.year === now.getFullYear() && row.month === now.getMonth() + 1;
+    const nowMonth =
+      row.year === now.getFullYear() && row.month === now.getMonth() + 1;
 
     const incomeX = gx;
     const expenseX = gx + oneBarW + 2;
 
     if (row.income > 0) {
-      const gi = ctx.createLinearGradient(incomeX, yBottom - incomeH, incomeX, yBottom);
+      const gi = ctx.createLinearGradient(
+        incomeX,
+        yBottom - incomeH,
+        incomeX,
+        yBottom,
+      );
       gi.addColorStop(0, nowMonth ? "#53d792" : "#32b873");
       gi.addColorStop(1, nowMonth ? "#249965" : "#1c7b4d");
       ctx.fillStyle = gi;
@@ -3012,12 +3193,23 @@ function renderCashflowChart() {
     }
 
     if (row.expense > 0) {
-      const ge = ctx.createLinearGradient(expenseX, yBottom - expenseH, expenseX, yBottom);
+      const ge = ctx.createLinearGradient(
+        expenseX,
+        yBottom - expenseH,
+        expenseX,
+        yBottom,
+      );
       ge.addColorStop(0, nowMonth ? "#ff8080" : "#f25f5f");
       ge.addColorStop(1, nowMonth ? "#ca4848" : "#b73737");
       ctx.fillStyle = ge;
       ctx.beginPath();
-      ctx.roundRect(expenseX, yBottom - expenseH, oneBarW, expenseH, [3, 3, 0, 0]);
+      ctx.roundRect(
+        expenseX,
+        yBottom - expenseH,
+        oneBarW,
+        expenseH,
+        [3, 3, 0, 0],
+      );
       ctx.fill();
     }
 
@@ -3058,18 +3250,17 @@ function formatCashflowDate(dateIso) {
 
   syncCashflowFormMode();
 
-  const deleteConfirmModal = document.getElementById("cashflowDeleteConfirmModal");
+  const deleteConfirmModal = document.getElementById(
+    "cashflowDeleteConfirmModal",
+  );
   if (deleteConfirmModal) {
     deleteConfirmModal.addEventListener("click", function (e) {
       if (e.target === this) closeCashflowDeleteConfirmModal();
     });
   }
-}());
-
+})();
 
 renderOvertime();
-
-
 
 // cập nhật mỗi giây
 setInterval(updateClock, 1000);
@@ -3087,15 +3278,14 @@ function setAppInitLoading(visible, message) {
   loading.classList.toggle("is-visible", Boolean(visible));
 }
 
-
 /* ========================== INIT ========================= */
 // Show password modal IMMEDIATELY (before heavy rendering)
 (async () => {
-  setAppInitLoading(true, "Đang khởi tạo dữ liệu...");
+  setAppInitLoading(true, "Chờ tôi chút nhé...");
   try {
     // Priority 1: Show password modal first (non-blocking)
     await initFirebaseServices();
-    
+
     // Priority 2: Heavy rendering tasks (after modal is ready)
     applyStoredToolboxState();
     initToolboxAutoCollapse();
@@ -3110,4 +3300,3 @@ function setAppInitLoading(visible, message) {
     setAppInitLoading(false);
   }
 })();
-

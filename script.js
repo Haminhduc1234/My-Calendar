@@ -2613,12 +2613,18 @@ updateClock();
 
 
 /* ========================== INIT ========================= */
-applyStoredToolboxState();
-initToolboxAutoCollapse();
-renderCalendar();
-renderToday();
-loadQuote();
-fetchWeatherByLocation();
-renderTodayLunar();
-initFirebaseServices();
+// Show password modal IMMEDIATELY (before heavy rendering)
+(async () => {
+  // Priority 1: Show password modal first (non-blocking)
+  await initFirebaseServices();
+  
+  // Priority 2: Heavy rendering tasks (after modal is ready)
+  applyStoredToolboxState();
+  initToolboxAutoCollapse();
+  renderCalendar();
+  renderToday();
+  loadQuote();
+  fetchWeatherByLocation();
+  renderTodayLunar();
+})();
 

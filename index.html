@@ -94,6 +94,12 @@
                         </svg>
                         <span class="fab-label">Thu Chi</span>
                     </button>
+                    <button class="quick-note-fab tool-btn glow" onclick="openQuickNoteModal()" aria-label="Mở ghi chú nhanh">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M5 3h10a2 2 0 0 1 2 2v2h2v14H5Zm2 4v12h10V5H7Zm2 3h6v1.8H9Zm0 3.4h6v1.8H9Z" />
+                        </svg>
+                        <span class="fab-label">Quick Note</span>
+                    </button>
                 </div>
             </div>
             <button id="toolboxToggle" class="toolbox-toggle" onclick="toggleToolbox()" aria-label="Thu gọn thanh công cụ" aria-expanded="true">
@@ -344,6 +350,20 @@
                     <button class="confirm-cancel-btn" onclick="closeCashflowDeleteConfirmModal()">Hủy</button>
                     <button class="confirm-delete-btn" onclick="confirmRemoveCashflowEntry()">Xóa</button>
                 </div>
+            </div>
+        </div>
+
+        <div id="quickNoteModal" class="modal">
+            <div class="quick-note-modal-content">
+                <button class="modal-close" onclick="closeQuickNoteModal()">×</button>
+                <h3>Quick Note</h3>
+
+                <div class="quick-note-form">
+                    <input type="text" id="quickNoteInput" maxlength="140" placeholder="Nhập việc cần làm..." />
+                    <button type="button" class="quick-note-add-btn" onclick="addQuickNote()">+ Thêm</button>
+                </div>
+
+                <div id="quickNoteList" class="quick-note-list"></div>
             </div>
         </div>
     </div>

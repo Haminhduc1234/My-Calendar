@@ -5,6 +5,7 @@ let selectedEventIndex = -1;
 let geoPromptRequestedThisLoad = false;
 const TOOLBOX_STATE_KEY = "quickToolboxState";
 const GEO_PROMPT_ASKED_KEY = "geoPromptAsked";
+const QUICK_NOTE_STORAGE_KEY_PREFIX = "quickNotesV1";
 const FIREBASE_EVENTS_PATH = self.FIREBASE_EVENTS_PATH || "calendarEvents";
 const FIREBASE_CLIENT_ID_KEY = "firebaseClientId";
 const FIREBASE_PROFILE_KEY_STORAGE = "calendarProfileKey";
@@ -1232,6 +1233,155 @@ function openGoldModal() {
 
 function closeGoldModal() {
   document.getElementById("goldModal").style.display = "none";
+}
+
+function getQuickNoteStorageKey() {
+  return userProfileKey
+    ? `${QUICK_NOTE_STORAGE_KEY_PREFIX}:${userProfileKey}`
+    : QUICK_NOTE_STORAGE_KEY_PREFIX;
+}
+
+function loadQuickNotes() {
+  const key = getQuickNoteStorageKey();
+  const raw = localStorage.getItem(key);
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((note) => ({
+        id: String(note?.id || "").trim(),
+        text: String(note?.text || "").trim(),
+        done: Boolean(note?.done),
+        createdAt: Number(note?.createdAt || Date.now())
+      }))
+      .filter((note) => note.id && note.text);
+  } catch {
+    return [];
+  }
+}
+
+function saveQuickNotes(notes) {
+  const normalized = Array.isArray(notes)
+    ? notes
+      .map((note) => ({
+        id: String(note?.id || "").trim(),
+        text: String(note?.text || "").trim(),
+        done: Boolean(note?.done),
+        createdAt: Number(note?.createdAt || Date.now())
+      }))
+      .filter((note) => note.id && note.text)
+    : [];
+
+  localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(normalized));
+}
+
+function escapeHtml(text) {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderQuickNotes() {
+  const listEl = document.getElementById("quickNoteList");
+  if (!listEl) return;
+
+  const notes = loadQuickNotes();
+  listEl.innerHTML = "";
+
+  if (notes.length === 0) {
+    listEl.innerHTML = '<div class="quick-note-empty">Chưa có ghi chú nào. Hãy thêm việc cần làm.</div>';
+    return;
+  }
+
+  notes.sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    return b.createdAt - a.createdAt;
+  });
+
+  listEl.innerHTML = notes.map((note) => {
+    return `
+      <div class="quick-note-item ${note.done ? "is-done" : ""}">
+        <input type="checkbox" ${note.done ? "checked" : ""} aria-label="Đánh dấu hoàn thành" onclick="toggleQuickNoteDone('${note.id}')">
+        <div class="quick-note-text">${escapeHtml(note.text)}</div>
+        <button type="button" class="quick-note-delete" onclick="deleteQuickNote('${note.id}')" aria-label="Xóa ghi chú">×</button>
+      </div>
+    `;
+  }).join("");
+}
+
+function openQuickNoteModal() {
+  renderQuickNotes();
+  document.getElementById("quickNoteModal").style.display = "flex";
+
+  const input = document.getElementById("quickNoteInput");
+  if (input) input.focus({ preventScroll: true });
+}
+
+function closeQuickNoteModal() {
+  document.getElementById("quickNoteModal").style.display = "none";
+}
+
+function addQuickNote() {
+  const input = document.getElementById("quickNoteInput");
+  if (!input) return;
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  const notes = loadQuickNotes();
+  notes.push({
+    id: `qn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    text,
+    done: false,
+    createdAt: Date.now()
+  });
+
+  saveQuickNotes(notes);
+  input.value = "";
+  renderQuickNotes();
+  input.focus({ preventScroll: true });
+}
+
+function toggleQuickNoteDone(noteId) {
+  const notes = loadQuickNotes();
+  const idx = notes.findIndex((note) => note.id === noteId);
+  if (idx < 0) return;
+
+  notes[idx].done = !notes[idx].done;
+  saveQuickNotes(notes);
+  renderQuickNotes();
+}
+
+function deleteQuickNote(noteId) {
+  const notes = loadQuickNotes().filter((note) => note.id !== noteId);
+  saveQuickNotes(notes);
+  renderQuickNotes();
+}
+
+function initQuickNoteModal() {
+  const modal = document.getElementById("quickNoteModal");
+  const input = document.getElementById("quickNoteInput");
+
+  if (modal) {
+    modal.addEventListener("click", function (e) {
+      if (e.target === this) closeQuickNoteModal();
+    });
+  }
+
+  if (input) {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        addQuickNote();
+      }
+    });
+  }
 }
 
 function toggleToolbox() {
@@ -2621,6 +2771,7 @@ updateClock();
   // Priority 2: Heavy rendering tasks (after modal is ready)
   applyStoredToolboxState();
   initToolboxAutoCollapse();
+  initQuickNoteModal();
   renderCalendar();
   renderToday();
   loadQuote();

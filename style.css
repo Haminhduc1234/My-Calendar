@@ -947,6 +947,41 @@ body {
     border-color: rgba(112, 224, 247, 0.32);
 }
 
+.quick-note-fab {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 194, 128, 0.5);
+    background: linear-gradient(145deg, #8a5a2f, #6b4320);
+    color: #fff6e8;
+    cursor: pointer;
+    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+    transition: transform 0.2s ease, filter 0.2s ease;
+    position: relative;
+    display: grid;
+    place-items: center;
+}
+
+.quick-note-fab svg {
+    width: 24px;
+    height: 24px;
+    fill: #ffe3bf;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.quick-note-fab:hover {
+    transform: translateY(-2px) scale(1.02);
+    filter: brightness(1.08);
+}
+
+.quick-note-fab.glow::before {
+    border-color: rgba(255, 203, 146, 0.58);
+}
+
+.quick-note-fab.glow::after {
+    border-color: rgba(255, 182, 108, 0.34);
+}
+
 .overtime-fab svg {
     width: 26px;
     height: 26px;
@@ -1468,7 +1503,8 @@ body {
 
 
     .gold-fab,
-    .income-fab {
+    .income-fab,
+    .quick-note-fab {
         width: 52px;
         height: 52px;
     }
@@ -1715,6 +1751,131 @@ body {
     filter: brightness(1.08);
 }
 
+/* ========================== QUICK NOTE ========================== */
+
+.quick-note-modal-content {
+    width: min(94vw, 520px);
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 32px);
+    border-radius: 18px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    background: linear-gradient(160deg, #0a1833, #0e2144);
+    box-shadow: 0 30px 44px rgba(0, 0, 0, 0.5);
+    animation: scaleIn 0.25s ease;
+    position: relative;
+    overflow-y: auto;
+}
+
+.quick-note-modal-content h3 {
+    margin: 0 0 12px;
+    color: #f4f8ff;
+}
+
+.quick-note-form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+#quickNoteInput {
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: rgba(6, 16, 34, 0.72);
+    color: var(--text);
+    padding: 9px 10px;
+    font: inherit;
+    outline: none;
+}
+
+#quickNoteInput::placeholder {
+    color: #89a1cd;
+}
+
+#quickNoteInput:focus {
+    border-color: rgba(190, 214, 255, 0.68);
+    box-shadow: 0 0 0 3px rgba(115, 162, 240, 0.2);
+}
+
+.quick-note-add-btn {
+    border-radius: 10px;
+    border: 1px solid rgba(255, 203, 146, 0.55);
+    background: linear-gradient(140deg, #8a5a2f, #6b4320);
+    color: #fff1dd;
+    font-weight: 700;
+    padding: 0 12px;
+    cursor: pointer;
+}
+
+.quick-note-add-btn:hover {
+    filter: brightness(1.1);
+}
+
+.quick-note-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: min(52vh, 420px);
+    overflow-y: auto;
+}
+
+.quick-note-empty {
+    border: 1px dashed rgba(183, 208, 255, 0.24);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    background: rgba(6, 16, 34, 0.45);
+}
+
+.quick-note-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(183, 208, 255, 0.2);
+    background: rgba(8, 20, 42, 0.62);
+}
+
+.quick-note-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: #68d79d;
+    cursor: pointer;
+}
+
+.quick-note-text {
+    font-size: 14px;
+    color: #e6f0ff;
+    word-break: break-word;
+}
+
+.quick-note-item.is-done .quick-note-text {
+    text-decoration: line-through;
+    color: #9fb2d1;
+}
+
+.quick-note-delete {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid rgba(244, 176, 176, 0.4);
+    background: rgba(113, 33, 33, 0.45);
+    color: #ffd6d6;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+}
+
+.quick-note-delete:hover {
+    filter: brightness(1.1);
+}
+
 .cashflow-summary-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1938,6 +2099,15 @@ body {
     .confirm-cancel-btn,
     .confirm-delete-btn {
         width: 100%;
+    }
+
+    .quick-note-form {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-note-add-btn {
+        width: 100%;
+        height: 38px;
     }
 
     .cashflow-row {

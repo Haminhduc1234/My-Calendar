@@ -100,6 +100,12 @@
                         </svg>
                         <span class="fab-label">Quick Note</span>
                     </button>
+                    <button class="music-fab tool-btn glow" onclick="openMyMusicModal()" aria-label="Mở trình phát nhạc">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M20 3v13.2a3.4 3.4 0 1 1-1.8-3V8.3L9.8 10v8.2a3.4 3.4 0 1 1-1.8-3V5.5z" />
+                        </svg>
+                        <span class="fab-label">My Music</span>
+                    </button>
                 </div>
             </div>
             <button id="toolboxToggle" class="toolbox-toggle" onclick="toggleToolbox()" aria-label="Thu gọn thanh công cụ" aria-expanded="true">
@@ -364,6 +370,43 @@
                 </div>
 
                 <div id="quickNoteList" class="quick-note-list"></div>
+            </div>
+        </div>
+
+        <div id="myMusicModal" class="modal">
+            <div class="my-music-modal-content">
+                <button class="modal-close" onclick="closeMyMusicModal()">×</button>
+                <div class="my-music-header">
+                    <h3>My Music</h3>
+                    <div class="my-music-track-meta">
+                        <div id="myMusicTitle" class="my-music-title">--</div>
+                        <div id="myMusicArtist" class="my-music-artist">--</div>
+                    </div>
+                </div>
+
+                <div class="my-music-disc-wrap">
+                    <div id="myMusicDisc" class="my-music-disc">
+                        <img id="myMusicCover" src="" alt="Album cover" />
+                    </div>
+                </div>
+
+                <div class="my-music-progress-wrap">
+                    <span id="myMusicCurrentTime" class="my-music-time">00:00</span>
+                    <input id="myMusicProgress" type="range" min="0" max="1000" value="0" step="1" aria-label="Tiến độ bài hát" />
+                    <span id="myMusicDuration" class="my-music-time">00:00</span>
+                </div>
+
+                <div class="my-music-controls">
+                    <button id="myMusicShuffleBtn" type="button" class="my-music-btn my-music-toggle-btn" onclick="toggleMyMusicShuffle()" aria-label="Phát ngẫu nhiên">⤮</button>
+                    <button type="button" class="my-music-btn" onclick="playPrevMusic()" aria-label="Bài trước">⏮</button>
+                    <button id="myMusicPlayBtn" type="button" class="my-music-btn my-music-play-btn" onclick="toggleMyMusicPlayPause()" aria-label="Phát hoặc tạm dừng">▶</button>
+                    <button type="button" class="my-music-btn" onclick="playNextMusic()" aria-label="Bài tiếp">⏭</button>
+                    <button id="myMusicRepeatOneBtn" type="button" class="my-music-btn my-music-toggle-btn" onclick="toggleMyMusicRepeatOne()" aria-label="Lặp lại một bài">1↻</button>
+                </div>
+
+                <div id="myMusicPlaylist" class="my-music-playlist"></div>
+
+                <audio id="myMusicAudio" preload="metadata"></audio>
             </div>
         </div>
     </div>

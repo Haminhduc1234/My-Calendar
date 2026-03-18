@@ -6,6 +6,7 @@ let geoPromptRequestedThisLoad = false;
 const TOOLBOX_STATE_KEY = "quickToolboxState";
 const GEO_PROMPT_ASKED_KEY = "geoPromptAsked";
 const QUICK_NOTE_STORAGE_KEY_PREFIX = "quickNotesV1";
+const MY_MUSIC_PREFS_KEY_PREFIX = "myMusicPrefsV1";
 const FIREBASE_EVENTS_PATH = self.FIREBASE_EVENTS_PATH || "calendarEvents";
 const FIREBASE_CLIENT_ID_KEY = "firebaseClientId";
 const FIREBASE_PROFILE_KEY_STORAGE = "calendarProfileKey";
@@ -1384,6 +1385,309 @@ function initQuickNoteModal() {
       }
     });
   }
+}
+
+const MY_MUSIC_TRACKS = [
+  {
+    title: "Night Drive",
+    artist: "SoundHelix",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    cover: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=640&q=80"
+  },
+  {
+    title: "Moonlight Street",
+    artist: "SoundHelix",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+    cover: "https://images.unsplash.com/photo-1461784180009-21121b2f204c?auto=format&fit=crop&w=640&q=80"
+  },
+  {
+    title: "City Lights",
+    artist: "SoundHelix",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+    cover: "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=640&q=80"
+  },
+  {
+    title: "Calm Waves",
+    artist: "SoundHelix",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+    cover: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=640&q=80"
+  }
+];
+
+const myMusicState = {
+  initialized: false,
+  index: 0,
+  shuffle: false,
+  repeatOne: false
+};
+
+function getMyMusicPrefsKey() {
+  return userProfileKey
+    ? `${MY_MUSIC_PREFS_KEY_PREFIX}:${userProfileKey}`
+    : MY_MUSIC_PREFS_KEY_PREFIX;
+}
+
+function loadMyMusicPrefs() {
+  const raw = localStorage.getItem(getMyMusicPrefsKey());
+  if (!raw) return { index: 0, shuffle: false, repeatOne: false };
+
+  try {
+    const parsed = JSON.parse(raw);
+    return {
+      index: Number.isFinite(Number(parsed?.index)) ? Number(parsed.index) : 0,
+      shuffle: Boolean(parsed?.shuffle),
+      repeatOne: Boolean(parsed?.repeatOne)
+    };
+  } catch {
+    return { index: 0, shuffle: false, repeatOne: false };
+  }
+}
+
+function saveMyMusicPrefs() {
+  localStorage.setItem(getMyMusicPrefsKey(), JSON.stringify({
+    index: myMusicState.index,
+    shuffle: myMusicState.shuffle,
+    repeatOne: myMusicState.repeatOne
+  }));
+}
+
+function formatMusicTime(seconds) {
+  const sec = Math.max(0, Math.floor(Number(seconds) || 0));
+  const m = Math.floor(sec / 60);
+  const s = String(sec % 60).padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function getMyMusicAudio() {
+  return document.getElementById("myMusicAudio");
+}
+
+function getTrackByIndex(index) {
+  const size = MY_MUSIC_TRACKS.length;
+  const safe = ((Number(index) || 0) % size + size) % size;
+  return { track: MY_MUSIC_TRACKS[safe], index: safe };
+}
+
+function renderMyMusicMeta() {
+  const { track, index } = getTrackByIndex(myMusicState.index);
+  myMusicState.index = index;
+
+  const titleEl = document.getElementById("myMusicTitle");
+  const artistEl = document.getElementById("myMusicArtist");
+  const coverEl = document.getElementById("myMusicCover");
+  const shuffleBtn = document.getElementById("myMusicShuffleBtn");
+  const repeatBtn = document.getElementById("myMusicRepeatOneBtn");
+
+  if (titleEl) titleEl.innerText = track.title;
+  if (artistEl) artistEl.innerText = track.artist;
+  if (coverEl) {
+    coverEl.src = track.cover;
+    coverEl.alt = `${track.title} cover`;
+  }
+
+  if (shuffleBtn) shuffleBtn.classList.toggle("is-active", myMusicState.shuffle);
+  if (repeatBtn) repeatBtn.classList.toggle("is-active", myMusicState.repeatOne);
+  renderMyMusicPlaylist();
+}
+
+function renderMyMusicPlaylist() {
+  const listEl = document.getElementById("myMusicPlaylist");
+  const audio = getMyMusicAudio();
+  if (!listEl) return;
+
+  const activeIndex = getTrackByIndex(myMusicState.index).index;
+  const isPlaying = Boolean(audio && !audio.paused);
+
+  listEl.innerHTML = MY_MUSIC_TRACKS.map((track, idx) => {
+    const isActive = idx === activeIndex;
+    const status = isActive ? (isPlaying ? "Playing" : "Ready") : "";
+    return `
+      <button type="button" class="my-music-track-item ${isActive ? "is-active" : ""} ${isActive && isPlaying ? "is-playing" : ""}" onclick="selectMyMusicTrack(${idx})" aria-label="Phát bài ${escapeHtml(track.title)}">
+        <span class="my-music-track-index">${String(idx + 1).padStart(2, "0")}</span>
+        <span class="my-music-track-text">
+          <span class="my-music-track-name">${escapeHtml(track.title)}</span>
+          <span class="my-music-track-artist">${escapeHtml(track.artist)}</span>
+        </span>
+        <span class="my-music-track-status">${status}</span>
+      </button>
+    `;
+  }).join("");
+}
+
+function selectMyMusicTrack(index) {
+  const safeIndex = getTrackByIndex(index).index;
+  loadMyMusicTrack(safeIndex, true);
+}
+
+function setMyMusicPlayUI(isPlaying) {
+  const playBtn = document.getElementById("myMusicPlayBtn");
+  const disc = document.getElementById("myMusicDisc");
+  if (playBtn) playBtn.innerText = isPlaying ? "❚❚" : "▶";
+  if (disc) disc.classList.toggle("is-spinning", isPlaying);
+  renderMyMusicPlaylist();
+}
+
+function syncMyMusicProgress() {
+  const audio = getMyMusicAudio();
+  const progress = document.getElementById("myMusicProgress");
+  const currentEl = document.getElementById("myMusicCurrentTime");
+  const durationEl = document.getElementById("myMusicDuration");
+  if (!audio || !progress || !currentEl || !durationEl) return;
+
+  const duration = Number(audio.duration);
+  const current = Number(audio.currentTime || 0);
+
+  if (Number.isFinite(duration) && duration > 0) {
+    progress.value = String(Math.floor((current / duration) * 1000));
+    durationEl.innerText = formatMusicTime(duration);
+  } else {
+    progress.value = "0";
+    durationEl.innerText = "0:00";
+  }
+
+  currentEl.innerText = formatMusicTime(current);
+}
+
+function loadMyMusicTrack(index, shouldPlay = false) {
+  const audio = getMyMusicAudio();
+  if (!audio) return;
+
+  const { track, index: safeIndex } = getTrackByIndex(index);
+  myMusicState.index = safeIndex;
+  renderMyMusicMeta();
+
+  if (audio.src !== track.src) {
+    audio.src = track.src;
+    audio.load();
+  }
+
+  syncMyMusicProgress();
+  saveMyMusicPrefs();
+
+  if (shouldPlay) {
+    audio.play().catch(() => {
+      setMyMusicPlayUI(false);
+    });
+  } else {
+    setMyMusicPlayUI(!audio.paused);
+  }
+}
+
+function pickRandomTrackIndex(exceptIndex) {
+  const size = MY_MUSIC_TRACKS.length;
+  if (size <= 1) return 0;
+
+  let idx = exceptIndex;
+  while (idx === exceptIndex) {
+    idx = Math.floor(Math.random() * size);
+  }
+  return idx;
+}
+
+function openMyMusicModal() {
+  const modal = document.getElementById("myMusicModal");
+  if (!modal) return;
+
+  if (!myMusicState.initialized) {
+    initMyMusicPlayer();
+  }
+
+  modal.style.display = "flex";
+  syncMyMusicProgress();
+}
+
+function closeMyMusicModal() {
+  const modal = document.getElementById("myMusicModal");
+  // Intentionally keep audio playing when closing modal.
+  if (modal) modal.style.display = "none";
+}
+
+function toggleMyMusicPlayPause() {
+  const audio = getMyMusicAudio();
+  if (!audio) return;
+
+  if (!audio.src) {
+    loadMyMusicTrack(myMusicState.index, true);
+    return;
+  }
+
+  if (audio.paused) {
+    audio.play().catch(() => {
+      setMyMusicPlayUI(false);
+    });
+  } else {
+    audio.pause();
+  }
+}
+
+function playNextMusic() {
+  const nextIndex = myMusicState.shuffle
+    ? pickRandomTrackIndex(myMusicState.index)
+    : myMusicState.index + 1;
+  loadMyMusicTrack(nextIndex, true);
+}
+
+function playPrevMusic() {
+  const prevIndex = myMusicState.shuffle
+    ? pickRandomTrackIndex(myMusicState.index)
+    : myMusicState.index - 1;
+  loadMyMusicTrack(prevIndex, true);
+}
+
+function toggleMyMusicShuffle() {
+  myMusicState.shuffle = !myMusicState.shuffle;
+  renderMyMusicMeta();
+  saveMyMusicPrefs();
+}
+
+function toggleMyMusicRepeatOne() {
+  myMusicState.repeatOne = !myMusicState.repeatOne;
+  renderMyMusicMeta();
+  saveMyMusicPrefs();
+}
+
+function initMyMusicPlayer() {
+  const modal = document.getElementById("myMusicModal");
+  const audio = getMyMusicAudio();
+  const progress = document.getElementById("myMusicProgress");
+  if (!modal || !audio || !progress) return;
+
+  if (myMusicState.initialized) return;
+
+  const prefs = loadMyMusicPrefs();
+  myMusicState.index = prefs.index;
+  myMusicState.shuffle = prefs.shuffle;
+  myMusicState.repeatOne = prefs.repeatOne;
+
+  audio.addEventListener("play", () => setMyMusicPlayUI(true));
+  audio.addEventListener("pause", () => setMyMusicPlayUI(false));
+  audio.addEventListener("timeupdate", syncMyMusicProgress);
+  audio.addEventListener("loadedmetadata", syncMyMusicProgress);
+  audio.addEventListener("ended", () => {
+    if (myMusicState.repeatOne) {
+      audio.currentTime = 0;
+      audio.play().catch(() => {
+        setMyMusicPlayUI(false);
+      });
+      return;
+    }
+    playNextMusic();
+  });
+
+  progress.addEventListener("input", () => {
+    const duration = Number(audio.duration);
+    if (!Number.isFinite(duration) || duration <= 0) return;
+    const nextTime = (Number(progress.value) / 1000) * duration;
+    audio.currentTime = nextTime;
+    syncMyMusicProgress();
+  });
+
+  modal.addEventListener("click", function (e) {
+    if (e.target === this) closeMyMusicModal();
+  });
+
+  loadMyMusicTrack(myMusicState.index, false);
+  myMusicState.initialized = true;
 }
 
 function toggleToolbox() {
@@ -2774,6 +3078,7 @@ updateClock();
   applyStoredToolboxState();
   initToolboxAutoCollapse();
   initQuickNoteModal();
+  initMyMusicPlayer();
   renderCalendar();
   renderToday();
   loadQuote();

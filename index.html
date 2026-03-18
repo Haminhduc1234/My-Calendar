@@ -412,11 +412,21 @@
                 </div>
 
                 <div class="my-music-controls">
-                    <button id="myMusicShuffleBtn" type="button" class="my-music-btn my-music-toggle-btn" onclick="toggleMyMusicShuffle()" aria-label="Phát ngẫu nhiên">⤮</button>
-                    <button type="button" class="my-music-btn" onclick="playPrevMusic()" aria-label="Bài trước">⏮</button>
-                    <button id="myMusicPlayBtn" type="button" class="my-music-btn my-music-play-btn" onclick="toggleMyMusicPlayPause()" aria-label="Phát hoặc tạm dừng">▶</button>
-                    <button type="button" class="my-music-btn" onclick="playNextMusic()" aria-label="Bài tiếp">⏭</button>
-                    <button id="myMusicRepeatOneBtn" type="button" class="my-music-btn my-music-toggle-btn" onclick="toggleMyMusicRepeatOne()" aria-label="Lặp lại một bài">1↻</button>
+                    <button id="myMusicShuffleBtn" type="button" class="my-music-btn my-music-toggle-btn" onclick="toggleMyMusicShuffle()" aria-label="Phát ngẫu nhiên">
+                        <img class="my-music-btn-icon" src="public/random.png" alt="" aria-hidden="true" />
+                    </button>
+                    <button type="button" class="my-music-btn" onclick="playPrevMusic()" aria-label="Bài trước">
+                        <img class="my-music-btn-icon is-prev" src="public/next.png" alt="" aria-hidden="true" />
+                    </button>
+                    <button id="myMusicPlayBtn" type="button" class="my-music-btn my-music-play-btn" onclick="toggleMyMusicPlayPause()" aria-label="Phát hoặc tạm dừng">
+                        <img id="myMusicPlayIcon" class="my-music-btn-icon my-music-play-icon" src="public/ui.png" alt="" aria-hidden="true" />
+                    </button>
+                    <button type="button" class="my-music-btn" onclick="playNextMusic()" aria-label="Bài tiếp">
+                        <img class="my-music-btn-icon" src="public/next.png" alt="" aria-hidden="true" />
+                    </button>
+                    <button id="myMusicRepeatOneBtn" type="button" class="my-music-btn my-music-toggle-btn" onclick="toggleMyMusicRepeatOne()" aria-label="Lặp lại một bài">
+                        <img class="my-music-btn-icon" src="public/play-again.png" alt="" aria-hidden="true" />
+                    </button>
                 </div>
 
                 <div id="myMusicPlaylist" class="my-music-playlist"></div>

@@ -2208,13 +2208,8 @@ body {
     min-width: 42px;
     height: 42px;
     border-radius: 50%;
-    border: 1px solid rgba(204, 173, 255, 0.42);
-    background: rgba(28, 22, 56, 0.84);
-    color: #f6eeff;
-    font-size: 16px;
-    font-family: "Segoe UI Symbol", "Noto Sans Symbols2", "Be Vietnam Pro", sans-serif;
-    font-weight: 700;
-    line-height: 1;
+    border: 1px solid rgba(224, 198, 255, 0.64);
+    background: linear-gradient(140deg, #7648b3, #58308e);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2232,19 +2227,39 @@ body {
 .my-music-play-btn {
     width: 56px;
     height: 56px;
-    font-size: 24px;
     background: linear-gradient(140deg, #7648b3, #58308e);
     border-color: rgba(224, 198, 255, 0.64);
 }
 
-#myMusicPlayBtn {
-    letter-spacing: -1px;
+.my-music-toggle-btn {
+    opacity: 0.5;
+    filter: saturate(0.8);
+}
+
+.my-music-btn-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    display: block;
+    filter: brightness(0) invert(1);
+    pointer-events: none;
+    user-select: none;
+}
+
+.my-music-btn-icon.is-prev {
+    transform: rotate(180deg);
+}
+
+.my-music-play-icon {
+    width: 24px;
+    height: 24px;
 }
 
 .my-music-toggle-btn.is-active {
-    background: linear-gradient(140deg, #6f40aa, #4c2d7a);
-    border-color: rgba(229, 209, 255, 0.78);
-    color: #ffffff;
+    opacity: 1;
+    filter: none;
+    background: linear-gradient(140deg, #8c5fd0, #6a3faa);
+    border-color: rgba(245, 231, 255, 0.9);
 }
 
 #myMusicAudio {

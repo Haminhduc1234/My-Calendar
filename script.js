@@ -1575,8 +1575,10 @@ function selectMyMusicTrack(index) {
 
 function setMyMusicPlayUI(isPlaying) {
   const playBtn = document.getElementById("myMusicPlayBtn");
+  const playIcon = document.getElementById("myMusicPlayIcon");
   const disc = document.getElementById("myMusicDisc");
-  if (playBtn) playBtn.innerText = isPlaying ? "❚❚" : "▶";
+  if (playBtn) playBtn.setAttribute("aria-label", isPlaying ? "Tạm dừng" : "Phát");
+  if (playIcon) playIcon.src = isPlaying ? "public/pause.png" : "public/ui.png";
   if (disc) disc.classList.toggle("is-spinning", isPlaying);
   renderMyMusicPlaylist();
 }

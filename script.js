@@ -969,17 +969,18 @@ async function ensureFirebaseAuth() {
 
 
 async function initFirebaseRealtime() {
+
+    // Hiển thị PIN ngay để người dùng nhập mà không phải chờ auth Firebase.
+  if (!await ensureProfileKey()) {
+    alert("Bạn cần nhập mật khẩu đồng bộ để sử dụng dữ liệu đa thiết bị.");
+    return;
+  }
+
   if (!window.firebase || !window.firebase.apps) return;
   if (!isFirebaseConfigReady()) return;
 
   if (!window.firebase.apps.length) {
     window.firebase.initializeApp(FIREBASE_CONFIG);
-  }
-
-  // Hiển thị PIN ngay để người dùng nhập mà không phải chờ auth Firebase.
-  if (!await ensureProfileKey()) {
-    alert("Bạn cần nhập mật khẩu đồng bộ để sử dụng dữ liệu đa thiết bị.");
-    return;
   }
 
   const signedIn = await ensureFirebaseAuth();

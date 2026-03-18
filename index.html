@@ -27,9 +27,21 @@
 <body>
     <div id="appInitLoading" class="app-init-loading" aria-live="polite" aria-busy="true">
         <div class="app-init-loading-card">
+            <div class="app-init-loading-hero" aria-hidden="true">
+                <span class="app-init-hero-ring ring-a"></span>
+                <span class="app-init-hero-ring ring-b"></span>
+                <span class="app-init-hero-spark spark-a"></span>
+                <span class="app-init-hero-spark spark-b"></span>
+                <span class="app-init-hero-spark spark-c"></span>
+                <div class="app-init-hero-core">
+                    <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                        <path d="M7 3.8v2.1M17 3.8v2.1M5.6 7.3h12.8M6.8 5.6h10.4A1.8 1.8 0 0 1 19 7.4v9.8a1.8 1.8 0 0 1-1.8 1.8H6.8A1.8 1.8 0 0 1 5 17.2V7.4a1.8 1.8 0 0 1 1.8-1.8Zm1.8 4.2h2.6v2.6H8.6Zm4.1 0h2.6v2.6h-2.6Zm-4.1 4.1h6.7" />
+                    </svg>
+                </div>
+            </div>
             <div class="app-init-loading-head">
                 <span class="app-init-dot" aria-hidden="true"></span>
-                <div id="appInitLoadingText" class="app-init-loading-text">Đang khởi tạo dữ liệu...</div>
+                <div id="appInitLoadingText" class="app-init-loading-text">Vui lòng chờ chút nhé...</div>
             </div>
             <div class="app-init-skeleton" aria-hidden="true">
                 <span class="app-init-skeleton-line w-95"></span>

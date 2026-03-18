@@ -56,31 +56,132 @@ body {
 }
 
 .app-init-loading-card {
-    width: min(90vw, 360px);
-    border-radius: 16px;
-    padding: 14px;
-    border: 1px solid rgba(183, 208, 255, 0.24);
-    background: linear-gradient(155deg, rgba(11, 25, 52, 0.96), rgba(9, 21, 44, 0.96));
-    box-shadow: 0 18px 34px rgba(0, 0, 0, 0.42);
+    width: min(92vw, 440px);
+    border-radius: 28px;
+    padding: 28px 24px 22px;
+    border: 1px solid rgba(183, 208, 255, 0.28);
+    background:
+        radial-gradient(circle at top, rgba(124, 170, 255, 0.18), transparent 42%),
+        linear-gradient(155deg, rgba(11, 25, 52, 0.98), rgba(9, 21, 44, 0.98));
+    box-shadow: 0 24px 52px rgba(0, 0, 0, 0.46);
+    overflow: hidden;
+}
+
+.app-init-loading-hero {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 132px;
+    height: 132px;
+    margin: 0 auto 18px;
+}
+
+.app-init-hero-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(161, 196, 255, 0.28);
+}
+
+.app-init-hero-ring.ring-a {
+    animation: appInitSpin 8s linear infinite;
+}
+
+.app-init-hero-ring.ring-b {
+    inset: 12px;
+    border-style: dashed;
+    border-color: rgba(132, 180, 255, 0.34);
+    animation: appInitSpinReverse 6s linear infinite;
+}
+
+.app-init-hero-core {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    width: 76px;
+    height: 76px;
+    border-radius: 24px;
+    background: linear-gradient(160deg, rgba(126, 177, 255, 0.28), rgba(66, 109, 190, 0.34));
+    border: 1px solid rgba(198, 220, 255, 0.28);
+    box-shadow:
+        0 16px 32px rgba(12, 28, 56, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+    animation: appInitFloat 2.2s ease-in-out infinite;
+}
+
+.app-init-hero-core::before {
+    content: "";
+    position: absolute;
+    inset: -12px;
+    border-radius: 28px;
+    background: radial-gradient(circle, rgba(110, 160, 248, 0.34), transparent 68%);
+    z-index: -1;
+    animation: appInitGlow 1.8s ease-in-out infinite;
+}
+
+.app-init-hero-core svg {
+    width: 38px;
+    height: 38px;
+    stroke: #f4f8ff;
+    stroke-width: 1.75;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 4px 10px rgba(10, 18, 34, 0.28));
+}
+
+.app-init-hero-spark {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f7fbff, #89b5ff);
+    box-shadow: 0 0 18px rgba(127, 178, 255, 0.6);
+}
+
+.app-init-hero-spark.spark-a {
+    top: 10px;
+    right: 18px;
+    animation: appInitSpark 2.4s ease-in-out infinite;
+}
+
+.app-init-hero-spark.spark-b {
+    bottom: 20px;
+    left: 10px;
+    width: 8px;
+    height: 8px;
+    animation: appInitSpark 2.1s ease-in-out infinite 0.35s;
+}
+
+.app-init-hero-spark.spark-c {
+    bottom: 8px;
+    right: 28px;
+    width: 6px;
+    height: 6px;
+    animation: appInitSpark 2.8s ease-in-out infinite 0.55s;
 }
 
 .app-init-loading-head {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
 .app-init-loading-text {
-    font-size: 13px;
-    font-weight: 600;
-    color: #d6e5ff;
-    letter-spacing: 0.2px;
+    font-size: 17px;
+    font-weight: 700;
+    color: #e9f2ff;
+    letter-spacing: 0.25px;
+    text-align: center;
 }
 
 .app-init-dot {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background: #8db8ff;
     box-shadow: 0 0 0 0 rgba(141, 184, 255, 0.7);
@@ -91,11 +192,11 @@ body {
 .app-init-skeleton {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .app-init-skeleton-line {
-    height: 10px;
+    height: 12px;
     border-radius: 999px;
     background:
         linear-gradient(100deg, rgba(148, 175, 224, 0.16) 20%, rgba(186, 210, 255, 0.38) 40%, rgba(148, 175, 224, 0.16) 60%),
@@ -1629,9 +1730,93 @@ body {
     }
 }
 
+@keyframes appInitSpin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes appInitSpinReverse {
+    from {
+        transform: rotate(360deg);
+    }
+
+    to {
+        transform: rotate(0deg);
+    }
+}
+
+@keyframes appInitFloat {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes appInitGlow {
+    0%,
+    100% {
+        opacity: 0.6;
+        transform: scale(0.96);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.06);
+    }
+}
+
+@keyframes appInitSpark {
+    0%,
+    100% {
+        transform: scale(0.9);
+        opacity: 0.55;
+    }
+
+    50% {
+        transform: scale(1.25);
+        opacity: 1;
+    }
+}
+
 @media (max-width: 540px) {
     body {
         padding: 14px 8px 10px;
+    }
+
+    .app-init-loading-card {
+        width: min(94vw, 380px);
+        padding: 24px 18px 18px;
+        border-radius: 24px;
+    }
+
+    .app-init-loading-hero {
+        width: 112px;
+        height: 112px;
+        margin-bottom: 16px;
+    }
+
+    .app-init-hero-core {
+        width: 68px;
+        height: 68px;
+        border-radius: 20px;
+    }
+
+    .app-init-hero-core svg {
+        width: 34px;
+        height: 34px;
+    }
+
+    .app-init-loading-text {
+        font-size: 15px;
     }
 
     .today-panel,

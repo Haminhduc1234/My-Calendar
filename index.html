@@ -46,6 +46,8 @@
             </div>
         </div>
 
+        <div id="todayEvents" class="today-events-panel" style="display:none;"></div>
+
         <div class="calendar-container">
             <div class="header">
                 <button onclick="changeMonth(-1)">◀</button>
@@ -106,45 +108,77 @@
             <div id="map"></div>
 
         </div> -->
-        <!-- MODAL -->
-        <div id="eventModal" class="modal">
+        <!-- MODALS -->
+
+        <!-- Password Modal - shown every time page loads -->
+        <div id="passwordModal" class="modal" style="display:flex; z-index:1000;">
+            <div class="modal-content password-modal-box">
+                <h3>🔐 Nhập mã PIN</h3>
+                <p class="password-modal-desc">Nhập 6 chữ số để truy cập dữ liệu.<br>Mỗi mã PIN là một tài khoản riêng.</p>
+                <div class="otp-group">
+                    <input class="otp-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+                    <input class="otp-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+                    <input class="otp-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+                    <input class="otp-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+                    <input class="otp-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+                    <input class="otp-input" type="password" inputmode="numeric" maxlength="1" autocomplete="off" />
+                </div>
+                <div id="passwordError" class="password-error">Vui lòng nhập đủ 6 chữ số.</div>
+            </div>
+        </div>
+
+        <!-- Day Details Modal - shows events list and overtime editor -->
+        <div id="dayDetailsModal" class="modal">
             <div class="modal-content">
-                <button class="modal-close" onclick="closeModal()">×</button>
+                <button class="modal-close" onclick="closeDayDetailsModal()">×</button>
+                <h3>Danh sách sự kiện</h3>
+                <div class="date-label" id="dayDetailsDate"></div>
 
-                <h3>Thêm sự kiện</h3>
-                <div class="date-label" id="selectedDate"></div>
-
-                <div class="event-form-grid">
-                    <label class="field-label" for="eventTitle">Tiêu đề</label>
-                    <input id="eventTitle" type="text" maxlength="80" placeholder="Ví dụ: Họp dự án" />
-
-                    <label class="field-label" for="eventText">Nội dung</label>
-                    <textarea id="eventText" placeholder="Nhập nội dung..."></textarea>
-
-                    <label class="checkbox-row" for="eventHasOvertime">
-                        <input id="eventHasOvertime" type="checkbox" />
-                        <span>Có tăng ca</span>
-                    </label>
-
-                    <div class="ot-inline" id="overtimeInputWrap">
-                        <label class="field-label" for="eventOvertimeHours">Giờ tăng ca</label>
-                        <input id="eventOvertimeHours" type="number" min="0" step="1" inputmode="numeric" placeholder="VD: 3" />
+                <div class="day-details-content">
+                    <div class="events-section">
+                        <div class="section-header">
+                            <h4>Sự kiện của ngày</h4>
+                            <button class="btn-add-event" onclick="openAddEventModalFromDayDetails()">+ Thêm</button>
+                        </div>
+                        <div class="events-list" id="dayEventsList"></div>
                     </div>
 
-                    <label class="checkbox-row" for="eventRealtimeNotify">
-                        <input id="eventRealtimeNotify" type="checkbox" checked />
-                        <span>Bắn thông báo realtime</span>
-                    </label>
-
-                    <div class="notify-inline" id="notifyInputWrap">
-                        <label class="field-label" for="eventNotifyAt">Giờ thông báo sự kiện</label>
-                        <input id="eventNotifyAt" type="datetime-local" />
+                    <div class="overtime-section">
+                        <label class="field-label" for="dayOvertimeHours">Giờ tăng ca hôm nay</label>
+                        <div class="overtime-input-group">
+                            <input id="dayOvertimeHours" type="number" min="0" step="1" inputmode="numeric" placeholder="VD: 3" />
+                            <button class="btn-save-ot" onclick="saveDayOvertime()">Lưu</button>
+                        </div>
                     </div>
                 </div>
 
                 <div class="modal-actions">
-                    <button id="saveBtn" onclick="saveEvent()">Lưu</button>
-                    <button id="closeBtn" onclick="closeModal()">Đóng</button>
+                    <button onclick="closeDayDetailsModal()">Đóng</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Event Modal - for creating new event -->
+        <div id="addEventModal" class="modal">
+            <div class="modal-content">
+                <button class="modal-close" onclick="closeAddEventModal()">×</button>
+                <h3 id="addEventModalTitle">Thêm sự kiện</h3>
+                <div class="date-label" id="addEventDate"></div>
+
+                <div class="event-form-grid">
+                    <label class="field-label" for="newEventTitle">Tiêu đề</label>
+                    <input id="newEventTitle" type="text" maxlength="80" placeholder="Ví dụ: Họp dự án" />
+
+                    <label class="field-label" for="newEventText">Nội dung</label>
+                    <textarea id="newEventText" placeholder="Nhập nội dung..."></textarea>
+
+                    <label class="field-label" for="newEventDateTime">Ngày/Giờ</label>
+                    <input id="newEventDateTime" type="datetime-local" />
+                </div>
+
+                <div class="modal-actions">
+                    <button id="saveEventBtn" onclick="saveNewEvent()">Lưu</button>
+                    <button id="closeEventBtn" onclick="closeAddEventModal()">Đóng</button>
                 </div>
             </div>
         </div>
@@ -230,16 +264,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
-    <script>
-        window.firebaseMessagingBootstrap = {
-            registrationPromise: null
-        };
-
-        if ('serviceWorker' in navigator) {
-            window.firebaseMessagingBootstrap.registrationPromise = navigator.serviceWorker.register('./firebase-messaging-sw.js');
-        }
-    </script>
     <script src="script.js"></script>
     <!-- <script src="MapSearch.js"></script> -->
 
@@ -250,6 +274,13 @@
             resultsId: "searchResults"
         });
     </script> -->
+
+  <div id="cloudSyncedBadge">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7ec8a4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    Cloud synced
+  </div>
 </body>
 
 </html>

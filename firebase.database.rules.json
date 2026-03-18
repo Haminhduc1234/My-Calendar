@@ -3,10 +3,21 @@
     ".read": false,
     ".write": false,
     "calendarEvents": {
-      "$eventId": {
+      "$profileKey": {
         ".read": "auth != null",
         ".write": "auth != null",
-        ".validate": "newData.hasChildren(['date','title','text','overtimeHours','createdAt','senderId','notifyAt','notifyAtMs']) && newData.child('date').isString() && newData.child('date').val().matches(/^\\d{4}-\\d{1,2}-\\d{1,2}$/) && newData.child('title').isString() && newData.child('title').val().length <= 80 && newData.child('text').isString() && newData.child('text').val().length <= 2000 && newData.child('overtimeHours').isNumber() && newData.child('overtimeHours').val() >= 0 && newData.child('overtimeHours').val() <= 24 && newData.child('createdAt').isNumber() && newData.child('createdAt').val() <= now + 60000 && newData.child('senderId').isString() && newData.child('senderId').val() === auth.uid && newData.child('notifyAt').isString() && newData.child('notifyAt').val().length >= 16 && newData.child('notifyAtMs').isNumber() && newData.child('notifyAtMs').val() > now - 86400000"
+        "dates": {
+          "$dateKey": {
+            ".read": "auth != null",
+            ".write": "auth != null",
+            ".validate": "$dateKey.matches(/^\\d{4}-\\d{1,2}-\\d{1,2}$/) && newData.hasChildren(['__type','overtimeHours','updatedAt']) && newData.child('__type').isString() && newData.child('__type').val() === 'date_data' && newData.child('overtimeHours').isNumber() && newData.child('overtimeHours').val() >= 0 && newData.child('overtimeHours').val() <= 24 && newData.child('updatedAt').isNumber() && (!newData.child('pKey').exists() || newData.child('pKey').isString())",
+            "events": {
+              "$idx": {
+                ".validate": "newData.hasChildren(['title','text','eventDateTime','createdAt']) && newData.child('title').isString() && newData.child('title').val().length <= 80 && newData.child('text').isString() && newData.child('text').val().length <= 2000 && newData.child('eventDateTime').isString() && newData.child('eventDateTime').val().length <= 40 && newData.child('createdAt').isNumber() && (!newData.child('updatedAt').exists() || newData.child('updatedAt').isNumber())"
+              }
+            }
+          }
+        }
       }
     },
     "notificationTokens": {

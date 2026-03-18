@@ -1,21 +1,23 @@
 /* ========================== CẤU HÌNH ========================== */
 let currentDate = new Date();
 let selectedKey = "";
+let selectedEventIndex = -1;
 let geoPromptRequestedThisLoad = false;
 const TOOLBOX_STATE_KEY = "quickToolboxState";
 const GEO_PROMPT_ASKED_KEY = "geoPromptAsked";
 const FIREBASE_EVENTS_PATH = self.FIREBASE_EVENTS_PATH || "calendarEvents";
-const FIREBASE_TOKEN_PATH = self.FIREBASE_TOKEN_PATH || "notificationTokens";
 const FIREBASE_CLIENT_ID_KEY = "firebaseClientId";
+const FIREBASE_PROFILE_KEY_STORAGE = "calendarProfileKey";
+const LEGACY_MIGRATION_FLAG_PREFIX = "calendarLegacyMigrated:";
 const FIREBASE_CONFIG = self.FIREBASE_WEB_CONFIG || {};
-const FIREBASE_WEB_PUSH_VAPID_KEY = self.FIREBASE_WEB_PUSH_VAPID_KEY || "";
 
 let firebaseDb = null;
-let firebaseEventsRef = null;
+let firebaseDatesRef = null;
 let firebaseReady = false;
 let firebaseAuth = null;
-let firebaseMessaging = null;
-const scheduledNotifyTimers = new Map();
+let userProfileKey = "";
+let dateDataCache = {};
+let syncWriteErrorShown = false;
 
 // Lễ dương lịch
 const SOLAR_HOLIDAYS = {
@@ -170,9 +172,43 @@ function convertSolarToLunar(dd, mm, yy) {
 }
 
 /* ========================== RENDER CALENDAR ========================== */
+function renderTodayEvents() {
+  const today = new Date();
+  const key = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+  const events = getEventsForDate(key);
+  const panel = document.getElementById("todayEvents");
+  if (!panel) return;
+
+  if (events.length === 0) {
+    panel.style.display = "none";
+    return;
+  }
+
+  panel.style.display = "block";
+  panel.innerHTML = `
+    <div class="today-events-header">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      Sự kiện hôm nay
+    </div>
+    <div class="today-events-list">${events.map(ev => {
+      const timeStr = ev.eventDateTime
+        ? new Date(ev.eventDateTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+        : '';
+      return `<div class="today-event-item">
+        ${ timeStr ? `<span class="today-event-time">${timeStr}</span>` : '' }
+        <span class="today-event-title">${ev.title || '(Không có tiêu đề)'}</span>
+        ${ ev.text ? `<span class="today-event-text">${ev.text}</span>` : '' }
+      </div>`;
+    }).join('')}</div>
+  `;
+}
+
 function renderCalendar() {
   const calDom = document.getElementById("calendar");
   calDom.innerHTML = "";
+  renderTodayEvents();
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -199,8 +235,9 @@ function renderCalendar() {
     const lunar = convertSolarToLunar(d, m, y);
     const key = `${y}-${m}-${d}`;
 
-    if (cellDate.getTime() === today.getTime()) div.classList.add("today");
-    if (localStorage.getItem(key)) div.classList.add("has-event");
+  if (cellDate.getTime() === today.getTime()) div.classList.add("today");
+    if (getEventsForDate(key).length > 0) div.classList.add("has-event");
+      if (getOvertimeHoursForDateKey(key) > 0) div.classList.add("has-overtime");
     if (SOLAR_HOLIDAYS[`${d}-${m}`] || LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`])
       div.classList.add("holiday");
     let holidayName = "";
@@ -242,6 +279,303 @@ function parseLegacyOvertimeHours(raw) {
   return Number.isFinite(hours) && hours > 0 ? hours : 0;
 }
 
+/* ====== ĐỘC GHI DỮ LIỆU NGÀY (Hỗ trợ nhiều sự kiện) ====== */
+function normalizeDateData(raw) {
+  const payload = raw || {};
+  const rawEvents = Array.isArray(payload.events)
+    ? payload.events
+    : (payload.events && typeof payload.events === "object"
+      ? Object.keys(payload.events)
+        .sort((a, b) => Number(a) - Number(b))
+        .map((key) => payload.events[key])
+      : []);
+
+  const events = rawEvents.map((event) => ({
+    title: String(event?.title || "").trim(),
+    text: String(event?.text || "").trim(),
+    eventDateTime: String(event?.eventDateTime || ""),
+    createdAt: Number(event?.createdAt || Date.now()),
+    updatedAt: Number(event?.updatedAt || 0)
+  }));
+
+  return {
+    events,
+    overtimeHours: Math.max(0, parseInt(payload.overtimeHours, 10) || 0),
+    updatedAt: Number(payload.updatedAt || Date.now())
+  };
+}
+
+function getAllDateKeysFromCache() {
+  return Object.keys(dateDataCache).filter(isDateKey);
+}
+
+function hashProfilePassword(password) {
+  let hash = 2166136261;
+  for (let i = 0; i < password.length; i++) {
+    hash ^= password.charCodeAt(i);
+    hash +=
+      (hash << 1) +
+      (hash << 4) +
+      (hash << 7) +
+      (hash << 8) +
+      (hash << 24);
+  }
+  return `u_${(hash >>> 0).toString(16).padStart(8, "0")}`;
+}
+
+function ensureProfileKey() {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("passwordModal");
+    const inputs = Array.from(document.querySelectorAll(".otp-input"));
+    const errorEl = document.getElementById("passwordError");
+
+    modal.style.display = "flex";
+    inputs.forEach((inp) => (inp.value = ""));
+    errorEl.style.display = "none";
+    setTimeout(() => inputs[0].focus(), 50);
+
+    function getOtpValue() {
+      return inputs.map((inp) => inp.value).join("");
+    }
+
+    function cleanup() {
+      inputs.forEach((inp) => {
+        inp.removeEventListener("keydown", onKeydown);
+        inp.removeEventListener("input", onInput);
+        inp.removeEventListener("focus", onFocus);
+        inp.removeEventListener("paste", onPaste);
+      });
+    }
+
+    function doSubmit() {
+      const value = getOtpValue();
+      if (value.length < 6) {
+        errorEl.style.display = "block";
+        inputs[value.length] && inputs[value.length].focus();
+        return;
+      }
+      errorEl.style.display = "none";
+      userProfileKey = hashProfilePassword(value);
+      if (!localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE)) {
+        localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, userProfileKey);
+      }
+      modal.style.display = "none";
+      cleanup();
+      resolve(true);
+    }
+
+    function onInput(e) {
+      const inp = e.target;
+      const idx = inputs.indexOf(inp);
+      // Chỉ giữ ký tự số cuối
+      inp.value = inp.value.replace(/\D/g, "").slice(-1);
+      if (inp.value && idx < inputs.length - 1) {
+        inputs[idx + 1].focus();
+      }
+      if (getOtpValue().length === 6) doSubmit();
+    }
+
+    function onKeydown(e) {
+      const inp = e.target;
+      const idx = inputs.indexOf(inp);
+      if (e.key === "Backspace") {
+        if (inp.value) {
+          inp.value = "";
+        } else if (idx > 0) {
+          inputs[idx - 1].focus();
+          inputs[idx - 1].value = "";
+        }
+      } else if (e.key === "ArrowLeft" && idx > 0) {
+        inputs[idx - 1].focus();
+      } else if (e.key === "ArrowRight" && idx < inputs.length - 1) {
+        inputs[idx + 1].focus();
+      } else if (e.key === "Enter") {
+        doSubmit();
+      }
+    }
+
+    function onFocus(e) {
+      e.target.select();
+    }
+
+    function onPaste(e) {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 6);
+      text.split("").forEach((ch, i) => { if (inputs[i]) inputs[i].value = ch; });
+      const next = Math.min(text.length, inputs.length - 1);
+      inputs[next].focus();
+      if (text.length === 6) doSubmit();
+    }
+
+    inputs.forEach((inp) => {
+      inp.addEventListener("input", onInput);
+      inp.addEventListener("keydown", onKeydown);
+      inp.addEventListener("focus", onFocus);
+      inp.addEventListener("paste", onPaste);
+    });
+  });
+}
+
+function collectLegacyLocalDateData() {
+  const localData = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (!isDateKey(key)) continue;
+
+    const raw = localStorage.getItem(key);
+    if (!raw) continue;
+
+    try {
+      const parsed = JSON.parse(raw);
+      // Bỏ qua data do Firebase sync ghi — chỉ migrate data legacy thực sự
+      if (parsed?.__type === "date_data") continue;
+    } catch {
+      // dữ liệu cũ dạng text/json không đúng cấu trúc
+    }
+
+    const legacyEvent = parseEventRecord(raw);
+    if (!legacyEvent) continue;
+
+    localData[key] = normalizeDateData({
+      events: [{
+        title: legacyEvent.title,
+        text: legacyEvent.text,
+        eventDateTime: "",
+        createdAt: Date.now()
+      }],
+      overtimeHours: legacyEvent.overtimeHours,
+      updatedAt: Date.now()
+    });
+  }
+
+  return localData;
+}
+
+// Chỉ tin bản ghi Firebase nếu pKey khớp với profile hiện tại,
+// hoặc không có pKey nhưng đây là profile gốc ban đầu (backward compat)
+function isDateRecordTrusted(raw) {
+  if (!raw) return false;
+  const originalKey = localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE);
+  if (raw.pKey !== undefined) return raw.pKey === userProfileKey;
+  return userProfileKey === originalKey;
+}
+
+function getDateData(dateKey) {
+  if (dateDataCache[dateKey]) return normalizeDateData(dateDataCache[dateKey]);
+  return normalizeDateData({ events: [], overtimeHours: 0 });
+}
+
+function saveDateData(dateKey, data) {
+  const normalized = normalizeDateData(data);
+
+  const record = {
+    __type: "date_data",
+    events: normalized.events,
+    overtimeHours: normalized.overtimeHours,
+    updatedAt: Date.now()
+  };
+
+  const firebaseRecord = {
+    __type: "date_data",
+    pKey: userProfileKey,
+    // Realtime Database xử lý mảng rỗng không ổn định; dùng object rỗng để luôn tồn tại node events.
+    events: normalized.events.length > 0 ? normalized.events : {},
+    overtimeHours: normalized.overtimeHours,
+    updatedAt: Date.now()
+  };
+
+  if (normalized.events.length === 0 && normalized.overtimeHours <= 0) {
+    delete dateDataCache[dateKey];
+    localStorage.removeItem(dateKey);
+    if (firebaseDatesRef) {
+      firebaseDatesRef.child(dateKey).remove().catch(() => {
+        console.error("Không thể xóa dữ liệu ngày khỏi Firebase.");
+        if (!syncWriteErrorShown) {
+          syncWriteErrorShown = true;
+          alert("Không thể đồng bộ dữ liệu lên Firebase. Vui lòng kiểm tra Firebase Rules và deploy rules mới.");
+        }
+      });
+    }
+    return;
+  }
+
+  dateDataCache[dateKey] = normalizeDateData(record);
+  localStorage.setItem(dateKey, JSON.stringify(record));
+
+  if (firebaseDatesRef) {
+    firebaseDatesRef.child(dateKey).set(firebaseRecord)
+      .then(() => showCloudSyncedBadge())
+      .catch(() => {
+        console.error("Không thể lưu dữ liệu ngày lên Firebase.");
+        if (!syncWriteErrorShown) {
+          syncWriteErrorShown = true;
+          alert("Không thể đồng bộ dữ liệu lên Firebase. Vui lòng kiểm tra Firebase Rules và deploy rules mới.");
+        }
+      });
+  }
+}
+
+let _cloudSyncedTimer = null;
+function showCloudSyncedBadge() {
+  let badge = document.getElementById("cloudSyncedBadge");
+  if (!badge) return;
+  clearTimeout(_cloudSyncedTimer);
+  badge.classList.add("visible");
+  _cloudSyncedTimer = setTimeout(() => badge.classList.remove("visible"), 2200);
+}
+
+function addEventToDate(dateKey, eventData) {
+  const data = getDateData(dateKey);
+  data.events.push({
+    title: String(eventData.title || "").trim(),
+    text: String(eventData.text || "").trim(),
+    eventDateTime: String(eventData.eventDateTime || ""),
+    createdAt: Date.now()
+  });
+  saveDateData(dateKey, data);
+}
+
+function updateEventInDate(dateKey, eventIndex, eventData) {
+  const data = getDateData(dateKey);
+  if (eventIndex < 0 || eventIndex >= data.events.length) return;
+
+  const previous = data.events[eventIndex] || {};
+  data.events[eventIndex] = {
+    title: String(eventData.title || "").trim(),
+    text: String(eventData.text || "").trim(),
+    eventDateTime: String(eventData.eventDateTime || ""),
+    createdAt: previous.createdAt || Date.now(),
+    updatedAt: Date.now()
+  };
+
+  saveDateData(dateKey, data);
+}
+
+function deleteEventFromDate(dateKey, eventIndex) {
+  const data = getDateData(dateKey);
+  if (eventIndex >= 0 && eventIndex < data.events.length) {
+    data.events.splice(eventIndex, 1);
+    saveDateData(dateKey, data);
+  }
+}
+
+function updateOvertimeForDate(dateKey, hours) {
+  const data = getDateData(dateKey);
+  data.overtimeHours = Math.max(0, parseInt(hours, 10) || 0);
+  saveDateData(dateKey, data);
+}
+
+function getEventsForDate(dateKey) {
+  const data = getDateData(dateKey);
+  return data.events || [];
+}
+
+function getOvertimeHoursForDateKey(dateKey) {
+  const data = getDateData(dateKey);
+  return data.overtimeHours || 0;
+}
+
+/* Legacy function for backwards compatibility */
 function parseEventRecord(raw) {
   if (!raw) return null;
 
@@ -251,39 +585,20 @@ function parseEventRecord(raw) {
   try {
     const parsed = JSON.parse(text);
     if (parsed && parsed.__type === "calendar_event") {
-      const overtimeHours = Math.max(0, parseInt(parsed.overtimeHours, 10) || 0);
       return {
         title: String(parsed.title || ""),
         text: String(parsed.text || ""),
-        overtimeHours,
-        realtimeNotify: Boolean(parsed.realtimeNotify),
-        notifyAt: String(parsed.notifyAt || "")
+        overtimeHours: Math.max(0, parseInt(parsed.overtimeHours, 10) || 0)
       };
     }
-  } catch {
-    // Dữ liệu cũ không phải JSON.
-  }
+  } catch {}
 
   const legacyHours = parseLegacyOvertimeHours(text);
   return {
     title: "",
     text: legacyHours > 0 ? "" : text,
-    overtimeHours: legacyHours,
-    realtimeNotify: false,
-    notifyAt: ""
+    overtimeHours: legacyHours
   };
-}
-
-function encodeEventRecord(record) {
-  return JSON.stringify({
-    __type: "calendar_event",
-    title: String(record.title || "").trim(),
-    text: String(record.text || "").trim(),
-    overtimeHours: Math.max(0, parseInt(record.overtimeHours, 10) || 0),
-    realtimeNotify: Boolean(record.realtimeNotify),
-    notifyAt: String(record.notifyAt || ""),
-    updatedAt: Date.now()
-  });
 }
 
 function toDatetimeLocalValue(dateInput) {
@@ -295,28 +610,7 @@ function toDatetimeLocalValue(dateInput) {
   return local.toISOString().slice(0, 16);
 }
 
-function toNotifyTimestamp(dateInput) {
-  if (!dateInput) return null;
-  const ts = new Date(dateInput).getTime();
-  if (!Number.isFinite(ts)) return null;
-  return ts;
-}
 
-function buildReminderPayload(dateKey, event) {
-  if (!event || !event.realtimeNotify || !event.notifyAt) return null;
-
-  const notifyAtMs = toNotifyTimestamp(event.notifyAt);
-  if (!notifyAtMs) return null;
-
-  return {
-    date: dateKey,
-    title: event.title || "Sự kiện mới",
-    text: event.text || "",
-    overtimeHours: Math.max(0, parseInt(event.overtimeHours, 10) || 0),
-    notifyAt: event.notifyAt,
-    notifyAtMs
-  };
-}
 
 function getFirebaseConfigIssues() {
   const requiredKeys = [
@@ -331,30 +625,10 @@ function getFirebaseConfigIssues() {
   return requiredKeys.filter((k) => String(FIREBASE_CONFIG[k] || "").trim().length === 0);
 }
 
-function isMessagingSupported() {
-  return (
-    "Notification" in window &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window &&
-    !!window.firebase?.messaging
-  );
-}
 
-function getFirebaseMessagingIssues() {
-  const issues = [];
-  if (!FIREBASE_WEB_PUSH_VAPID_KEY) issues.push("webPushVapidKey");
-  if (!isMessagingSupported()) issues.push("browserSupport");
-  return issues;
-}
 
 function readEventByKey(key) {
   return parseEventRecord(localStorage.getItem(key));
-}
-
-function getOvertimeHoursForDateKey(key) {
-  const event = readEventByKey(key);
-  if (!event) return 0;
-  return Math.max(0, parseInt(event.overtimeHours, 10) || 0);
 }
 
 function getOrCreateFirebaseClientId() {
@@ -375,93 +649,7 @@ function isFirebaseConfigReady() {
   return getFirebaseConfigIssues().length === 0;
 }
 
-function maybeRequestNotificationPermission() {
-  if (!("Notification" in window)) return Promise.resolve("denied");
-  if (Notification.permission === "granted") return Promise.resolve("granted");
-  if (Notification.permission === "denied") return Promise.resolve("denied");
-  return Notification.requestPermission();
-}
 
-function showRealtimeNotification(payload) {
-  if (!("Notification" in window) || Notification.permission !== "granted") return;
-  const title = payload.title?.trim() || "Sự kiện mới";
-  const bodyParts = [];
-  if (payload.date) bodyParts.push(`Ngày ${payload.date}`);
-  if (payload.text) bodyParts.push(payload.text);
-  if (Number(payload.overtimeHours) > 0) bodyParts.push(`OT: ${payload.overtimeHours}h`);
-
-  const notification = new Notification(title, {
-    body: bodyParts.join(" | ") || "Bạn có một sự kiện vừa được tạo",
-    icon: "public/favicon.png",
-    tag: `event-${payload.id || Date.now()}`
-  });
-
-  setTimeout(() => notification.close(), 10000);
-}
-
-function scheduleRealtimeNotification(payload, id) {
-  if (!payload) return;
-  if (id && scheduledNotifyTimers.has(id)) {
-    clearTimeout(scheduledNotifyTimers.get(id));
-    scheduledNotifyTimers.delete(id);
-  }
-
-  const notifyAtMs = Number(payload.notifyAtMs || 0);
-  if (!Number.isFinite(notifyAtMs) || notifyAtMs <= 0) {
-    showRealtimeNotification({ ...payload, id });
-    return;
-  }
-
-  const waitMs = notifyAtMs - Date.now();
-  if (waitMs <= 0) {
-    showRealtimeNotification({ ...payload, id });
-    return;
-  }
-
-  const timer = setTimeout(() => {
-    showRealtimeNotification({ ...payload, id });
-    if (id) scheduledNotifyTimers.delete(id);
-  }, waitMs);
-
-  if (id) scheduledNotifyTimers.set(id, timer);
-}
-
-function cancelScheduledNotification(id) {
-  if (!id || !scheduledNotifyTimers.has(id)) return;
-  clearTimeout(scheduledNotifyTimers.get(id));
-  scheduledNotifyTimers.delete(id);
-}
-
-function scheduleLocalEventReminder(dateKey, event) {
-  const timerId = `local-${dateKey}`;
-  cancelScheduledNotification(timerId);
-
-  const payload = buildReminderPayload(dateKey, event);
-  if (!payload) return;
-
-  scheduleRealtimeNotification(payload, timerId);
-}
-
-function restoreLocalScheduledNotifications() {
-  for (let index = 0; index < localStorage.length; index++) {
-    const key = localStorage.key(index);
-    if (!isDateKey(key)) continue;
-
-    const event = readEventByKey(key);
-    if (!event) continue;
-    scheduleLocalEventReminder(key, event);
-  }
-}
-
-async function pushRealtimeEvent(payload) {
-  if (!firebaseReady || !firebaseEventsRef) return;
-  const record = {
-    ...payload,
-    createdAt: Date.now(),
-    senderId: getFirebaseSenderId()
-  };
-  await firebaseEventsRef.push(record);
-}
 
 async function ensureFirebaseAuth() {
   if (!window.firebase?.auth) return false;
@@ -477,66 +665,7 @@ async function ensureFirebaseAuth() {
   }
 }
 
-async function saveMessagingToken(token) {
-  if (!firebaseDb || !firebaseAuth?.currentUser?.uid || !token) return;
-  await firebaseDb.ref(`${FIREBASE_TOKEN_PATH}/${firebaseAuth.currentUser.uid}`).set({
-    token,
-    updatedAt: Date.now(),
-    userAgent: navigator.userAgent.slice(0, 240)
-  });
-}
 
-async function ensureMessagingServiceWorker() {
-  if (!("serviceWorker" in navigator)) return null;
-
-  try {
-    if (window.firebaseMessagingBootstrap?.registrationPromise) {
-      return await window.firebaseMessagingBootstrap.registrationPromise;
-    }
-
-    return await navigator.serviceWorker.register("./firebase-messaging-sw.js");
-  } catch (error) {
-    console.error("Messaging service worker registration failed", error);
-    return null;
-  }
-}
-
-async function initFirebaseMessaging() {
-  if (!firebaseReady) return;
-  if (getFirebaseMessagingIssues().length > 0) return;
-
-  try {
-    firebaseMessaging = window.firebase.messaging();
-    const serviceWorkerRegistration = await ensureMessagingServiceWorker();
-    if (!serviceWorkerRegistration) return;
-
-    const permission = await maybeRequestNotificationPermission();
-    if (permission !== "granted") return;
-
-    const token = await firebaseMessaging.getToken({
-      vapidKey: FIREBASE_WEB_PUSH_VAPID_KEY,
-      serviceWorkerRegistration
-    });
-
-    if (token) {
-      await saveMessagingToken(token);
-    }
-
-    firebaseMessaging.onMessage((payload) => {
-      if (document.visibilityState === "visible") return;
-
-      showRealtimeNotification({
-        id: payload.data?.eventId,
-        date: payload.data?.date,
-        title: payload.notification?.title || payload.data?.title,
-        text: payload.notification?.body || payload.data?.text,
-        overtimeHours: Number(payload.data?.overtimeHours || 0)
-      });
-    });
-  } catch (error) {
-    console.error("FCM init failed", error);
-  }
-}
 
 async function initFirebaseRealtime() {
   if (!window.firebase || !window.firebase.apps) return;
@@ -546,80 +675,242 @@ async function initFirebaseRealtime() {
     window.firebase.initializeApp(FIREBASE_CONFIG);
   }
 
-  await ensureFirebaseAuth();
+  const signedIn = await ensureFirebaseAuth();
+  if (!signedIn) {
+    alert("Không thể đăng nhập ẩn danh với Firebase. Vui lòng bật Anonymous Authentication trong Firebase Console.");
+    return;
+  }
+
+  if (!await ensureProfileKey()) {
+    alert("Bạn cần nhập mật khẩu đồng bộ để sử dụng dữ liệu đa thiết bị.");
+    return;
+  }
 
   firebaseDb = window.firebase.database();
-  firebaseEventsRef = firebaseDb.ref(FIREBASE_EVENTS_PATH);
+  firebaseDatesRef = firebaseDb.ref(`${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`);
+
+  // Xóa date cache localStorage của profile cũ để tránh cross-profile pollution
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (k && isDateKey(k)) localStorage.removeItem(k);
+  }
+
+  const snapshot = await firebaseDatesRef.once("value");
+  const remoteData = snapshot.val() || {};
+
+  dateDataCache = {};
+  Object.keys(remoteData).forEach((dateKey) => {
+    if (!isDateKey(dateKey)) return;
+    if (!isDateRecordTrusted(remoteData[dateKey])) return;
+    dateDataCache[dateKey] = normalizeDateData(remoteData[dateKey]);
+  });
+
+  const migrationFlag = `${LEGACY_MIGRATION_FLAG_PREFIX}${userProfileKey}`;
+  const migrated = localStorage.getItem(migrationFlag) === "1";
+  if (!migrated) {
+    const localData = collectLegacyLocalDateData();
+    const localKeys = Object.keys(localData);
+    for (const dateKey of localKeys) {
+      if (dateDataCache[dateKey]) continue;
+      dateDataCache[dateKey] = normalizeDateData(localData[dateKey]);
+      await firebaseDatesRef.child(dateKey).set({
+        __type: "date_data",
+        events: dateDataCache[dateKey].events.length > 0 ? dateDataCache[dateKey].events : {},
+        overtimeHours: dateDataCache[dateKey].overtimeHours,
+        updatedAt: Date.now()
+      });
+    }
+    localStorage.setItem(migrationFlag, "1");
+  }
+
+  firebaseDatesRef.on("value", (dataSnapshot) => {
+    const incoming = dataSnapshot.val() || {};
+    const nextCache = {};
+
+    Object.keys(incoming).forEach((dateKey) => {
+      if (!isDateKey(dateKey)) return;
+      if (!isDateRecordTrusted(incoming[dateKey])) return;
+      nextCache[dateKey] = normalizeDateData(incoming[dateKey]);
+      localStorage.setItem(dateKey, JSON.stringify({
+        __type: "date_data",
+        events: nextCache[dateKey].events,
+        overtimeHours: nextCache[dateKey].overtimeHours,
+        updatedAt: Date.now()
+      }));
+    });
+
+    dateDataCache = nextCache;
+    renderCalendar();
+    renderOvertime();
+    renderOvertimeSalary();
+  });
+
   firebaseReady = true;
 
-  firebaseEventsRef.once("value").then((snapshot) => {
-    const existingIds = new Set(Object.keys(snapshot.val() || {}));
-    firebaseEventsRef.on("child_added", (childSnap) => {
-      if (existingIds.has(childSnap.key)) return;
-
-      const payload = childSnap.val() || {};
-      if (payload.senderId && payload.senderId === getFirebaseSenderId()) return;
-      scheduleRealtimeNotification(payload, childSnap.key);
-    });
-  });
+  // Realtime database initialized
+  console.log("Firebase Realtime Database connected");
 }
 
 async function initFirebaseServices() {
   await initFirebaseRealtime();
-  await initFirebaseMessaging();
 }
 
-function toggleOvertimeInput() {
-  const checked = document.getElementById("eventHasOvertime").checked;
-  document.getElementById("overtimeInputWrap").classList.toggle("show", checked);
-  if (!checked) {
-    document.getElementById("eventOvertimeHours").value = "";
-  }
-}
 
-function toggleNotifyInput() {
-  const checked = document.getElementById("eventRealtimeNotify").checked;
-  document.getElementById("notifyInputWrap").classList.toggle("show", checked);
-  if (!checked) {
-    document.getElementById("eventNotifyAt").value = "";
-  }
-}
+
+
 
 function openAddEventModalForToday() {
   const today = new Date();
   const key = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
-  openModal(key, today.getDate(), today.getMonth() + 1, today.getFullYear());
+  openAddEventModal(key, today.getDate(), today.getMonth() + 1, today.getFullYear());
 }
 
-/* ========================== SỰ KIỆN ========================== */
-function openModal(key, d, m, y) {
-  selectedKey = key;
-  const event = readEventByKey(key) || {
-    title: "",
-    text: "",
-    overtimeHours: 0,
-    realtimeNotify: true,
-    notifyAt: ""
+/* ========================== MO-ĐAL ========================== */
+
+function openAddEventModalFromDayDetails() {
+  if (!selectedKey) return;
+  const [y, m, d] = selectedKey.split('-').map(Number);
+  openAddEventModal(selectedKey, d, m, y);
+}
+
+function openEditEventModal(eventIndex) {
+  if (!selectedKey) return;
+
+  const data = getDateData(selectedKey);
+  const event = data.events[eventIndex];
+  if (!event) return;
+
+  selectedEventIndex = eventIndex;
+
+  const [y, m, d] = selectedKey.split('-').map(Number);
+  document.getElementById("addEventDate").innerText = `${d}/${m}/${y}`;
+  document.getElementById("newEventTitle").value = String(event.title || "");
+  document.getElementById("newEventText").value = String(event.text || "");
+  document.getElementById("newEventDateTime").value = toDatetimeLocalValue(event.eventDateTime);
+  document.getElementById("addEventModalTitle").innerText = "Chỉnh sửa sự kiện";
+  document.getElementById("saveEventBtn").innerText = "Cập nhật";
+
+  document.getElementById("addEventModal").style.display = "flex";
+}
+
+// Day Details Modal - shows events list and overtime editor
+function openDayDetailsModal(dateKey, d, m, y) {
+  selectedKey = dateKey;
+  const data = getDateData(dateKey);
+  
+  document.getElementById("dayDetailsDate").innerText = `${d}/${m}/${y}`;
+  document.getElementById("dayOvertimeHours").value = data.overtimeHours || 0;
+  
+  // Render events list
+  const eventsList = document.getElementById("dayEventsList");
+  eventsList.innerHTML = "";
+  
+  if (data.events.length === 0) {
+    eventsList.innerHTML = '<div class="no-events">Chưa có sự kiện</div>';
+  } else {
+    data.events.forEach((event, idx) => {
+      const eventDiv = document.createElement("div");
+      eventDiv.className = "event-item";
+      const timeStr = event.eventDateTime ? new Date(event.eventDateTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute: '2-digit'}) : "--:--";
+      eventDiv.innerHTML = `
+        <div class="event-time">${timeStr}</div>
+        <div class="event-content">
+          <div class="event-title">${event.title || '(Không có tiêu đề)'}</div>
+          <div class="event-text">${event.text}</div>
+        </div>
+        <div class="event-actions">
+          <button class="event-edit" onclick="openEditEventModal(${idx})" title="Sửa" aria-label="Sửa sự kiện">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm17.71-10.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.09Z" />
+            </svg>
+          </button>
+          <button class="event-delete" onclick="deleteEventFromDateUI(${idx})" title="Xóa">×</button>
+        </div>
+      `;
+      eventsList.appendChild(eventDiv);
+    });
+  }
+  
+  document.getElementById("dayDetailsModal").style.display = "flex";
+}
+
+function closeDayDetailsModal() {
+  document.getElementById("dayDetailsModal").style.display = "none";
+}
+
+function saveDayOvertime() {
+  const hours = parseInt(document.getElementById("dayOvertimeHours").value, 10) || 0;
+  updateOvertimeForDate(selectedKey, Math.max(0, hours));
+  renderOvertime();
+  renderOvertimeSalary();
+}
+
+function deleteEventFromDateUI(eventIndex) {
+  deleteEventFromDate(selectedKey, eventIndex);
+  renderCalendar();
+  const [y, m, d] = selectedKey.split('-').map(Number);
+  openDayDetailsModal(selectedKey, d, m, y);
+}
+
+// Add Event Modal - for creating new event
+function openAddEventModal(dateKey, d, m, y) {
+  selectedKey = dateKey;
+  selectedEventIndex = -1;
+  
+  document.getElementById("addEventDate").innerText = `${d}/${m}/${y}`;
+  document.getElementById("newEventTitle").value = "";
+  document.getElementById("newEventText").value = "";
+  document.getElementById("newEventDateTime").value = toDatetimeLocalValue(new Date(`${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}T09:00`));
+  document.getElementById("addEventModalTitle").innerText = "Thêm sự kiện";
+  document.getElementById("saveEventBtn").innerText = "Lưu";
+  
+  document.getElementById("addEventModal").style.display = "flex";
+}
+
+function closeAddEventModal() {
+  document.getElementById("addEventModal").style.display = "none";
+}
+
+function saveNewEvent() {
+  const title = document.getElementById("newEventTitle").value.trim();
+  const text = document.getElementById("newEventText").value.trim();
+  const eventDateTime = document.getElementById("newEventDateTime").value;
+  
+  if (!title && !text) {
+    alert("Vui lòng nhập tiêu đề hoặc nội dung sự kiện");
+    return;
+  }
+  
+  const eventPayload = {
+    title,
+    text,
+    eventDateTime
   };
 
-  document.getElementById("selectedDate").innerText = `${d}/${m}/${y}`;
-  document.getElementById("eventTitle").value = event.title;
-  document.getElementById("eventText").value = event.text;
-  document.getElementById("eventHasOvertime").checked = Number(event.overtimeHours) > 0;
-  document.getElementById("eventOvertimeHours").value =
-    Number(event.overtimeHours) > 0 ? String(event.overtimeHours) : "";
-  document.getElementById("eventRealtimeNotify").checked = event.realtimeNotify !== false;
-  document.getElementById("eventNotifyAt").value = toDatetimeLocalValue(event.notifyAt);
-  toggleOvertimeInput();
-  toggleNotifyInput();
-
-  document.getElementById("eventModal").style.display = "flex";
+  if (selectedEventIndex >= 0) {
+    updateEventInDate(selectedKey, selectedEventIndex, eventPayload);
+  } else {
+    addEventToDate(selectedKey, eventPayload);
+  }
+  
+  renderCalendar();
+  renderOvertime();
+  renderOvertimeSalary();
+  closeAddEventModal();
+  
+  // Tự động mở lại day details modal để hiển thị sự kiện mới
+  const [y, m, d] = selectedKey.split('-').map(Number);
+  openDayDetailsModal(selectedKey, d, m, y);
 }
 
-function closeModal() { document.getElementById("eventModal").style.display = "none"; }
-document.getElementById("eventModal").addEventListener("click", function (e) {
-  if (e.target === this) closeModal();
-});
+function openModal(key, d, m, y) {
+  // Alias for backwards compatibility - now opens day details
+  openDayDetailsModal(key, d, m, y);
+}
+
+function closeModal() {
+  closeDayDetailsModal();
+}
 
 function openOvertimeModal() {
   document.getElementById("overtimeModal").style.display = "flex";
@@ -667,6 +958,14 @@ function applyStoredToolboxState() {
   );
 }
 
+document.getElementById("dayDetailsModal").addEventListener("click", function (e) {
+  if (e.target === this) closeDayDetailsModal();
+});
+
+document.getElementById("addEventModal").addEventListener("click", function (e) {
+  if (e.target === this) closeAddEventModal();
+});
+
 document.getElementById("overtimeModal").addEventListener("click", function (e) {
   if (e.target === this) closeOvertimeModal();
 });
@@ -676,67 +975,24 @@ document.getElementById("goldModal").addEventListener("click", function (e) {
 });
 
 function saveEvent() {
-  const title = document.getElementById("eventTitle").value.trim();
-  const text = document.getElementById("eventText").value.trim();
-  const hasOvertime = document.getElementById("eventHasOvertime").checked;
-  const realtimeNotify = document.getElementById("eventRealtimeNotify").checked;
-  const notifyAt = document.getElementById("eventNotifyAt").value;
-  const overtimeHours = hasOvertime
-    ? Math.max(0, parseInt(document.getElementById("eventOvertimeHours").value, 10) || 0)
-    : 0;
-
-  if (realtimeNotify && !notifyAt) {
-    alert("Vui lòng chọn giờ thông báo sự kiện trước khi lưu.");
+  const title = document.getElementById("newEventTitle").value.trim();
+  const text = document.getElementById("newEventText").value.trim();
+  const eventDateTime = document.getElementById("newEventDateTime").value;
+  
+  if (!title && !text) {
+    alert("Vui lòng nhập tiêu đề hoặc nội dung sự kiện");
     return;
   }
-
-  const notifyAtMs = realtimeNotify ? toNotifyTimestamp(notifyAt) : null;
-  if (realtimeNotify && !notifyAtMs) {
-    alert("Giờ thông báo không hợp lệ.");
-    return;
-  }
-
-  const hasData = Boolean(title || text || overtimeHours > 0);
-
-  if (hasData) {
-    const storedEvent = {
-      title,
-      text,
-      overtimeHours,
-      realtimeNotify,
-      notifyAt: realtimeNotify ? notifyAt : ""
-    };
-
-    localStorage.setItem(selectedKey, encodeEventRecord(storedEvent));
-    scheduleLocalEventReminder(selectedKey, storedEvent);
-
-    if (realtimeNotify && !isFirebaseConfigReady()) {
-      const missingConfig = getFirebaseConfigIssues();
-      alert(`Thiếu cấu hình Firebase: ${missingConfig.join(", ")}. Vui lòng cập nhật để gửi thông báo realtime.`);
-    }
-
-    if (realtimeNotify && isFirebaseConfigReady()) {
-      maybeRequestNotificationPermission().finally(() => {
-        pushRealtimeEvent({
-          date: selectedKey,
-          title: title || "Sự kiện mới",
-          text,
-          overtimeHours,
-          notifyAt,
-          notifyAtMs
-        }).catch(() => {
-          alert("Không thể gửi sự kiện lên Firebase. Vui lòng kiểm tra Rules, databaseURL và kết nối mạng.");
-        });
-      });
-    }
-  } else {
-    cancelScheduledNotification(`local-${selectedKey}`);
-    localStorage.removeItem(selectedKey);
-  }
+  
+  addEventToDate(selectedKey, {
+    title,
+    text,
+    eventDateTime
+  });
 
   renderOvertime();
   renderOvertimeSalary();
-  closeModal();
+  closeAddEventModal();
   renderCalendar();
 }
 
@@ -857,12 +1113,14 @@ function getGeolocationOptions() {
 
 function handleLocationError(error) {
   if (error?.code === 1) {
+    // Người dùng từ chối quyền → ghi nhớ để không hỏi lại.
     localStorage.setItem("geoPermission", "denied");
     showLocationDisabledMessage();
     return;
   }
 
-  localStorage.removeItem("geoPermission");
+  // Timeout hoặc vị trí không khả dụng (code 2, 3) → KHÔNG xóa cache quyền,
+  // vì người dùng vẫn đã cấp quyền, chỉ là thiết bị/mạng tạm thời không lấy được vị trí.
   showLocationUnavailableMessage();
 }
 
@@ -1057,11 +1315,25 @@ async function fetchWeatherByLocation() {
     return;
   }
 
-  // Ưu tiên trạng thái quyền thật của trình duyệt thay vì chỉ dựa localStorage.
+  const cachedPermission = localStorage.getItem("geoPermission");
+
+  // Đã từng được cấp quyền → thử lấy vị trí trực tiếp, không hỏi lại.
+  // handleLocationError sẽ cập nhật cache nếu user thu hồi quyền sau này.
+  if (cachedPermission === "granted") {
+    loadWeatherFromCurrentPosition();
+    return;
+  }
+
+  // Đã từng bị từ chối → không hỏi nữa.
+  if (cachedPermission === "denied") {
+    showLocationDisabledMessage();
+    return;
+  }
+
+  // Chưa có cache → kiểm tra Permissions API nếu trình duyệt hỗ trợ.
   if (navigator.permissions && navigator.permissions.query) {
     try {
       const status = await navigator.permissions.query({ name: "geolocation" });
-      const askedBefore = localStorage.getItem(GEO_PROMPT_ASKED_KEY) === "1";
 
       if (status.state === "granted") {
         localStorage.setItem("geoPermission", "granted");
@@ -1074,39 +1346,19 @@ async function fetchWeatherByLocation() {
         showLocationDisabledMessage();
         return;
       }
-
-      // Trạng thái prompt: tự động xin quyền đúng yêu cầu.
-      if (!askedBefore && !geoPromptRequestedThisLoad) {
-        geoPromptRequestedThisLoad = true;
-        requestLocationPermission();
-      } else {
-        showLocationDisabledMessage();
-      }
-      return;
+      // "prompt" → fall through để xin quyền lần đầu bên dưới.
     } catch {
       // Fallback cho trình duyệt không hỗ trợ đầy đủ Permissions API.
     }
   }
 
-  const permission = localStorage.getItem("geoPermission");
-  const askedBefore = localStorage.getItem(GEO_PROMPT_ASKED_KEY) === "1";
-  if (permission === "granted") {
-    loadWeatherFromCurrentPosition();
-    return;
-  }
-
-  if (permission === "denied") {
-    loadWeatherFromCurrentPosition();
-    return;
-  }
-
-  if (!askedBefore && !geoPromptRequestedThisLoad) {
+  // Chưa biết trạng thái (lần đầu dùng) → xin quyền một lần duy nhất mỗi session.
+  if (!geoPromptRequestedThisLoad) {
     geoPromptRequestedThisLoad = true;
     requestLocationPermission();
-    return;
+  } else {
+    showLocationDisabledMessage();
   }
-
-  loadWeatherFromCurrentPosition();
 }
 
 function weatherCodeToText(code) {
@@ -1169,9 +1421,8 @@ function calcOvertimeSummary(viewYear, viewMonth) {
   let weekday = { base: 0, bonus: 0 };
   let sunday = { base: 0, bonus: 0 };
 
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!isDateKey(key)) continue;
+  const dateKeys = getAllDateKeysFromCache();
+  for (const key of dateKeys) {
 
     const [y, m, d] = key.split("-").map(Number);
 
@@ -1247,9 +1498,8 @@ function calcOvertimeSalary(viewYear, viewMonth, hourlyRate) {
     salary: 0
   };
 
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (!isDateKey(key)) continue;
+  const dateKeys = getAllDateKeysFromCache();
+  for (const key of dateKeys) {
 
     const [y, m, d] = key.split("-").map(Number);
 
@@ -1565,8 +1815,7 @@ hourSalary.addEventListener("input", renderOvertimeSalary);
 
 
 renderOvertime();
-document.getElementById("eventHasOvertime").addEventListener("change", toggleOvertimeInput);
-document.getElementById("eventRealtimeNotify").addEventListener("change", toggleNotifyInput);
+
 
 
 // cập nhật mỗi giây
@@ -1582,4 +1831,4 @@ loadQuote();
 fetchWeatherByLocation();
 renderTodayLunar();
 initFirebaseServices();
-restoreLocalScheduledNotifications();
+

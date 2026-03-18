@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "calendar-ac2fa"
-  }
+    "default": "calendar-ac2fa",
+    "s": "calendar-ac2fa"
+  },
+  "targets": {},
+  "etags": {}
 }

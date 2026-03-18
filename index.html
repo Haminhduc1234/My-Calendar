@@ -121,13 +121,14 @@
             <div class="modal-content password-modal-box">
                 <h3>🔐 Nhập mã PIN</h3>
                 <p class="password-modal-desc">Nhập 6 chữ số để truy cập dữ liệu.<br>Mỗi mã PIN là một tài khoản riêng.</p>
-                <div class="otp-group">
-                    <input class="otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="one-time-code" autocorrect="off" autocapitalize="off" spellcheck="false" />
-                    <input class="otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-                    <input class="otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-                    <input class="otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-                    <input class="otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
-                    <input class="otp-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+                <div class="otp-group" id="otpGroup" role="button" tabindex="0" aria-label="Nhập mã PIN 6 chữ số">
+                    <input id="otpMasterInput" class="otp-master-input" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Mã PIN" />
+                    <span class="otp-slot" data-otp-slot="0"></span>
+                    <span class="otp-slot" data-otp-slot="1"></span>
+                    <span class="otp-slot" data-otp-slot="2"></span>
+                    <span class="otp-slot" data-otp-slot="3"></span>
+                    <span class="otp-slot" data-otp-slot="4"></span>
+                    <span class="otp-slot" data-otp-slot="5"></span>
                 </div>
                 <div id="passwordError" class="password-error">Vui lòng nhập đủ 6 chữ số.</div>
             </div>
@@ -221,7 +222,7 @@
                             <input type="text" id="hourSalary" placeholder="VD: 50.000" inputmode="numeric" />
                         </label>
 
-                        <label>
+                        <label style="margin-top: 8px;">
                             💼 Lương cứng/tháng:
                             <input type="text" id="fixedSalary" placeholder="VD: 8.000.000" inputmode="numeric" />
                         </label>

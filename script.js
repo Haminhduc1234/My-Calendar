@@ -326,32 +326,51 @@ function hashProfilePassword(password) {
 function ensureProfileKey() {
   return new Promise((resolve) => {
     const modal = document.getElementById("passwordModal");
-    const inputs = Array.from(document.querySelectorAll(".otp-input"));
+    const otpGroup = document.getElementById("otpGroup");
+    const masterInput = document.getElementById("otpMasterInput");
+    const slots = Array.from(document.querySelectorAll(".otp-slot"));
     const errorEl = document.getElementById("passwordError");
 
     modal.style.display = "flex";
-    inputs.forEach((inp) => (inp.value = ""));
+    masterInput.value = "";
     errorEl.style.display = "none";
-    setTimeout(() => inputs[0].focus(), 50);
+    renderOtpSlots();
+    setTimeout(() => {
+      masterInput.focus({ preventScroll: true });
+    }, 50);
 
     function getOtpValue() {
-      return inputs.map((inp) => inp.value).join("");
+      return masterInput.value.replace(/\D/g, "").slice(0, 6);
     }
 
     function cleanup() {
-      inputs.forEach((inp) => {
-        inp.removeEventListener("keydown", onKeydown);
-        inp.removeEventListener("input", onInput);
-        inp.removeEventListener("focus", onFocus);
-        inp.removeEventListener("paste", onPaste);
+      masterInput.removeEventListener("keydown", onKeydown);
+      masterInput.removeEventListener("input", onInput);
+      masterInput.removeEventListener("paste", onPaste);
+      otpGroup.removeEventListener("click", onGroupActivate);
+      otpGroup.removeEventListener("keydown", onGroupKeydown);
+    }
+
+    function renderOtpSlots() {
+      const value = getOtpValue();
+      if (masterInput.value !== value) {
+        masterInput.value = value;
+      }
+
+      slots.forEach((slot, index) => {
+        const filled = index < value.length;
+        slot.classList.toggle("is-filled", filled);
+        slot.classList.toggle("is-active", index === Math.min(value.length, 5));
       });
+
+      return value;
     }
 
     function doSubmit() {
-      const value = getOtpValue();
+      const value = renderOtpSlots();
       if (value.length < 6) {
         errorEl.style.display = "block";
-        inputs[value.length] && inputs[value.length].focus();
+        masterInput.focus({ preventScroll: true });
         return;
       }
       errorEl.style.display = "none";
@@ -364,73 +383,43 @@ function ensureProfileKey() {
       resolve(true);
     }
 
-    function focusInputAt(index) {
-      if (!inputs[index]) return;
-      if (document.activeElement === inputs[index]) return;
-      requestAnimationFrame(() => inputs[index] && inputs[index].focus());
-    }
-
-    function onInput(e) {
-      const inp = e.target;
-      const idx = inputs.indexOf(inp);
-      // Chỉ giữ ký tự số cuối
-      inp.value = inp.value.replace(/\D/g, "").slice(-1);
-
-      // iOS thường bỏ qua keydown khi xóa, xử lý lùi ô ngay trong input event
-      if (!inp.value && e.inputType === "deleteContentBackward" && idx > 0) {
-        focusInputAt(idx - 1);
-        return;
+    function onInput() {
+      const value = renderOtpSlots();
+      if (value.length === 6) {
+        requestAnimationFrame(doSubmit);
       }
-
-      if (inp.value && idx < inputs.length - 1) {
-        focusInputAt(idx + 1);
-      }
-      if (getOtpValue().length === 6) doSubmit();
     }
 
     function onKeydown(e) {
-      const inp = e.target;
-      const idx = inputs.indexOf(inp);
-      if (e.key === "Backspace") {
-        if (inp.value) {
-          inp.value = "";
-        } else if (idx > 0) {
-          focusInputAt(idx - 1);
-          inputs[idx - 1].value = "";
-        }
-      } else if (e.key === "ArrowLeft" && idx > 0) {
-        focusInputAt(idx - 1);
-      } else if (e.key === "ArrowRight" && idx < inputs.length - 1) {
-        focusInputAt(idx + 1);
-      } else if (e.key === "Enter") {
+      if (e.key === "Enter") {
         doSubmit();
-      }
-    }
-
-    function onFocus(e) {
-      const target = e.target;
-      // iOS hạn chế việc select liên tục vì có thể gây giật bàn phím
-      if (typeof target.setSelectionRange === "function") {
-        const len = target.value.length;
-        target.setSelectionRange(len, len);
       }
     }
 
     function onPaste(e) {
       e.preventDefault();
       const text = (e.clipboardData || window.clipboardData).getData("text").replace(/\D/g, "").slice(0, 6);
-      text.split("").forEach((ch, i) => { if (inputs[i]) inputs[i].value = ch; });
-      const next = Math.min(text.length, inputs.length - 1);
-      focusInputAt(next);
+      masterInput.value = text;
+      renderOtpSlots();
       if (text.length === 6) doSubmit();
     }
 
-    inputs.forEach((inp) => {
-      inp.addEventListener("input", onInput);
-      inp.addEventListener("keydown", onKeydown);
-      inp.addEventListener("focus", onFocus);
-      inp.addEventListener("paste", onPaste);
-    });
+    function onGroupActivate() {
+      masterInput.focus({ preventScroll: true });
+    }
+
+    function onGroupKeydown(e) {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        masterInput.focus({ preventScroll: true });
+      }
+    }
+
+    masterInput.addEventListener("input", onInput);
+    masterInput.addEventListener("keydown", onKeydown);
+    masterInput.addEventListener("paste", onPaste);
+    otpGroup.addEventListener("click", onGroupActivate);
+    otpGroup.addEventListener("keydown", onGroupKeydown);
   });
 }
 

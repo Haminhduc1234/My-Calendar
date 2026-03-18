@@ -386,9 +386,14 @@ function ensureProfileKey() {
     masterInput.value = "";
     errorEl.style.display = "none";
     renderOtpSlots();
-    setTimeout(() => {
+    
+    // Focus immediately on the input field
+    masterInput.focus({ preventScroll: true });
+    
+    // Ensure focus is properly set even if first attempt doesn't work
+    requestAnimationFrame(() => {
       masterInput.focus({ preventScroll: true });
-    }, 50);
+    });
 
     function getOtpValue() {
       return masterInput.value.replace(/\D/g, "").slice(0, 6);

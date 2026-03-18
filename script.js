@@ -1387,68 +1387,16 @@ function initQuickNoteModal() {
   }
 }
 
-let MY_MUSIC_TRACKS = [
-  {
-    title: "Muôn vị nhân sinh",
-    artist: "Phan Mạnh Quỳnh",
-    src: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4f/43/23/4f4323ca-e268-6fa5-452e-8be39dea8bda/mzaf_11251342321742794534.plus.aac.p.m4a",
-    cover: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=640&q=80"
-  },
-  {
-    title: "Hôn lễ của em",
-    artist: "Trọng Nhân, Tiểu Mỹ",
-    src: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d3/35/5a/d3355a8d-22f9-a0f0-e92a-7b731d1584b8/mzaf_13951486350408724524.plus.aac.p.m4a",
-    cover: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=640&q=80"
-  },
-  {
-    title: "Người im lặng gặp người hay nói",
-    artist: "HIEUTHUHAI",
-    src: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/e9/74/01/e974014a-85fa-387d-0315-b2ccc393310f/mzaf_5846554348365381241.plus.aac.p.m4a",
-    cover: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=640&q=80"
-  },
-  {
-    title: "50 năm về sau",
-    artist: "F47, meChill, Đặng Thanh Tuyền",
-    src: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/5a/30/c3/5a30c3e7-83b8-25de-858e-354286a9368f/mzaf_1663433944031705099.plus.aac.p.m4a",
-    cover: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=640&q=80"
-  },
-  {
-    title: "Lý giải",
-    artist: "Hoàng Dũng",
-    src: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/cd/ae/63/cdae63ad-d47c-616c-dca0-d7d86506207d/mzaf_6818664278985821818.plus.aac.p.m4a",
-    cover: "https://images.unsplash.com/photo-1507838153414-b4b713384a76?auto=format&fit=crop&w=640&q=80"
-  },
-  {
-    title: "Nhường lại nỗi đau",
-    artist: "Ngân Ngân",
-    src: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/cb/ca/76/cbca76db-43b3-49ca-63db-f7979b21f382/mzaf_11968967208015347145.plus.aac.p.m4a",
-    cover: "https://images.unsplash.com/photo-1471478331149-c72f17e33c73?auto=format&fit=crop&w=640&q=80"
-  },
-  {
-    title: "Cỏ dại và hoa dành dành",
-    artist: "Trí Tổng, meChill",
-    src: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/11/73/34/11733464-509b-3189-d769-b1f9a5b2d0d0/mzaf_11948592978269117499.plus.aac.p.m4a",
-    cover: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?auto=format&fit=crop&w=640&q=80"
-  },
-  {
-    title: "Thiệp hồng sai tên",
-    artist: "Nguyễn Thành Đạt",
-    src: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/17/bc/8c/17bc8cd6-e2f8-b263-0d85-ab01b9d6e3e8/mzaf_816321900895488647.plus.aac.p.m4a",
-    cover: "https://images.unsplash.com/photo-1470229538611-16ba8c7ffbd7?auto=format&fit=crop&w=640&q=80"
-  },
-  {
-    title: "Đứa trẻ mùa Đông Chí",
-    artist: "Jack - J97",
-    src: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/48/67/fe/4867feef-9932-18c8-c438-21e3f4c9fb7a/mzaf_12154586289476980615.plus.aac.p.m4a",
-    cover: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=640&q=80"
-  },
-  {
-    title: "Để dành cho em",
-    artist: "Dangrangto, DONAL",
-    src: "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/fb/b6/71/fbb67176-94c1-68d2-a97a-72da97c817c4/mzaf_14695074226150120049.plus.aac.p.m4a",
-    cover: "https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?auto=format&fit=crop&w=640&q=80"
-  }
-];
+let MY_MUSIC_TRACKS = Array.isArray(self.MY_LOCAL_MUSIC_TRACKS)
+  ? self.MY_LOCAL_MUSIC_TRACKS.filter((track) => {
+      return track
+        && typeof track.title === "string"
+        && typeof track.artist === "string"
+        && typeof track.src === "string"
+        && typeof track.cover === "string"
+        && track.src.trim().length > 0;
+    })
+  : [];
 
 const myMusicState = {
   initialized: false,

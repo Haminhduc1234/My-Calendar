@@ -976,14 +976,15 @@ async function initFirebaseRealtime() {
     window.firebase.initializeApp(FIREBASE_CONFIG);
   }
 
-  const signedIn = await ensureFirebaseAuth();
-  if (!signedIn) {
-    alert("Không thể đăng nhập ẩn danh với Firebase. Vui lòng bật Anonymous Authentication trong Firebase Console.");
+  // Hiển thị PIN ngay để người dùng nhập mà không phải chờ auth Firebase.
+  if (!await ensureProfileKey()) {
+    alert("Bạn cần nhập mật khẩu đồng bộ để sử dụng dữ liệu đa thiết bị.");
     return;
   }
 
-  if (!await ensureProfileKey()) {
-    alert("Bạn cần nhập mật khẩu đồng bộ để sử dụng dữ liệu đa thiết bị.");
+  const signedIn = await ensureFirebaseAuth();
+  if (!signedIn) {
+    alert("Không thể đăng nhập ẩn danh với Firebase. Vui lòng bật Anonymous Authentication trong Firebase Console.");
     return;
   }
 

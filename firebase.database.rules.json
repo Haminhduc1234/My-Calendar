@@ -15,6 +15,11 @@
               "$idx": {
                 ".validate": "newData.hasChildren(['title','text','eventDateTime','createdAt']) && newData.child('title').isString() && newData.child('title').val().length <= 80 && newData.child('text').isString() && newData.child('text').val().length <= 2000 && newData.child('eventDateTime').isString() && newData.child('eventDateTime').val().length <= 40 && newData.child('createdAt').isNumber() && (!newData.child('updatedAt').exists() || newData.child('updatedAt').isNumber())"
               }
+            },
+            "cashflowEntries": {
+              "$idx": {
+                ".validate": "newData.hasChildren(['id','date','type','amount','note','createdAt']) && newData.child('id').isString() && newData.child('id').val().length >= 3 && newData.child('id').val().length <= 64 && newData.child('date').isString() && newData.child('date').val().matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.child('type').isString() && (newData.child('type').val() === 'income' || newData.child('type').val() === 'expense') && newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('amount').val() <= 10000000000 && newData.child('note').isString() && newData.child('note').val().length <= 120 && newData.child('createdAt').isNumber() && (!newData.child('updatedAt').exists() || newData.child('updatedAt').isNumber())"
+              }
             }
           }
         }

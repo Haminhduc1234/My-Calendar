@@ -9,6 +9,8 @@ const FIREBASE_EVENTS_PATH = self.FIREBASE_EVENTS_PATH || "calendarEvents";
 const FIREBASE_CLIENT_ID_KEY = "firebaseClientId";
 const FIREBASE_PROFILE_KEY_STORAGE = "calendarProfileKey";
 const LEGACY_MIGRATION_FLAG_PREFIX = "calendarLegacyMigrated:";
+const LEGACY_CASHFLOW_MIGRATION_FLAG_PREFIX = "calendarLegacyCashflowMigrated:";
+const LEGACY_CASHFLOW_STORAGE_KEY = "cashflowEntriesV1";
 const FIREBASE_CONFIG = self.FIREBASE_WEB_CONFIG || {};
 
 let firebaseDb = null;
@@ -298,11 +300,60 @@ function normalizeDateData(raw) {
     updatedAt: Number(event?.updatedAt || 0)
   }));
 
+  const rawCashflowEntries = Array.isArray(payload.cashflowEntries)
+    ? payload.cashflowEntries
+    : (payload.cashflowEntries && typeof payload.cashflowEntries === "object"
+      ? Object.keys(payload.cashflowEntries)
+        .sort((a, b) => Number(a) - Number(b))
+        .map((key) => payload.cashflowEntries[key])
+      : []);
+
+  const cashflowEntries = rawCashflowEntries
+    .map((entry) => {
+      const normalizedDate = normalizeIsoDateString(entry?.date || "");
+      const type = entry?.type === "expense" ? "expense" : "income";
+      const amount = Math.max(0, parseInt(entry?.amount, 10) || 0);
+      return {
+        id: String(entry?.id || "").trim(),
+        date: normalizedDate,
+        type,
+        amount,
+        note: String(entry?.note || "").trim(),
+        createdAt: Number(entry?.createdAt || Date.now()),
+        updatedAt: Number(entry?.updatedAt || 0)
+      };
+    })
+    .filter((entry) => entry.id && entry.date && entry.amount > 0);
+
   return {
     events,
     overtimeHours: Math.max(0, parseInt(payload.overtimeHours, 10) || 0),
+    cashflowEntries,
     updatedAt: Number(payload.updatedAt || Date.now())
   };
+}
+
+function normalizeIsoDateString(value) {
+  const text = String(value || "").trim();
+  const m = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return "";
+  const y = m[1];
+  const mm = String(Number(m[2])).padStart(2, "0");
+  const dd = String(Number(m[3])).padStart(2, "0");
+  return `${y}-${mm}-${dd}`;
+}
+
+function isoDateToDateKey(isoDate) {
+  const normalized = normalizeIsoDateString(isoDate);
+  if (!normalized) return "";
+  const [y, m, d] = normalized.split("-").map(Number);
+  return `${y}-${m}-${d}`;
+}
+
+function dateKeyToIsoDate(dateKey) {
+  const m = String(dateKey || "").trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return "";
+  return `${m[1]}-${String(Number(m[2])).padStart(2, "0")}-${String(Number(m[3])).padStart(2, "0")}`;
 }
 
 function getAllDateKeysFromCache() {
@@ -458,6 +509,65 @@ function collectLegacyLocalDateData() {
   return localData;
 }
 
+function collectLegacyCashflowEntries() {
+  try {
+    const raw = localStorage.getItem(LEGACY_CASHFLOW_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .map((entry) => {
+        const date = normalizeIsoDateString(entry?.date || "");
+        const type = entry?.type === "expense" ? "expense" : "income";
+        const amount = Math.max(0, parseInt(entry?.amount, 10) || 0);
+        const note = String(entry?.note || "").trim();
+        const id = String(entry?.id || "").trim() || `cf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const createdAt = Number(entry?.createdAt || Date.now());
+
+        return {
+          id,
+          date,
+          type,
+          amount,
+          note,
+          createdAt,
+          updatedAt: Number(entry?.updatedAt || 0)
+        };
+      })
+      .filter((entry) => entry.date && entry.amount > 0);
+  } catch {
+    return [];
+  }
+}
+
+async function migrateLegacyCashflowEntriesIfNeeded() {
+  const migrationFlag = `${LEGACY_CASHFLOW_MIGRATION_FLAG_PREFIX}${userProfileKey}`;
+  const migrated = localStorage.getItem(migrationFlag) === "1";
+  if (migrated) return;
+
+  const legacyEntries = collectLegacyCashflowEntries();
+  if (legacyEntries.length === 0) {
+    localStorage.setItem(migrationFlag, "1");
+    return;
+  }
+
+  for (const legacyEntry of legacyEntries) {
+    const dateKey = isoDateToDateKey(legacyEntry.date);
+    if (!dateKey) continue;
+
+    const data = getDateData(dateKey);
+    const exists = data.cashflowEntries.some((entry) => entry.id === legacyEntry.id);
+    if (exists) continue;
+
+    data.cashflowEntries.push(legacyEntry);
+    saveDateData(dateKey, data);
+  }
+
+  localStorage.removeItem(LEGACY_CASHFLOW_STORAGE_KEY);
+  localStorage.setItem(migrationFlag, "1");
+}
+
 // Chỉ tin bản ghi Firebase nếu pKey khớp với profile hiện tại,
 // hoặc không có pKey nhưng đây là profile gốc ban đầu (backward compat)
 function isDateRecordTrusted(raw) {
@@ -469,7 +579,7 @@ function isDateRecordTrusted(raw) {
 
 function getDateData(dateKey) {
   if (dateDataCache[dateKey]) return normalizeDateData(dateDataCache[dateKey]);
-  return normalizeDateData({ events: [], overtimeHours: 0 });
+  return normalizeDateData({ events: [], overtimeHours: 0, cashflowEntries: [] });
 }
 
 function saveDateData(dateKey, data) {
@@ -479,6 +589,7 @@ function saveDateData(dateKey, data) {
     __type: "date_data",
     events: normalized.events,
     overtimeHours: normalized.overtimeHours,
+    cashflowEntries: normalized.cashflowEntries,
     updatedAt: Date.now()
   };
 
@@ -488,10 +599,11 @@ function saveDateData(dateKey, data) {
     // Realtime Database xử lý mảng rỗng không ổn định; dùng object rỗng để luôn tồn tại node events.
     events: normalized.events.length > 0 ? normalized.events : {},
     overtimeHours: normalized.overtimeHours,
+    cashflowEntries: normalized.cashflowEntries.length > 0 ? normalized.cashflowEntries : {},
     updatedAt: Date.now()
   };
 
-  if (normalized.events.length === 0 && normalized.overtimeHours <= 0) {
+  if (normalized.events.length === 0 && normalized.overtimeHours <= 0 && normalized.cashflowEntries.length === 0) {
     delete dateDataCache[dateKey];
     localStorage.removeItem(dateKey);
     if (firebaseDatesRef) {
@@ -724,11 +836,14 @@ async function initFirebaseRealtime() {
         __type: "date_data",
         events: dateDataCache[dateKey].events.length > 0 ? dateDataCache[dateKey].events : {},
         overtimeHours: dateDataCache[dateKey].overtimeHours,
+        cashflowEntries: dateDataCache[dateKey].cashflowEntries.length > 0 ? dateDataCache[dateKey].cashflowEntries : {},
         updatedAt: Date.now()
       });
     }
     localStorage.setItem(migrationFlag, "1");
   }
+
+  await migrateLegacyCashflowEntriesIfNeeded();
 
   firebaseDatesRef.on("value", (dataSnapshot) => {
     const incoming = dataSnapshot.val() || {};
@@ -742,6 +857,7 @@ async function initFirebaseRealtime() {
         __type: "date_data",
         events: nextCache[dateKey].events,
         overtimeHours: nextCache[dateKey].overtimeHours,
+        cashflowEntries: nextCache[dateKey].cashflowEntries,
         updatedAt: Date.now()
       }));
     });
@@ -750,6 +866,7 @@ async function initFirebaseRealtime() {
     renderCalendar();
     renderOvertime();
     renderOvertimeSalary();
+    renderCashflowDashboard();
   });
 
   firebaseReady = true;
@@ -1868,34 +1985,29 @@ restoreSalaryInputs();
 renderOvertimeSalary();
 
 /* ========================== QUẢN LÝ THU CHI ========================== */
-const CASHFLOW_STORAGE_KEY = "cashflowEntriesV1";
 let cashflowEntries = [];
 let editingCashflowId = "";
 let pendingDeleteCashflowId = "";
 
-function loadCashflowEntries() {
-  try {
-    const raw = localStorage.getItem(CASHFLOW_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed
-      .map((entry) => ({
-        id: String(entry.id || ""),
-        date: String(entry.date || ""),
-        type: entry.type === "expense" ? "expense" : "income",
-        amount: Math.max(0, parseInt(entry.amount, 10) || 0),
-        note: String(entry.note || "").trim(),
-        createdAt: Number(entry.createdAt || Date.now())
-      }))
-      .filter((entry) => entry.id && entry.date && entry.amount > 0);
-  } catch {
-    return [];
+function getAllCashflowEntriesFromCache() {
+  const rows = [];
+  const dateKeys = getAllDateKeysFromCache();
+  for (const dateKey of dateKeys) {
+    const data = getDateData(dateKey);
+    const entries = data.cashflowEntries || [];
+    for (const entry of entries) {
+      rows.push({
+        ...entry,
+        date: normalizeIsoDateString(entry.date || dateKeyToIsoDate(dateKey))
+      });
+    }
   }
+  return rows;
 }
 
-function saveCashflowEntries() {
-  localStorage.setItem(CASHFLOW_STORAGE_KEY, JSON.stringify(cashflowEntries));
+function reloadCashflowEntriesFromCache() {
+  cashflowEntries = getAllCashflowEntriesFromCache();
+  sortCashflowEntries();
 }
 
 function sortCashflowEntries() {
@@ -1930,18 +2042,31 @@ function closeCashflowModal() {
   document.getElementById("cashflowModal").style.display = "none";
 }
 
+function findCashflowEntryLocation(entryId) {
+  const dateKeys = getAllDateKeysFromCache();
+  for (const dateKey of dateKeys) {
+    const data = getDateData(dateKey);
+    const idx = (data.cashflowEntries || []).findIndex((entry) => entry.id === entryId);
+    if (idx >= 0) {
+      return { dateKey, index: idx, entry: data.cashflowEntries[idx] };
+    }
+  }
+  return null;
+}
+
 function addCashflowEntry() {
   const dateInput = document.getElementById("cashflowDate");
   const typeInput = document.getElementById("cashflowType");
   const amountInput = document.getElementById("cashflowAmount");
   const noteInput = document.getElementById("cashflowNote");
 
-  const date = dateInput.value;
+  const date = normalizeIsoDateString(dateInput.value);
   const type = typeInput.value === "expense" ? "expense" : "income";
   const amount = parseInt(amountInput.value.replace(/\D/g, ""), 10) || 0;
   const note = noteInput.value.trim();
+  const targetDateKey = isoDateToDateKey(date);
 
-  if (!date) {
+  if (!date || !targetDateKey) {
     alert("Vui lòng chọn ngày giao dịch");
     return;
   }
@@ -1951,18 +2076,30 @@ function addCashflowEntry() {
   }
 
   if (editingCashflowId) {
-    const entry = cashflowEntries.find((item) => item.id === editingCashflowId);
-    if (!entry) {
+    const located = findCashflowEntryLocation(editingCashflowId);
+    if (!located) {
       editingCashflowId = "";
       syncCashflowFormMode();
       alert("Giao dịch cần sửa không còn tồn tại.");
       return;
     }
 
-    entry.date = date;
-    entry.type = type;
-    entry.amount = amount;
-    entry.note = note;
+    const previousDateKey = located.dateKey;
+    const previousData = getDateData(previousDateKey);
+    previousData.cashflowEntries.splice(located.index, 1);
+    saveDateData(previousDateKey, previousData);
+
+    const targetData = getDateData(targetDateKey);
+    targetData.cashflowEntries.push({
+      id: located.entry.id,
+      date,
+      type,
+      amount,
+      note,
+      createdAt: located.entry.createdAt || Date.now(),
+      updatedAt: Date.now()
+    });
+    saveDateData(targetDateKey, targetData);
   } else {
     const entry = {
       id: `cf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -1973,11 +2110,12 @@ function addCashflowEntry() {
       createdAt: Date.now()
     };
 
-    cashflowEntries.push(entry);
+    const data = getDateData(targetDateKey);
+    data.cashflowEntries.push(entry);
+    saveDateData(targetDateKey, data);
   }
 
-  sortCashflowEntries();
-  saveCashflowEntries();
+  reloadCashflowEntriesFromCache();
 
   resetCashflowForm();
 
@@ -2050,22 +2188,27 @@ function confirmRemoveCashflowEntry() {
     return;
   }
 
-  const idx = cashflowEntries.findIndex((entry) => entry.id === id);
-  if (idx < 0) {
+  const located = findCashflowEntryLocation(id);
+  if (!located) {
     closeCashflowDeleteConfirmModal();
     return;
   }
 
-  cashflowEntries.splice(idx, 1);
+  const data = getDateData(located.dateKey);
+  data.cashflowEntries.splice(located.index, 1);
+  saveDateData(located.dateKey, data);
+
+  reloadCashflowEntriesFromCache();
+
   if (editingCashflowId === id) {
     resetCashflowForm();
   }
-  saveCashflowEntries();
   closeCashflowDeleteConfirmModal();
   renderCashflowDashboard();
 }
 
 function renderCashflowDashboard() {
+  reloadCashflowEntriesFromCache();
   renderCashflowMonthSummary();
   renderCashflowRecentList();
   renderCashflowChart();
@@ -2267,8 +2410,7 @@ function formatCashflowDate(dateIso) {
 }
 
 (function initCashflowModal() {
-  cashflowEntries = loadCashflowEntries();
-  sortCashflowEntries();
+  reloadCashflowEntriesFromCache();
 
   const modal = document.getElementById("cashflowModal");
   modal.addEventListener("click", function (e) {

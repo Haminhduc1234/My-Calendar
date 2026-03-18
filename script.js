@@ -1785,6 +1785,21 @@ async function loadGoldMarketData() {
 }
 
 const salaryInput = document.getElementById("hourSalary");
+const fixedSalaryInput = document.getElementById("fixedSalary");
+const OVERTIME_HOURLY_SALARY_KEY = "overtimeHourlySalary";
+const FIXED_MONTHLY_SALARY_KEY = "overtimeFixedSalary";
+
+function restoreSalaryInputs() {
+  const savedHourly = parseInt(localStorage.getItem(OVERTIME_HOURLY_SALARY_KEY) || "0", 10) || 0;
+  const savedFixed = parseInt(localStorage.getItem(FIXED_MONTHLY_SALARY_KEY) || "0", 10) || 0;
+
+  if (savedHourly > 0) {
+    salaryInput.value = savedHourly.toLocaleString("vi-VN");
+  }
+  if (savedFixed > 0) {
+    fixedSalaryInput.value = savedFixed.toLocaleString("vi-VN");
+  }
+}
 
 salaryInput.addEventListener("input", () => {
   formatCurrencyInput(salaryInput);
@@ -1794,24 +1809,427 @@ salaryInput.addEventListener("input", () => {
 
 function renderOvertimeSalary() {
   const salaryPerHour = parseInt(
-    hourSalary.value.replace(/\D/g, ""),
+    salaryInput.value.replace(/\D/g, ""),
     10
-  );
-  if (!salaryPerHour || salaryPerHour <= 0) {
-    document.getElementById("otSalary").innerText = "0";
+  ) || 0;
+  const fixedSalary = parseInt(
+    fixedSalaryInput.value.replace(/\D/g, ""),
+    10
+  ) || 0;
+
+  localStorage.setItem(OVERTIME_HOURLY_SALARY_KEY, String(salaryPerHour));
+  localStorage.setItem(FIXED_MONTHLY_SALARY_KEY, String(fixedSalary));
+
+  let overtimeMoney = 0;
+  if (salaryPerHour > 0) {
+    const otSalary = calcOvertimeSalary(currentDate.getFullYear(), currentDate.getMonth(), salaryPerHour);
+    overtimeMoney = otSalary.total.salary;
+  }
+
+  document.getElementById("otSalary").innerText = overtimeMoney.toLocaleString("vi-VN");
+  document.getElementById("totalIncome").innerText = (fixedSalary + overtimeMoney).toLocaleString("vi-VN");
+}
+
+salaryInput.addEventListener("input", renderOvertimeSalary);
+fixedSalaryInput.addEventListener("input", () => {
+  formatCurrencyInput(fixedSalaryInput);
+  renderOvertimeSalary();
+});
+
+restoreSalaryInputs();
+renderOvertimeSalary();
+
+/* ========================== QUẢN LÝ THU CHI ========================== */
+const CASHFLOW_STORAGE_KEY = "cashflowEntriesV1";
+let cashflowEntries = [];
+let editingCashflowId = "";
+
+function loadCashflowEntries() {
+  try {
+    const raw = localStorage.getItem(CASHFLOW_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((entry) => ({
+        id: String(entry.id || ""),
+        date: String(entry.date || ""),
+        type: entry.type === "expense" ? "expense" : "income",
+        amount: Math.max(0, parseInt(entry.amount, 10) || 0),
+        note: String(entry.note || "").trim(),
+        createdAt: Number(entry.createdAt || Date.now())
+      }))
+      .filter((entry) => entry.id && entry.date && entry.amount > 0);
+  } catch {
+    return [];
+  }
+}
+
+function saveCashflowEntries() {
+  localStorage.setItem(CASHFLOW_STORAGE_KEY, JSON.stringify(cashflowEntries));
+}
+
+function sortCashflowEntries() {
+  cashflowEntries.sort((a, b) => {
+    if (a.date === b.date) return b.createdAt - a.createdAt;
+    return a.date < b.date ? 1 : -1;
+  });
+}
+
+function getTodayIsoDate() {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function openCashflowModal() {
+  const modal = document.getElementById("cashflowModal");
+  const dateInput = document.getElementById("cashflowDate");
+  if (!dateInput.value) {
+    dateInput.value = getTodayIsoDate();
+  }
+
+  modal.style.display = "flex";
+  syncCashflowFormMode();
+  renderCashflowDashboard();
+}
+
+function closeCashflowModal() {
+  resetCashflowForm();
+  document.getElementById("cashflowModal").style.display = "none";
+}
+
+function addCashflowEntry() {
+  const dateInput = document.getElementById("cashflowDate");
+  const typeInput = document.getElementById("cashflowType");
+  const amountInput = document.getElementById("cashflowAmount");
+  const noteInput = document.getElementById("cashflowNote");
+
+  const date = dateInput.value;
+  const type = typeInput.value === "expense" ? "expense" : "income";
+  const amount = parseInt(amountInput.value.replace(/\D/g, ""), 10) || 0;
+  const note = noteInput.value.trim();
+
+  if (!date) {
+    alert("Vui lòng chọn ngày giao dịch");
+    return;
+  }
+  if (amount <= 0) {
+    alert("Vui lòng nhập số tiền lớn hơn 0");
     return;
   }
 
-  const otSalary = calcOvertimeSalary(currentDate.getFullYear(), currentDate.getMonth(), salaryPerHour);
+  if (editingCashflowId) {
+    const entry = cashflowEntries.find((item) => item.id === editingCashflowId);
+    if (!entry) {
+      editingCashflowId = "";
+      syncCashflowFormMode();
+      alert("Giao dịch cần sửa không còn tồn tại.");
+      return;
+    }
 
-  const totalMoney = otSalary.total.salary;
+    entry.date = date;
+    entry.type = type;
+    entry.amount = amount;
+    entry.note = note;
+  } else {
+    const entry = {
+      id: `cf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      date,
+      type,
+      amount,
+      note,
+      createdAt: Date.now()
+    };
 
-  document.getElementById("otSalary").innerText =
-    totalMoney.toLocaleString("vi-VN");
+    cashflowEntries.push(entry);
+  }
+
+  sortCashflowEntries();
+  saveCashflowEntries();
+
+  resetCashflowForm();
+
+  renderCashflowDashboard();
 }
 
-hourSalary.addEventListener("input", renderOvertimeSalary);
+function startCashflowEdit(id) {
+  const entry = cashflowEntries.find((item) => item.id === id);
+  if (!entry) return;
 
+  editingCashflowId = id;
+
+  document.getElementById("cashflowDate").value = entry.date;
+  document.getElementById("cashflowType").value = entry.type;
+  document.getElementById("cashflowAmount").value = entry.amount.toLocaleString("vi-VN");
+  document.getElementById("cashflowNote").value = entry.note || "";
+
+  syncCashflowFormMode();
+}
+
+function cancelCashflowEdit() {
+  resetCashflowForm();
+}
+
+function resetCashflowForm() {
+  editingCashflowId = "";
+  document.getElementById("cashflowDate").value = getTodayIsoDate();
+  document.getElementById("cashflowType").value = "income";
+  document.getElementById("cashflowAmount").value = "";
+  document.getElementById("cashflowNote").value = "";
+  syncCashflowFormMode();
+}
+
+function syncCashflowFormMode() {
+  const submitBtn = document.getElementById("cashflowSubmitBtn");
+  const cancelBtn = document.getElementById("cashflowCancelEditBtn");
+  if (!submitBtn || !cancelBtn) return;
+
+  if (editingCashflowId) {
+    submitBtn.innerText = "Lưu chỉnh sửa";
+    cancelBtn.style.display = "inline-flex";
+  } else {
+    submitBtn.innerText = "+ Thêm giao dịch";
+    cancelBtn.style.display = "none";
+  }
+}
+
+function removeCashflowEntry(id) {
+  const idx = cashflowEntries.findIndex((entry) => entry.id === id);
+  if (idx < 0) return;
+
+  cashflowEntries.splice(idx, 1);
+  if (editingCashflowId === id) {
+    resetCashflowForm();
+  }
+  saveCashflowEntries();
+  renderCashflowDashboard();
+}
+
+function renderCashflowDashboard() {
+  renderCashflowMonthSummary();
+  renderCashflowRecentList();
+  renderCashflowChart();
+}
+
+function renderCashflowMonthSummary() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+
+  let income = 0;
+  let expense = 0;
+
+  for (const entry of cashflowEntries) {
+    const [y, m] = entry.date.split("-").map(Number);
+    if (y !== year || m !== month) continue;
+    if (entry.type === "income") income += entry.amount;
+    else expense += entry.amount;
+  }
+
+  const net = income - expense;
+  document.getElementById("cashflowIncomeMonth").innerText = `${income.toLocaleString("vi-VN")} đ`;
+  document.getElementById("cashflowExpenseMonth").innerText = `${expense.toLocaleString("vi-VN")} đ`;
+
+  const netEl = document.getElementById("cashflowNetMonth");
+  netEl.innerText = `${net.toLocaleString("vi-VN")} đ`;
+  netEl.style.color = net >= 0 ? "#8fe5b7" : "#ffb3b3";
+}
+
+function renderCashflowRecentList() {
+  const listEl = document.getElementById("cashflowRecentList");
+  listEl.innerHTML = "";
+
+  if (cashflowEntries.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "cashflow-recent-empty";
+    empty.innerText = "Chưa có giao dịch nào. Hãy thêm khoản thu/chi đầu tiên.";
+    listEl.appendChild(empty);
+    return;
+  }
+
+  const recent = cashflowEntries.slice(0, 8);
+  for (const entry of recent) {
+    const row = document.createElement("div");
+    row.className = "cashflow-row";
+
+    const dateEl = document.createElement("div");
+    dateEl.className = "cashflow-row-date";
+    dateEl.innerText = formatCashflowDate(entry.date);
+
+    const noteEl = document.createElement("div");
+    noteEl.className = "cashflow-row-note";
+    noteEl.innerText = entry.note || (entry.type === "income" ? "Khoản thu" : "Khoản chi");
+
+    const amountEl = document.createElement("div");
+    amountEl.className = `cashflow-row-amount ${entry.type === "income" ? "is-income" : "is-expense"}`;
+    amountEl.innerText = `${entry.type === "income" ? "+" : "-"}${entry.amount.toLocaleString("vi-VN")} đ`;
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "cashflow-row-edit";
+    editBtn.type = "button";
+    editBtn.title = "Sửa giao dịch";
+    editBtn.setAttribute("aria-label", "Sửa giao dịch");
+    editBtn.innerHTML = "&#9998;";
+    editBtn.addEventListener("click", () => startCashflowEdit(entry.id));
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "cashflow-row-delete";
+    delBtn.type = "button";
+    delBtn.title = "Xóa giao dịch";
+    delBtn.innerText = "×";
+    delBtn.addEventListener("click", () => removeCashflowEntry(entry.id));
+
+    row.appendChild(dateEl);
+    row.appendChild(noteEl);
+    row.appendChild(amountEl);
+    row.appendChild(editBtn);
+    row.appendChild(delBtn);
+    listEl.appendChild(row);
+  }
+}
+
+function buildCashflowByMonth() {
+  const now = new Date();
+  const months = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      year: d.getFullYear(),
+      month: d.getMonth() + 1,
+      label: `T${d.getMonth() + 1}`,
+      income: 0,
+      expense: 0
+    });
+  }
+
+  for (const entry of cashflowEntries) {
+    const [year, month] = entry.date.split("-").map(Number);
+    const target = months.find((item) => item.year === year && item.month === month);
+    if (!target) continue;
+    if (entry.type === "income") target.income += entry.amount;
+    else target.expense += entry.amount;
+  }
+
+  return months;
+}
+
+function renderCashflowChart() {
+  const canvas = document.getElementById("cashflowChart");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+
+  const rows = buildCashflowByMonth();
+  const maxVal = Math.max(
+    1,
+    ...rows.map((row) => Math.max(row.income, row.expense))
+  );
+
+  const dpr = window.devicePixelRatio || 1;
+  const wrap = canvas.parentElement;
+  const cssW = wrap.clientWidth;
+  const cssH = wrap.clientHeight;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  ctx.scale(dpr, dpr);
+
+  const W = cssW;
+  const H = cssH;
+  const padL = 8;
+  const padR = 8;
+  const padT = 16;
+  const padB = 30;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.strokeStyle = "rgba(154, 183, 231, 0.12)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 3; i++) {
+    const y = padT + chartH - (chartH * i / 3);
+    ctx.beginPath();
+    ctx.moveTo(padL, y);
+    ctx.lineTo(padL + chartW, y);
+    ctx.stroke();
+  }
+
+  const n = rows.length;
+  const groupGap = 3;
+  const groupW = Math.max(9, (chartW - groupGap * (n - 1)) / n);
+  const oneBarW = Math.max(3, Math.floor((groupW - 2) / 2));
+  const now = new Date();
+
+  rows.forEach((row, i) => {
+    const gx = padL + i * (groupW + groupGap);
+    const yBottom = padT + chartH;
+    const incomeH = (row.income / maxVal) * chartH;
+    const expenseH = (row.expense / maxVal) * chartH;
+    const nowMonth = row.year === now.getFullYear() && row.month === now.getMonth() + 1;
+
+    const incomeX = gx;
+    const expenseX = gx + oneBarW + 2;
+
+    if (row.income > 0) {
+      const gi = ctx.createLinearGradient(incomeX, yBottom - incomeH, incomeX, yBottom);
+      gi.addColorStop(0, nowMonth ? "#53d792" : "#32b873");
+      gi.addColorStop(1, nowMonth ? "#249965" : "#1c7b4d");
+      ctx.fillStyle = gi;
+      ctx.beginPath();
+      ctx.roundRect(incomeX, yBottom - incomeH, oneBarW, incomeH, [3, 3, 0, 0]);
+      ctx.fill();
+    }
+
+    if (row.expense > 0) {
+      const ge = ctx.createLinearGradient(expenseX, yBottom - expenseH, expenseX, yBottom);
+      ge.addColorStop(0, nowMonth ? "#ff8080" : "#f25f5f");
+      ge.addColorStop(1, nowMonth ? "#ca4848" : "#b73737");
+      ctx.fillStyle = ge;
+      ctx.beginPath();
+      ctx.roundRect(expenseX, yBottom - expenseH, oneBarW, expenseH, [3, 3, 0, 0]);
+      ctx.fill();
+    }
+
+    if (row.income <= 0 && row.expense <= 0) {
+      ctx.fillStyle = "rgba(154, 183, 231, 0.1)";
+      ctx.fillRect(gx, yBottom - 2, groupW, 2);
+    }
+
+    ctx.fillStyle = nowMonth ? "#a8cbff" : "#7a9ac8";
+    ctx.font = `${nowMonth ? "bold " : ""}9px "Be Vietnam Pro", sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillText(row.label, gx + groupW / 2, H - 10);
+  });
+}
+
+function formatCashflowDate(dateIso) {
+  const [y, m, d] = dateIso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+(function initCashflowModal() {
+  cashflowEntries = loadCashflowEntries();
+  sortCashflowEntries();
+
+  const modal = document.getElementById("cashflowModal");
+  modal.addEventListener("click", function (e) {
+    if (e.target === this) closeCashflowModal();
+  });
+
+  const amountInput = document.getElementById("cashflowAmount");
+  amountInput.addEventListener("input", () => {
+    formatCurrencyInput(amountInput);
+  });
+
+  const dateInput = document.getElementById("cashflowDate");
+  if (!dateInput.value) {
+    dateInput.value = getTodayIsoDate();
+  }
+
+  syncCashflowFormMode();
+}());
 
 
 renderOvertime();

@@ -88,6 +88,12 @@
                         </svg>
                         <span class="fab-label">Gold</span>
                     </button>
+                    <button class="income-fab tool-btn glow" onclick="openCashflowModal()" aria-label="Mở quản lý thu chi">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5Zm2 2v7h13v-7Zm2 1.5h4v2H7Z" />
+                        </svg>
+                        <span class="fab-label">Thu Chi</span>
+                    </button>
                 </div>
             </div>
             <button id="toolboxToggle" class="toolbox-toggle" onclick="toggleToolbox()" aria-label="Thu gọn thanh công cụ" aria-expanded="true">
@@ -215,9 +221,19 @@
                             <input type="text" id="hourSalary" placeholder="VD: 50.000" inputmode="numeric" />
                         </label>
 
+                        <label>
+                            💼 Lương cứng/tháng:
+                            <input type="text" id="fixedSalary" placeholder="VD: 8.000.000" inputmode="numeric" />
+                        </label>
+
                         <div class="salary-result">
                             💵 Tổng lương OT:
                             <b id="otSalary">0</b> đ
+                        </div>
+
+                        <div class="salary-result">
+                            🧾 Tổng thu nhập tháng:
+                            <b id="totalIncome">0</b> đ
                         </div>
                     </div>
                 </div>
@@ -250,6 +266,73 @@
                 <!-- <div class="gold-note" id="goldSourceNote">
                     Nguồn: Stooq (XAUUSD) + open.er-api (USD/VND), quy đổi tham khảo toàn quốc.
                 </div> -->
+            </div>
+        </div>
+
+        <div id="cashflowModal" class="modal">
+            <div class="cashflow-modal-content">
+                <button class="modal-close" onclick="closeCashflowModal()">×</button>
+                <h3>📊 Quản lý thu chi</h3>
+
+                <div class="cashflow-form-grid">
+                    <label class="cashflow-input-item">
+                        <span>Ngày</span>
+                        <input type="date" id="cashflowDate" />
+                    </label>
+
+                    <label class="cashflow-input-item">
+                        <span>Loại</span>
+                        <select id="cashflowType">
+                            <option value="income">Thu</option>
+                            <option value="expense">Chi</option>
+                        </select>
+                    </label>
+
+                    <label class="cashflow-input-item cashflow-amount-item">
+                        <span>Số tiền</span>
+                        <input type="text" id="cashflowAmount" placeholder="VD: 1.200.000" inputmode="numeric" />
+                    </label>
+
+                    <label class="cashflow-input-item cashflow-note-item">
+                        <span>Ghi chú</span>
+                        <input type="text" id="cashflowNote" placeholder="Ví dụ: Lương, ăn uống, điện nước..." maxlength="120" />
+                    </label>
+                </div>
+
+                <div class="cashflow-actions">
+                    <button id="cashflowSubmitBtn" class="cashflow-add-btn" onclick="addCashflowEntry()">+ Thêm giao dịch</button>
+                    <button id="cashflowCancelEditBtn" class="cashflow-cancel-btn" onclick="cancelCashflowEdit()" style="display:none;">Hủy sửa</button>
+                </div>
+
+                <div class="cashflow-summary-grid">
+                    <div class="cashflow-summary-card">
+                        <div class="cashflow-summary-label">Thu tháng này</div>
+                        <div class="cashflow-summary-value is-income" id="cashflowIncomeMonth">0 đ</div>
+                    </div>
+                    <div class="cashflow-summary-card">
+                        <div class="cashflow-summary-label">Chi tháng này</div>
+                        <div class="cashflow-summary-value is-expense" id="cashflowExpenseMonth">0 đ</div>
+                    </div>
+                    <div class="cashflow-summary-card">
+                        <div class="cashflow-summary-label">Chênh lệch</div>
+                        <div class="cashflow-summary-value" id="cashflowNetMonth">0 đ</div>
+                    </div>
+                </div>
+
+                <div class="cashflow-history-box">
+                    <div class="cashflow-history-title">Giao dịch gần đây</div>
+                    <div class="cashflow-recent-list" id="cashflowRecentList"></div>
+                </div>
+
+                <div class="cashflow-legend">
+                    <span class="legend-item legend-income">Thu</span>
+                    <span class="legend-item legend-expense">Chi</span>
+                </div>
+
+                <div class="cashflow-chart-wrap">
+                    <canvas id="cashflowChart"></canvas>
+                </div>
+                <div class="cashflow-chart-subtitle">Biểu đồ thu chi 12 tháng gần nhất</div>
             </div>
         </div>
     </div>

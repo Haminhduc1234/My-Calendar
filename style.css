@@ -751,6 +751,28 @@ body {
   min-width: 0;
 }
 
+#addEventModal .event-form-grid {
+  overflow-x: hidden;
+}
+
+#newEventDateTime {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  inline-size: 100% !important;
+  width: 100% !important;
+  max-inline-size: 100% !important;
+  max-width: 100% !important;
+  min-inline-size: 0 !important;
+  min-width: 0 !important;
+  padding-right: 10px;
+}
+
+#newEventDateTime::-webkit-datetime-edit,
+#newEventDateTime::-webkit-date-and-time-value {
+  min-width: 0;
+}
+
 .field-label {
   font-size: 13px;
   color: #cadcfb;

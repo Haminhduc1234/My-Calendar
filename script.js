@@ -1654,7 +1654,7 @@ function setMyMusicPlayUI(isPlaying) {
   const disc = document.getElementById("myMusicDisc");
   if (playBtn)
     playBtn.setAttribute("aria-label", isPlaying ? "Tạm dừng" : "Phát");
-  if (playIcon) playIcon.src = isPlaying ? "public/pause.png" : "public/ui.png";
+  if (playIcon) playIcon.src = isPlaying ? "public/pause.png" : "public/app.png";
   if (disc) disc.classList.toggle("is-spinning", isPlaying);
   renderMyMusicPlaylist();
 }

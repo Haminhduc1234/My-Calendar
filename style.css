@@ -2393,9 +2393,9 @@ input[type="datetime-local"] {
 .my-music-modal-content {
   width: min(96vw, 760px);
   max-width: calc(100vw - 16px);
-  max-height: calc(100vh - 20px);
-  padding: 18px;
-  border-radius: 20px;
+  max-height: calc(100vh - 12px);
+  padding: 12px;
+  border-radius: 12px;
   border: 1px solid rgba(200, 167, 255, 0.28);
   background:
     radial-gradient(
@@ -2909,8 +2909,8 @@ input[type="datetime-local"] {
 
   .my-music-modal-content {
     width: calc(100vw - 16px);
-    padding: 14px;
-    border-radius: 14px;
+    padding: 12px;
+    border-radius: 12px;
   }
 
   .my-music-title {

@@ -16,5 +16,23 @@ self.MY_LOCAL_MUSIC_TRACKS = [
     artist: "Zing, Phương Anh Đào",
     src: "public/musics/Kho%20B%C3%A1u.mp3",
     cover: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=640&q=80"
-  }
+  },
+  {
+    title: "Không Thời Gian",
+    artist: "Unknown Artist",
+    src: "public/musics/Kh%C3%B4ng%20Th%E1%BB%9Di%20Gian.mp3",
+    cover: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=640&q=80"
+  },
+  {
+    title: "Nếu Như Là Định Mệnh",
+    artist: "Unknown Artist",
+    src: "public/musics/N%E1%BA%BFu%20Nh%C6%B0%20L%C3%A0%20%C4%90%E1%BB%8Bnh%20M%E1%BB%87nh.mp3",
+    cover: "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=640&q=80"
+  },
+  {
+    title: "Trạng Thái Mộng Mơ",
+    artist: "Unknown Artist",
+    src: "public/musics/Tr%E1%BA%A1ng%20Th%C3%A1i%20M%E1%BB%99ng%20M%C6%A1.mp3",
+    cover: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=640&q=80"
+  },
 ];

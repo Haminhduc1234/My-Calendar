@@ -762,6 +762,8 @@ body {
 .modal-content input[type="datetime-local"],
 .modal-content input[type="password"] {
   display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
   width: 100%;
   max-width: 100%;
   min-width: 0;
@@ -2113,6 +2115,17 @@ body {
 
 /* Safari iOS date controls can enforce intrinsic min-width and overflow grid cells. */
 input[type="date"] {
+  display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  -webkit-min-logical-width: 0;
+  font-size: 16px;
+}
+
+input[type="datetime-local"] {
   display: block;
   inline-size: 100%;
   min-inline-size: 0;

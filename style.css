@@ -2076,7 +2076,7 @@ body {
 
 .cashflow-form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 10px;
 }
@@ -2084,6 +2084,7 @@ body {
 .cashflow-input-item {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   gap: 5px;
   font-size: 12px;
   font-weight: 600;
@@ -2113,6 +2114,8 @@ body {
 /* Safari iOS date controls can enforce intrinsic min-width and overflow grid cells. */
 input[type="date"] {
   display: block;
+  inline-size: 100%;
+  min-inline-size: 0;
   width: 100%;
   max-width: 100%;
   min-width: 0;

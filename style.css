@@ -2673,7 +2673,7 @@ input[type="datetime-local"] {
 
 .my-music-track-item {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
   align-items: center;
   gap: 10px;
   border-radius: 10px;
@@ -2692,6 +2692,33 @@ input[type="datetime-local"] {
 .my-music-track-item:hover {
   filter: brightness(1.08);
   border-color: rgba(221, 200, 255, 0.42);
+}
+
+.my-music-track-item.is-dragging {
+  opacity: 0.4;
+  filter: brightness(0.8);
+}
+
+.my-music-track-item.drag-over {
+  border-color: rgba(168, 196, 255, 0.8);
+  background: rgba(111, 64, 170, 0.55);
+}
+
+.drag-handle {
+  color: rgba(189, 168, 222, 0.6);
+  font-size: 14px;
+  cursor: grab;
+  padding: 2px 4px;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.drag-handle:hover {
+  color: #ede3ff;
+}
+
+.my-music-track-item:active .drag-handle {
+  cursor: grabbing;
 }
 
 .my-music-track-index {

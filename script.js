@@ -1631,7 +1631,8 @@ function renderMyMusicPlaylist() {
     const isActive = idx === activeIndex;
     const status = isActive ? (isPlaying ? "Playing" : "Ready") : "";
     return `
-      <button type="button" class="my-music-track-item ${isActive ? "is-active" : ""} ${isActive && isPlaying ? "is-playing" : ""}" onclick="selectMyMusicTrack(${idx})" aria-label="Phát bài ${escapeHtml(track.title)}">
+      <button type="button" class="my-music-track-item ${isActive ? "is-active" : ""} ${isActive && isPlaying ? "is-playing" : ""}" draggable="true" data-track-index="${idx}" onclick="selectMyMusicTrack(${idx})" aria-label="Phát bài ${escapeHtml(track.title)}">
+        <span class="drag-handle" aria-hidden="true">☰</span>
         <span class="my-music-track-index">${String(idx + 1).padStart(2, "0")}</span>
         <span class="my-music-track-text">
           <span class="my-music-track-name">${escapeHtml(track.title)}</span>
@@ -1641,6 +1642,82 @@ function renderMyMusicPlaylist() {
       </button>
     `;
   }).join("");
+
+  bindPlaylistDragDrop();
+}
+
+let _dragSrcIndex = null;
+
+function bindPlaylistDragDrop() {
+  const listEl = document.getElementById("myMusicPlaylist");
+  if (!listEl) return;
+
+  const items = listEl.querySelectorAll(".my-music-track-item");
+  items.forEach(item => {
+    item.addEventListener("dragstart", handleDragStart);
+    item.addEventListener("dragenter", handleDragEnter);
+    item.addEventListener("dragover", handleDragOver);
+    item.addEventListener("dragleave", handleDragLeave);
+    item.addEventListener("drop", handleDrop);
+    item.addEventListener("dragend", handleDragEnd);
+  });
+}
+
+function handleDragStart(e) {
+  _dragSrcIndex = Number(e.currentTarget.dataset.trackIndex);
+  e.currentTarget.classList.add("is-dragging");
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", _dragSrcIndex);
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  return false;
+}
+
+function handleDragEnter(e) {
+  e.preventDefault();
+  const target = e.currentTarget;
+  if (Number(target.dataset.trackIndex) !== _dragSrcIndex) {
+    target.classList.add("drag-over");
+  }
+}
+
+function handleDragLeave(e) {
+  e.currentTarget.classList.remove("drag-over");
+}
+
+function handleDrop(e) {
+  e.stopPropagation();
+  e.preventDefault();
+  const targetIndex = Number(e.currentTarget.dataset.trackIndex);
+  if (_dragSrcIndex === null || _dragSrcIndex === targetIndex) return;
+
+  if (myMusicState.index === _dragSrcIndex) {
+    myMusicState.index = targetIndex;
+  } else {
+    const minIdx = Math.min(_dragSrcIndex, targetIndex);
+    const maxIdx = Math.max(_dragSrcIndex, targetIndex);
+    if (myMusicState.index > _dragSrcIndex && myMusicState.index <= maxIdx) {
+      myMusicState.index--;
+    } else if (myMusicState.index < _dragSrcIndex && myMusicState.index >= minIdx) {
+      myMusicState.index++;
+    }
+  }
+
+  const [movedTrack] = MY_MUSIC_TRACKS.splice(_dragSrcIndex, 1);
+  MY_MUSIC_TRACKS.splice(targetIndex, 0, movedTrack);
+
+  saveMyMusicPrefs();
+  renderMyMusicPlaylist();
+}
+
+function handleDragEnd(e) {
+  _dragSrcIndex = null;
+  document.querySelectorAll(".my-music-track-item").forEach(item => {
+    item.classList.remove("is-dragging", "drag-over");
+  });
 }
 
 function selectMyMusicTrack(index) {

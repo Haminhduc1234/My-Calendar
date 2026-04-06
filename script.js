@@ -3278,9 +3278,125 @@ function setAppInitLoading(visible, message) {
   loading.classList.toggle("is-visible", Boolean(visible));
 }
 
+/* ========================== CURRENCY DATA ========================== */
+const CURRENCY_DATA = {
+  USD: { name: "Đô la Mỹ", flag: "https://flagcdn.com/w40/us.png" },
+  VND: { name: "Việt Nam Đồng", flag: "https://flagcdn.com/w40/vn.png" },
+  EUR: { name: "Euro", flag: "https://flagcdn.com/w40/eu.png" },
+  JPY: { name: "Yên Nhật", flag: "https://flagcdn.com/w40/jp.png" },
+  KRW: { name: "Won Hàn", flag: "https://flagcdn.com/w40/kr.png" },
+  CNY: { name: "Nhân dân tệ", flag: "https://flagcdn.com/w40/cn.png" },
+  GBP: { name: "Bảng Anh", flag: "https://flagcdn.com/w40/gb.png" },
+  AUD: { name: "Đô la Úc", flag: "https://flagcdn.com/w40/au.png" },
+  CAD: { name: "Đô la Canada", flag: "https://flagcdn.com/w40/ca.png" },
+  SGD: { name: "Đô la Singapore", flag: "https://flagcdn.com/w40/sg.png" },
+  THB: { name: "Baht Thái Lan", flag: "https://flagcdn.com/w40/th.png" },
+  HKD: { name: "Đô la Hồng Kông", flag: "https://flagcdn.com/w40/hk.png" },
+  NZD: { name: "Đô la New Zealand", flag: "https://flagcdn.com/w40/nz.png" },
+  CHF: { name: "Franc Thụy Sĩ", flag: "https://flagcdn.com/w40/ch.png" },
+  INR: { name: "Rupee Ấn Độ", flag: "https://flagcdn.com/w40/in.png" },
+  PHP: { name: "Peso Philippines", flag: "https://flagcdn.com/w40/ph.png" },
+  MYR: { name: "Ringgit Malaysia", flag: "https://flagcdn.com/w40/my.png" },
+  IDR: { name: "Rupiah Indonesia", flag: "https://flagcdn.com/w40/id.png" },
+  TWD: { name: "Đô la Đài Loan", flag: "https://flagcdn.com/w40/tw.png" },
+  RUB: { name: "Rúp Nga", flag: "https://flagcdn.com/w40/ru.png" },
+  MXN: { name: "Peso Mexico", flag: "https://flagcdn.com/w40/mx.png" },
+  BRL: { name: "Real Brazil", flag: "https://flagcdn.com/w40/br.png" },
+  ZAR: { name: "Rand Nam Phi", flag: "https://flagcdn.com/w40/za.png" },
+  AED: { name: "Dirham UAE", flag: "https://flagcdn.com/w40/ae.png" },
+  SAR: { name: "Riyal Ả Rập Xê Út", flag: "https://flagcdn.com/w40/sa.png" },
+  SEK: { name: "Krona Thụy Điển", flag: "https://flagcdn.com/w40/se.png" },
+  NOK: { name: "Krone Na Uy", flag: "https://flagcdn.com/w40/no.png" },
+  DKK: { name: "Krone Đan Mạch", flag: "https://flagcdn.com/w40/dk.png" }
+};
+
+function initCurrencySelects() {
+  ["currencyFrom", "currencyTo"].forEach(id => {
+    const select = document.getElementById(id);
+    const dropdown = document.getElementById(id + "Dropdown");
+    const selectBox = document.getElementById(id + "Select");
+    const valueSpan = selectBox.querySelector(".currency-select-value");
+    const arrowSpan = selectBox.querySelector(".currency-select-arrow");
+    
+    const options = Array.from(select.options);
+    dropdown.innerHTML = options.map(opt => {
+      const code = opt.value;
+      const data = CURRENCY_DATA[code];
+      if (!data) return "";
+      return `<div class="currency-option" data-value="${code}">
+        <img src="${data.flag}" alt="${data.name}" onerror="this.style.display='none'">
+        <span>${code} - ${data.name}</span>
+      </div>`;
+    }).join("");
+    
+    const updateDisplay = () => {
+      const selectedCode = select.value;
+      const data = CURRENCY_DATA[selectedCode];
+      if (data) {
+        valueSpan.innerHTML = `<img src="${data.flag}" alt="${data.name}" onerror="this.style.display='none'" style="width:24px;height:18px;object-fit:cover;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,0.3)"> <span>${selectedCode} - ${data.name}</span>`;
+      }
+    };
+    
+    dropdown.addEventListener("click", (e) => {
+      const option = e.target.closest(".currency-option");
+      if (option) {
+        select.value = option.dataset.value;
+        dropdown.querySelectorAll(".currency-option").forEach(o => o.classList.remove("selected"));
+        option.classList.add("selected");
+        updateDisplay();
+        dropdown.classList.remove("show");
+        arrowSpan.style.transform = "";
+        convertCurrency();
+      }
+    });
+    
+    updateDisplay();
+  });
+}
+
+function toggleCurrencySelect(id) {
+  const dropdown = document.getElementById(id + "Dropdown");
+  const selectBox = document.getElementById(id + "Select");
+  const arrowSpan = selectBox.querySelector(".currency-select-arrow");
+  
+  document.querySelectorAll(".currency-dropdown").forEach(d => {
+    if (d !== dropdown) d.classList.remove("show");
+  });
+  document.querySelectorAll(".currency-select-arrow").forEach(a => {
+    if (a !== arrowSpan) a.style.transform = "";
+  });
+  
+  dropdown.classList.toggle("show");
+  arrowSpan.style.transform = dropdown.classList.contains("show") ? "rotate(180deg)" : "";
+}
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".currency-select-wrapper")) {
+    document.querySelectorAll(".currency-dropdown").forEach(d => d.classList.remove("show"));
+    document.querySelectorAll(".currency-select-arrow").forEach(a => a.style.transform = "");
+  }
+});
+
 /* ========================== CURRENCY CONVERTER ========================== */
+function formatCurrencyInput(input) {
+  let value = input.value.replace(/[^\d]/g, "");
+  if (value) {
+    value = parseInt(value, 10).toLocaleString("vi-VN");
+  }
+  input.value = value;
+}
+
 function openCurrencyModal() {
   document.getElementById("currencyModal").style.display = "flex";
+  if (!window.currencyInitialized) {
+    initCurrencySelects();
+    window.currencyInitialized = true;
+  }
+  let amountInput = document.getElementById("currencyAmount");
+  let value = amountInput.value.replace(/[^\d]/g, "");
+  if (value) {
+    amountInput.value = parseInt(value, 10).toLocaleString("vi-VN");
+  }
   if (!window.exchangeRates) {
     fetchExchangeRates();
   }
@@ -3300,6 +3416,11 @@ async function fetchExchangeRates() {
       window.exchangeRates = data.rates;
       const lastUpdate = new Date(data.time_last_update_unix * 1000).toLocaleString("vi-VN");
       infoEl.innerText = `Cập nhật lần cuối: ${lastUpdate}`;
+      let amountInput = document.getElementById("currencyAmount");
+      let value = amountInput.value.replace(/[^\d]/g, "");
+      if (value) {
+        amountInput.value = parseInt(value, 10).toLocaleString("vi-VN");
+      }
       convertCurrency();
     } else {
       infoEl.innerText = "Lỗi khi lấy tỷ giá.";
@@ -3312,7 +3433,8 @@ async function fetchExchangeRates() {
 
 function convertCurrency() {
   if (!window.exchangeRates) return;
-  const amount = parseFloat(document.getElementById("currencyAmount").value) || 0;
+  let amountStr = document.getElementById("currencyAmount").value.replace(/[^\d]/g, "");
+  const amount = parseFloat(amountStr) || 0;
   const from = document.getElementById("currencyFrom").value;
   const to = document.getElementById("currencyTo").value;
   
@@ -3322,7 +3444,7 @@ function convertCurrency() {
   if (rateFrom && rateTo) {
     const result = (amount / rateFrom) * rateTo;
     let formattedResult = "";
-    if (["VND", "JPY", "KRW"].includes(to)) {
+    if (["VND", "JPY", "KRW", "IDR", "KHR", "LAK", "MMK"].includes(to)) {
       formattedResult = Math.round(result).toLocaleString("vi-VN");
     } else {
       formattedResult = result.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
@@ -3337,6 +3459,11 @@ function swapCurrency() {
   const temp = from.value;
   from.value = to.value;
   to.value = temp;
+  let amountInput = document.getElementById("currencyAmount");
+  let value = amountInput.value.replace(/[^\d]/g, "");
+  if (value) {
+    amountInput.value = parseInt(value, 10).toLocaleString("vi-VN");
+  }
   convertCurrency();
 }
 

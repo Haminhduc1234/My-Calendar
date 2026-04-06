@@ -204,7 +204,7 @@
               aria-label="Chuyển đổi tiền tệ"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                <path d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/>
               </svg>
               <span class="fab-label">Tiền Tệ</span>
             </button>
@@ -744,39 +744,87 @@
           <h3>Chuyển đổi tiền tệ</h3>
           <div class="currency-converter-box" style="margin-top: 15px;">
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-              <input type="number" id="currencyAmount" placeholder="Số lượng" value="1" style="flex: 1; flex-basis: 40%;" oninput="convertCurrency()" />
-              <select id="currencyFrom" style="flex: 1; flex-basis: 60%; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: rgba(6, 16, 34, 0.72); color: var(--text); outline: none;" onchange="convertCurrency()">
-                <option value="USD">USD - Đô la Mỹ</option>
-                <option value="VND" selected>VND - Việt Nam Đồng</option>
-                <option value="EUR">EUR - Euro</option>
-                <option value="JPY">JPY - Yên Nhật</option>
-                <option value="KRW">KRW - Won Hàn</option>
-                <option value="CNY">CNY - Nhân dân tệ</option>
-                <option value="GBP">GBP - Bảng Anh</option>
-                <option value="AUD">AUD - Đô la Úc</option>
-                <option value="CAD">CAD - Đô la Canada</option>
-                <option value="SGD">SGD - Đô la Singapore</option>
-                <option value="THB">THB - Bạt Thái Lan</option>
+              <input type="text" id="currencyAmount" placeholder="Số lượng" value="1" style="flex: 1; flex-basis: 40%; ime-mode: disabled;" oninput="formatCurrencyInput(this); convertCurrency();" />
+              <select id="currencyFrom" style="display: none;">
+                <option value="USD" selected>USD</option>
+                <option value="VND">VND</option>
+                <option value="EUR">EUR</option>
+                <option value="JPY">JPY</option>
+                <option value="KRW">KRW</option>
+                <option value="CNY">CNY</option>
+                <option value="GBP">GBP</option>
+                <option value="AUD">AUD</option>
+                <option value="CAD">CAD</option>
+                <option value="SGD">SGD</option>
+                <option value="THB">THB</option>
+                <option value="HKD">HKD</option>
+                <option value="NZD">NZD</option>
+                <option value="CHF">CHF</option>
+                <option value="INR">INR</option>
+                <option value="PHP">PHP</option>
+                <option value="MYR">MYR</option>
+                <option value="IDR">IDR</option>
+                <option value="TWD">TWD</option>
+                <option value="RUB">RUB</option>
+                <option value="MXN">MXN</option>
+                <option value="BRL">BRL</option>
+                <option value="ZAR">ZAR</option>
+                <option value="AED">AED</option>
+                <option value="SAR">SAR</option>
+                <option value="SEK">SEK</option>
+                <option value="NOK">NOK</option>
+                <option value="DKK">DKK</option>
               </select>
+              <div class="currency-select-wrapper">
+                <div id="currencyFromSelect" class="currency-select" onclick="toggleCurrencySelect('currencyFrom')">
+                  <span class="currency-select-value"></span>
+                  <span class="currency-select-arrow">▼</span>
+                </div>
+                <div id="currencyFromDropdown" class="currency-dropdown"></div>
+              </div>
             </div>
             <div style="text-align: center; margin-bottom: 15px;">
               <button onclick="swapCurrency()" style="background: rgba(255, 255, 255, 0.1); border: 1px solid var(--line); border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; color: var(--text); display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s;">⇅</button>
             </div>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
               <input type="text" id="currencyResult" placeholder="Kết quả" readonly style="flex: 1; flex-basis: 40%; background: rgba(0,0,0,0.2);" />
-              <select id="currencyTo" style="flex: 1; flex-basis: 60%; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: rgba(6, 16, 34, 0.72); color: var(--text); outline: none;" onchange="convertCurrency()">
-                <option value="USD" selected>USD - Đô la Mỹ</option>
-                <option value="VND">VND - Việt Nam Đồng</option>
-                <option value="EUR">EUR - Euro</option>
-                <option value="JPY">JPY - Yên Nhật</option>
-                <option value="KRW">KRW - Won Hàn</option>
-                <option value="CNY">CNY - Nhân dân tệ</option>
-                <option value="GBP">GBP - Bảng Anh</option>
-                <option value="AUD">AUD - Đô la Úc</option>
-                <option value="CAD">CAD - Đô la Canada</option>
-                <option value="SGD">SGD - Đô la Singapore</option>
-                <option value="THB">THB - Bạt Thái Lan</option>
+              <select id="currencyTo" style="display: none;">
+                <option value="VND" selected>VND</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="JPY">JPY</option>
+                <option value="KRW">KRW</option>
+                <option value="CNY">CNY</option>
+                <option value="GBP">GBP</option>
+                <option value="AUD">AUD</option>
+                <option value="CAD">CAD</option>
+                <option value="SGD">SGD</option>
+                <option value="THB">THB</option>
+                <option value="HKD">HKD</option>
+                <option value="NZD">NZD</option>
+                <option value="CHF">CHF</option>
+                <option value="INR">INR</option>
+                <option value="PHP">PHP</option>
+                <option value="MYR">MYR</option>
+                <option value="IDR">IDR</option>
+                <option value="TWD">TWD</option>
+                <option value="RUB">RUB</option>
+                <option value="MXN">MXN</option>
+                <option value="BRL">BRL</option>
+                <option value="ZAR">ZAR</option>
+                <option value="AED">AED</option>
+                <option value="SAR">SAR</option>
+                <option value="SEK">SEK</option>
+                <option value="NOK">NOK</option>
+                <option value="DKK">DKK</option>
               </select>
+              <div class="currency-select-wrapper">
+                <div id="currencyToSelect" class="currency-select" onclick="toggleCurrencySelect('currencyTo')">
+                  <span class="currency-select-value"></span>
+                  <span class="currency-select-arrow">▼</span>
+                </div>
+                <div id="currencyToDropdown" class="currency-dropdown"></div>
+              </div>
             </div>
             <div id="currencyUpdateInfo" style="margin-top: 15px; font-size: 12px; color: var(--muted); text-align: center;">Đang tải tỷ giá...</div>
           </div>

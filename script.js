@@ -3278,6 +3278,68 @@ function setAppInitLoading(visible, message) {
   loading.classList.toggle("is-visible", Boolean(visible));
 }
 
+/* ========================== CURRENCY CONVERTER ========================== */
+function openCurrencyModal() {
+  document.getElementById("currencyModal").style.display = "flex";
+  if (!window.exchangeRates) {
+    fetchExchangeRates();
+  }
+}
+
+function closeCurrencyModal() {
+  document.getElementById("currencyModal").style.display = "none";
+}
+
+async function fetchExchangeRates() {
+  const infoEl = document.getElementById("currencyUpdateInfo");
+  try {
+    infoEl.innerText = "Đang tải tỷ giá...";
+    const response = await fetch("https://open.er-api.com/v6/latest/USD");
+    const data = await response.json();
+    if (data && data.rates) {
+      window.exchangeRates = data.rates;
+      const lastUpdate = new Date(data.time_last_update_unix * 1000).toLocaleString("vi-VN");
+      infoEl.innerText = `Cập nhật lần cuối: ${lastUpdate}`;
+      convertCurrency();
+    } else {
+      infoEl.innerText = "Lỗi khi lấy tỷ giá.";
+    }
+  } catch (err) {
+    console.error("Lỗi tỷ giá:", err);
+    infoEl.innerText = "Lỗi kết nối khi lấy tỷ giá.";
+  }
+}
+
+function convertCurrency() {
+  if (!window.exchangeRates) return;
+  const amount = parseFloat(document.getElementById("currencyAmount").value) || 0;
+  const from = document.getElementById("currencyFrom").value;
+  const to = document.getElementById("currencyTo").value;
+  
+  const rateFrom = window.exchangeRates[from];
+  const rateTo = window.exchangeRates[to];
+  
+  if (rateFrom && rateTo) {
+    const result = (amount / rateFrom) * rateTo;
+    let formattedResult = "";
+    if (["VND", "JPY", "KRW"].includes(to)) {
+      formattedResult = Math.round(result).toLocaleString("vi-VN");
+    } else {
+      formattedResult = result.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
+    }
+    document.getElementById("currencyResult").value = formattedResult;
+  }
+}
+
+function swapCurrency() {
+  const from = document.getElementById("currencyFrom");
+  const to = document.getElementById("currencyTo");
+  const temp = from.value;
+  from.value = to.value;
+  to.value = temp;
+  convertCurrency();
+}
+
 /* ========================== INIT ========================= */
 // Show password modal IMMEDIATELY (before heavy rendering)
 (async () => {

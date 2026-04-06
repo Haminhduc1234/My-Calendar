@@ -745,82 +745,86 @@
           <div class="currency-converter-box" style="margin-top: 15px;">
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
               <input type="text" id="currencyAmount" placeholder="Số lượng" value="1" style="flex: 1; flex-basis: 40%; ime-mode: disabled;" oninput="formatCurrencyInput(this); convertCurrency();" />
-              <select id="currencyFrom" style="display: none;">
-                <option value="USD" selected>USD</option>
-                <option value="VND">VND</option>
-                <option value="EUR">EUR</option>
-                <option value="JPY">JPY</option>
-                <option value="KRW">KRW</option>
-                <option value="CNY">CNY</option>
-                <option value="GBP">GBP</option>
-                <option value="AUD">AUD</option>
-                <option value="CAD">CAD</option>
-                <option value="SGD">SGD</option>
-                <option value="THB">THB</option>
-                <option value="HKD">HKD</option>
-                <option value="NZD">NZD</option>
-                <option value="CHF">CHF</option>
-                <option value="INR">INR</option>
-                <option value="PHP">PHP</option>
-                <option value="MYR">MYR</option>
-                <option value="IDR">IDR</option>
-                <option value="TWD">TWD</option>
-                <option value="RUB">RUB</option>
-                <option value="MXN">MXN</option>
-                <option value="BRL">BRL</option>
-                <option value="ZAR">ZAR</option>
-                <option value="AED">AED</option>
-                <option value="SAR">SAR</option>
-                <option value="SEK">SEK</option>
-                <option value="NOK">NOK</option>
-                <option value="DKK">DKK</option>
-              </select>
-              <div id="currencyFromSelect" class="currency-select" onclick="toggleCurrencySelect('currencyFrom')">
-                <span class="currency-select-value"></span>
-                <span class="currency-select-arrow">▼</span>
+              <div class="currency-select-wrapper">
+                <select id="currencyFrom" style="display: none;">
+                  <option value="USD" selected>USD</option>
+                  <option value="VND">VND</option>
+                  <option value="EUR">EUR</option>
+                  <option value="JPY">JPY</option>
+                  <option value="KRW">KRW</option>
+                  <option value="CNY">CNY</option>
+                  <option value="GBP">GBP</option>
+                  <option value="AUD">AUD</option>
+                  <option value="CAD">CAD</option>
+                  <option value="SGD">SGD</option>
+                  <option value="THB">THB</option>
+                  <option value="HKD">HKD</option>
+                  <option value="NZD">NZD</option>
+                  <option value="CHF">CHF</option>
+                  <option value="INR">INR</option>
+                  <option value="PHP">PHP</option>
+                  <option value="MYR">MYR</option>
+                  <option value="IDR">IDR</option>
+                  <option value="TWD">TWD</option>
+                  <option value="RUB">RUB</option>
+                  <option value="MXN">MXN</option>
+                  <option value="BRL">BRL</option>
+                  <option value="ZAR">ZAR</option>
+                  <option value="AED">AED</option>
+                  <option value="SAR">SAR</option>
+                  <option value="SEK">SEK</option>
+                  <option value="NOK">NOK</option>
+                  <option value="DKK">DKK</option>
+                </select>
+                <div id="currencyFromSelect" class="currency-select" onclick="toggleCurrencySelect('currencyFrom')">
+                  <span class="currency-select-value"></span>
+                  <span class="currency-select-arrow">▼</span>
+                </div>
+                <div id="currencyFromDropdown" class="currency-dropdown" style="position: absolute;"></div>
               </div>
-              <div id="currencyFromDropdown" class="currency-dropdown" style="position: absolute;"></div>
             </div>
             <div style="text-align: center; margin-bottom: 15px;">
               <button onclick="swapCurrency()" style="background: rgba(255, 255, 255, 0.1); border: 1px solid var(--line); border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; color: var(--text); display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s;">⇅</button>
             </div>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
               <input type="text" id="currencyResult" placeholder="Kết quả" readonly style="flex: 1; flex-basis: 40%; background: rgba(0,0,0,0.2);" />
-              <select id="currencyTo" style="display: none;">
-                <option value="VND" selected>VND</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-                <option value="JPY">JPY</option>
-                <option value="KRW">KRW</option>
-                <option value="CNY">CNY</option>
-                <option value="GBP">GBP</option>
-                <option value="AUD">AUD</option>
-                <option value="CAD">CAD</option>
-                <option value="SGD">SGD</option>
-                <option value="THB">THB</option>
-                <option value="HKD">HKD</option>
-                <option value="NZD">NZD</option>
-                <option value="CHF">CHF</option>
-                <option value="INR">INR</option>
-                <option value="PHP">PHP</option>
-                <option value="MYR">MYR</option>
-                <option value="IDR">IDR</option>
-                <option value="TWD">TWD</option>
-                <option value="RUB">RUB</option>
-                <option value="MXN">MXN</option>
-                <option value="BRL">BRL</option>
-                <option value="ZAR">ZAR</option>
-                <option value="AED">AED</option>
-                <option value="SAR">SAR</option>
-                <option value="SEK">SEK</option>
-                <option value="NOK">NOK</option>
-                <option value="DKK">DKK</option>
-              </select>
-              <div id="currencyToSelect" class="currency-select" onclick="toggleCurrencySelect('currencyTo')">
-                <span class="currency-select-value"></span>
-                <span class="currency-select-arrow">▼</span>
+              <div class="currency-select-wrapper">
+                <select id="currencyTo" style="display: none;">
+                  <option value="VND" selected>VND</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="JPY">JPY</option>
+                  <option value="KRW">KRW</option>
+                  <option value="CNY">CNY</option>
+                  <option value="GBP">GBP</option>
+                  <option value="AUD">AUD</option>
+                  <option value="CAD">CAD</option>
+                  <option value="SGD">SGD</option>
+                  <option value="THB">THB</option>
+                  <option value="HKD">HKD</option>
+                  <option value="NZD">NZD</option>
+                  <option value="CHF">CHF</option>
+                  <option value="INR">INR</option>
+                  <option value="PHP">PHP</option>
+                  <option value="MYR">MYR</option>
+                  <option value="IDR">IDR</option>
+                  <option value="TWD">TWD</option>
+                  <option value="RUB">RUB</option>
+                  <option value="MXN">MXN</option>
+                  <option value="BRL">BRL</option>
+                  <option value="ZAR">ZAR</option>
+                  <option value="AED">AED</option>
+                  <option value="SAR">SAR</option>
+                  <option value="SEK">SEK</option>
+                  <option value="NOK">NOK</option>
+                  <option value="DKK">DKK</option>
+                </select>
+                <div id="currencyToSelect" class="currency-select" onclick="toggleCurrencySelect('currencyTo')">
+                  <span class="currency-select-value"></span>
+                  <span class="currency-select-arrow">▼</span>
+                </div>
+                <div id="currencyToDropdown" class="currency-dropdown" style="position: absolute;"></div>
               </div>
-              <div id="currencyToDropdown" class="currency-dropdown" style="position: absolute;"></div>
             </div>
             <div id="currencyUpdateInfo" style="margin-top: 15px; font-size: 12px; color: var(--muted); text-align: center;">Đang tải tỷ giá...</div>
           </div>

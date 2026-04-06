@@ -1392,6 +1392,7 @@ body {
   gap: 8px;
   flex: 1;
   overflow: hidden;
+  white-space: nowrap;
 }
 
 .currency-select-arrow {
@@ -1418,6 +1419,7 @@ body {
 .currency-select-wrapper {
   flex: 1;
   flex-basis: 60%;
+  flex-shrink: 0;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -1426,6 +1428,7 @@ body {
 .currency-select-wrapper .currency-select {
   width: 100%;
   box-sizing: border-box;
+  min-width: 110px;
 }
 
 .currency-dropdown.show {

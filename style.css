@@ -1476,6 +1476,23 @@ body {
   margin-bottom: 12px;
 }
 
+.gold-card-value.is-loading {
+  color: transparent !important;
+  height: 28px;
+  width: 75%;
+  margin: 4px 0 8px;
+  border-radius: 8px;
+  background:
+    linear-gradient(100deg,
+      rgba(148, 175, 224, 0.16) 20%,
+      rgba(186, 210, 255, 0.38) 40%,
+      rgba(148, 175, 224, 0.16) 60%),
+    rgba(99, 126, 178, 0.2);
+  background-size: 220% 100%;
+  animation: appSkeletonShimmer 1.2s linear infinite;
+  display: block;
+}
+
 .gold-summary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

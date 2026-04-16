@@ -2790,6 +2790,11 @@ async function loadGoldMarketData() {
   const sellEl = document.getElementById("goldSellLuong");
   const noteEl = document.getElementById("goldSourceNote");
 
+  if (buyEl && sellEl) {
+    buyEl.classList.add("is-loading");
+    sellEl.classList.add("is-loading");
+  }
+
   updatedEl.innerText = "Đang tải dữ liệu giá vàng Việt Nam...";
   buyEl.innerText = "--";
   sellEl.innerText = "--";
@@ -2810,11 +2815,20 @@ async function loadGoldMarketData() {
     sellEl.innerText = formatVnd(sellVnd);
     updatedEl.innerText = `Giá vàng SJC hôm nay Cập nhật lúc ${current.updatedAt}`;
 
-    noteEl.innerText =
-      "Nguồn: giavang.org (giá vàng trong nước SJC toàn quốc hiện tại) qua proxy r.jina.ai.";
+    if (noteEl) {
+      noteEl.innerText =
+        "Nguồn: giavang.org (giá vàng trong nước SJC toàn quốc hiện tại) qua proxy r.jina.ai.";
+    }
   } catch {
-    noteEl.innerText =
-      "Nguồn nội địa đang lỗi mạng hoặc bị chặn. Vui lòng thử lại sau.";
+    if (noteEl) {
+      noteEl.innerText =
+        "Nguồn nội địa đang lỗi mạng hoặc bị chặn. Vui lòng thử lại sau.";
+    }
+  } finally {
+    if (buyEl && sellEl) {
+      buyEl.classList.remove("is-loading");
+      sellEl.classList.remove("is-loading");
+    }
   }
 }
 

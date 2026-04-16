@@ -216,9 +216,9 @@ function renderTodayEvents() {
       .map((ev) => {
         const timeStr = ev.eventDateTime
           ? new Date(ev.eventDateTime).toLocaleTimeString("vi-VN", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
+            hour: "2-digit",
+            minute: "2-digit",
+          })
           : "";
         return `<div class="today-event-item">
         ${timeStr ? `<span class="today-event-time">${timeStr}</span>` : ""}
@@ -241,7 +241,9 @@ function renderCalendar() {
   document.getElementById("monthYear").innerText =
     `Tháng ${month + 1} / ${year}`;
 
-  const firstDayOfMonth = new Date(year, month, 1).getDay();
+  let firstDayOfMonth = new Date(year, month, 1).getDay();
+  // Chuyển Chủ Nhật (0) thành 6, Thứ Hai (1) thành 0... để tuần bắt đầu từ Thứ Hai
+  firstDayOfMonth = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
   const startDate = new Date(year, month, 1 - firstDayOfMonth);
 
   const today = new Date();
@@ -316,8 +318,8 @@ function normalizeDateData(raw) {
     ? payload.events
     : payload.events && typeof payload.events === "object"
       ? Object.keys(payload.events)
-          .sort((a, b) => Number(a) - Number(b))
-          .map((key) => payload.events[key])
+        .sort((a, b) => Number(a) - Number(b))
+        .map((key) => payload.events[key])
       : [];
 
   const events = rawEvents.map((event) => ({
@@ -332,8 +334,8 @@ function normalizeDateData(raw) {
     ? payload.cashflowEntries
     : payload.cashflowEntries && typeof payload.cashflowEntries === "object"
       ? Object.keys(payload.cashflowEntries)
-          .sort((a, b) => Number(a) - Number(b))
-          .map((key) => payload.cashflowEntries[key])
+        .sort((a, b) => Number(a) - Number(b))
+        .map((key) => payload.cashflowEntries[key])
       : [];
 
   const cashflowEntries = rawCashflowEntries
@@ -989,7 +991,7 @@ function parseEventRecord(raw) {
         overtimeHours: Math.max(0, parseInt(parsed.overtimeHours, 10) || 0),
       };
     }
-  } catch {}
+  } catch { }
 
   const legacyHours = parseLegacyOvertimeHours(text);
   return {
@@ -1227,9 +1229,9 @@ function openDayDetailsModal(dateKey, d, m, y) {
       eventDiv.className = "event-item";
       const timeStr = event.eventDateTime
         ? new Date(event.eventDateTime).toLocaleTimeString("vi-VN", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+          hour: "2-digit",
+          minute: "2-digit",
+        })
         : "--:--";
       eventDiv.innerHTML = `
         <div class="event-time">${timeStr}</div>
@@ -1384,13 +1386,13 @@ function loadQuickNotes() {
 function saveQuickNotes(notes) {
   const normalized = Array.isArray(notes)
     ? notes
-        .map((note) => ({
-          id: String(note?.id || "").trim(),
-          text: String(note?.text || "").trim(),
-          done: Boolean(note?.done),
-          createdAt: Number(note?.createdAt || Date.now()),
-        }))
-        .filter((note) => note.id && note.text)
+      .map((note) => ({
+        id: String(note?.id || "").trim(),
+        text: String(note?.text || "").trim(),
+        done: Boolean(note?.done),
+        createdAt: Number(note?.createdAt || Date.now()),
+      }))
+      .filter((note) => note.id && note.text)
     : [];
 
   localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(normalized));
@@ -1507,15 +1509,15 @@ function initQuickNoteModal() {
 
 let MY_MUSIC_TRACKS = Array.isArray(self.MY_LOCAL_MUSIC_TRACKS)
   ? self.MY_LOCAL_MUSIC_TRACKS.filter((track) => {
-      return (
-        track &&
-        typeof track.title === "string" &&
-        typeof track.artist === "string" &&
-        typeof track.src === "string" &&
-        typeof track.cover === "string" &&
-        track.src.trim().length > 0
-      );
-    })
+    return (
+      track &&
+      typeof track.title === "string" &&
+      typeof track.artist === "string" &&
+      typeof track.src === "string" &&
+      typeof track.cover === "string" &&
+      track.src.trim().length > 0
+    );
+  })
   : [];
 
 const myMusicState = {
@@ -3343,15 +3345,9 @@ renderOvertime();
 setInterval(updateClock, 1000);
 updateClock();
 
-function setAppInitLoading(visible, message) {
+function setAppInitLoading(visible) {
   const loading = document.getElementById("appInitLoading");
-  const text = document.getElementById("appInitLoadingText");
   if (!loading) return;
-
-  if (text && message) {
-    text.innerText = message;
-  }
-
   loading.classList.toggle("is-visible", Boolean(visible));
 }
 
@@ -3394,7 +3390,7 @@ function initCurrencySelects() {
     const selectBox = document.getElementById(id + "Select");
     const valueSpan = selectBox.querySelector(".currency-select-value");
     const arrowSpan = selectBox.querySelector(".currency-select-arrow");
-    
+
     const options = Array.from(select.options);
     dropdown.innerHTML = options.map(opt => {
       const code = opt.value;
@@ -3405,7 +3401,7 @@ function initCurrencySelects() {
         <span>${code} - ${data.name}</span>
       </div>`;
     }).join("");
-    
+
     const updateDisplay = () => {
       const selectedCode = select.value;
       const data = CURRENCY_DATA[selectedCode];
@@ -3413,7 +3409,7 @@ function initCurrencySelects() {
         valueSpan.innerHTML = `<img src="${data.flag}" alt="${data.name}" onerror="this.style.display='none'" style="width:24px;height:18px;object-fit:cover;border-radius:2px;box-shadow:0 1px 3px rgba(0,0,0,0.3)"> <span>${selectedCode} - ${data.name}</span>`;
       }
     };
-    
+
     dropdown.addEventListener("click", (e) => {
       const option = e.target.closest(".currency-option");
       if (option) {
@@ -3426,7 +3422,7 @@ function initCurrencySelects() {
         convertCurrency();
       }
     });
-    
+
     updateDisplay();
   });
 }
@@ -3435,14 +3431,14 @@ function toggleCurrencySelect(id) {
   const dropdown = document.getElementById(id + "Dropdown");
   const selectBox = document.getElementById(id + "Select");
   const arrowSpan = selectBox.querySelector(".currency-select-arrow");
-  
+
   document.querySelectorAll(".currency-dropdown").forEach(d => {
     if (d !== dropdown) d.classList.remove("show");
   });
   document.querySelectorAll(".currency-select-arrow").forEach(a => {
     if (a !== arrowSpan) a.style.transform = "";
   });
-  
+
   dropdown.classList.toggle("show");
   arrowSpan.style.transform = dropdown.classList.contains("show") ? "rotate(180deg)" : "";
 }
@@ -3514,10 +3510,10 @@ function convertCurrency() {
   const amount = parseFloat(amountStr) || 0;
   const from = document.getElementById("currencyFrom").value;
   const to = document.getElementById("currencyTo").value;
-  
+
   const rateFrom = window.exchangeRates[from];
   const rateTo = window.exchangeRates[to];
-  
+
   if (rateFrom && rateTo) {
     const result = (amount / rateFrom) * rateTo;
     let formattedResult = "";
@@ -3547,7 +3543,7 @@ function swapCurrency() {
 /* ========================== INIT ========================= */
 // Show password modal IMMEDIATELY (before heavy rendering)
 (async () => {
-  setAppInitLoading(true, "Chờ tôi chút nhé...");
+  setAppInitLoading(true);
   try {
     // Priority 1: Show password modal first (non-blocking)
     await initFirebaseServices();

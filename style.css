@@ -37,11 +37,14 @@ body {
 }
 
 .app-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px 95px 16px;
+  position: relative;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: min(100%, 980px);
-  margin: 0 auto;
 }
 
 .app-init-loading {
@@ -968,7 +971,7 @@ body {
 .quick-toolbox {
   position: fixed;
   right: 0;
-  bottom: 18px;
+  bottom: 85px;
   display: flex;
   flex-direction: row;
   align-items: flex-end;
@@ -2077,7 +2080,7 @@ body {
 
   .quick-toolbox {
     right: 10px;
-    bottom: 10px;
+    bottom: 85px;
     gap: 8px;
   }
 
@@ -2941,6 +2944,8 @@ input[type="datetime-local"] {
   color: var(--muted);
 }
 
+/* Consolidated into the top of the file */
+
 .cashflow-chart-wrap {
   width: 100%;
   height: 190px;
@@ -3033,6 +3038,107 @@ input[type="datetime-local"] {
   .cashflow-row {
     grid-template-columns: auto 1fr auto auto auto;
   }
+}
+
+/* ========================== BOTTOM NAV ========================== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 72px;
+  background: rgba(13, 22, 43, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #a6bde2;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  flex: 1;
+  text-decoration: none;
+  padding: 8px 0;
+}
+
+.nav-item svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+  margin-bottom: 4px;
+  transition: transform 0.2s ease;
+}
+
+.nav-label {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.nav-item.prominent {
+  position: relative;
+  overflow: visible;
+}
+
+.prominent-inner {
+  background: linear-gradient(135deg, #4a90e2, #357abd);
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -54px;
+  box-shadow: 0 8px 25px rgba(74, 144, 226, 0.5);
+  border: 5px solid #07142a;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.prominent-inner svg {
+  width: 30px;
+  height: 30px;
+  fill: #fff;
+  margin-bottom: 0;
+}
+
+.nav-item.prominent .nav-label {
+  margin-top: 5px;
+}
+
+.nav-item:hover {
+  color: #ffffff;
+}
+
+.nav-item:hover svg {
+  transform: translateY(-2px);
+}
+
+.nav-item.prominent:hover .prominent-inner {
+  transform: scale(1.1);
+  box-shadow: 0 12px 30px rgba(74, 144, 226, 0.7);
+}
+
+.nav-item.overtime-fab:hover { color: #8fe5b7; }
+.nav-item.music-fab:hover { color: #ff85a2; }
+.nav-item.quick-note-fab:hover { color: #a8ccff; }
+.nav-item.gold-fab:hover { color: #f0c24d; }
+
+.nav-item:active {
+  transform: scale(0.92);
 }
 
 @keyframes musicSpin {

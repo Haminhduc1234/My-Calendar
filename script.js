@@ -1200,11 +1200,30 @@ async function initFirebaseRealtime() {
   console.log("Firebase Realtime Database connected");
 }
 
+function closeAllModals() {
+  const modals = [
+    "addEventModal",
+    "dayDetailsModal",
+    "overtimeModal",
+    "goldModal",
+    "quickNoteModal",
+    "myMusicModal",
+    "cashflowModal",
+    "cashflowDeleteConfirmModal",
+    "currencyModal"
+  ];
+  modals.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+}
+
 async function initFirebaseServices() {
   await initFirebaseRealtime();
 }
 
 function openAddEventModalForToday() {
+  closeAllModals();
   const today = new Date();
   const key = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
   openAddEventModal(
@@ -1224,6 +1243,7 @@ function openAddEventModalFromDayDetails() {
 }
 
 function openEditEventModal(eventIndex) {
+  closeAllModals();
   if (!selectedKey) return;
 
   const data = getDateData(selectedKey);
@@ -1247,6 +1267,7 @@ function openEditEventModal(eventIndex) {
 
 // Day Details Modal - shows events list and overtime editor
 function openDayDetailsModal(dateKey, d, m, y) {
+  closeAllModals();
   selectedKey = dateKey;
   const data = getDateData(dateKey);
 
@@ -1312,6 +1333,7 @@ function deleteEventFromDateUI(eventIndex) {
 
 // Add Event Modal - for creating new event
 function openAddEventModal(dateKey, d, m, y) {
+  closeAllModals();
   selectedKey = dateKey;
   selectedEventIndex = -1;
 
@@ -1375,6 +1397,7 @@ function closeModal() {
 }
 
 function openOvertimeModal() {
+  closeAllModals();
   document.getElementById("overtimeModal").style.display = "flex";
 }
 
@@ -1383,6 +1406,7 @@ function closeOvertimeModal() {
 }
 
 function openGoldModal() {
+  closeAllModals();
   document.getElementById("goldModal").style.display = "flex";
   loadGoldMarketData();
 }
@@ -1486,6 +1510,7 @@ function renderQuickNotes() {
 }
 
 function openQuickNoteModal() {
+  closeAllModals();
   renderQuickNotes();
   document.getElementById("quickNoteModal").style.display = "flex";
 
@@ -1843,6 +1868,7 @@ function pickRandomTrackIndex(exceptIndex) {
 }
 
 function openMyMusicModal() {
+  closeAllModals();
   const modal = document.getElementById("myMusicModal");
   if (!modal) return;
 
@@ -2962,6 +2988,7 @@ function getTodayIsoDate() {
 }
 
 function openCashflowModal() {
+  closeAllModals();
   const modal = document.getElementById("cashflowModal");
   const dateInput = document.getElementById("cashflowDate");
   if (!dateInput.value) {
@@ -3521,6 +3548,7 @@ function formatCurrencyInput(input) {
 }
 
 function openCurrencyModal() {
+  closeAllModals();
   document.getElementById("currencyModal").style.display = "flex";
   if (!window.currencyInitialized) {
     initCurrencySelects();

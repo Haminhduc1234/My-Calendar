@@ -37,7 +37,7 @@ body {
 }
 
 .app-wrapper {
-  max-width: 1200px;
+  max-width: 480px;
   margin: 0 auto;
   padding: 0 16px 95px 16px;
   position: relative;
@@ -45,6 +45,13 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  background: var(--bg-0);
+  box-shadow: 0 0 100px rgba(0, 0, 0, 0.6);
+  overflow-x: hidden;
+}
+
+body {
+  background: #020814;
 }
 
 .app-init-loading {
@@ -581,37 +588,43 @@ body {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(2, 8, 20, 0.76);
-  backdrop-filter: blur(6px);
-  justify-content: center;
-  align-items: center;
-  z-index: 500;
-  animation: fadeIn 0.2s ease;
+  background: var(--bg-0); /* Full solid back on full screen */
+  z-index: 2000; /* Higher than bottom nav */
+  animation: modalFadeIn 0.2s ease;
 }
 
-.modal-content {
-  width: min(92vw, 360px);
-  max-width: calc(100vw - 16px);
-  border-radius: 18px;
-  padding: 18px;
-  border: 1px solid var(--line);
-  background: linear-gradient(160deg, #0a1833, #0e2144);
-  box-shadow: 0 30px 44px rgba(0, 0, 0, 0.5);
-  animation: scaleIn 0.25s ease;
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.modal-content,
+.overtime-modal-content,
+.gold-modal-content,
+.quick-note-modal-content,
+.my-music-modal-content,
+.cashflow-modal-content,
+.currency-modal-content {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 20px !important;
+  border: none !important;
+  background: linear-gradient(160deg, #0a1833, #0e2144) !important;
+  animation: modalSlideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  overflow-y: auto;
   position: relative;
 }
 
-.overtime-modal-content {
-  width: min(94vw, 420px);
-  max-width: calc(100vw - 16px);
-  border-radius: 18px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  background: linear-gradient(160deg, #0a1833, #0e2144);
-  box-shadow: 0 30px 44px rgba(0, 0, 0, 0.5);
-  animation: scaleIn 0.25s ease;
-  position: relative;
-}
+
 
 .overtime-modal-content h3 {
   margin: 0 0 10px;

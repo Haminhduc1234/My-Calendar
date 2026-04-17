@@ -2821,8 +2821,19 @@ function drawGoldChart(canvasId, points) {
 }
 
 async function fetchTextWithCorsFallback(url) {
-  const proxyUrl = `https://r.jina.ai/http://${url.replace(/^https?:\/\//, "")}`;
-  const res = await fetch(proxyUrl);
+  // Add timestamp to bypass caching
+  const timestamp = Date.now();
+  const separator = url.includes("?") ? "&" : "?";
+  const finalUrl = `${url}${separator}t=${timestamp}`;
+
+  const proxyUrl = `https://r.jina.ai/http://${finalUrl.replace(/^https?:\/\//, "")}`;
+
+  const res = await fetch(proxyUrl, {
+    cache: "no-cache",
+    headers: {
+      "Cache-Control": "no-cache"
+    }
+  });
   if (!res.ok) throw new Error("Không thể tải dữ liệu do CORS");
 
   const raw = await res.text();
@@ -3651,3 +3662,217 @@ function swapCurrency() {
     setAppInitLoading(false);
   }
 })();
+
+/* ========================== TIN TỨC ========================== */
+let currentNewsTab = "vn";
+let newsCache = {
+  vn: null, global: null, sports: null, business: null,
+  tech: null, realestate: null, health: null,
+  entertainment: null, cars: null, travel: null
+};
+
+function openNewsModal() {
+  closeAllModals();
+  document.getElementById("newsModal").style.display = "flex";
+
+  // Load news if not cached or cache is old
+  if (!newsCache[currentNewsTab]) {
+    fetchNews(currentNewsTab);
+  } else {
+    renderNewsItems(newsCache[currentNewsTab]);
+  }
+}
+
+async function refreshNews() {
+  const btn = document.getElementById("newsRefreshBtn");
+  if (btn) btn.classList.add("spinning");
+
+  // Clear cache for current tab
+  newsCache[currentNewsTab] = null;
+
+  await fetchNews(currentNewsTab);
+
+  if (btn) {
+    setTimeout(() => {
+      btn.classList.remove("spinning");
+    }, 600); // Keep spinning for at least 600ms for visual feel
+  }
+}
+
+function closeNewsModal() {
+  document.getElementById("newsModal").style.display = "none";
+}
+
+function switchNewsTab(type) {
+  if (currentNewsTab === type) return;
+
+  currentNewsTab = type;
+  const tabIds = {
+    vn: "newsTabVN", global: "newsTabGlobal", sports: "newsTabSports",
+    business: "newsTabBusiness", tech: "newsTabTech", realestate: "newsTabRealEstate",
+    health: "newsTabHealth", entertainment: "newsTabEntertainment",
+    cars: "newsTabCars", travel: "newsTabTravel"
+  };
+
+  Object.values(tabIds).forEach(id => {
+    document.getElementById(id)?.classList.remove("active");
+  });
+  document.getElementById(tabIds[type])?.classList.add("active");
+
+  if (!newsCache[type]) {
+    fetchNews(type);
+  } else {
+    renderNewsItems(newsCache[type]);
+  }
+}
+
+async function fetchNews(type) {
+  const container = document.getElementById("newsContainer");
+  container.innerHTML = renderNewsSkeletons();
+
+  const sources = {
+    vn: "vnexpress.net",
+    global: "vnexpress.net/the-gioi",
+    sports: "vnexpress.net/the-thao",
+    business: "vnexpress.net/kinh-doanh",
+    tech: "vnexpress.net/so-hoa",
+    realestate: "vnexpress.net/bat-dong-san",
+    health: "vnexpress.net/suc-khoe",
+    entertainment: "vnexpress.net/giai-tri",
+    cars: "vnexpress.net/oto-xe-may",
+    travel: "vnexpress.net/du-lich"
+  };
+
+  const targetUrl = sources[type];
+
+  try {
+    const markdown = await fetchTextWithCorsFallback(targetUrl);
+    const items = parseNewsMarkdown(markdown);
+
+    if (items.length === 0) throw new Error("No news found");
+
+    newsCache[type] = items;
+    renderNewsItems(items);
+  } catch (err) {
+    console.error("Lỗi lấy tin tức:", err);
+    container.innerHTML = `<div style="text-align:center; padding: 40px; color: #ffb3b3;">
+      <p>Không thể tải tin tức lúc này. Vui lòng thử lại sau.</p>
+      <button onclick="fetchNews('${type}')" style="margin-top:10px; padding: 5px 15px; background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:5px; color:#fff; cursor:pointer;">Thử lại</button>
+    </div>`;
+  }
+}
+
+function parseNewsMarkdown(md) {
+  const items = [];
+  // Use ### instead of ## as Jina uses H3 for news items on VNExpress
+  // Catch both the Title and the Link
+  const pattern = /### \[([^\]]+)\]\((https?:\/\/vnexpress\.net\/[^\)\s]+)(?:\s+"[^"]*")?\)([\s\S]*?)(?=### \[|$)/g;
+
+  let match;
+  let count = 0;
+
+  // To handle shifted thumbnails, we'll first find all image-link pairs in the document
+  // Structure: [![Alt](ImgURL)](LinkURL)
+  const imgLinkPattern = /\[!\[.*?\]\((https?:\/\/.*?)\)\]\((https?:\/\/vnexpress\.net\/[^\)\s]+)(?:\s+"[^"]*")?\)/g;
+  const imgMap = {};
+  let imgMatch;
+  while ((imgMatch = imgLinkPattern.exec(md)) !== null) {
+    const imgUrl = imgMatch[1];
+    const linkUrl = imgMatch[2];
+    imgMap[linkUrl] = imgUrl;
+  }
+
+  while ((match = pattern.exec(md)) !== null && count < 25) {
+    const title = match[1].trim();
+    const link = match[2];
+    const contentChunk = match[3].trim();
+
+    // 1. Try to find thumbnail by matching the article link (Best accuracy)
+    let thumb = imgMap[link] || "";
+
+    // 2. Fallback: Find first image in the local content chunk
+    if (!thumb) {
+      const localImgMatch = contentChunk.match(/!\[.*?\]\((https?:\/\/.*?)\)/);
+      thumb = localImgMatch ? localImgMatch[1] : "";
+    }
+
+    // Get description (Joining multiple lines to ensure 3-line requirement is met)
+    const filteredLines = contentChunk
+      .replace(/\[!\[.*?\]\((.*?)\)\]\((.*?)\)/g, "") // Remove image-link markdown
+      .replace(/!\[.*?\]\((.*?)\)/g, "") // Remove image markdown
+      .replace(/\[\d+\]\(.*?#box_comment_vne\)/g, "") // Specifically remove comment counts
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, "$1") // Simplify links to just their text
+      .trim()
+      .split("\n")
+      .map(line => line.trim())
+      .filter(line => line.length > 10 && !line.includes("box_comment_vne"));
+
+    // Take a larger slice to fill the 3-line UI
+    let description = filteredLines.slice(0, 4).join(" ") || "Bấm để xem chi tiết bài viết và các thông tin liên quan từ nguồn VNExpress...";
+    if (description.length > 250) description = description.substring(0, 240).trim() + "...";
+
+    if (title.length < 10 || title.includes("Loại bài") || title.includes("Xem thêm")) continue;
+
+    items.push({
+      title,
+      link,
+      thumb,
+      description: description || "Bấm để xem chi tiết bài viết...",
+      pubDate: new Date().toISOString()
+    });
+    count++;
+  }
+  return items;
+}
+
+function renderNewsItems(items) {
+  const container = document.getElementById("newsContainer");
+  if (!items || items.length === 0) {
+    container.innerHTML = "<p style='text-align:center; padding: 20px; color: #a6bde2;'>Không có tin nào.</p>";
+    return;
+  }
+
+  const html = items.map(item => {
+    const dateStr = new Date(item.pubDate).toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    const thumbHtml = item.thumb
+      ? `<img src="${item.thumb}" class="news-card-thumb" loading="lazy" onerror="this.style.display='none'">`
+      : `<div class="news-card-thumb" style="display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05);"><svg viewBox="0 0 24 24" style="width:24px; fill:rgba(255,255,255,0.2)"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div>`;
+
+    return `
+      <a href="${item.link}" target="_blank" class="news-card">
+        ${thumbHtml}
+        <div class="news-card-body">
+          <div class="news-card-title">${item.title}</div>
+          <div class="news-card-desc">${item.description}</div>
+          <div class="news-card-meta">
+            <span>VNExpress</span>
+            <span>${dateStr}</span>
+          </div>
+        </div>
+      </a>
+    `;
+  }).join("");
+
+  container.innerHTML = html;
+}
+
+function renderNewsSkeletons() {
+  let skeletons = "";
+  for (let i = 0; i < 6; i++) {
+    skeletons += `
+      <div class="news-skeleton">
+        <div class="skeleton-line skeleton-title"></div>
+        <div class="skeleton-line skeleton-desc"></div>
+        <div class="skeleton-line skeleton-desc"></div>
+        <div class="skeleton-line skeleton-desc-short"></div>
+      </div>
+    `;
+  }
+  return skeletons;
+}

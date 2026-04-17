@@ -105,6 +105,13 @@
             </svg>
             <span class="fab-label">Tiền Tệ</span>
           </button>
+          <button class="overtime-fab tool-btn glow" onclick="openOvertimeModal()" aria-label="Mở bảng tăng ca">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path
+                d="M12 3a9 9 0 1 0 9 9 9.01 9.01 0 0 0-9-9Zm0 16.2A7.2 7.2 0 1 1 19.2 12 7.21 7.21 0 0 1 12 19.2Zm.9-11.1h-1.8v4.5l3.9 2.34.9-1.53-3-1.71Z" />
+            </svg>
+            <span class="fab-label">Tăng Ca</span>
+          </button>
         </div>
       </div>
       <button id="toolboxToggle" class="toolbox-toggle" onclick="toggleToolbox()" aria-label="Thu gọn thanh công cụ"
@@ -116,12 +123,11 @@
     </div>
 
     <nav class="bottom-nav">
-      <button class="nav-item overtime-fab" onclick="openOvertimeModal()" aria-label="Mở bảng tăng ca">
+      <button class="nav-item event-fab" onclick="openAddEventModalForToday()" aria-label="Thêm sự kiện nhanh">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path
-            d="M12 3a9 9 0 1 0 9 9 9.01 9.01 0 0 0-9-9Zm0 16.2A7.2 7.2 0 1 1 19.2 12 7.21 7.21 0 0 1 12 19.2Zm.9-11.1h-1.8v4.5l3.9 2.34.9-1.53-3-1.71Z" />
+          <path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z" />
         </svg>
-        <span class="nav-label">OT</span>
+        <span class="nav-label">Event</span>
       </button>
 
       <button class="nav-item music-fab" onclick="openMyMusicModal()" aria-label="Mở trình phát nhạc">
@@ -131,14 +137,13 @@
         <span class="nav-label">Music</span>
       </button>
 
-      <button class="nav-item event-fab prominent" onclick="openAddEventModalForToday()"
-        aria-label="Thêm sự kiện nhanh">
+      <button class="nav-item news-fab prominent" onclick="openNewsModal()" aria-label="Xem tin tức mới nhất">
         <div class="prominent-inner">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M19 11h-6V5h-2v6H5v2h6v6h2v-6h6z" />
+            <path d="M21 5H3v14h18V5zm-2 12H5V7h14v10zM7 9h10v2H7V9zm0 4h7v2H7v-2z" />
           </svg>
         </div>
-        <span class="nav-label">Event</span>
+        <span class="nav-label">Tin Tức</span>
       </button>
 
       <button class="nav-item quick-note-fab" onclick="openQuickNoteModal()" aria-label="Mở ghi chú nhanh">
@@ -167,6 +172,46 @@
             <div id="map"></div>
 
         </div> -->
+    <!-- News Modal -->
+    <div id="newsModal" class="modal">
+      <div class="news-modal-content">
+        <div class="news-header">
+          <div class="news-title-area">
+            <h2>Tin Tức Mới Nhất</h2>
+            <button id="newsRefreshBtn" class="news-refresh-btn" onclick="refreshNews()" aria-label="Làm mới tin tức">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+              </svg>
+            </button>
+          </div>
+          <button class="news-close-btn" onclick="closeNewsModal()" aria-label="Đóng">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="news-tabs">
+          <button id="newsTabVN" class="news-tab active" onclick="switchNewsTab('vn')">Mới nhất</button>
+          <button id="newsTabGlobal" class="news-tab" onclick="switchNewsTab('global')">Thế giới</button>
+          <button id="newsTabSports" class="news-tab" onclick="switchNewsTab('sports')">Thể thao</button>
+          <button id="newsTabBusiness" class="news-tab" onclick="switchNewsTab('business')">Kinh doanh</button>
+          <button id="newsTabTech" class="news-tab" onclick="switchNewsTab('tech')">Khoa học công nghệ</button>
+          <button id="newsTabRealEstate" class="news-tab" onclick="switchNewsTab('realestate')">Bất động sản</button>
+          <button id="newsTabHealth" class="news-tab" onclick="switchNewsTab('health')">Sức khỏe</button>
+          <button id="newsTabEntertainment" class="news-tab" onclick="switchNewsTab('entertainment')">Giải trí</button>
+          <button id="newsTabCars" class="news-tab" onclick="switchNewsTab('cars')">Xe</button>
+          <button id="newsTabTravel" class="news-tab" onclick="switchNewsTab('travel')">Du lịch</button>
+        </div>
+
+        <div id="newsContainer" class="news-list-container">
+          <!-- News cards will be injected here -->
+        </div>
+      </div>
+    </div>
+
     <!-- MODALS -->
 
     <!-- Password Modal - shown every time page loads -->

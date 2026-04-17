@@ -17,10 +17,12 @@ const FIREBASE_CONFIG = self.FIREBASE_WEB_CONFIG || {};
 
 let firebaseDb = null;
 let firebaseDatesRef = null;
+let firebaseQuickNotesRef = null;
 let firebaseReady = false;
 let firebaseAuth = null;
 let userProfileKey = "";
 let dateDataCache = {};
+let quickNotesCache = [];
 let syncWriteErrorShown = false;
 
 // Lễ dương lịch
@@ -1087,6 +1089,9 @@ async function initFirebaseRealtime() {
   firebaseDatesRef = firebaseDb.ref(
     `${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`,
   );
+  firebaseQuickNotesRef = firebaseDb.ref(
+    `${FIREBASE_EVENTS_PATH}/${userProfileKey}/quickNotes`,
+  );
 
   // Xóa date cache localStorage của profile cũ để tránh cross-profile pollution
   for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -1131,6 +1136,23 @@ async function initFirebaseRealtime() {
 
   await migrateLegacyCashflowEntriesIfNeeded();
 
+  // Initial Quick Notes Sync
+  const qnSnapshot = await firebaseQuickNotesRef.once("value");
+  const remoteNotes = qnSnapshot.val();
+
+  if (Array.isArray(remoteNotes)) {
+    quickNotesCache = remoteNotes;
+    // Update local storage as backup
+    localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(remoteNotes));
+  } else {
+    // Migration: if empty on Firebase, try local storage
+    const localNotes = loadQuickNotes();
+    if (localNotes.length > 0) {
+      quickNotesCache = localNotes;
+      await firebaseQuickNotesRef.set(localNotes);
+    }
+  }
+
   firebaseDatesRef.on("value", (dataSnapshot) => {
     const incoming = dataSnapshot.val() || {};
     const nextCache = {};
@@ -1156,6 +1178,18 @@ async function initFirebaseRealtime() {
     renderOvertime();
     renderOvertimeSalary();
     renderCashflowDashboard();
+  });
+
+  firebaseQuickNotesRef.on("value", (snapshot) => {
+    const incoming = snapshot.val();
+    if (Array.isArray(incoming)) {
+      quickNotesCache = incoming;
+      localStorage.setItem(
+        getQuickNoteStorageKey(),
+        JSON.stringify(incoming),
+      );
+      renderQuickNotes();
+    }
   });
 
   firebaseReady = true;
@@ -1362,6 +1396,10 @@ function getQuickNoteStorageKey() {
 }
 
 function loadQuickNotes() {
+  if (Array.isArray(quickNotesCache) && quickNotesCache.length > 0) {
+    return quickNotesCache;
+  }
+
   const key = getQuickNoteStorageKey();
   const raw = localStorage.getItem(key);
   if (!raw) return [];
@@ -1395,7 +1433,14 @@ function saveQuickNotes(notes) {
       .filter((note) => note.id && note.text)
     : [];
 
+  quickNotesCache = normalized;
   localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(normalized));
+
+  if (firebaseQuickNotesRef) {
+    firebaseQuickNotesRef.set(normalized).catch((err) => {
+      console.error("Firebase Quick Notes save error:", err);
+    });
+  }
 }
 
 function escapeHtml(text) {

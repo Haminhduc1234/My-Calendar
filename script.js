@@ -1090,7 +1090,7 @@ async function initFirebaseRealtime() {
     `${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`,
   );
   firebaseQuickNotesRef = firebaseDb.ref(
-    `${FIREBASE_EVENTS_PATH}/${userProfileKey}/quickNotes`,
+    `quickNotes/${userProfileKey}`,
   );
 
   // Xóa date cache localStorage của profile cũ để tránh cross-profile pollution
@@ -1144,12 +1144,14 @@ async function initFirebaseRealtime() {
     quickNotesCache = remoteNotes;
     // Update local storage as backup
     localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(remoteNotes));
+    renderQuickNotes();
   } else {
     // Migration: if empty on Firebase, try local storage
     const localNotes = loadQuickNotes();
     if (localNotes.length > 0) {
       quickNotesCache = localNotes;
       await firebaseQuickNotesRef.set(localNotes);
+      renderQuickNotes();
     }
   }
 

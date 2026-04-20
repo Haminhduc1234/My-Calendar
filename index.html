@@ -241,12 +241,16 @@
 
     <!-- Day Details Modal - shows events list and overtime editor -->
     <div id="dayDetailsModal" class="modal">
-      <div class="modal-content">
-        <button class="modal-close" onclick="closeDayDetailsModal()">
-          ×
-        </button>
-        <h3>Danh sách sự kiện</h3>
-        <div class="date-label" id="dayDetailsDate"></div>
+      <div class="modal-content event-modal-wrapper">
+        <div class="event-modal-header">
+          <div>
+            <h3>Danh sách sự kiện</h3>
+            <div class="date-label" id="dayDetailsDate"></div>
+          </div>
+          <button class="modal-close event-modal-close" onclick="closeDayDetailsModal()">
+            ×
+          </button>
+        </div>
 
         <div class="day-details-content">
           <div class="events-section">
@@ -279,10 +283,14 @@
 
     <!-- Add Event Modal - for creating new event -->
     <div id="addEventModal" class="modal">
-      <div class="modal-content">
-        <button class="modal-close" onclick="closeAddEventModal()">×</button>
-        <h3 id="addEventModalTitle">Thêm sự kiện</h3>
-        <div class="date-label" id="addEventDate"></div>
+      <div class="modal-content event-modal-wrapper">
+        <div class="event-modal-header">
+          <div>
+            <h3 id="addEventModalTitle">Thêm sự kiện</h3>
+            <div class="date-label" id="addEventDate"></div>
+          </div>
+          <button class="modal-close event-modal-close" onclick="closeAddEventModal()">×</button>
+        </div>
 
         <div class="event-form-grid">
           <label class="field-label" for="newEventTitle">Tiêu đề</label>
@@ -381,15 +389,17 @@
     </div>
 
     <div id="cashflowModal" class="modal">
-      <div class="cashflow-modal-content">
-        <div class="cashflow-modal-header">
-          <h3>Quản lý thu chi</h3>
-          <button class="modal-close cashflow-modal-close" onclick="closeCashflowModal()">
+      <div class="modal-content event-modal-wrapper">
+        <div class="event-modal-header">
+          <div>
+            <h3>Quản lý thu chi</h3>
+          </div>
+          <button class="modal-close event-modal-close" onclick="closeCashflowModal()">
             ×
           </button>
         </div>
 
-        <div class="cashflow-modal-body">
+        <div>
           <div class="cashflow-form-grid">
             <label class="cashflow-input-item">
               <span>Ngày</span>

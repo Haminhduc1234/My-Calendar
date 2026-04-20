@@ -3486,3 +3486,341 @@ input[type="datetime-local"] {
     transform: rotate(360deg);
   }
 }
+/* ========================== PROJECTS MODAL ========================== */
+.project-fab svg path {
+  fill: currentColor;
+}
+.project-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid rgba(160, 130, 255, 0.5);
+  background: linear-gradient(145deg, #5a3d8a, #3d2868);
+  color: #e7e0ff;
+  cursor: pointer;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s ease, filter 0.2s ease;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.project-fab svg {
+  width: 25px;
+  height: 25px;
+  fill: #c9b8ff;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+.project-fab:hover {
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.08);
+}
+.project-fab.glow::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1px solid rgba(180, 160, 255, 0.62);
+  animation: pulseSpread 2.2s infinite;
+  pointer-events: none;
+}
+.project-fab.glow::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 1px solid rgba(160, 140, 255, 0.34);
+}
+.projects-container, .project-tasks-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+.project-actions-bar {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-start;
+  margin-bottom: 10px;
+}
+.project-btn-add {
+  padding: 10px 16px;
+  background: rgba(0, 153, 255, 0.2);
+  border: 1px solid rgba(0, 153, 255, 0.4);
+  color: #66b2ff;
+  border-radius: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.project-btn-add:hover {
+  background: rgba(0, 153, 255, 0.3);
+}
+.project-btn-header-back {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.projects-list, .project-tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+.project-item, .task-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+}
+.project-item:hover, .task-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.task-item.draggable {
+  cursor: grab;
+}
+.task-item.draggable:active {
+  cursor: grabbing;
+}
+.task-item.dragging {
+  opacity: 0.5;
+  border: 2px dashed #66b2ff;
+}
+.project-item-header, .task-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.project-item-title, .task-item-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #f4f8ff;
+  margin: 0;
+  flex: 1;
+}
+.project-item-text, .task-item-text {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+.item-actions {
+  display: flex;
+  gap: 8px;
+}
+.item-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 6px;
+  color: #f4f8ff;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.item-btn.delete {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+}
+.item-btn.drag-handle {
+  cursor: grab;
+  color: rgba(255, 255, 255, 0.4);
+}
+.drag-controls {
+  display: flex;
+  gap: 4px;
+}
+.drag-controls button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 4px;
+  color: #f4f8ff;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.drag-controls button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+.drag-controls button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.task-drag-handle {
+  cursor: grab;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+}
+.task-drag-handle:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+.task-move-btn {
+  font-weight: bold;
+}
+.task-item.drag-over {
+  border-color: rgba(0, 153, 255, 0.6);
+  background: rgba(0, 153, 255, 0.1);
+}
+.task-checkbox {
+  font-size: 18px;
+  margin-right: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.task-checkbox:hover {
+  transform: scale(1.1);
+}
+.task-checkbox.completed {
+  color: #66cc66;
+}
+.task-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-name.done {
+  text-decoration: line-through;
+  color: rgba(255, 255, 255, 0.4);
+}
+.project-item-meta {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+}
+.project-item-title {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.project-item-title:hover {
+  color: #66b2ff;
+}
+
+/* Project Form Modal */
+.project-form-modal-content {
+  width: 90%;
+  max-width: 420px;
+  background: var(--modal-bg);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--line);
+}
+.project-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.project-form-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--text);
+}
+.project-form-header .modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.project-form-header .modal-close:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.1);
+}
+.project-form-group {
+  margin-bottom: 16px;
+}
+.project-form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+.project-form-group input,
+.project-form-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+.project-form-group input:focus,
+.project-form-group textarea:focus {
+  outline: none;
+  border-color: rgba(100, 150, 255, 0.5);
+  box-shadow: 0 0 0 3px rgba(100, 150, 255, 0.15);
+}
+.project-form-group input::placeholder,
+.project-form-group textarea::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+.project-form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+.project-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+.project-form-cancel {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.project-form-cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.project-form-submit {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #4a7fd4, #3a6ac4);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(74, 127, 212, 0.3);
+}
+.project-form-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(74, 127, 212, 0.4);
+}

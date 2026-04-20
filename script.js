@@ -20,10 +20,22 @@ let firebaseDatesRef = null;
 let firebaseQuickNotesRef = null;
 let firebaseReady = false;
 let firebaseAuth = null;
+let firebaseProjectsRef = null;
 let userProfileKey = "";
 let dateDataCache = {};
 let quickNotesCache = [];
 let syncWriteErrorShown = false;
+
+// Projects state
+let projectsDataCache = {};
+let currentOpenedProjectId = null;
+let projectTasksCache = {};
+let _editingProjectId = null;
+let _editingTaskId = null;
+
+function generateId() {
+  return `id-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
 
 // Lễ dương lịch
 const SOLAR_HOLIDAYS = {
@@ -1092,6 +1104,37 @@ async function initFirebaseRealtime() {
   firebaseQuickNotesRef = firebaseDb.ref(
     `quickNotes/${userProfileKey}`,
   );
+  firebaseProjectsRef = firebaseDb.ref(
+    `projects/${userProfileKey}`,
+  );
+
+  // Lắng nghe sự thay đổi của Projects
+  firebaseProjectsRef.on("value", (snapshot) => {
+    const remoteData = snapshot.val() || {};
+
+    // Separate projects and tasks
+    projectsDataCache = {};
+    const newTasksCache = {};
+
+    Object.keys(remoteData).forEach(key => {
+      const val = remoteData[key];
+      if (val && typeof val === "object") {
+        if (val.tasks) {
+          newTasksCache[key] = val.tasks;
+          const { tasks, ...projectData } = val;
+          projectsDataCache[key] = projectData;
+        } else if (val.id || val.title) {
+          projectsDataCache[key] = val;
+        }
+      }
+    });
+
+    projectTasksCache = { ...projectTasksCache, ...newTasksCache };
+    renderProjectsList();
+    if (currentOpenedProjectId) {
+      renderProjectTasksList(currentOpenedProjectId);
+    }
+  });
 
   // Xóa date cache localStorage của profile cũ để tránh cross-profile pollution
   for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -1154,6 +1197,43 @@ async function initFirebaseRealtime() {
       renderQuickNotes();
     }
   }
+
+  // Initial Projects Sync
+  const projSnapshot = await firebaseProjectsRef.once("value");
+  const remoteProjects = projSnapshot.val();
+
+  if (remoteProjects && typeof remoteProjects === "object") {
+    projectsDataCache = {};
+    Object.keys(remoteProjects).forEach(key => {
+      const val = remoteProjects[key];
+      if (val && typeof val === "object") {
+        if (val.tasks) {
+          projectTasksCache[key] = val.tasks;
+          const { tasks, ...projectData } = val;
+          projectsDataCache[key] = projectData;
+        } else if (val.id || val.title) {
+          projectsDataCache[key] = val;
+        }
+      }
+    });
+    localStorage.setItem(`projects:${userProfileKey}`, JSON.stringify(projectsDataCache));
+  } else {
+    const localProjects = loadProjectsFromLocalStorage();
+    if (localProjects) {
+      projectsDataCache = localProjects;
+      await firebaseProjectsRef.set(localProjects);
+    }
+  }
+
+  // Load tasks for each project from local storage if not loaded from Firebase
+  Object.keys(projectsDataCache).forEach(projectId => {
+    if (!projectTasksCache[projectId]) {
+      const localTasks = loadProjectTasksFromLocalStorage(projectId);
+      if (localTasks) {
+        projectTasksCache[projectId] = localTasks;
+      }
+    }
+  });
 
   firebaseDatesRef.on("value", (dataSnapshot) => {
     const incoming = dataSnapshot.val() || {};
@@ -1403,6 +1483,531 @@ function openOvertimeModal() {
 
 function closeOvertimeModal() {
   document.getElementById("overtimeModal").style.display = "none";
+}
+
+// ===================== PROJECT MANAGEMENT =====================
+
+function openProjectsModal() {
+  closeAllModals();
+  document.getElementById("projectsModal").style.display = "flex";
+  renderProjectsList();
+}
+
+function closeProjectsModal() {
+  document.getElementById("projectsModal").style.display = "none";
+  _editingProjectId = null;
+}
+
+function openProjectTasksModal(projectId, projectTitle) {
+  currentOpenedProjectId = projectId;
+  document.getElementById("currentProjectTitle").textContent = projectTitle || "Dự án";
+  document.getElementById("projectsModal").style.display = "none";
+  document.getElementById("projectTasksModal").style.display = "flex";
+  renderProjectTasksList(projectId);
+}
+
+function closeProjectTasksModal() {
+  document.getElementById("projectTasksModal").style.display = "none";
+  currentOpenedProjectId = null;
+  _editingTaskId = null;
+  renderProjectsList();
+}
+
+function backToProjectsList() {
+  closeProjectTasksModal();
+  openProjectsModal();
+}
+
+function renderProjectsList() {
+  const container = document.getElementById("projectsList");
+  if (!container) return;
+
+  const projects = Object.entries(projectsDataCache || {})
+    .map(([id, data]) => ({ id, ...data }))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  if (projects.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px 20px; color: var(--muted);">
+        <p>Chưa có dự án nào.</p>
+        <p>Nhấn "+ Thêm dự án mới" để bắt đầu.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = projects.map(project => `
+    <div class="project-item" data-project-id="${project.id}">
+      <div class="project-item-header">
+        <div class="project-item-title" onclick="openProjectTasksModal('${project.id}', '${escapeHtml(project.title || "")}')">
+          ${escapeHtml(project.title || "Dự án không tên")}
+        </div>
+        <div class="item-actions">
+          <button class="item-btn" onclick="editProject('${project.id}')" title="Sửa">✎</button>
+          <button class="item-btn delete" onclick="deleteProject('${project.id}')" title="Xóa">✕</button>
+        </div>
+      </div>
+      ${project.description ? `<div class="project-item-text">${escapeHtml(project.description)}</div>` : ""}
+      <div class="project-item-meta">
+        <span>${countTasksInProject(project.id)} công việc</span>
+      </div>
+    </div>
+  `).join("");
+}
+
+function countTasksInProject(projectId) {
+  const tasks = projectTasksCache[projectId] || {};
+  return Object.keys(tasks).length;
+}
+
+function openProjectFormModal(isEdit, projectId) {
+  const modal = document.getElementById("projectFormModal");
+  const titleEl = document.getElementById("projectFormTitle");
+  const idInput = document.getElementById("projectFormId");
+  const nameInput = document.getElementById("projectFormName");
+  const descInput = document.getElementById("projectFormDesc");
+
+  if (isEdit && projectId) {
+    const project = projectsDataCache[projectId];
+    if (!project) return;
+    titleEl.textContent = "Sửa dự án";
+    idInput.value = projectId;
+    nameInput.value = project.title || "";
+    descInput.value = project.description || "";
+  } else {
+    titleEl.textContent = "Thêm dự án mới";
+    idInput.value = "";
+    nameInput.value = "";
+    descInput.value = "";
+  }
+
+  modal.style.display = "flex";
+  nameInput.focus();
+}
+
+function closeProjectFormModal() {
+  document.getElementById("projectFormModal").style.display = "none";
+}
+
+function handleProjectFormSubmit(e) {
+  e.preventDefault();
+  const idInput = document.getElementById("projectFormId");
+  const nameInput = document.getElementById("projectFormName");
+  const descInput = document.getElementById("projectFormDesc");
+
+  const title = nameInput.value.trim();
+  const description = descInput.value.trim();
+
+  if (!title) {
+    nameInput.focus();
+    return;
+  }
+
+  const projectId = idInput.value;
+
+  if (projectId) {
+    // Edit existing project
+    const project = projectsDataCache[projectId];
+    if (project) {
+      projectsDataCache[projectId] = {
+        ...project,
+        title,
+        description,
+        updatedAt: Date.now()
+      };
+    }
+  } else {
+    // Create new project
+    const id = generateId();
+    const projects = projectsDataCache || {};
+    const order = Object.keys(projects).length;
+
+    projectsDataCache = {
+      ...projects,
+      [id]: {
+        id,
+        title,
+        description,
+        order,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      }
+    };
+  }
+
+  saveProjectsToFirebase();
+  closeProjectFormModal();
+}
+
+function createNewProject() {
+  openProjectFormModal(false);
+}
+
+function editProject(projectId) {
+  openProjectFormModal(true, projectId);
+}
+
+function deleteProject(projectId) {
+  if (!confirm("Bạn có chắc muốn xóa dự án này?\nTất cả công việc trong dự án cũng sẽ bị xóa.")) return;
+
+  const projects = projectsDataCache || {};
+  delete projects[projectId];
+  projectsDataCache = projects;
+
+  // Also delete tasks for this project
+  delete projectTasksCache[projectId];
+
+  saveProjectsToFirebase();
+  saveProjectTasksToFirebase(projectId);
+  renderProjectsList();
+}
+
+function saveProjectsToFirebase() {
+  if (!firebaseProjectsRef) {
+    saveProjectsToLocalStorage();
+    return;
+  }
+
+  firebaseProjectsRef.set(projectsDataCache).catch(() => {
+    saveProjectsToLocalStorage();
+  });
+}
+
+function saveProjectsToLocalStorage() {
+  if (!userProfileKey) return;
+  localStorage.setItem(`projects:${userProfileKey}`, JSON.stringify(projectsDataCache));
+}
+
+function loadProjectsFromLocalStorage() {
+  if (!userProfileKey) return null;
+  const data = localStorage.getItem(`projects:${userProfileKey}`);
+  return data ? JSON.parse(data) : null;
+}
+
+// Task Management
+function renderProjectTasksList(projectId) {
+  const container = document.getElementById("projectTasksList");
+  if (!container) return;
+
+  const tasks = Object.entries(projectTasksCache[projectId] || {})
+    .map(([id, data]) => ({ id, ...data }))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  if (tasks.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px 20px; color: var(--muted);">
+        <p>Chưa có công việc nào.</p>
+        <p>Nhấn "+ Thêm công việc" để bắt đầu.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = tasks.map((task, idx) => `
+    <div class="task-item draggable" draggable="true" data-task-id="${task.id}" data-project-id="${projectId}" data-task-order="${task.order || idx}">
+      <div class="task-item-header">
+        <div class="drag-controls">
+          <button class="task-drag-handle" onclick="event.stopPropagation();" title="Kéo để sắp xếp">☰</button>
+          <button class="task-move-btn" onclick="moveTaskUp('${projectId}', '${task.id}')" title="Di chuyển lên" ${idx === 0 ? "disabled" : ""}>↑</button>
+          <button class="task-move-btn" onclick="moveTaskDown('${projectId}', '${task.id}')" title="Di chuyển xuống" ${idx === tasks.length - 1 ? "disabled" : ""}>↓</button>
+        </div>
+        <div class="task-item-title" onclick="toggleTaskComplete('${projectId}', '${task.id}')">
+          <span class="task-checkbox ${task.completed ? "completed" : ""}">${task.completed ? "☑" : "☐"}</span>
+          <span class="task-name ${task.completed ? "done" : ""}">${escapeHtml(task.title || "")}</span>
+        </div>
+        <div class="item-actions">
+          <button class="item-btn" onclick="editTask('${projectId}', '${task.id}')" title="Sửa">✎</button>
+          <button class="item-btn delete" onclick="deleteTask('${projectId}', '${task.id}')" title="Xóa">✕</button>
+        </div>
+      </div>
+      ${task.description ? `<div class="task-item-text">${escapeHtml(task.description)}</div>` : ""}
+    </div>
+  `).join("");
+
+  bindTaskDragDrop(projectId);
+}
+
+// Task Form Modal
+function openTaskFormModal(isEdit, projectId, taskId) {
+  const modal = document.getElementById("taskFormModal");
+  const titleEl = document.getElementById("taskFormTitle");
+  const idInput = document.getElementById("taskFormId");
+  const projectIdInput = document.getElementById("taskFormProjectId");
+  const nameInput = document.getElementById("taskFormName");
+  const descInput = document.getElementById("taskFormDesc");
+
+  if (!document.getElementById("taskFormProjectId")) {
+    const hiddenInput = document.createElement("input");
+    hiddenInput.type = "hidden";
+    hiddenInput.id = "taskFormProjectId";
+    document.getElementById("taskForm").appendChild(hiddenInput);
+  }
+
+  if (isEdit && taskId && projectId) {
+    const task = (projectTasksCache[projectId] || {})[taskId];
+    if (!task) return;
+    titleEl.textContent = "Sửa công việc";
+    idInput.value = taskId;
+    projectIdInput.value = projectId;
+    nameInput.value = task.title || "";
+    descInput.value = task.description || "";
+  } else {
+    titleEl.textContent = "Thêm công việc";
+    idInput.value = "";
+    projectIdInput.value = projectId || currentOpenedProjectId;
+    nameInput.value = "";
+    descInput.value = "";
+  }
+
+  modal.style.display = "flex";
+  nameInput.focus();
+}
+
+function closeTaskFormModal() {
+  document.getElementById("taskFormModal").style.display = "none";
+}
+
+function handleTaskFormSubmit(e) {
+  e.preventDefault();
+  const idInput = document.getElementById("taskFormId");
+  const projectIdInput = document.getElementById("taskFormProjectId");
+  const nameInput = document.getElementById("taskFormName");
+  const descInput = document.getElementById("taskFormDesc");
+
+  const title = nameInput.value.trim();
+  const description = descInput.value.trim();
+  const projectId = projectIdInput.value;
+
+  if (!title || !projectId) return;
+
+  const taskId = idInput.value;
+
+  if (taskId) {
+    // Edit existing task
+    const task = (projectTasksCache[projectId] || {})[taskId];
+    if (task) {
+      projectTasksCache[projectId][taskId] = {
+        ...task,
+        title,
+        description,
+        updatedAt: Date.now()
+      };
+    }
+  } else {
+    // Create new task
+    const id = generateId();
+    const tasks = projectTasksCache[projectId] || {};
+    const order = Object.keys(tasks).length;
+
+    if (!projectTasksCache[projectId]) {
+      projectTasksCache[projectId] = {};
+    }
+
+    projectTasksCache[projectId][id] = {
+      id,
+      title,
+      description,
+      completed: false,
+      order,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+  }
+
+  saveProjectTasksToFirebase(projectId);
+  closeTaskFormModal();
+  renderProjectTasksList(projectId);
+  renderProjectsList();
+}
+
+function createNewTask() {
+  if (!currentOpenedProjectId) return;
+  openTaskFormModal(false, currentOpenedProjectId);
+}
+
+function editTask(projectId, taskId) {
+  openTaskFormModal(true, projectId, taskId);
+}
+
+function deleteTask(projectId, taskId) {
+  if (!confirm("Bạn có chắc muốn xóa công việc này?")) return;
+
+  const tasks = projectTasksCache[projectId] || {};
+  delete tasks[taskId];
+  projectTasksCache[projectId] = tasks;
+
+  saveProjectTasksToFirebase(projectId);
+  renderProjectTasksList(projectId);
+  renderProjectsList();
+}
+
+function deleteTask(projectId, taskId) {
+  if (!confirm("Bạn có chắc muốn xóa công việc này?")) return;
+
+  const tasks = projectTasksCache[projectId] || {};
+  delete tasks[taskId];
+  projectTasksCache[projectId] = tasks;
+
+  saveProjectTasksToFirebase(projectId);
+  renderProjectTasksList(projectId);
+  renderProjectsList();
+}
+
+function toggleTaskComplete(projectId, taskId) {
+  const task = (projectTasksCache[projectId] || {})[taskId];
+  if (!task) return;
+
+  projectTasksCache[projectId][taskId] = {
+    ...task,
+    completed: !task.completed,
+    updatedAt: Date.now()
+  };
+
+  saveProjectTasksToFirebase(projectId);
+  renderProjectTasksList(projectId);
+}
+
+function moveTaskUp(projectId, taskId) {
+  const tasks = Object.entries(projectTasksCache[projectId] || {})
+    .map(([id, data]) => ({ id, ...data }))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const idx = tasks.findIndex(t => t.id === taskId);
+  if (idx <= 0) return;
+
+  // Swap orders
+  const tempOrder = tasks[idx].order;
+  tasks[idx].order = tasks[idx - 1].order;
+  tasks[idx - 1].order = tempOrder;
+
+  // Rebuild cache
+  const newCache = {};
+  tasks.forEach(t => {
+    newCache[t.id] = projectTasksCache[projectId][t.id];
+    newCache[t.id].order = t.order;
+  });
+  projectTasksCache[projectId] = newCache;
+
+  saveProjectTasksToFirebase(projectId);
+  renderProjectTasksList(projectId);
+}
+
+function moveTaskDown(projectId, taskId) {
+  const tasks = Object.entries(projectTasksCache[projectId] || {})
+    .map(([id, data]) => ({ id, ...data }))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const idx = tasks.findIndex(t => t.id === taskId);
+  if (idx < 0 || idx >= tasks.length - 1) return;
+
+  // Swap orders
+  const tempOrder = tasks[idx].order;
+  tasks[idx].order = tasks[idx + 1].order;
+  tasks[idx + 1].order = tempOrder;
+
+  // Rebuild cache
+  const newCache = {};
+  tasks.forEach(t => {
+    newCache[t.id] = projectTasksCache[projectId][t.id];
+    newCache[t.id].order = t.order;
+  });
+  projectTasksCache[projectId] = newCache;
+
+  saveProjectTasksToFirebase(projectId);
+  renderProjectTasksList(projectId);
+}
+
+function saveProjectTasksToFirebase(projectId) {
+  if (!firebaseProjectsRef) {
+    saveProjectTasksToLocalStorage(projectId);
+    return;
+  }
+
+  firebaseProjectsRef.child(projectId).child("tasks").set(projectTasksCache[projectId] || {}).catch(() => {
+    saveProjectTasksToLocalStorage(projectId);
+  });
+}
+
+function saveProjectTasksToLocalStorage(projectId) {
+  if (!userProfileKey) return;
+  localStorage.setItem(`projectTasks:${userProfileKey}:${projectId}`, JSON.stringify(projectTasksCache[projectId] || {}));
+}
+
+function loadProjectTasksFromLocalStorage(projectId) {
+  if (!userProfileKey) return null;
+  const data = localStorage.getItem(`projectTasks:${userProfileKey}:${projectId}`);
+  return data ? JSON.parse(data) : null;
+}
+
+// Drag and Drop for Tasks
+let _taskDragSrcId = null;
+
+function bindTaskDragDrop(projectId) {
+  const items = document.querySelectorAll(".task-item.draggable");
+  items.forEach(item => {
+    item.addEventListener("dragstart", handleTaskDragStart);
+    item.addEventListener("dragover", handleTaskDragOver);
+    item.addEventListener("dragenter", handleTaskDragEnter);
+    item.addEventListener("dragleave", handleTaskDragLeave);
+    item.addEventListener("drop", (e) => handleTaskDrop(e, projectId));
+    item.addEventListener("dragend", handleTaskDragEnd);
+  });
+}
+
+function handleTaskDragStart(e) {
+  _taskDragSrcId = e.currentTarget.dataset.taskId;
+  e.currentTarget.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+}
+
+function handleTaskDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+}
+
+function handleTaskDragEnter(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add("drag-over");
+}
+
+function handleTaskDragLeave(e) {
+  e.currentTarget.classList.remove("drag-over");
+}
+
+function handleTaskDrop(e, projectId) {
+  e.preventDefault();
+  const targetId = e.currentTarget.dataset.taskId;
+  if (!_taskDragSrcId || _taskDragSrcId === targetId) return;
+
+  const tasks = Object.entries(projectTasksCache[projectId] || {})
+    .map(([id, data]) => ({ id, ...data }))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const srcIdx = tasks.findIndex(t => t.id === _taskDragSrcId);
+  const targetIdx = tasks.findIndex(t => t.id === targetId);
+
+  if (srcIdx < 0 || targetIdx < 0) return;
+
+  const [movedTask] = tasks.splice(srcIdx, 1);
+  tasks.splice(targetIdx, 0, movedTask);
+
+  // Update orders
+  const newCache = {};
+  tasks.forEach((t, idx) => {
+    newCache[t.id] = projectTasksCache[projectId][t.id];
+    newCache[t.id].order = idx;
+  });
+  projectTasksCache[projectId] = newCache;
+
+  saveProjectTasksToFirebase(projectId);
+  renderProjectTasksList(projectId);
+}
+
+function handleTaskDragEnd(e) {
+  _taskDragSrcId = null;
+  document.querySelectorAll(".task-item").forEach(item => {
+    item.classList.remove("dragging", "drag-over");
+  });
 }
 
 function openGoldModal() {
@@ -3876,3 +4481,21 @@ function renderNewsSkeletons() {
   }
   return skeletons;
 }
+
+// Global keyboard shortcuts
+document.addEventListener("keydown", function(e) {
+  if (e.key === "Escape") {
+    // Close any open form modals first
+    const projectFormModal = document.getElementById("projectFormModal");
+    const taskFormModal = document.getElementById("taskFormModal");
+
+    if (projectFormModal && projectFormModal.style.display === "flex") {
+      closeProjectFormModal();
+      return;
+    }
+    if (taskFormModal && taskFormModal.style.display === "flex") {
+      closeTaskFormModal();
+      return;
+    }
+  }
+});

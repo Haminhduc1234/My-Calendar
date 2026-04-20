@@ -105,6 +105,12 @@
             </svg>
             <span class="fab-label">Tiền Tệ</span>
           </button>
+          <button class="project-fab tool-btn glow" onclick="openProjectsModal()" aria-label="Quản lý dự án">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M19 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 9h6v2h-6v-2zm0-4h6v2h-6V8zm-2 4H7v2h3v-2zm0-4H7v2h3V8z"></path>
+            </svg>
+            <span class="fab-label">Dự Án</span>
+          </button>
           <button class="overtime-fab tool-btn glow" onclick="openOvertimeModal()" aria-label="Mở bảng tăng ca">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path
@@ -481,6 +487,102 @@
         </div>
       </div>
     </div>
+
+    <!-- Projects Modal -->
+    <div id="projectsModal" class="modal">
+      <div class="modal-content event-modal-wrapper">
+        <div class="event-modal-header">
+          <div>
+            <h3>Quản lý dự án</h3>
+          </div>
+          <button class="modal-close event-modal-close" onclick="closeProjectsModal()">×</button>
+        </div>
+
+        <div class="projects-container">
+          <div class="project-actions-bar">
+            <button class="project-btn-add" onclick="createNewProject()">+ Thêm dự án mới</button>
+          </div>
+          <div id="projectsList" class="projects-list">
+            <!-- Project items rendered here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Project Tasks Modal -->
+    <div id="projectTasksModal" class="modal">
+      <div class="modal-content event-modal-wrapper">
+        <div class="event-modal-header">
+          <div>
+            <h3 id="currentProjectTitle">Tên dự án</h3>
+            <div class="date-label">Kéo thả để sắp xếp công việc</div>
+          </div>
+          <button class="modal-close event-modal-close" onclick="closeProjectTasksModal()">×</button>
+        </div>
+
+        <div class="project-tasks-container">
+          <div class="project-actions-bar">
+            <button class="project-btn-add" onclick="createNewTask()">+ Thêm công việc</button>
+            <button class="project-btn-header-back" onclick="backToProjectsList()">Quay lại</button>
+          </div>
+          
+          <div id="projectTasksList" class="project-tasks-list">
+            <!-- Task items rendered here -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Project Form Modal -->
+    <div id="projectFormModal" class="modal">
+      <div class="modal-content project-form-modal-content">
+        <div class="project-form-header">
+          <h3 id="projectFormTitle">Thêm dự án mới</h3>
+          <button class="modal-close" onclick="closeProjectFormModal()">×</button>
+        </div>
+        <form id="projectForm" onsubmit="handleProjectFormSubmit(event)">
+          <input type="hidden" id="projectFormId" />
+          <div class="project-form-group">
+            <label for="projectFormName">Tên dự án</label>
+            <input type="text" id="projectFormName" placeholder="Nhập tên dự án..." maxlength="100" required />
+          </div>
+          <div class="project-form-group">
+            <label for="projectFormDesc">Mô tả</label>
+            <textarea id="projectFormDesc" placeholder="Nhập mô tả (tùy chọn)..." rows="3" maxlength="500"></textarea>
+          </div>
+          <div class="project-form-actions">
+            <button type="button" class="project-form-cancel" onclick="closeProjectFormModal()">Hủy</button>
+            <button type="submit" class="project-form-submit" id="projectFormSubmitBtn">Lưu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Task Form Modal -->
+    <div id="taskFormModal" class="modal">
+      <div class="modal-content project-form-modal-content">
+        <div class="project-form-header">
+          <h3 id="taskFormTitle">Thêm công việc</h3>
+          <button class="modal-close" onclick="closeTaskFormModal()">×</button>
+        </div>
+        <form id="taskForm" onsubmit="handleTaskFormSubmit(event)">
+          <input type="hidden" id="taskFormId" />
+          <div class="project-form-group">
+            <label for="taskFormName">Tên công việc</label>
+            <input type="text" id="taskFormName" placeholder="Nhập tên công việc..." maxlength="200" required />
+          </div>
+          <div class="project-form-group">
+            <label for="taskFormDesc">Mô tả</label>
+            <textarea id="taskFormDesc" placeholder="Nhập mô tả (tùy chọn)..." rows="3" maxlength="1000"></textarea>
+          </div>
+          <div class="project-form-actions">
+            <button type="button" class="project-form-cancel" onclick="closeTaskFormModal()">Hủy</button>
+            <button type="submit" class="project-form-submit" id="taskFormSubmitBtn">Lưu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
   </div>
 
   <div id="cashflowDeleteConfirmModal" class="modal">

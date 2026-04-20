@@ -31,6 +31,12 @@
         ".write": "auth != null"
       }
     },
+    "projects": {
+      "$profileKey": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
     "notificationTokens": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",

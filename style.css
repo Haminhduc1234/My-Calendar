@@ -3542,6 +3542,12 @@ input[type="datetime-local"] {
   justify-content: flex-start;
   margin-bottom: 10px;
 }
+.project-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
 .project-btn-add {
   padding: 10px 16px;
   background: rgba(0, 153, 255, 0.2);
@@ -3570,6 +3576,7 @@ input[type="datetime-local"] {
   gap: 12px;
   overflow-y: auto;
   padding-bottom: 24px;
+  max-height: 60vh;
 }
 .project-item, .task-item {
   background: rgba(255, 255, 255, 0.05);
@@ -3579,9 +3586,11 @@ input[type="datetime-local"] {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
   position: relative;
+}
+.project-item {
+  cursor: pointer;
 }
 .project-item:hover, .task-item:hover {
   background: rgba(255, 255, 255, 0.08);
@@ -3823,4 +3832,137 @@ input[type="datetime-local"] {
 .project-form-submit:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(74, 127, 212, 0.4);
+}
+
+/* Drag & Drop Effects */
+.task-item.draggable {
+  cursor: grab;
+}
+.task-item.draggable:active {
+  cursor: grabbing;
+}
+.task-item.dragging {
+  opacity: 0.4;
+  transform: scale(0.98);
+  border: 2px dashed #66b2ff;
+}
+.task-item.drop-target {
+  transition: all 0.2s;
+}
+.task-item.drag-over {
+  background: rgba(102, 178, 255, 0.1);
+  border-color: rgba(102, 178, 255, 0.5);
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(102, 178, 255, 0.3);
+  z-index: 10;
+}
+
+/* Task Form Modal - Smaller */
+#taskFormModal .project-form-modal-content {
+  max-width: 360px;
+  padding: 20px;
+}
+#taskFormModal .project-form-group {
+  margin-bottom: 12px;
+}
+#taskFormModal .project-form-group input,
+#taskFormModal .project-form-group textarea {
+  padding: 10px 12px;
+}
+#taskFormModal .project-form-group textarea {
+  min-height: 60px;
+}
+
+/* Custom Confirm Popup */
+.confirm-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s, visibility 0.25s;
+}
+.confirm-popup-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+.confirm-popup {
+  background: var(--modal-bg, #1a1a2e);
+  border: 1px solid var(--line, rgba(255,255,255,0.1));
+  border-radius: 16px;
+  padding: 24px;
+  width: 90%;
+  max-width: 340px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.confirm-popup-overlay.show .confirm-popup {
+  transform: scale(1) translateY(0);
+}
+.confirm-popup-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 24px;
+}
+.confirm-popup-icon.danger {
+  background: rgba(255, 68, 68, 0.15);
+  color: #ff6b6b;
+}
+.confirm-popup-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text, #fff);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.confirm-popup-message {
+  font-size: 14px;
+  color: var(--muted, rgba(255,255,255,0.6));
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+.confirm-popup-actions {
+  display: flex;
+  gap: 12px;
+}
+.confirm-popup-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+.confirm-popup-btn.cancel {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text, #fff);
+  border: 1px solid var(--line, rgba(255,255,255,0.1));
+}
+.confirm-popup-btn.cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.confirm-popup-btn.danger {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+.confirm-popup-btn.danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
 }

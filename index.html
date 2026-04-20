@@ -500,6 +500,7 @@
 
         <div class="projects-container">
           <div class="project-actions-bar">
+            <span style="flex:1"></span>
             <button class="project-btn-add" onclick="createNewProject()">+ Thêm dự án mới</button>
           </div>
           <div id="projectsList" class="projects-list">
@@ -522,8 +523,8 @@
 
         <div class="project-tasks-container">
           <div class="project-actions-bar">
+            <button class="project-btn-header-back" onclick="backToProjectsList()">← Quay lại</button>
             <button class="project-btn-add" onclick="createNewTask()">+ Thêm công việc</button>
-            <button class="project-btn-header-back" onclick="backToProjectsList()">Quay lại</button>
           </div>
           
           <div id="projectTasksList" class="project-tasks-list">
@@ -801,6 +802,20 @@
     </svg>
     Cloud synced
   </div>
+
+  <!-- Custom Confirm Popup -->
+  <div id="confirmPopup" class="confirm-popup-overlay" onclick="if(event.target === this) closeConfirmPopup()">
+    <div class="confirm-popup">
+      <div class="confirm-popup-icon danger">⚠</div>
+      <div class="confirm-popup-title" id="confirmPopupTitle">Xác nhận xóa</div>
+      <div class="confirm-popup-message" id="confirmPopupMessage">Bạn có chắc muốn xóa?</div>
+      <div class="confirm-popup-actions">
+        <button class="confirm-popup-btn cancel" onclick="closeConfirmPopup()">Hủy</button>
+        <button class="confirm-popup-btn danger" id="confirmPopupConfirmBtn" onclick="confirmPopupAction()">Xóa</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>

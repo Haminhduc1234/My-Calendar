@@ -1537,14 +1537,14 @@ function renderProjectsList() {
   }
 
   container.innerHTML = projects.map(project => `
-    <div class="project-item" data-project-id="${project.id}">
+    <div class="project-item" data-project-id="${project.id}" onclick="if(!event.target.closest('.item-actions')) openProjectTasksModal('${project.id}', '${escapeHtml(project.title || "")}')">
       <div class="project-item-header">
-        <div class="project-item-title" onclick="openProjectTasksModal('${project.id}', '${escapeHtml(project.title || "")}')">
+        <div class="project-item-title">
           ${escapeHtml(project.title || "Dự án không tên")}
         </div>
         <div class="item-actions">
-          <button class="item-btn" onclick="editProject('${project.id}')" title="Sửa">✎</button>
-          <button class="item-btn delete" onclick="deleteProject('${project.id}')" title="Xóa">✕</button>
+          <button class="item-btn" onclick="event.stopPropagation(); editProject('${project.id}')" title="Sửa">✎</button>
+          <button class="item-btn delete" onclick="event.stopPropagation(); deleteProject('${project.id}')" title="Xóa">✕</button>
         </div>
       </div>
       ${project.description ? `<div class="project-item-text">${escapeHtml(project.description)}</div>` : ""}
@@ -1648,8 +1648,16 @@ function editProject(projectId) {
 }
 
 function deleteProject(projectId) {
-  if (!confirm("Bạn có chắc muốn xóa dự án này?\nTất cả công việc trong dự án cũng sẽ bị xóa.")) return;
+  showConfirmPopup(
+    "Xóa dự án",
+    "Bạn có chắc muốn xóa dự án này? Tất cả công việc trong dự án cũng sẽ bị xóa.",
+    "Xóa",
+    doDeleteProject,
+    projectId
+  );
+}
 
+function doDeleteProject(projectId) {
   const projects = projectsDataCache || {};
   delete projects[projectId];
   projectsDataCache = projects;
@@ -1704,20 +1712,18 @@ function renderProjectTasksList(projectId) {
   }
 
   container.innerHTML = tasks.map((task, idx) => `
-    <div class="task-item draggable" draggable="true" data-task-id="${task.id}" data-project-id="${projectId}" data-task-order="${task.order || idx}">
+    <div class="task-item draggable" draggable="true" data-task-id="${task.id}" data-project-id="${projectId}" data-task-order="${task.order || idx}" onclick="event.stopPropagation();">
       <div class="task-item-header">
         <div class="drag-controls">
           <button class="task-drag-handle" onclick="event.stopPropagation();" title="Kéo để sắp xếp">☰</button>
-          <button class="task-move-btn" onclick="moveTaskUp('${projectId}', '${task.id}')" title="Di chuyển lên" ${idx === 0 ? "disabled" : ""}>↑</button>
-          <button class="task-move-btn" onclick="moveTaskDown('${projectId}', '${task.id}')" title="Di chuyển xuống" ${idx === tasks.length - 1 ? "disabled" : ""}>↓</button>
         </div>
-        <div class="task-item-title" onclick="toggleTaskComplete('${projectId}', '${task.id}')">
+        <div class="task-item-title" onclick="event.stopPropagation(); toggleTaskComplete('${projectId}', '${task.id}')">
           <span class="task-checkbox ${task.completed ? "completed" : ""}">${task.completed ? "☑" : "☐"}</span>
           <span class="task-name ${task.completed ? "done" : ""}">${escapeHtml(task.title || "")}</span>
         </div>
         <div class="item-actions">
-          <button class="item-btn" onclick="editTask('${projectId}', '${task.id}')" title="Sửa">✎</button>
-          <button class="item-btn delete" onclick="deleteTask('${projectId}', '${task.id}')" title="Xóa">✕</button>
+          <button class="item-btn" onclick="event.stopPropagation(); editTask('${projectId}', '${task.id}')" title="Sửa">✎</button>
+          <button class="item-btn delete" onclick="event.stopPropagation(); deleteTask('${projectId}', '${task.id}')" title="Xóa">✕</button>
         </div>
       </div>
       ${task.description ? `<div class="task-item-text">${escapeHtml(task.description)}</div>` : ""}
@@ -1765,6 +1771,48 @@ function openTaskFormModal(isEdit, projectId, taskId) {
 
 function closeTaskFormModal() {
   document.getElementById("taskFormModal").style.display = "none";
+}
+
+// Custom Confirm Popup
+let _confirmPopupCallback = null;
+let _confirmPopupArgs = null;
+
+function showConfirmPopup(title, message, confirmText, callback, args) {
+  const popup = document.getElementById("confirmPopup");
+  const titleEl = document.getElementById("confirmPopupTitle");
+  const messageEl = document.getElementById("confirmPopupMessage");
+  const confirmBtn = document.getElementById("confirmPopupConfirmBtn");
+
+  titleEl.textContent = title;
+  messageEl.textContent = message;
+  confirmBtn.textContent = confirmText || "Xóa";
+
+  _confirmPopupCallback = callback;
+  _confirmPopupArgs = args;
+
+  popup.classList.add("show");
+}
+
+function closeConfirmPopup() {
+  const popup = document.getElementById("confirmPopup");
+  popup.classList.remove("show");
+  _confirmPopupCallback = null;
+  _confirmPopupArgs = null;
+}
+
+function confirmPopupAction() {
+  if (_confirmPopupCallback) {
+    if (_confirmPopupArgs) {
+      if (Array.isArray(_confirmPopupArgs)) {
+        _confirmPopupCallback(..._confirmPopupArgs);
+      } else {
+        _confirmPopupCallback(_confirmPopupArgs);
+      }
+    } else {
+      _confirmPopupCallback();
+    }
+  }
+  closeConfirmPopup();
 }
 
 function handleTaskFormSubmit(e) {
@@ -1830,20 +1878,17 @@ function editTask(projectId, taskId) {
 }
 
 function deleteTask(projectId, taskId) {
-  if (!confirm("Bạn có chắc muốn xóa công việc này?")) return;
-
-  const tasks = projectTasksCache[projectId] || {};
-  delete tasks[taskId];
-  projectTasksCache[projectId] = tasks;
-
-  saveProjectTasksToFirebase(projectId);
-  renderProjectTasksList(projectId);
-  renderProjectsList();
+  showConfirmPopup(
+    "Xóa công việc",
+    "Bạn có chắc muốn xóa công việc này?",
+    "Xóa",
+    doDeleteTask,
+    { projectId, taskId }
+  );
 }
 
-function deleteTask(projectId, taskId) {
-  if (!confirm("Bạn có chắc muốn xóa công việc này?")) return;
-
+function doDeleteTask(args) {
+  const { projectId, taskId } = args;
   const tasks = projectTasksCache[projectId] || {};
   delete tasks[taskId];
   projectTasksCache[projectId] = tasks;
@@ -1957,25 +2002,67 @@ function bindTaskDragDrop(projectId) {
 function handleTaskDragStart(e) {
   _taskDragSrcId = e.currentTarget.dataset.taskId;
   e.currentTarget.classList.add("dragging");
+  e.currentTarget.style.opacity = "0.4";
   e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", _taskDragSrcId);
+
+  // Add drop indicator style to all items
+  document.querySelectorAll(".task-item.draggable").forEach(item => {
+    if (item.dataset.taskId !== _taskDragSrcId) {
+      item.classList.add("drop-target");
+    }
+  });
 }
 
 function handleTaskDragOver(e) {
   e.preventDefault();
   e.dataTransfer.dropEffect = "move";
+
+  // Add visual indicator line
+  const rect = e.currentTarget.getBoundingClientRect();
+  const midY = rect.top + rect.height / 2;
+
+  // Remove existing indicator
+  document.querySelectorAll(".drop-indicator").forEach(el => el.remove());
+
+  if (e.clientY < midY) {
+    e.currentTarget.style.borderTop = "3px solid #66b2ff";
+    e.currentTarget.style.borderBottom = "";
+  } else {
+    e.currentTarget.style.borderBottom = "3px solid #66b2ff";
+    e.currentTarget.style.borderTop = "";
+  }
 }
 
 function handleTaskDragEnter(e) {
   e.preventDefault();
   e.currentTarget.classList.add("drag-over");
+  e.currentTarget.style.transform = "scale(1.02)";
+  e.currentTarget.style.boxShadow = "0 8px 24px rgba(102, 178, 255, 0.3)";
+  e.currentTarget.style.zIndex = "10";
 }
 
 function handleTaskDragLeave(e) {
   e.currentTarget.classList.remove("drag-over");
+  e.currentTarget.style.transform = "";
+  e.currentTarget.style.boxShadow = "";
+  e.currentTarget.style.zIndex = "";
 }
 
 function handleTaskDrop(e, projectId) {
   e.preventDefault();
+
+  // Clean up visual indicators first
+  document.querySelectorAll(".drop-target, .drag-over").forEach(el => {
+    el.classList.remove("drop-target", "drag-over");
+    el.style.transform = "";
+    el.style.boxShadow = "";
+    el.style.zIndex = "";
+    el.style.borderTop = "";
+    el.style.borderBottom = "";
+  });
+  document.querySelectorAll(".drop-indicator").forEach(el => el.remove());
+
   const targetId = e.currentTarget.dataset.taskId;
   if (!_taskDragSrcId || _taskDragSrcId === targetId) return;
 
@@ -1991,7 +2078,17 @@ function handleTaskDrop(e, projectId) {
   const [movedTask] = tasks.splice(srcIdx, 1);
   tasks.splice(targetIdx, 0, movedTask);
 
-  // Update orders
+  // Determine actual insert position
+  const rect = e.currentTarget.getBoundingClientRect();
+  const midY = rect.top + rect.height / 2;
+  let insertIdx = targetIdx;
+  if (e.clientY < midY && srcIdx < targetIdx) {
+    insertIdx = targetIdx - 1;
+  } else if (e.clientY >= midY && srcIdx > targetIdx) {
+    insertIdx = targetIdx + 1;
+  }
+
+  // Rebuild with correct order
   const newCache = {};
   tasks.forEach((t, idx) => {
     newCache[t.id] = projectTasksCache[projectId][t.id];
@@ -1999,15 +2096,34 @@ function handleTaskDrop(e, projectId) {
   });
   projectTasksCache[projectId] = newCache;
 
+  // Add drop animation feedback
+  e.currentTarget.style.transition = "background 0.3s, border-color 0.3s";
+  e.currentTarget.style.background = "rgba(102, 178, 255, 0.15)";
+  e.currentTarget.style.borderColor = "rgba(102, 178, 255, 0.6)";
+  setTimeout(() => {
+    e.currentTarget.style.background = "";
+    e.currentTarget.style.borderColor = "";
+  }, 300);
+
   saveProjectTasksToFirebase(projectId);
   renderProjectTasksList(projectId);
 }
 
 function handleTaskDragEnd(e) {
   _taskDragSrcId = null;
+  e.currentTarget.style.opacity = "";
+
+  // Clean up all drag effects
   document.querySelectorAll(".task-item").forEach(item => {
-    item.classList.remove("dragging", "drag-over");
+    item.classList.remove("dragging", "drag-over", "drop-target");
+    item.style.opacity = "";
+    item.style.transform = "";
+    item.style.boxShadow = "";
+    item.style.zIndex = "";
+    item.style.borderTop = "";
+    item.style.borderBottom = "";
   });
+  document.querySelectorAll(".drop-indicator").forEach(el => el.remove());
 }
 
 function openGoldModal() {
@@ -4485,7 +4601,14 @@ function renderNewsSkeletons() {
 // Global keyboard shortcuts
 document.addEventListener("keydown", function(e) {
   if (e.key === "Escape") {
-    // Close any open form modals first
+    // Close confirm popup first
+    const confirmPopup = document.getElementById("confirmPopup");
+    if (confirmPopup && confirmPopup.classList.contains("show")) {
+      closeConfirmPopup();
+      return;
+    }
+
+    // Close any open form modals
     const projectFormModal = document.getElementById("projectFormModal");
     const taskFormModal = document.getElementById("taskFormModal");
 

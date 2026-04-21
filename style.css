@@ -328,7 +328,7 @@ body {
   font-weight: 700;
   font-size: 62px;
   line-height: 1.06;
-  background: linear-gradient(135deg, #ff4444, #ff8800, #ffcc00, #44cc44, #4488ff, #6644cc, #aa44aa);
+  background: linear-gradient(135deg, #ff0000, #ff7f00, #ffdd00, #00cc44, #0088ff, #4400cc, #aa00aa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -346,7 +346,7 @@ body {
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 1.8px;
-  background: linear-gradient(90deg, #ff6666, #ffaa44, #ffee44, #66dd66, #6699ff, #8855dd);
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffdd00, #00cc44, #0088ff, #4400cc, #aa00aa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -436,7 +436,7 @@ body {
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.6px;
-  background: linear-gradient(90deg, #ff6666, #ffaa44, #ffee44, #66dd66, #6699ff, #8855dd);
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffdd00, #00cc44, #0088ff, #4400cc, #aa00aa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -531,7 +531,7 @@ body {
   position: absolute;
   inset: -2px;
   border-radius: 15px;
-  background: linear-gradient(135deg, #ff4444, #ff8800, #ffcc00, #44cc44, #4488ff, #6644cc, #aa44aa);
+  background: linear-gradient(135deg, #ff0000, #ff7f00, #ffdd00, #00cc44, #0088ff, #4400cc, #aa00aa);
   z-index: -1;
   /* animation removed for performance */
   background-size: 300% 300%;
@@ -689,7 +689,7 @@ body {
 
 .event-modal-header h3 {
   margin: 0 0 4px 0 !important;
-  background: linear-gradient(90deg, #ff6666, #ffaa44, #ffee44, #66dd66, #6699ff, #8855dd);
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffdd00, #00cc44, #0088ff, #4400cc, #aa00aa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -709,7 +709,7 @@ body {
 
 .overtime-modal-content h3 {
   margin: 0 0 10px;
-  background: linear-gradient(90deg, #ff6666, #ffaa44, #ffee44, #66dd66, #6699ff, #8855dd);
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffdd00, #00cc44, #0088ff, #4400cc, #aa00aa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -725,7 +725,7 @@ body {
 
 .modal-content h3 {
   margin: 0 0 6px;
-  background: linear-gradient(90deg, #ff6666, #ffaa44, #ffee44, #66dd66, #6699ff, #8855dd);
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffdd00, #00cc44, #0088ff, #4400cc, #aa00aa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -2203,7 +2203,7 @@ body {
 .news-header h2 {
   margin: 0;
   font-size: 20px;
-  background: linear-gradient(90deg, #ff6666, #ffaa44, #ffee44, #66dd66, #6699ff, #8855dd);
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffdd00, #00cc44, #0088ff, #4400cc, #aa00aa);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -3511,7 +3511,7 @@ input[type="datetime-local"] {
 }
 
 .prominent-inner {
-  background: linear-gradient(135deg, #ff4444, #ff8800, #ffcc00, #44cc44, #4488ff, #6644cc, #aa44aa);
+  background: linear-gradient(135deg, #ff0000, #ff7f00, #ffdd00, #00cc44, #0088ff, #4400cc, #aa00aa);
   background-size: 300% 300%;
   /* animation removed for performance */
   width: 64px;

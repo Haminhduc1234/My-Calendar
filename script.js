@@ -1986,17 +1986,151 @@ function loadProjectTasksFromLocalStorage(projectId) {
 
 // Drag and Drop for Tasks
 let _taskDragSrcId = null;
+let _touchDragSrcEl = null;
+let _touchStartY = 0;
+let _touchCurrentY = 0;
+let _touchDragging = false;
 
 function bindTaskDragDrop(projectId) {
   const items = document.querySelectorAll(".task-item.draggable");
   items.forEach(item => {
+    // Desktop drag events
     item.addEventListener("dragstart", handleTaskDragStart);
     item.addEventListener("dragover", handleTaskDragOver);
     item.addEventListener("dragenter", handleTaskDragEnter);
     item.addEventListener("dragleave", handleTaskDragLeave);
     item.addEventListener("drop", (e) => handleTaskDrop(e, projectId));
     item.addEventListener("dragend", handleTaskDragEnd);
+
+    // Mobile touch events
+    item.addEventListener("touchstart", handleTaskTouchStart, { passive: false });
+    item.addEventListener("touchmove", handleTaskTouchMove, { passive: false });
+    item.addEventListener("touchend", (e) => handleTaskTouchEnd(e, projectId));
   });
+}
+
+function handleTaskTouchStart(e) {
+  if (e.target.closest(".item-actions") || e.target.closest(".task-drag-handle")) {
+    return;
+  }
+  e.preventDefault();
+  _touchStartY = e.touches[0].clientY;
+  _touchCurrentY = _touchStartY;
+  _touchDragSrcEl = e.currentTarget;
+  _taskDragSrcId = e.currentTarget.dataset.taskId;
+  _touchDragging = false;
+
+  _touchDragSrcEl.classList.add("dragging");
+  _touchDragSrcEl.style.opacity = "0.4";
+
+  document.querySelectorAll(".task-item.draggable").forEach(item => {
+    if (item.dataset.taskId !== _taskDragSrcId) {
+      item.classList.add("drop-target");
+    }
+  });
+}
+
+function handleTaskTouchMove(e) {
+  if (!_touchDragSrcEl) return;
+  e.preventDefault();
+
+  _touchCurrentY = e.touches[0].clientY;
+  const diff = Math.abs(_touchCurrentY - _touchStartY);
+
+  if (diff > 10) {
+    _touchDragging = true;
+    _touchDragSrcEl.style.transform = `translateY(${_touchCurrentY - _touchStartY}px)`;
+    _touchDragSrcEl.style.zIndex = "1000";
+    _touchDragSrcEl.style.position = "relative";
+
+    // Highlight drop target
+    const items = Array.from(document.querySelectorAll(".task-item.draggable"));
+    items.forEach(item => {
+      if (item === _touchDragSrcEl) return;
+      item.style.borderTop = "";
+      item.style.borderBottom = "";
+
+      const rect = item.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+
+      if (_touchCurrentY < midY) {
+        item.style.borderTop = "3px solid #66b2ff";
+      } else {
+        item.style.borderBottom = "3px solid #66b2ff";
+      }
+    });
+  }
+}
+
+function handleTaskTouchEnd(e, projectId) {
+  if (!_touchDragSrcEl) return;
+
+  _touchDragSrcEl.classList.remove("dragging");
+  _touchDragSrcEl.style.opacity = "";
+  _touchDragSrcEl.style.transform = "";
+  _touchDragSrcEl.style.zIndex = "";
+  _touchDragSrcEl.style.position = "";
+
+  document.querySelectorAll(".drop-target, .drag-over").forEach(el => {
+    el.classList.remove("drop-target", "drag-over");
+    el.style.transform = "";
+    el.style.boxShadow = "";
+    el.style.zIndex = "";
+    el.style.borderTop = "";
+    el.style.borderBottom = "";
+  });
+
+  if (_touchDragging && _taskDragSrcId) {
+    // Find target element under touch point
+    const touch = e.changedTouches[0];
+    const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetItem = targetEl ? targetEl.closest(".task-item.draggable") : null;
+
+    if (targetItem && targetItem.dataset.taskId !== _taskDragSrcId) {
+      const targetId = targetItem.dataset.taskId;
+      const rect = targetItem.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      const insertAbove = touch.clientY < midY;
+
+      performTaskReorder(projectId, _taskDragSrcId, targetId, insertAbove);
+    }
+  }
+
+  _touchDragSrcEl = null;
+  _taskDragSrcId = null;
+  _touchDragging = false;
+}
+
+function performTaskReorder(projectId, srcId, targetId, insertAbove) {
+  const tasks = Object.entries(projectTasksCache[projectId] || {})
+    .map(([id, data]) => ({ id, ...data }))
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  const srcIdx = tasks.findIndex(t => t.id === srcId);
+  const targetIdx = tasks.findIndex(t => t.id === targetId);
+
+  if (srcIdx < 0 || targetIdx < 0) return;
+
+  const [movedTask] = tasks.splice(srcIdx, 1);
+
+  let insertIdx = insertAbove ? targetIdx : targetIdx + 1;
+  if (srcIdx < targetIdx && !insertAbove) {
+    insertIdx = targetIdx;
+  } else if (srcIdx > targetIdx && insertAbove) {
+    insertIdx = targetIdx + 1;
+  }
+
+  tasks.splice(Math.max(0, Math.min(insertIdx, tasks.length)), 0, movedTask);
+
+  const newCache = {};
+  tasks.forEach((t, idx) => {
+    newCache[t.id] = projectTasksCache[projectId][t.id];
+    newCache[t.id].order = idx;
+  });
+  projectTasksCache[projectId] = newCache;
+
+  saveProjectTasksToFirebase(projectId);
+  renderProjectTasksList(projectId);
 }
 
 function handleTaskDragStart(e) {

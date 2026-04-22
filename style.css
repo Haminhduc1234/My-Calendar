@@ -180,7 +180,7 @@ body {
   position: absolute;
   inset: -1px;
   border-radius: 21px;
-  background: linear-gradient(135deg, #ff000066, #ff880066, #ffdd0066, #00cc4466, #0088ff66, #4400cc66, #8800aa66);
+  background: linear-gradient(135deg, #ff000066, #ff7f0066, #ffdd0066, #00cc4466, #0088ff66, #4400cc66, #aa00aa66);
   z-index: -1;
   /* animation removed for performance */
   background-size: 300% 300%;
@@ -3912,7 +3912,7 @@ input[type="datetime-local"] {
 }
 .project-form-submit {
   padding: 10px 24px;
-  background: linear-gradient(135deg, #ff4444, #ff8800, #ffcc00, #44cc44, #4488ff, #6644cc);
+  background: linear-gradient(135deg, #ff0000, #ff7f00, #ffdd00, #00cc44, #0088ff, #4400cc, #aa00aa);
   background-size: 300% 300%;
   /* animation removed for performance */
   border: none;

@@ -18,8 +18,8 @@
   --holiday: #ffe6e6;
   --ok: #d8f6e8;
   --warning: #ffe9c6;
-  --rainbow: linear-gradient(135deg, #ff0000, #ff8800, #ffdd00, #00cc44, #0088ff, #4400cc, #8800aa);
-  --rainbow-soft: linear-gradient(135deg, rgba(255, 0, 0, 0.25), rgba(255, 136, 0, 0.25), rgba(255, 221, 0, 0.25), rgba(0, 204, 68, 0.25), rgba(0, 136, 255, 0.25), rgba(68, 0, 204, 0.25), rgba(136, 0, 170, 0.25));
+  --rainbow: linear-gradient(75deg, #ff0000, #ff8800, #ffdd00, #00cc44, #0088ff, #4400cc, #8800aa);
+  --rainbow-soft: linear-gradient(75deg, rgba(255, 0, 0, 0.25), rgba(255, 136, 0, 0.25), rgba(255, 221, 0, 0.25), rgba(0, 204, 68, 0.25), rgba(0, 136, 255, 0.25), rgba(68, 0, 204, 0.25), rgba(136, 0, 170, 0.25));
 }
 
 body {
@@ -547,18 +547,34 @@ body {
 }
 
 .holiday {
-  border-color: rgba(255, 120, 120, 0.5);
-  background: linear-gradient(180deg,
-      rgba(80, 20, 30, 0.72),
-      rgba(40, 10, 15, 0.86));
+  border-color: rgba(220, 40, 40, 0.85);
+  overflow: hidden;
+}
+
+.holiday::before {
+  content: '';
+  position: absolute;
+  /* Mở rộng ra ngoài để sau khi xoay 90° vẫn phủ full ô */
+  inset: -60%;
+  background: url('public/vietnam.png') center / cover no-repeat;
+  transform: rotate(90deg);
+  z-index: 0;
+  border-radius: 0;
+}
+
+.holiday>* {
+  position: relative;
+  z-index: 1;
 }
 
 .holiday .solar {
-  color: var(--holiday);
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
 
 .holiday .lunar {
-  color: #ffd1d1;
+  color: #ffe0e0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .holiday.today {
@@ -1093,7 +1109,6 @@ body {
 
 .toolbox-panel {
   padding: 10px;
-  max-width: 128px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
   background: rgba(15, 15, 25, 0.85);
@@ -2564,7 +2579,6 @@ body {
 
   .toolbox-panel {
     padding: 8px;
-    max-width: 120px;
   }
 
   .overtime-fab {
@@ -2787,9 +2801,23 @@ input[type="datetime-local"] {
 
 .quick-note-form {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr auto auto;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.quick-note-cancel-btn {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(20, 15, 30, 0.85);
+  color: #e0d0ff;
+  font-weight: 700;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
+.quick-note-cancel-btn:hover {
+  filter: brightness(1.1);
 }
 
 #quickNoteInput {
@@ -2830,7 +2858,8 @@ input[type="datetime-local"] {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: min(52vh, 420px);
+  max-height: calc(100vh - 180px);
+  max-height: calc(100dvh - 180px);
   overflow-y: auto;
 }
 
@@ -2846,13 +2875,40 @@ input[type="datetime-local"] {
 
 .quick-note-item {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
   align-items: center;
   gap: 10px;
   padding: 10px;
   border-radius: 10px;
   border: 1px solid rgba(183, 208, 255, 0.2);
   background: rgba(8, 20, 42, 0.62);
+  transition: filter 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.quick-note-item.is-dragging {
+  opacity: 0.4;
+  filter: brightness(0.8);
+}
+
+.quick-note-item.drag-over {
+  border-color: rgba(168, 196, 255, 0.8);
+  background: rgba(111, 64, 170, 0.55);
+}
+
+.note-drag-handle {
+  color: rgba(189, 168, 222, 0.6);
+  font-size: 14px;
+  cursor: grab;
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.note-drag-handle:hover {
+  color: #ede3ff;
+}
+
+.quick-note-item:active .note-drag-handle {
+  cursor: grabbing;
 }
 
 .quick-note-item input[type="checkbox"] {
@@ -2866,6 +2922,12 @@ input[type="datetime-local"] {
   font-size: 14px;
   color: #e6f0ff;
   word-break: break-word;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.quick-note-text:hover {
+  opacity: 0.7;
 }
 
 .quick-note-item.is-done .quick-note-text {
@@ -2910,6 +2972,8 @@ input[type="datetime-local"] {
   animation: scaleIn 0.25s ease;
   position: relative;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .my-music-header h3 {
@@ -3019,7 +3083,8 @@ input[type="datetime-local"] {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: min(30vh, 220px);
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 2px;
 }
@@ -3424,11 +3489,18 @@ input[type="datetime-local"] {
   }
 
   .quick-note-form {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
-  .quick-note-add-btn {
-    width: 100%;
+  #quickNoteInput {
+    flex: 1 1 100%;
+  }
+
+  .quick-note-add-btn,
+  .quick-note-cancel-btn {
+    flex: 1;
     height: 38px;
   }
 
@@ -3454,10 +3526,6 @@ input[type="datetime-local"] {
 
   .my-music-controls {
     gap: 8px;
-  }
-
-  .my-music-playlist {
-    max-height: min(28vh, 190px);
   }
 
   .cashflow-row {

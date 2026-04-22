@@ -281,11 +281,17 @@ function renderCalendar() {
     if (cellDate.getTime() === today.getTime()) div.classList.add("today");
     if (getEventsForDate(key).length > 0) div.classList.add("has-event");
     if (getOvertimeHoursForDateKey(key) > 0) div.classList.add("has-overtime");
+    
+    const isCustomHoliday = !!getDateData(key).isHoliday;
+
     if (
       SOLAR_HOLIDAYS[`${d}-${m}`] ||
-      LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`]
-    )
+      LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`] ||
+      isCustomHoliday
+    ) {
       div.classList.add("holiday");
+    }
+
     let holidayName = "";
 
     if (SOLAR_HOLIDAYS[`${d}-${m}`]) {
@@ -295,6 +301,11 @@ function renderCalendar() {
     if (LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`]) {
       holidayName = LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`];
     }
+    
+    if (isCustomHoliday && !holidayName) {
+      holidayName = "Ngày nghỉ lễ";
+    }
+
     div.innerHTML = `
   <div class="solar">${d}</div>
   <div class="lunar">${lunar.lunarDay}/${lunar.lunarMonth}${lunar.lunarLeap ? "N" : ""}</div>
@@ -373,6 +384,7 @@ function normalizeDateData(raw) {
     events,
     overtimeHours: Math.max(0, parseInt(payload.overtimeHours, 10) || 0),
     cashflowEntries,
+    isHoliday: !!payload.isHoliday,
     updatedAt: Number(payload.updatedAt || Date.now()),
   };
 }
@@ -676,6 +688,7 @@ function saveDateData(dateKey, data) {
     events: normalized.events,
     overtimeHours: normalized.overtimeHours,
     cashflowEntries: normalized.cashflowEntries,
+    isHoliday: normalized.isHoliday,
     updatedAt: Date.now(),
   };
 
@@ -687,13 +700,15 @@ function saveDateData(dateKey, data) {
     overtimeHours: normalized.overtimeHours,
     cashflowEntries:
       normalized.cashflowEntries.length > 0 ? normalized.cashflowEntries : {},
+    isHoliday: normalized.isHoliday,
     updatedAt: Date.now(),
   };
 
   if (
     normalized.events.length === 0 &&
     normalized.overtimeHours <= 0 &&
-    normalized.cashflowEntries.length === 0
+    normalized.cashflowEntries.length === 0 &&
+    !normalized.isHoliday
   ) {
     delete dateDataCache[dateKey];
     localStorage.removeItem(dateKey);
@@ -1345,6 +1360,17 @@ function openEditEventModal(eventIndex) {
   document.getElementById("addEventModal").style.display = "flex";
 }
 
+function toggleDayHoliday() {
+  if (!selectedKey) return;
+  const data = getDateData(selectedKey);
+  const checkbox = document.getElementById("dayIsHoliday");
+  if (!checkbox) return;
+  
+  data.isHoliday = checkbox.checked;
+  saveDateData(selectedKey, data);
+  renderCalendar();
+}
+
 // Day Details Modal - shows events list and overtime editor
 function openDayDetailsModal(dateKey, d, m, y) {
   closeAllModals();
@@ -1353,6 +1379,11 @@ function openDayDetailsModal(dateKey, d, m, y) {
 
   document.getElementById("dayDetailsDate").innerText = `${d}/${m}/${y}`;
   document.getElementById("dayOvertimeHours").value = data.overtimeHours || 0;
+
+  const holidayCheckbox = document.getElementById("dayIsHoliday");
+  if (holidayCheckbox) {
+    holidayCheckbox.checked = !!data.isHoliday;
+  }
 
   // Render events list
   const eventsList = document.getElementById("dayEventsList");
@@ -2346,22 +2377,115 @@ function renderQuickNotes() {
     return;
   }
 
-  notes.sort((a, b) => {
-    if (a.done !== b.done) return a.done ? 1 : -1;
-    return b.createdAt - a.createdAt;
-  });
-
   listEl.innerHTML = notes
     .map((note) => {
       return `
-      <div class="quick-note-item ${note.done ? "is-done" : ""}">
+      <div class="quick-note-item ${note.done ? "is-done" : ""}" draggable="true" data-note-id="${note.id}">
+        <span class="note-drag-handle" aria-hidden="true">☰</span>
         <input type="checkbox" ${note.done ? "checked" : ""} aria-label="Đánh dấu hoàn thành" onclick="toggleQuickNoteDone('${note.id}')">
-        <div class="quick-note-text">${escapeHtml(note.text)}</div>
+        <div class="quick-note-text" onclick="editQuickNote('${note.id}')" title="Nhấn để sửa">${escapeHtml(note.text)}</div>
         <button type="button" class="quick-note-delete" onclick="deleteQuickNote('${note.id}')" aria-label="Xóa ghi chú">×</button>
       </div>
     `;
     })
     .join("");
+    
+  bindQuickNoteDragDrop();
+}
+
+let _noteDragSrcId = null;
+
+function bindQuickNoteDragDrop() {
+  const items = document.querySelectorAll("#quickNoteList .quick-note-item");
+  items.forEach(item => {
+    item.addEventListener("dragstart", handleNoteDragStart);
+    item.addEventListener("dragenter", handleNoteDragEnter);
+    item.addEventListener("dragover", handleNoteDragOver);
+    item.addEventListener("dragleave", handleNoteDragLeave);
+    item.addEventListener("drop", handleNoteDrop);
+    item.addEventListener("dragend", handleNoteDragEnd);
+  });
+}
+
+function handleNoteDragStart(e) {
+  _noteDragSrcId = e.currentTarget.dataset.noteId;
+  e.currentTarget.classList.add("is-dragging");
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", _noteDragSrcId);
+}
+
+function handleNoteDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  return false;
+}
+
+function handleNoteDragEnter(e) {
+  e.preventDefault();
+  if (e.currentTarget.dataset.noteId !== _noteDragSrcId) {
+    e.currentTarget.classList.add("drag-over");
+  }
+}
+
+function handleNoteDragLeave(e) {
+  e.currentTarget.classList.remove("drag-over");
+}
+
+function handleNoteDrop(e) {
+  e.stopPropagation();
+  e.preventDefault();
+  const targetId = e.currentTarget.dataset.noteId;
+  if (!_noteDragSrcId || _noteDragSrcId === targetId) return;
+
+  const notes = loadQuickNotes();
+  const srcIdx = notes.findIndex(n => n.id === _noteDragSrcId);
+  const targetIdx = notes.findIndex(n => n.id === targetId);
+
+  if (srcIdx < 0 || targetIdx < 0) return;
+
+  const [movedNote] = notes.splice(srcIdx, 1);
+  notes.splice(targetIdx, 0, movedNote);
+
+  saveQuickNotes(notes);
+  renderQuickNotes();
+}
+
+function handleNoteDragEnd(e) {
+  _noteDragSrcId = null;
+  document.querySelectorAll("#quickNoteList .quick-note-item").forEach(item => {
+    item.classList.remove("is-dragging", "drag-over");
+  });
+}
+
+let _editingQuickNoteId = null;
+
+function editQuickNote(noteId) {
+  const notes = loadQuickNotes();
+  const note = notes.find(n => n.id === noteId);
+  if (!note) return;
+
+  _editingQuickNoteId = noteId;
+  const input = document.getElementById("quickNoteInput");
+  const submitBtn = document.getElementById("quickNoteSubmitBtn");
+  const cancelBtn = document.getElementById("quickNoteCancelBtn");
+
+  if (input) {
+    input.value = note.text;
+    input.focus({ preventScroll: true });
+  }
+  if (submitBtn) submitBtn.innerText = "Lưu";
+  if (cancelBtn) cancelBtn.style.display = "block";
+}
+
+function cancelEditQuickNote() {
+  _editingQuickNoteId = null;
+  const input = document.getElementById("quickNoteInput");
+  const submitBtn = document.getElementById("quickNoteSubmitBtn");
+  const cancelBtn = document.getElementById("quickNoteCancelBtn");
+
+  if (input) input.value = "";
+  if (submitBtn) submitBtn.innerText = "+ Thêm";
+  if (cancelBtn) cancelBtn.style.display = "none";
 }
 
 function openQuickNoteModal() {
@@ -2375,9 +2499,10 @@ function openQuickNoteModal() {
 
 function closeQuickNoteModal() {
   document.getElementById("quickNoteModal").style.display = "none";
+  cancelEditQuickNote();
 }
 
-function addQuickNote() {
+function submitQuickNote() {
   const input = document.getElementById("quickNoteInput");
   if (!input) return;
 
@@ -2385,15 +2510,23 @@ function addQuickNote() {
   if (!text) return;
 
   const notes = loadQuickNotes();
-  notes.push({
-    id: `qn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    text,
-    done: false,
-    createdAt: Date.now(),
-  });
+
+  if (_editingQuickNoteId) {
+    const idx = notes.findIndex(n => n.id === _editingQuickNoteId);
+    if (idx >= 0) {
+      notes[idx].text = text;
+    }
+  } else {
+    notes.unshift({
+      id: `qn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      text,
+      done: false,
+      createdAt: Date.now(),
+    });
+  }
 
   saveQuickNotes(notes);
-  input.value = "";
+  cancelEditQuickNote();
   renderQuickNotes();
   input.focus({ preventScroll: true });
 }
@@ -2428,7 +2561,7 @@ function initQuickNoteModal() {
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
-        addQuickNote();
+        submitQuickNote();
       }
     });
   }

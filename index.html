@@ -143,20 +143,20 @@
         <span class="nav-label">Music</span>
       </button>
 
-      <button class="nav-item news-fab prominent" onclick="openNewsModal()" aria-label="Xem tin tức mới nhất">
+      <button class="nav-item quick-note-fab prominent" onclick="openQuickNoteModal()" aria-label="Mở ghi chú nhanh">
         <div class="prominent-inner">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M21 5H3v14h18V5zm-2 12H5V7h14v10zM7 9h10v2H7V9zm0 4h7v2H7v-2z" />
+            <path d="M5 3h10a2 2 0 0 1 2 2v2h2v14H5Zm2 4v12h10V5H7Zm2 3h6v1.8H9Zm0 3.4h6v1.8H9Z" />
           </svg>
         </div>
-        <span class="nav-label">Tin Tức</span>
+        <span class="nav-label">Note</span>
       </button>
 
-      <button class="nav-item quick-note-fab" onclick="openQuickNoteModal()" aria-label="Mở ghi chú nhanh">
+      <button class="nav-item news-fab" onclick="openNewsModal()" aria-label="Xem tin tức mới nhất">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M5 3h10a2 2 0 0 1 2 2v2h2v14H5Zm2 4v12h10V5H7Zm2 3h6v1.8H9Zm0 3.4h6v1.8H9Z" />
+          <path d="M21 5H3v14h18V5zm-2 12H5V7h14v10zM7 9h10v2H7V9zm0 4h7v2H7v-2z" />
         </svg>
-        <span class="nav-label">Note</span>
+        <span class="nav-label">Tin Tức</span>
       </button>
 
       <button class="nav-item gold-fab" onclick="openGoldModal()" aria-label="Xem giá vàng toàn quốc">
@@ -276,6 +276,10 @@
               <button class="btn-save-ot" onclick="saveDayOvertime()">
                 Lưu
               </button>
+            </div>
+            <div style="margin-top: 15px; display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="dayIsHoliday" style="width: 18px; height: 18px; accent-color: #ff3333;" onchange="toggleDayHoliday()" />
+              <label for="dayIsHoliday" style="color: #e6f0ff; font-size: 14px; cursor: pointer; user-select: none;">Đánh dấu là ngày nghỉ lễ 🇻🇳</label>
             </div>
           </div>
         </div>
@@ -614,8 +618,11 @@
 
       <div class="quick-note-form">
         <input type="text" id="quickNoteInput" maxlength="140" placeholder="Nhập việc cần làm..." />
-        <button type="button" class="quick-note-add-btn" onclick="addQuickNote()">
+        <button type="button" id="quickNoteSubmitBtn" class="quick-note-add-btn" onclick="submitQuickNote()">
           + Thêm
+        </button>
+        <button type="button" id="quickNoteCancelBtn" class="quick-note-cancel-btn" onclick="cancelEditQuickNote()" style="display: none;">
+          Hủy
         </button>
       </div>
 

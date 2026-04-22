@@ -4889,3 +4889,250 @@ document.addEventListener("keydown", function(e) {
     }
   }
 });
+
+/* ========================== TRANSLATE FEATURE ========================== */
+const TRANSLATE_STORAGE_KEY = "translateLanguages";
+let translateDebounceTimer = null;
+let lastTranslatedText = "";
+
+function getSavedLanguages() {
+  const saved = localStorage.getItem(TRANSLATE_STORAGE_KEY);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch (e) {
+      return { fromLang: "auto", toLang: "vi" };
+    }
+  }
+  return { fromLang: "auto", toLang: "vi" };
+}
+
+function saveLanguages(fromLang, toLang) {
+  localStorage.setItem(TRANSLATE_STORAGE_KEY, JSON.stringify({ fromLang, toLang }));
+}
+
+function loadSavedLanguages() {
+  const { fromLang, toLang } = getSavedLanguages();
+  document.getElementById("translateFromLang").value = fromLang;
+  document.getElementById("translateToLang").value = toLang;
+}
+
+function openTranslateModal() {
+  const modal = document.getElementById("translateModal");
+  modal.style.display = "flex";
+  loadSavedLanguages();
+  document.getElementById("translateInput").focus();
+}
+
+function closeTranslateModal() {
+  document.getElementById("translateModal").style.display = "none";
+  clearTranslateState();
+}
+
+function clearTranslateState() {
+  document.getElementById("translateInput").value = "";
+  document.getElementById("translateOutput").value = "";
+  document.getElementById("translateDetected").classList.remove("show");
+  document.getElementById("translateDetected").innerText = "";
+  document.getElementById("translateLoading").style.display = "none";
+  document.getElementById("translateError").style.display = "none";
+  lastTranslatedText = "";
+}
+
+function clearTranslateInput() {
+  const inputEl = document.getElementById("translateInput");
+  const outputEl = document.getElementById("translateOutput");
+  
+  inputEl.value = "";
+  outputEl.value = "";
+  inputEl.style.height = 'auto';
+  outputEl.style.height = 'auto';
+  
+  document.getElementById("translateDetected").classList.remove("show");
+  document.getElementById("translateDetected").innerText = "";
+  document.getElementById("translateError").style.display = "none";
+  lastTranslatedText = "";
+  document.getElementById("translateInput").focus();
+}
+
+function autoResizeTextarea(textarea) {
+  textarea.style.height = 'auto';
+  const newHeight = Math.min(textarea.scrollHeight, 250);
+  textarea.style.height = newHeight + 'px';
+}
+
+function onTranslateInput() {
+  const input = document.getElementById("translateInput");
+  const text = input.value;
+
+  autoResizeTextarea(input);
+
+  clearTimeout(translateDebounceTimer);
+  if (text.trim().length > 0) {
+    translateDebounceTimer = setTimeout(() => performTranslation(text), 800);
+  } else {
+    document.getElementById("translateOutput").value = "";
+    document.getElementById("translateDetected").classList.remove("show");
+    document.getElementById("translateError").style.display = "none";
+  }
+}
+
+function detectLanguage() {
+  const fromLang = document.getElementById("translateFromLang").value;
+  const toLang = document.getElementById("translateToLang").value;
+  saveLanguages(fromLang, toLang);
+
+  const input = document.getElementById("translateInput");
+  const text = input.value.trim();
+  if (text.length > 0) {
+    clearTimeout(translateDebounceTimer);
+    translateDebounceTimer = setTimeout(() => performTranslation(text), 800);
+  }
+}
+
+function saveToLangSelection() {
+  const fromLang = document.getElementById("translateFromLang").value;
+  const toLang = document.getElementById("translateToLang").value;
+  saveLanguages(fromLang, toLang);
+}
+
+async function performTranslation(text) {
+  if (!text.trim() || text === lastTranslatedText) return;
+
+  const input = text.trim();
+
+  const fromLang = document.getElementById("translateFromLang").value;
+  const toLang = document.getElementById("translateToLang").value;
+
+  const loadingEl = document.getElementById("translateLoading");
+  const errorEl = document.getElementById("translateError");
+  const outputEl = document.getElementById("translateOutput");
+  const detectedEl = document.getElementById("translateDetected");
+
+  loadingEl.style.display = "flex";
+  errorEl.style.display = "none";
+  outputEl.value = "";
+  detectedEl.classList.remove("show");
+
+  try {
+    const fromLangCode = fromLang === "auto" ? "autodetect" : fromLang;
+    const langPair = `${fromLangCode}|${toLang}`;
+
+    const response = await fetch(
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(input)}&langpair=${langPair}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+
+    const data = await response.json();
+
+    loadingEl.style.display = "none";
+
+    if (data.responseStatus === 200 && data.responseData) {
+      outputEl.value = data.responseData.translatedText;
+      autoResizeTextarea(outputEl);
+      lastTranslatedText = input;
+
+      if (fromLang === "auto" && data.responseData.detectedLanguage) {
+        const detectedLang = data.responseData.detectedLanguage.toLowerCase();
+        const langNames = {
+          "en": "Tiếng Anh",
+          "ko": "Tiếng Hàn",
+          "zh": "Tiếng Trung",
+          "vi": "Tiếng Việt"
+        };
+        const langEmojis = {
+          "en": "🇬🇧",
+          "ko": "🇰🇷",
+          "zh": "🇨🇳",
+          "vi": "🇻🇳"
+        };
+        const langName = langNames[detectedLang] || detectedLang;
+        const langEmoji = langEmojis[detectedLang] || "";
+        detectedEl.innerHTML = `${langEmoji} Đã nhận diện: <strong>${langName}</strong>`;
+        detectedEl.classList.add("show");
+      }
+    } else {
+      throw new Error(data.responseDetails || "Translation failed");
+    }
+  } catch (err) {
+    loadingEl.style.display = "none";
+    errorEl.innerText = "Lỗi dịch: " + err.message + ". Vui lòng thử lại.";
+    errorEl.style.display = "block";
+    console.error("Translation error:", err);
+  }
+}
+
+function swapLanguages() {
+  const fromSelect = document.getElementById("translateFromLang");
+  const toSelect = document.getElementById("translateToLang");
+  const input = document.getElementById("translateInput");
+  const output = document.getElementById("translateOutput");
+
+  if (fromSelect.value === "auto") {
+    return;
+  }
+
+  const tempValue = fromSelect.value;
+  fromSelect.value = toSelect.value;
+  toSelect.value = tempValue;
+
+  saveLanguages(fromSelect.value, toSelect.value);
+
+  const inputText = input.value;
+  const outputText = output.value;
+
+  input.value = outputText;
+  output.value = "";
+
+  document.getElementById("translateDetected").classList.remove("show");
+
+  if (inputText.trim()) {
+    clearTimeout(translateDebounceTimer);
+    translateDebounceTimer = setTimeout(() => performTranslation(inputText), 800);
+  }
+}
+
+async function copyTranslation() {
+  const output = document.getElementById("translateOutput");
+  const text = output.value;
+
+  if (!text) return;
+
+  const copyBtn = document.querySelector(".translate-copy-btn");
+  const originalSvg = copyBtn.innerHTML;
+
+  try {
+    await navigator.clipboard.writeText(text);
+    copyBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+    </svg>`;
+    copyBtn.classList.add("copied");
+
+    setTimeout(() => {
+      copyBtn.innerHTML = originalSvg;
+      copyBtn.classList.remove("copied");
+    }, 2000);
+  } catch (err) {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+
+    copyBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+    </svg>`;
+    copyBtn.classList.add("copied");
+
+    setTimeout(() => {
+      copyBtn.innerHTML = originalSvg;
+      copyBtn.classList.remove("copied");
+    }, 2000);
+  }
+}

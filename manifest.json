@@ -1,7 +1,7 @@
 {
-  "name": "Lịch Âm Dương Việt Nam",
-  "short_name": "Lịch Việt",
-  "description": "Lịch âm dương Việt Nam - giao diện hiện đại navy - ghi chú - OT",
+  "name": "Personal Assistant",
+  "short_name": "Personal Assistant",
+  "description": "Personal Assistant - tất cả những thứ bạn cần trong một nơi",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#03060f",

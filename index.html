@@ -10,7 +10,7 @@
   <link rel="icon" href="favicon.png" />
   <link rel="apple-touch-icon" href="public/favicon.png" />
 
-  <title>Lịch Âm Dương</title>
+  <title>Personal Assistant</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -118,6 +118,12 @@
             </svg>
             <span class="fab-label">Tăng Ca</span>
           </button>
+          <button class="news-fab tool-btn glow" onclick="openNewsModal()" aria-label="Mở tin tức mới nhất">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M21 5H3v14h18V5zm-2 12H5V7h14v10zM7 9h10v2H7V9zm0 4h7v2H7v-2z" />
+            </svg>
+            <span class="fab-label">Tin Tức</span>
+          </button>
         </div>
       </div>
       <button id="toolboxToggle" class="toolbox-toggle" onclick="toggleToolbox()" aria-label="Thu gọn thanh công cụ"
@@ -152,11 +158,11 @@
         <span class="nav-label">Note</span>
       </button>
 
-      <button class="nav-item news-fab" onclick="openNewsModal()" aria-label="Xem tin tức mới nhất">
+      <button class="nav-item translate-fab" onclick="openTranslateModal()" aria-label="Mở công cụ dịch thuật">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M21 5H3v14h18V5zm-2 12H5V7h14v10zM7 9h10v2H7V9zm0 4h7v2H7v-2z" />
+          <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
         </svg>
-        <span class="nav-label">Tin Tức</span>
+        <span class="nav-label">Dịch</span>
       </button>
 
       <button class="nav-item gold-fab" onclick="openGoldModal()" aria-label="Xem giá vàng toàn quốc">
@@ -776,6 +782,62 @@
         </div>
         <div id="currencyUpdateInfo"
           style="margin-top: 15px; font-size: 12px; color: var(--muted); text-align: center;">Đang tải tỷ giá...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Translate Modal -->
+  <div id="translateModal" class="modal">
+    <div class="modal-content translate-modal-content">
+      <button class="modal-close" onclick="closeTranslateModal()">×</button>
+      <h3>Dịch thuật</h3>
+      <div class="translate-box">
+        <div class="translate-lang-row">
+          <div class="translate-select-wrapper">
+            <select id="translateFromLang" onchange="detectLanguage()">
+              <option value="auto">Tự động</option>
+              <option value="en">🇬🇧 Tiếng Anh</option>
+              <option value="ko">🇰🇷 Tiếng Hàn</option>
+              <option value="zh">🇨🇳 Tiếng Trung</option>
+              <option value="vi">🇻🇳 Tiếng Việt</option>
+            </select>
+          </div>
+          <button onclick="swapLanguages()" class="translate-swap-btn" aria-label="Đổi ngôn ngữ">
+            ⇄
+          </button>
+          <div class="translate-select-wrapper">
+            <select id="translateToLang" onchange="saveToLangSelection()">
+              <option value="vi" selected>🇻🇳 Tiếng Việt</option>
+              <option value="en">🇬🇧 Tiếng Anh</option>
+              <option value="ko">🇰🇷 Tiếng Hàn</option>
+              <option value="zh">🇨🇳 Tiếng Trung</option>
+            </select>
+          </div>
+        </div>
+        <div class="translate-textareas">
+          <div class="translate-input-area">
+            <textarea id="translateInput" placeholder="Nhập văn bản cần dịch..." oninput="onTranslateInput()"></textarea>
+            <button onclick="clearTranslateInput()" class="translate-clear-btn" aria-label="Xóa">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="translate-output-area">
+            <textarea id="translateOutput" placeholder="Kết quả dịch sẽ hiển thị ở đây..." readonly></textarea>
+            <button onclick="copyTranslation()" class="translate-copy-btn" aria-label="Sao chép">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="translate-detected" id="translateDetected"></div>
+        <div class="translate-loading" id="translateLoading" style="display: none;">
+          <div class="translate-spinner"></div>
+          <span>Đang dịch...</span>
+        </div>
+        <div class="translate-error" id="translateError" style="display: none;"></div>
       </div>
     </div>
   </div>

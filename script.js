@@ -14,16 +14,19 @@ const LEGACY_MIGRATION_FLAG_PREFIX = "calendarLegacyMigrated:";
 const LEGACY_CASHFLOW_MIGRATION_FLAG_PREFIX = "calendarLegacyCashflowMigrated:";
 const LEGACY_CASHFLOW_STORAGE_KEY = "cashflowEntriesV1";
 const FIREBASE_CONFIG = self.FIREBASE_WEB_CONFIG || {};
+const FIREBASE_TRANSLATE_HISTORY_PATH = self.FIREBASE_TRANSLATE_HISTORY_PATH || "translateHistory";
 
 let firebaseDb = null;
 let firebaseDatesRef = null;
 let firebaseQuickNotesRef = null;
+let firebaseTranslateHistoryRef = null;
 let firebaseReady = false;
 let firebaseAuth = null;
 let firebaseProjectsRef = null;
 let userProfileKey = "";
 let dateDataCache = {};
 let quickNotesCache = [];
+let translateHistoryCache = [];
 let syncWriteErrorShown = false;
 
 // Projects state
@@ -1122,6 +1125,20 @@ async function initFirebaseRealtime() {
   firebaseProjectsRef = firebaseDb.ref(
     `projects/${userProfileKey}`,
   );
+  firebaseTranslateHistoryRef = firebaseDb.ref(
+    `${FIREBASE_TRANSLATE_HISTORY_PATH}/${userProfileKey}`,
+  );
+
+  // Lắng nghe sự thay đổi của Translate History
+  firebaseTranslateHistoryRef.on("value", (snapshot) => {
+    const remoteData = snapshot.val() || {};
+    translateHistoryCache = Object.keys(remoteData).map(key => ({
+      id: key,
+      ...remoteData[key]
+    })).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    console.log("Translate history: Loaded", translateHistoryCache.length, "items from Firebase");
+    renderTranslateHistory();
+  });
 
   // Lắng nghe sự thay đổi của Projects
   firebaseProjectsRef.on("value", (snapshot) => {
@@ -1844,6 +1861,49 @@ function confirmPopupAction() {
     }
   }
   closeConfirmPopup();
+}
+
+function showToast(message, duration = 2500) {
+  let toast = document.getElementById("toastNotification");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toastNotification";
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 30, 50, 0.95);
+      color: #e6f0ff;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 14px;
+      z-index: 9999;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 204, 68, 0.4);
+      animation: toastIn 0.3s ease;
+      max-width: 90vw;
+      text-align: center;
+    `;
+    document.body.appendChild(toast);
+
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+      @keyframes toastOut { from { opacity: 1; transform: translateX(-50%) translateY(0); } to { opacity: 0; transform: translateX(-50%) translateY(-10px); } }
+    `;
+    document.head.appendChild(style);
+  }
+
+  toast.textContent = message;
+  toast.style.animation = "toastIn 0.3s ease";
+
+  setTimeout(() => {
+    toast.style.animation = "toastOut 0.3s ease";
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
+  }, duration);
 }
 
 function handleTaskFormSubmit(e) {
@@ -5125,3 +5185,193 @@ async function copyTranslation() {
     }, 2000);
   }
 }
+
+/* ========================== TRANSLATE HISTORY ========================== */
+
+async function saveTranslateToHistory(originalText, translatedText, fromLang, toLang) {
+  if (!originalText || !translatedText) {
+    console.log("Translate history: Missing text, skipping save");
+    return;
+  }
+
+  if (!firebaseTranslateHistoryRef) {
+    console.log("Translate history: Firebase not ready, skipping save");
+    return;
+  }
+
+  const historyEntry = {
+    original: originalText,
+    translated: translatedText,
+    fromLang: fromLang,
+    toLang: toLang,
+    timestamp: new Date().toISOString()
+  };
+
+  console.log("Translate history: Saving entry", historyEntry);
+
+  try {
+    await firebaseTranslateHistoryRef.push(historyEntry);
+    console.log("Translate history: Saved successfully");
+  } catch (err) {
+    console.error("Lỗi lưu lịch sử dịch:", err);
+  }
+}
+
+function renderTranslateHistory() {
+  const container = document.getElementById("translateHistoryList");
+  if (!container) return;
+
+  if (translateHistoryCache.length === 0) {
+    container.innerHTML = '<div class="translate-history-empty">Chưa có lịch sử dịch</div>';
+    return;
+  }
+
+  const langNames = {
+    "auto": "Tự động",
+    "en": "Tiếng Anh",
+    "ko": "Tiếng Hàn",
+    "zh": "Tiếng Trung",
+    "vi": "Tiếng Việt"
+  };
+
+  container.innerHTML = translateHistoryCache.map(item => {
+    const date = new Date(item.timestamp);
+    const timeStr = date.toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    return `
+      <div class="translate-history-item" data-id="${item.id}">
+        <div class="translate-history-item-header">
+          <span class="translate-history-lang">${langNames[item.fromLang] || item.fromLang} → ${langNames[item.toLang] || item.toLang}</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="translate-history-time">${timeStr}</span>
+            <div class="translate-history-actions-btns">
+              <button class="translate-history-delete-btn" onclick="deleteTranslateHistoryItem('${item.id}')" title="Xóa">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="translate-history-original">${escapeHtml(item.original)}</div>
+        <div class="translate-history-translated">${escapeHtml(item.translated)}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+async function deleteTranslateHistoryItem(id) {
+  if (!firebaseTranslateHistoryRef) return;
+
+  try {
+    await firebaseTranslateHistoryRef.child(id).remove();
+  } catch (err) {
+    console.error("Lỗi xóa lịch sử dịch:", err);
+    showToast("Lỗi khi xóa lịch sử dịch");
+  }
+}
+
+async function confirmDeleteAllTranslateHistory() {
+  if (!firebaseTranslateHistoryRef) return;
+
+  if (translateHistoryCache.length === 0) {
+    showToast("Không có lịch sử để xóa");
+    return;
+  }
+
+  showConfirmPopup(
+    "Xóa tất cả lịch sử dịch",
+    `Bạn có chắc muốn xóa tất cả ${translateHistoryCache.length} lịch sử dịch? Hành động này không thể hoàn tác.`,
+    "Xóa tất cả",
+    async () => {
+      try {
+        await firebaseTranslateHistoryRef.remove();
+        showToast("Đã xóa tất cả lịch sử dịch");
+      } catch (err) {
+        console.error("Lỗi xóa tất cả lịch sử dịch:", err);
+        showToast("Lỗi khi xóa lịch sử dịch");
+      }
+    }
+  );
+}
+
+function exportTranslateHistoryCsv() {
+  if (translateHistoryCache.length === 0) {
+    showToast("Không có lịch sử để xuất");
+    return;
+  }
+
+  const langNames = {
+    "auto": "Tự động",
+    "en": "Tiếng Anh",
+    "ko": "Tiếng Hàn",
+    "zh": "Tiếng Trung",
+    "vi": "Tiếng Việt"
+  };
+
+  let csvContent = "\uFEFF"; // BOM for UTF-8
+  csvContent += "STT,Ngày giờ,Ngôn ngữ nguồn,Ngôn ngữ đích,Văn bản gốc,Văn bản dịch\n";
+
+  translateHistoryCache.forEach((item, index) => {
+    const date = new Date(item.timestamp).toLocaleString("vi-VN");
+    const fromLang = langNames[item.fromLang] || item.fromLang;
+    const toLang = langNames[item.toLang] || item.toLang;
+    const original = (item.original || "").replace(/"/g, '""');
+    const translated = (item.translated || "").replace(/"/g, '""');
+
+    csvContent += `${index + 1},"${date}","${fromLang}","${toLang}","${original}","${translated}"\n`;
+  });
+
+  downloadCsvFile(csvContent, `lich-su-dich-${formatDateForFilename(new Date())}.csv`);
+  showToast("Đã xuất file CSV thành công");
+}
+
+function formatDateForFilename(date) {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+function downloadCsvFile(content, filename) {
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.setAttribute("href", url);
+  link.setAttribute("download", filename);
+  link.style.visibility = "hidden";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+// Modify performTranslation to save history - save directly after successful translation
+const originalPerformTranslation = performTranslation;
+performTranslation = async function(text) {
+  const fromLang = document.getElementById("translateFromLang").value;
+  const toLang = document.getElementById("translateToLang").value;
+
+  await originalPerformTranslation(text);
+
+  // Save to history after successful translation (only if there's output)
+  const outputEl = document.getElementById("translateOutput");
+  const translatedText = outputEl ? outputEl.value : "";
+
+  if (translatedText && translatedText.trim() && text && text.trim()) {
+    saveTranslateToHistory(text.trim(), translatedText.trim(), fromLang, toLang);
+  }
+};

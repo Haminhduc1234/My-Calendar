@@ -37,6 +37,12 @@
         ".write": "auth != null"
       }
     },
+    "translateHistory": {
+      "$profileKey": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
     "notificationTokens": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",

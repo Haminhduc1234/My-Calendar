@@ -4521,6 +4521,29 @@ input[type="datetime-local"] {
   font-size: 13px;
 }
 
+.translate-submit-btn {
+  width: 100%;
+  padding: 12px 24px;
+  margin-top: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.translate-submit-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.translate-submit-btn:active {
+  transform: translateY(0);
+}
+
 /* Translate History Section */
 .translate-history-section {
   margin-top: 16px;

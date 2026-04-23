@@ -5017,27 +5017,30 @@ function onTranslateInput() {
   const input = document.getElementById("translateInput");
   const text = input.value;
 
-  clearTimeout(translateDebounceTimer);
-  if (text.trim().length > 0) {
-    translateDebounceTimer = setTimeout(() => performTranslation(text), 800);
-  } else {
+  if (!text.trim()) {
     document.getElementById("translateOutput").value = "";
     document.getElementById("translateDetected").classList.remove("show");
     document.getElementById("translateError").style.display = "none";
   }
 }
 
+function performTranslationFromButton() {
+  const input = document.getElementById("translateInput");
+  const text = input.value.trim();
+  
+  if (!text) {
+    document.getElementById("translateError").innerText = "Vui lòng nhập văn bản cần dịch.";
+    document.getElementById("translateError").style.display = "block";
+    return;
+  }
+  
+  performTranslation(text);
+}
+
 function detectLanguage() {
   const fromLang = document.getElementById("translateFromLang").value;
   const toLang = document.getElementById("translateToLang").value;
   saveLanguages(fromLang, toLang);
-
-  const input = document.getElementById("translateInput");
-  const text = input.value.trim();
-  if (text.length > 0) {
-    clearTimeout(translateDebounceTimer);
-    translateDebounceTimer = setTimeout(() => performTranslation(text), 800);
-  }
 }
 
 function saveToLangSelection() {
@@ -5137,11 +5140,6 @@ function swapLanguages() {
   output.value = "";
 
   document.getElementById("translateDetected").classList.remove("show");
-
-  if (inputText.trim()) {
-    clearTimeout(translateDebounceTimer);
-    translateDebounceTimer = setTimeout(() => performTranslation(inputText), 800);
-  }
 }
 
 async function copyTranslation() {

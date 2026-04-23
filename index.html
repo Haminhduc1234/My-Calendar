@@ -790,8 +790,25 @@
   <div id="translateModal" class="modal">
     <div class="modal-content translate-modal-content">
       <button class="modal-close" onclick="closeTranslateModal()">×</button>
-      <h3>Translate</h3>
-      <div class="translate-box">
+      <div class="translate-title-row">
+        <h3>Translate</h3>
+        <div class="translate-api-dropdown">
+          <button class="translate-api-btn" onclick="toggleApiDropdown()" aria-label="Cài đặt API">
+            ⚙️
+          </button>
+          <div id="translateApiDropdown" class="translate-api-menu">
+            <label class="translate-api-option">
+              <input type="radio" name="translateApi" value="mymemory" onchange="onApiChange()" checked />
+              <span>MyMemory</span>
+            </label>
+            <label class="translate-api-option">
+              <input type="radio" name="translateApi" value="google" onchange="onApiChange()" />
+              <span>Google Translate</span>
+            </label>
+          </div>
+        </div>
+      </div>
+        <div class="translate-box">
         <div class="translate-lang-row">
           <div class="translate-select-wrapper">
             <select id="translateFromLang" onchange="detectLanguage()">
@@ -841,9 +858,14 @@
         <button onclick="performTranslationFromButton()" class="translate-submit-btn">Dịch</button>
 
         <div class="translate-history-section">
-          <div class="translate-history-header">
-            <h4>Lịch sử</h4>
-            <div class="translate-history-actions">
+          <div class="translate-history-header" onclick="toggleTranslateHistory()">
+            <div class="translate-history-title">
+              <svg id="translateHistoryArrow" class="translate-history-arrow" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M7 10l5 5 5-5z"/>
+              </svg>
+              <h4>Lịch sử</h4>
+            </div>
+            <div class="translate-history-actions" onclick="event.stopPropagation()">
               <button class="translate-history-btn" onclick="exportTranslateHistoryCsv()" title="Xuất CSV">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                   <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>

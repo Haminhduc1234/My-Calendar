@@ -4286,6 +4286,80 @@ input[type="datetime-local"] {
   gap: 14px;
 }
 
+.translate-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.translate-title-row h3 {
+  margin: 0 !important;
+}
+
+.translate-api-dropdown {
+  position: relative;
+}
+
+.translate-api-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--text);
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.translate-api-btn:hover {
+  opacity: 1;
+}
+
+.translate-api-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  background: rgba(6, 16, 34, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 180px;
+  z-index: 100;
+  display: none;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.translate-api-menu.show {
+  display: block;
+}
+
+.translate-api-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  color: var(--text);
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.translate-api-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.translate-api-option input[type="radio"] {
+  accent-color: #00cc44;
+  width: 16px;
+  height: 16px;
+}
+
 .translate-lang-row {
   display: flex;
   align-items: center;
@@ -4556,6 +4630,37 @@ input[type="datetime-local"] {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.translate-history-header:hover {
+  opacity: 0.8;
+}
+
+.translate-history-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.translate-history-arrow {
+  transition: transform 0.2s ease;
+}
+
+.translate-history-arrow.collapsed {
+  transform: rotate(-90deg);
+}
+
+.translate-history-list {
+  max-height: 200px;
+  overflow-y: auto;
+  transition: max-height 0.3s ease;
+}
+
+.translate-history-list.collapsed {
+  max-height: 0;
+  overflow: hidden;
 }
 
 .translate-history-header h4 {

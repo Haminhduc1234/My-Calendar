@@ -4952,6 +4952,8 @@ document.addEventListener("keydown", function(e) {
 
 /* ========================== TRANSLATE FEATURE ========================== */
 const TRANSLATE_STORAGE_KEY = "translateLanguages";
+const TRANSLATE_API_KEY = "translateApi";
+const TRANSLATE_HISTORY_COLLAPSED_KEY = "translateHistoryCollapsed";
 let translateDebounceTimer = null;
 let lastTranslatedText = "";
 
@@ -4977,11 +4979,70 @@ function loadSavedLanguages() {
   document.getElementById("translateToLang").value = toLang;
 }
 
+function saveApiSelection() {
+  const selectedApi = document.querySelector('input[name="translateApi"]:checked');
+  if (selectedApi) {
+    localStorage.setItem(TRANSLATE_API_KEY, selectedApi.value);
+  }
+}
+
+function loadApiSelection() {
+  const saved = localStorage.getItem(TRANSLATE_API_KEY);
+  if (saved) {
+    const radio = document.querySelector(`input[name="translateApi"][value="${saved}"]`);
+    if (radio) {
+      radio.checked = true;
+    }
+  }
+}
+
+function onApiChange() {
+  const input = document.getElementById("translateInput").value.trim();
+  saveApiSelection();
+  
+  if (input) {
+    lastTranslatedText = "";
+    performTranslation(input);
+  }
+}
+
+function toggleApiDropdown() {
+  const dropdown = document.getElementById("translateApiDropdown");
+  dropdown.classList.toggle("show");
+}
+
+document.addEventListener("click", function(e) {
+  const dropdown = document.getElementById("translateApiDropdown");
+  const btn = document.querySelector(".translate-api-btn");
+  if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+    dropdown.classList.remove("show");
+  }
+});
+
 function openTranslateModal() {
   const modal = document.getElementById("translateModal");
   modal.style.display = "flex";
   loadSavedLanguages();
+  loadApiSelection();
+  initTranslateHistoryCollapsed();
   document.getElementById("translateInput").focus();
+}
+
+function toggleTranslateHistory() {
+  const listEl = document.getElementById("translateHistoryList");
+  const arrowEl = document.getElementById("translateHistoryArrow");
+  const isCollapsed = listEl.classList.toggle("collapsed");
+  arrowEl.classList.toggle("collapsed", isCollapsed);
+  localStorage.setItem(TRANSLATE_HISTORY_COLLAPSED_KEY, isCollapsed ? "true" : "false");
+}
+
+function initTranslateHistoryCollapsed() {
+  const saved = localStorage.getItem(TRANSLATE_HISTORY_COLLAPSED_KEY);
+  const isCollapsed = saved === "true";
+  const listEl = document.getElementById("translateHistoryList");
+  const arrowEl = document.getElementById("translateHistoryArrow");
+  listEl.classList.toggle("collapsed", isCollapsed);
+  arrowEl.classList.toggle("collapsed", isCollapsed);
 }
 
 function closeTranslateModal() {
@@ -5056,6 +5117,7 @@ async function performTranslation(text) {
 
   const fromLang = document.getElementById("translateFromLang").value;
   const toLang = document.getElementById("translateToLang").value;
+  const api = document.getElementById("translateApi").value;
 
   const loadingEl = document.getElementById("translateLoading");
   const errorEl = document.getElementById("translateError");
@@ -5068,46 +5130,74 @@ async function performTranslation(text) {
   detectedEl.classList.remove("show");
 
   try {
-    const fromLangCode = fromLang === "auto" ? "autodetect" : fromLang;
-    const langPair = `${fromLangCode}|${toLang}`;
+    let translatedText = "";
+    let detectedLanguage = null;
 
-    const response = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(input)}&langpair=${langPair}`
-    );
+    if (api === "mymemory") {
+      const fromLangCode = fromLang === "auto" ? "autodetect" : fromLang;
+      const langPair = `${fromLangCode}|${toLang}`;
 
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
+      const response = await fetch(
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(input)}&langpair=${langPair}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const data = await response.json();
+
+      if (data.responseStatus === 200 && data.responseData) {
+        translatedText = data.responseData.translatedText;
+        detectedLanguage = data.responseData.detectedLanguage;
+      } else {
+        throw new Error(data.responseDetails || "Translation failed");
+      }
+    } else if (api === "google") {
+      const sourceLang = fromLang === "auto" ? "auto" : fromLang;
+      const targetLang = toLang;
+
+      const response = await fetch(
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(input)}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Google Translate error");
+      }
+
+      const data = await response.json();
+      if (data && data[0]) {
+        translatedText = data[0].map(item => item[0]).join("");
+        if (fromLang === "auto" && data[2]) {
+          detectedLanguage = data[2];
+        }
+      } else {
+        throw new Error("Translation failed");
+      }
     }
 
-    const data = await response.json();
-
     loadingEl.style.display = "none";
+    outputEl.value = translatedText;
+    lastTranslatedText = input;
 
-    if (data.responseStatus === 200 && data.responseData) {
-      outputEl.value = data.responseData.translatedText;
-      lastTranslatedText = input;
-
-      if (fromLang === "auto" && data.responseData.detectedLanguage) {
-        const detectedLang = data.responseData.detectedLanguage.toLowerCase();
-        const langNames = {
-          "en": "Tiếng Anh",
-          "ko": "Tiếng Hàn",
-          "zh": "Tiếng Trung",
-          "vi": "Tiếng Việt"
-        };
-        const langEmojis = {
-          "en": "🇬🇧",
-          "ko": "🇰🇷",
-          "zh": "🇨🇳",
-          "vi": "🇻🇳"
-        };
-        const langName = langNames[detectedLang] || detectedLang;
-        const langEmoji = langEmojis[detectedLang] || "";
-        detectedEl.innerHTML = `${langEmoji} Đã nhận diện: <strong>${langName}</strong>`;
-        detectedEl.classList.add("show");
-      }
-    } else {
-      throw new Error(data.responseDetails || "Translation failed");
+    if (fromLang === "auto" && detectedLanguage) {
+      const detectedLang = detectedLanguage.toLowerCase();
+      const langNames = {
+        "en": "Tiếng Anh",
+        "ko": "Tiếng Hàn",
+        "zh": "Tiếng Trung",
+        "vi": "Tiếng Việt"
+      };
+      const langEmojis = {
+        "en": "🇬🇧",
+        "ko": "🇰🇷",
+        "zh": "🇨🇳",
+        "vi": "🇻🇳"
+      };
+      const langName = langNames[detectedLang] || detectedLang;
+      const langEmoji = langEmojis[detectedLang] || "";
+      detectedEl.innerHTML = `${langEmoji} Đã nhận diện: <strong>${langName}</strong>`;
+      detectedEl.classList.add("show");
     }
   } catch (err) {
     loadingEl.style.display = "none";

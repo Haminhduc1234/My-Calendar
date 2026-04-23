@@ -3677,6 +3677,30 @@ input[type="datetime-local"] {
   color: #f0c24d;
 }
 
+.nav-item.project-fab {
+  background: none;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+  flex: 1;
+}
+
+.nav-item.project-fab svg {
+  width: 24px;
+  height: 24px;
+  fill: #c9b8ff;
+  margin-bottom: 4px;
+  transition: transform 0.2s ease;
+}
+
+.nav-item.project-fab:hover {
+  color: #c9b8ff;
+}
+
 .nav-item:active {
   transform: scale(0.92);
 }

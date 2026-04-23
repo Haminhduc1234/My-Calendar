@@ -4945,8 +4945,6 @@ function clearTranslateInput() {
   
   inputEl.value = "";
   outputEl.value = "";
-  inputEl.style.height = 'auto';
-  outputEl.style.height = 'auto';
   
   document.getElementById("translateDetected").classList.remove("show");
   document.getElementById("translateDetected").innerText = "";
@@ -4955,17 +4953,9 @@ function clearTranslateInput() {
   document.getElementById("translateInput").focus();
 }
 
-function autoResizeTextarea(textarea) {
-  textarea.style.height = 'auto';
-  const newHeight = Math.min(textarea.scrollHeight, 250);
-  textarea.style.height = newHeight + 'px';
-}
-
 function onTranslateInput() {
   const input = document.getElementById("translateInput");
   const text = input.value;
-
-  autoResizeTextarea(input);
 
   clearTimeout(translateDebounceTimer);
   if (text.trim().length > 0) {
@@ -5032,7 +5022,6 @@ async function performTranslation(text) {
 
     if (data.responseStatus === 200 && data.responseData) {
       outputEl.value = data.responseData.translatedText;
-      autoResizeTextarea(outputEl);
       lastTranslatedText = input;
 
       if (fromLang === "auto" && data.responseData.detectedLanguage) {

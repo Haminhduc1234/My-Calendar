@@ -4291,6 +4291,7 @@ input[type="datetime-local"] {
   align-items: center;
   gap: 10px;
   position: relative;
+  width: 100%;
 }
 
 .translate-select-wrapper {
@@ -4365,7 +4366,6 @@ input[type="datetime-local"] {
   width: 100%;
   min-height: 200px;
   height: auto;
-  max-height: 350px;
   padding: 14px 80px 14px 14px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -4380,6 +4380,8 @@ input[type="datetime-local"] {
 
 .translate-output-area textarea {
   background: rgba(0, 20, 10, 0.5);
+  height: auto;
+  min-height: 200px;
 }
 
 .translate-input-area textarea::placeholder,
@@ -4600,13 +4602,14 @@ input[type="datetime-local"] {
   }
 
   .translate-lang-row {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
     gap: 8px;
   }
 
   .translate-select-wrapper {
-    width: 100%;
+    flex: 1;
   }
 
   .translate-select-wrapper select {
@@ -4614,7 +4617,7 @@ input[type="datetime-local"] {
   }
 
   .translate-swap-btn {
-    align-self: center;
-    margin: 4px 0;
+    flex-shrink: 0;
+    margin: 0;
   }
 }

@@ -5117,7 +5117,7 @@ async function performTranslation(text) {
 
   const fromLang = document.getElementById("translateFromLang").value;
   const toLang = document.getElementById("translateToLang").value;
-  const api = document.getElementById("translateApi").value;
+  const api = document.querySelector('input[name="translateApi"]:checked')?.value || 'mymemory';
 
   const loadingEl = document.getElementById("translateLoading");
   const errorEl = document.getElementById("translateError");

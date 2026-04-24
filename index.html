@@ -827,7 +827,7 @@
           </div>
         </div>
       </div>
-        <div class="translate-box">
+      <div class="translate-box">
         <div class="translate-lang-row">
           <div class="translate-select-wrapper">
             <select id="translateFromLang" onchange="detectLanguage()">
@@ -838,9 +838,7 @@
               <option value="vi">🇻🇳 Tiếng Việt</option>
             </select>
           </div>
-          <button onclick="swapLanguages()" class="translate-swap-btn" aria-label="Đổi ngôn ngữ">
-            ⇄
-          </button>
+          <button onclick="swapLanguages()" class="translate-swap-btn" aria-label="Đổi ngôn ngữ">⇄</button>
           <div class="translate-select-wrapper">
             <select id="translateToLang" onchange="saveToLangSelection()">
               <option value="vi" selected>🇻🇳 Tiếng Việt</option>
@@ -884,35 +882,42 @@
           </div>
           <div id="translatePronunciation" class="translate-pronunciation" style="display: none;"></div>
         </div>
-        <button onclick="performTranslationFromButton()" class="translate-submit-btn">Dịch</button>
-
-        <div class="translate-history-section">
-          <div class="translate-history-header" onclick="toggleTranslateHistory()">
-            <div class="translate-history-title">
-              <svg id="translateHistoryArrow" class="translate-history-arrow" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <path d="M7 10l5 5 5-5z"/>
-              </svg>
-              <h4>Lịch sử</h4>
-            </div>
-            <div class="translate-history-actions" onclick="event.stopPropagation()">
-              <button class="translate-history-btn" onclick="exportTranslateHistoryCsv()" title="Xuất CSV">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                  <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
-                </svg>
-                CSV
-              </button>
-              <button class="translate-history-btn danger" onclick="confirmDeleteAllTranslateHistory()" title="Xóa tất cả">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-                </svg>
-                Xóa tất cả
-              </button>
-            </div>
-          </div>
-          <div id="translateHistoryList" class="translate-history-list">
-            <div class="translate-history-empty">Chưa có lịch sử</div>
-          </div>
+        <div class="translate-box-bottom">
+          <button class="translate-view-history-btn" onclick="openTranslateHistoryModal()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+            </svg>
+            Xem lịch sử dịch
+          </button>
+          <button onclick="performTranslationFromButton()" class="translate-submit-btn">Dịch</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Translate History Modal -->
+  <div id="translateHistoryModal" class="modal">
+    <div class="modal-content translate-history-modal-content">
+      <div class="translate-history-modal-header">
+        <h3>Lịch sử dịch</h3>
+        <button class="modal-close" onclick="closeTranslateHistoryModal()">×</button>
+      </div>
+      <div class="translate-history-modal-actions">
+        <button class="translate-history-modal-btn" onclick="exportTranslateHistoryCsv()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+          </svg>
+          Xuất CSV
+        </button>
+        <button class="translate-history-modal-btn danger" onclick="confirmDeleteAllTranslateHistory()">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+          </svg>
+          Xóa tất cả
+        </button>
+      </div>
+      <div id="translateHistoryModalList" class="translate-history-modal-list">
+        <div class="translate-history-empty">Chưa có lịch sử</div>
       </div>
     </div>
   </div>

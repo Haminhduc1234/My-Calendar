@@ -5020,8 +5020,66 @@ function openTranslateModal() {
   loadSavedLanguages();
   loadApiSelection();
   loadSavedPronunciation();
-  initTranslateHistoryCollapsed();
   document.getElementById("translateInput").focus();
+}
+
+function openTranslateHistoryModal() {
+  const modal = document.getElementById("translateHistoryModal");
+  modal.style.display = "flex";
+  renderTranslateHistoryModal();
+}
+
+function closeTranslateHistoryModal() {
+  document.getElementById("translateHistoryModal").style.display = "none";
+}
+
+function renderTranslateHistoryModal() {
+  const container = document.getElementById("translateHistoryModalList");
+  if (!container) return;
+
+  if (translateHistoryCache.length === 0) {
+    container.innerHTML = '<div class="translate-history-empty">Chưa có lịch sử dịch</div>';
+    return;
+  }
+
+  const langNames = {
+    "auto": "Tự động",
+    "en": "Tiếng Anh",
+    "ko": "Tiếng Hàn",
+    "zh": "Tiếng Trung",
+    "vi": "Tiếng Việt"
+  };
+
+  container.innerHTML = translateHistoryCache.map(item => {
+    const date = new Date(item.timestamp);
+    const timeStr = date.toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    return `
+      <div class="translate-history-item" data-id="${item.id}">
+        <div class="translate-history-item-header">
+          <span class="translate-history-lang">${langNames[item.fromLang] || item.fromLang} → ${langNames[item.toLang] || item.toLang}</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="translate-history-time">${timeStr}</span>
+            <div class="translate-history-actions-btns">
+              <button class="translate-history-delete-btn" onclick="deleteTranslateHistoryItem('${item.id}'); renderTranslateHistoryModal();" title="Xóa">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="translate-history-original">${escapeHtml(item.original)}</div>
+        <div class="translate-history-translated">${escapeHtml(item.translated)}</div>
+      </div>
+    `;
+  }).join("");
 }
 
 function toggleTranslateHistory() {
@@ -5036,9 +5094,11 @@ function initTranslateHistoryCollapsed() {
   const saved = localStorage.getItem(TRANSLATE_HISTORY_COLLAPSED_KEY);
   const isCollapsed = saved === "true";
   const listEl = document.getElementById("translateHistoryList");
-  const arrowEl = document.getElementById("translateHistoryArrow");
-  listEl.classList.toggle("collapsed", isCollapsed);
-  arrowEl.classList.toggle("collapsed", isCollapsed);
+  if (listEl) {
+    const arrowEl = document.getElementById("translateHistoryArrow");
+    listEl.classList.toggle("collapsed", isCollapsed);
+    if (arrowEl) arrowEl.classList.toggle("collapsed", isCollapsed);
+  }
 }
 
 function closeTranslateModal() {
@@ -5973,6 +6033,14 @@ async function deleteTranslateHistoryItem(id) {
 }
 
 async function confirmDeleteAllTranslateHistory() {
+  // Close history modal if open, since the action is from there
+  const historyModal = document.getElementById("translateHistoryModal");
+  const isHistoryModalOpen = historyModal && historyModal.style.display === "flex";
+  
+  if (isHistoryModalOpen) {
+    closeTranslateHistoryModal();
+  }
+  
   if (!firebaseTranslateHistoryRef) return;
 
   if (translateHistoryCache.length === 0) {

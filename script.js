@@ -5198,57 +5198,127 @@ async function loadChinesePinyin(text, pronunciationEl) {
   
   try {
     // Extract only Chinese characters
-    const chineseOnly = text.replace(/[^\u4e00-\u9fff\s，。！？、：；""''（）【】《》]/g, '').trim();
+    const chineseOnly = text.replace(/[^\u4e00-\u9fff]/g, '');
     
     if (!chineseOnly) {
       pronunciationEl.innerHTML = '<div class="pronunciation-note">Không tìm thấy ký tự Trung Quốc trong văn bản này.</div>';
       return;
     }
     
-    // Use pinyin-pro library
-    if (typeof pinyin === 'undefined') {
-      await loadScript('https://unpkg.com/pinyin-pro@3.18.6/dist/index.js');
+    // Try multiple CDN sources for pinyin-pro
+    const cdnUrls = [
+      'https://unpkg.com/pinyin-pro@3.18.6/dist/index.js',
+      'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.6/dist/index.js'
+    ];
+    
+    let loaded = false;
+    for (const url of cdnUrls) {
+      if (typeof pinyin !== 'undefined') break;
+      try {
+        await loadScript(url);
+        loaded = true;
+      } catch (e) {
+        continue;
+      }
     }
     
-    if (typeof pinyin !== 'undefined') {
-      // pinyin-pro usage
-      const words = chineseOnly.split(/\s+/).filter(w => w.length > 0).slice(0, 15);
-      const results = [];
+    if (typeof pinyin !== 'undefined' && typeof pinyin === 'function') {
+      // Process character by character for complete coverage
+      let resultHTML = '';
       
-      for (const word of words) {
+      for (const char of chineseOnly) {
         try {
-          // pinyin-pro: pinyin(text, { toneType: 'symbol' })
-          const py = pinyin(word, { toneType: 'symbol' });
-          if (py && py !== word) {
-            results.push({ chinese: word, pinyin: py });
+          const py = pinyin(char, { toneType: 'symbol' });
+          if (py) {
+            resultHTML += `<span class="phonetic-item">${char} <span class="phonetic-value">${py}</span></span>`;
+          } else {
+            resultHTML += `<span class="phonetic-item">${char} <span class="phonetic-value">-</span></span>`;
           }
         } catch (e) {
-          // Try basic pinyin for this word
+          resultHTML += `<span class="phonetic-item">${char} <span class="phonetic-value">?</span></span>`;
         }
       }
       
-      if (results.length > 0) {
+      if (resultHTML) {
         pronunciationEl.innerHTML = `
           <div class="pronunciation-label">Pinyin / 拼音:</div>
-          <div class="pronunciation-text">${results.map(r => `<span class="phonetic-item">${r.chinese} <span class="phonetic-value">${r.pinyin}</span></span>`).join(' ')}</div>
+          <div class="pronunciation-text">${resultHTML}</div>
         `;
         return;
       }
     }
     
-    // Fallback: basic pinyin
-    const fallbackResults = getBasicPinyin(text);
-    if (fallbackResults.length > 0) {
-      pronunciationEl.innerHTML = `
-        <div class="pronunciation-label">Pinyin / 拼音:</div>
-        <div class="pronunciation-text">${fallbackResults.map(r => `<span class="phonetic-item">${r.chinese} <span class="phonetic-value">${r.pinyin}</span></span>`).join(' ')}</div>
-      `;
-    } else {
-      pronunciationEl.innerHTML = '<div class="pronunciation-note">Không tìm thấy phiên âm cho văn bản này.</div>';
+    // Fallback: embedded pinyin dictionary (subset of common characters)
+    const pinyinDict = {
+      '道':'dào','公':'gōng','务':'wù','员':'yuán',
+      '你':'nǐ','好':'hǎo','我':'wǒ','是':'shì','中':'zhōng','国':'guó','人':'rén',
+      '的':'de','在':'zài','有':'yǒu','了':'le','们':'men','不':'bù','这':'zhè','那':'nà',
+      '他':'tā','她':'tā','它':'tā','什':'shén','么':'me','吗':'ma','很':'hěn','会':'huì',
+      '能':'néng','想':'xiǎng','爱':'ài','喜':'xǐ','欢':'huān','谢':'xiè','对':'duì','起':'qǐ',
+      '没':'méi','关':'guān','系':'xì','请':'qǐng','问':'wèn','昨':'zuó','天':'tiān',
+      '今':'jīn','年':'nián','月':'yuè','日':'rì','时':'shí','分':'fēn','钟':'zhōng',
+      '快':'kuài','乐':'lè','东':'dōng','西':'xī','南':'nán','北':'běi','京':'jīng',
+      '上':'shàng','海':'hǎi','广':'guǎng','州':'zhōu','深':'shēn','圳':'zhèn',
+      '见':'jiàn','面':'miàn','认':'rèn','识':'shí','朋':'péng','友':'yǒu','家':'jiā',
+      '工':'gōng','作':'zuò','学':'xué','校':'xiào','老':'lǎo','师':'shī','同':'tóng',
+      '公':'gōng','司':'sī','医':'yī','院':'yuàn','银':'yín','行':'háng',
+      '饭':'fàn','店':'diàn','酒':'jiǔ','吧':'ba','咖':'kā','啡':'fēi','茶':'chá',
+      '水':'shuǐ','果':'guǒ','苹':'píng','香':'xiāng','蕉':'jiāo',
+      '葡':'pú','萄':'táo','西':'xī','瓜':'guā','米':'mǐ','包':'bāo',
+      '蛋':'dàn','肉':'ròu','鱼':'yú','鸡':'jī','鸭':'yā','猪':'zhū','牛':'niú','羊':'yáng',
+      '马':'mǎ','车':'chē','路':'lù','地':'dì','铁':'tiě','站':'zhàn','机':'jī','场':'chǎng',
+      '票':'piào','钱':'qián','买':'mǎi','卖':'mài','贵':'guì','便宜':'piányi',
+      '多':'duō','少':'shǎo','大':'dà','小':'xiǎo','高':'gāo','矮':'ǎi',
+      '长':'cháng','短':'duǎn','宽':'kuān','窄':'zhǎi','新':'xīn','旧':'jiù',
+      '热':'rè','冷':'lěng','暖':'nuǎn','凉':'liáng','早':'zǎo','晚':'wǎn',
+      '忙':'máng','闲':'xián','远':'yuǎn','近':'jìn','难':'nán','易':'yì',
+      '听':'tīng','说':'shuō','读':'dú','写':'xiě','看':'kàn','走':'zǒu',
+      '跑':'pǎo','飞':'fēi','吃':'chī','喝':'hē','睡':'shuì','觉':'jiào','醒':'xǐng',
+      '坐':'zuò','站':'zhàn','躺':'tǎng','开':'kāi','关':'guān',
+      '来':'lái','去':'qù','回':'huí','到':'dào','过':'guò','给':'gěi',
+      '和':'hé','与':'yǔ','或':'huò','但':'dàn','却':'què','因':'yīn','为':'wèi',
+      '所':'suǒ','以':'yǐ','如':'rú','果':'guǒ','虽':'suī','然':'rán',
+      '只':'zhǐ','要':'yào','需':'xū','应':'yīng','该':'gāi','可':'kě',
+      '以':'yǐ','够':'gòu','将':'jiāng','已':'yǐ','经':'jīng','正':'zhèng',
+      '被':'bèi','把':'bǎ','让':'ràng','叫':'jiào','使':'shǐ','令':'lìng',
+      '劝':'quàn','求':'qiú','帮':'bāng','助':'zhù','教':'jiào','答':'dá',
+      '告':'gào','诉':'sù','怎':'zěn','么':'me','怎':'zěn','么':'me',
+      '永':'yǒng','远':'yuǎn','经':'jīng','常':'cháng','往':'wǎng',
+      '突':'tū','然':'rán','须':'xū','须':'xū','准':'zhǔn','备':'bèi',
+      '始':'shǐ','束':'shù','完':'wán','成':'chéng','失':'shī','败':'bài',
+      '功':'gōng','步':'bù','迎':'yíng','送':'sòng','光':'guāng','临':'lín',
+      '参':'cān','加':'jiā','观':'guān','考':'kǎo','试':'shì','业':'yè',
+      '案':'àn','题':'tí','问':'wèn','题':'tí','解':'jiě','决':'jué',
+      '法':'fǎ','懂':'dǒng','记':'jì','得':'dé','忘':'wàng','白':'bái',
+      '楚':'chǔ','确':'què','定':'dìng','一':'yī','定':'dìng','肯':'kěn',
+      '许':'xǔ','点':'diǎn','半':'bàn','刻':'kè','秒':'miǎo','候':'hòu',
+      '样':'yàng','错':'cuò','棒':'bàng','帅':'shuài','酷':'kù',
+      '累':'lèi','舒':'shū','服':'fu','饿':'è','饱':'bǎo','渴':'kě',
+      '痛':'tòng','病':'bìng','士':'shì','护':'hù','房':'fáng','间':'jiān',
+      '厕':'cè','所':'suǒ','厨':'chú','厅':'tīng','床':'chuáng','桌':'zhuō',
+      '椅':'yǐ','沙':'shā','发':'fā','门':'mén','窗':'chuāng','匙':'shi',
+      '永':'yǒng','远':'yuǎn','健':'jiàn','康':'kāng','祝':'zhù','福':'fú',
+      '庆':'qìng','恭':'gōng','喜':'xǐ','诞':'dàn','庆':'qìng','礼':'lǐ',
+      '拜':'bài','星':'xīng','期':'qī'
+    };
+    
+    let resultHTML = '';
+    for (const char of chineseOnly) {
+      const py = pinyinDict[char];
+      if (py) {
+        resultHTML += `<span class="phonetic-item">${char} <span class="phonetic-value">${py}</span></span>`;
+      } else {
+        resultHTML += `<span class="phonetic-item">${char} <span class="phonetic-value">?</span></span>`;
+      }
     }
+    
+    pronunciationEl.innerHTML = `
+      <div class="pronunciation-label">Pinyin / 拼音:</div>
+      <div class="pronunciation-text">${resultHTML}</div>
+    `;
   } catch (error) {
     console.error('Pinyin error:', error);
-    pronunciationEl.innerHTML = '<div class="pronunciation-error">Lỗi khi tải pinyin. Vui lòng thử lại.</div>';
+    pronunciationEl.innerHTML = '<div class="pronunciation-error">Lỗi khi tải pinyin.</div>';
   }
 }
 

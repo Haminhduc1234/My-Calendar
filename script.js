@@ -5098,16 +5098,458 @@ function performTranslationFromButton() {
   performTranslation(text);
 }
 
+function togglePronunciation() {
+  const showPronunciation = document.getElementById("showPronunciation").checked;
+  const pronunciationEl = document.getElementById("translatePronunciation");
+  
+  if (showPronunciation) {
+    pronunciationEl.style.display = "block";
+    const translatedText = document.getElementById("translateOutput").value;
+    const toLang = document.getElementById("translateToLang").value;
+    if (translatedText) {
+      loadPronunciation(translatedText, toLang);
+    }
+  } else {
+    pronunciationEl.style.display = "none";
+  }
+}
+
+async function loadPronunciation(text, lang) {
+  const pronunciationEl = document.getElementById("translatePronunciation");
+  pronunciationEl.innerHTML = '<div class="pronunciation-loading">Đang tải phiên âm...</div>';
+  
+  try {
+    if (lang === "vi") {
+      pronunciationEl.innerHTML = '<div class="pronunciation-note">Tiếng Việt sử dụng bảng chữ cái Latin, không cần phiên âm.</div>';
+      return;
+    }
+    
+    if (lang === "en") {
+      await loadEnglishPhonetics(text, pronunciationEl);
+    } else if (lang === "ko") {
+      await loadKoreanRomanization(text, pronunciationEl);
+    } else if (lang === "zh") {
+      await loadChinesePinyin(text, pronunciationEl);
+    } else {
+      pronunciationEl.innerHTML = '<div class="pronunciation-note">Ngôn ngữ này chưa được hỗ trợ phiên âm.</div>';
+    }
+  } catch (error) {
+    pronunciationEl.innerHTML = '<div class="pronunciation-error">Không thể tải phiên âm. Vui lòng thử lại.</div>';
+  }
+}
+
+async function loadEnglishPhonetics(text, pronunciationEl) {
+  const words = text.split(/\s+/).filter(w => w.length > 1).slice(0, 8);
+  const phoneticResults = [];
+  
+  for (const word of words) {
+    const cleanWord = word.replace(/[^\w\s]/g, '').toLowerCase();
+    if (cleanWord.length > 1) {
+      try {
+        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${cleanWord}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data[0]?.phonetics) {
+            const phonetic = data[0].phonetics.find(p => p.text && p.text.includes('/')) 
+              || data[0].phonetics.find(p => p.text) 
+              || data[0].phonetics[0];
+            if (phonetic?.text) {
+              phoneticResults.push({ word: cleanWord, phonetic: phonetic.text });
+            }
+          }
+        }
+      } catch (e) {}
+    }
+  }
+  
+  if (phoneticResults.length > 0) {
+    pronunciationEl.innerHTML = `
+      <div class="pronunciation-label">Phiên âm IPA / Pronunciation:</div>
+      <div class="pronunciation-text">${phoneticResults.map(p => `<span class="phonetic-item">${p.word} <span class="phonetic-value">${p.phonetic}</span></span>`).join(' ')}</div>
+    `;
+  } else {
+    pronunciationEl.innerHTML = '<div class="pronunciation-note">Không tìm thấy phiên âm cho văn bản này.</div>';
+  }
+}
+
+async function loadKoreanRomanization(text, pronunciationEl) {
+  const words = text.split(/\s+/).filter(w => w.length > 0).slice(0, 10);
+  const results = [];
+  
+  for (const word of words) {
+    const romanized = koreanToRoman(word);
+    if (romanized !== word) {
+      results.push({ korean: word, roman: romanized });
+    }
+  }
+  
+  if (results.length > 0) {
+    pronunciationEl.innerHTML = `
+      <div class="pronunciation-label">Romanization / 로마자 변환:</div>
+      <div class="pronunciation-text">${results.map(r => `<span class="phonetic-item">${r.korean} <span class="phonetic-value">[${r.roman}]</span></span>`).join(' ')}</div>
+    `;
+  } else {
+    pronunciationEl.innerHTML = '<div class="pronunciation-note">Không tìm thấy phiên âm cho văn bản này.</div>';
+  }
+}
+
+async function loadChinesePinyin(text, pronunciationEl) {
+  pronunciationEl.innerHTML = '<div class="pronunciation-loading">Đang tải phiên âm...</div>';
+  
+  try {
+    // Extract only Chinese characters
+    const chineseOnly = text.replace(/[^\u4e00-\u9fff\s，。！？、：；""''（）【】《》]/g, '').trim();
+    
+    if (!chineseOnly) {
+      pronunciationEl.innerHTML = '<div class="pronunciation-note">Không tìm thấy ký tự Trung Quốc trong văn bản này.</div>';
+      return;
+    }
+    
+    // Use pinyin-pro library
+    if (typeof pinyin === 'undefined') {
+      await loadScript('https://unpkg.com/pinyin-pro@3.18.6/dist/index.js');
+    }
+    
+    if (typeof pinyin !== 'undefined') {
+      // pinyin-pro usage
+      const words = chineseOnly.split(/\s+/).filter(w => w.length > 0).slice(0, 15);
+      const results = [];
+      
+      for (const word of words) {
+        try {
+          // pinyin-pro: pinyin(text, { toneType: 'symbol' })
+          const py = pinyin(word, { toneType: 'symbol' });
+          if (py && py !== word) {
+            results.push({ chinese: word, pinyin: py });
+          }
+        } catch (e) {
+          // Try basic pinyin for this word
+        }
+      }
+      
+      if (results.length > 0) {
+        pronunciationEl.innerHTML = `
+          <div class="pronunciation-label">Pinyin / 拼音:</div>
+          <div class="pronunciation-text">${results.map(r => `<span class="phonetic-item">${r.chinese} <span class="phonetic-value">${r.pinyin}</span></span>`).join(' ')}</div>
+        `;
+        return;
+      }
+    }
+    
+    // Fallback: basic pinyin
+    const fallbackResults = getBasicPinyin(text);
+    if (fallbackResults.length > 0) {
+      pronunciationEl.innerHTML = `
+        <div class="pronunciation-label">Pinyin / 拼音:</div>
+        <div class="pronunciation-text">${fallbackResults.map(r => `<span class="phonetic-item">${r.chinese} <span class="phonetic-value">${r.pinyin}</span></span>`).join(' ')}</div>
+      `;
+    } else {
+      pronunciationEl.innerHTML = '<div class="pronunciation-note">Không tìm thấy phiên âm cho văn bản này.</div>';
+    }
+  } catch (error) {
+    console.error('Pinyin error:', error);
+    pronunciationEl.innerHTML = '<div class="pronunciation-error">Lỗi khi tải pinyin. Vui lòng thử lại.</div>';
+  }
+}
+
+// Basic pinyin lookup for common Chinese characters
+function getBasicPinyin(text) {
+  // Single character pinyin dictionary
+  const charDict = {
+    '一': 'yī', '二': 'èr', '三': 'sān', '四': 'sì', '五': 'wǔ',
+    '六': 'liù', '七': 'qī', '八': 'bā', '九': 'jiǔ', '十': 'shí',
+    '百': 'bǎi', '千': 'qiān', '万': 'wàn', '亿': 'yì',
+    '零': 'líng', '两': 'liǎng', '几': 'jǐ', '多': 'duō', '少': 'shǎo',
+    '大': 'dà', '小': 'xiǎo', '高': 'gāo', '低': 'dī', '长': 'cháng',
+    '短': 'duǎn', '宽': 'kuān', '窄': 'zhǎi', '厚': 'hòu', '薄': 'báo',
+    '深': 'shēn', '浅': 'qiǎn', '远': 'yuǎn', '近': 'jìn', '快': 'kuài',
+    '慢': 'màn', '早': 'zǎo', '晚': 'wǎn', '新': 'xīn', '旧': 'jiù',
+    '好': 'hǎo', '坏': 'huài', '对': 'duì', '错': 'cuò', '真': 'zhēn',
+    '假': 'jiǎ', '美': 'měi', '丑': 'chǒu', '贵': 'guì', '便宜': 'piányi',
+    '多': 'duō', '少': 'shǎo', '都': 'dōu', '很': 'hěn', '太': 'tài',
+    '最': 'zuì', '更': 'gèng', '非常': 'fēicháng', '特别': 'tèbié',
+    '我': 'wǒ', '你': 'nǐ', '他': 'tā', '她': 'tā', '它': 'tā',
+    '们': 'men', '的': 'de', '了': 'le', '是': 'shì', '在': 'zài',
+    '有': 'yǒu', '没': 'méi', '无': 'wú', '不': 'bù', '吗': 'ma',
+    '呢': 'ne', '啊': 'a', '吧': 'ba', '呀': 'ya', '哦': 'ó',
+    '这': 'zhè', '那': 'nà', '哪': 'nǎ', '谁': 'shuí', '什么': 'shénme',
+    '怎': 'zěn', '么': 'me', '怎么': 'zěnme', '为': 'wèi', '什么': 'shénme',
+    '为什': 'wèishén', '为什 么': 'wèishénme', '因为': 'yīnwèi', '所以': 'suǒyǐ',
+    '但': 'dàn', '是': 'shì', '然': 'rán', '但是': 'dànshì', '虽然': 'suīrán',
+    '如': 'rú', '果': 'guǒ', '如果': 'rúguǒ', '只': 'zhǐ', '要': 'yào',
+    '需': 'xū', '需 要': 'xūyào', '应': 'yīng', '该': 'gāi', '应该': 'yīnggāi',
+    '能': 'néng', '会': 'huì', '可': 'kě', '以': 'yǐ', '可以': 'kěyǐ',
+    '想': 'xiǎng', '要': 'yào', '得': 'dé', '到': 'dào', '去': 'qù',
+    '来': 'lái', '回': 'huí', '过': 'guò', '出': 'chū', '入': 'rù',
+    '上': 'shàng', '下': 'xià', '左': 'zuǒ', '右': 'yòu', '前': 'qián',
+    '后': 'hòu', '里': 'lǐ', '外': 'wài', '中': 'zhōng', '东': 'dōng',
+    '南': 'nán', '西': 'xī', '北': 'běi',
+    '天': 'tiān', '地': 'dì', '人': 'rén', '国': 'guó', '家': 'jiā',
+    '中 国': 'zhōngguó', '美国': 'Měiguó', '英国': 'Yīngguó', '法国': 'Fàguó',
+    '德国': 'Déguó', '日本': 'Rìběn', '韩国': 'Hánguó', '俄国': 'Éguó',
+    '京': 'jīng', '上海': 'Shànghǎi', '广州': 'Guǎngzhōu', '深圳': 'Shēnzhèn',
+    '香港': 'Xiānggǎng', '澳门': 'Aomen', '台湾': 'Táiwān', '新加坡': 'Xīnjiāpō',
+    '公': 'gōng', '司': 'sī', '公 司': 'gōngsī', '银': 'yín', '行': 'háng',
+    '银 行': 'yínháng', '学': 'xué', '校': 'xiào', '学 校': 'xuéxiào',
+    '老': 'lǎo', '师': 'shī', '老 师': 'lǎoshī', '生': 'shēng', '学 生': 'xuéshēng',
+    '朋': 'péng', '友': 'yǒu', '朋 友': 'péngyǒu', '同': 'tóng', '学': 'xué',
+    '同 学': 'tóngxué', '爸': 'bà', '妈': 'mā', '爸 爸': 'bàba', '妈 妈': 'māma',
+    '父': 'fù', '母': 'mǔ', '亲': 'qīn', '父 母': 'fùmǔ', '亲 戚': 'qīnqi',
+    '哥': 'gē', '弟': 'dì', '姐': 'jiě', '妹': 'mèi', '哥 哥': 'gēge',
+    '弟 弟': 'dìdi', '姐 姐': 'jiějie', '妹 妹': 'mèimei',
+    '见': 'jiàn', '面': 'miàn', '见 面': 'jiànmiàn', '认': 'rèn', '识': 'shí',
+    '认 识': 'rènshi', '告': 'gào', '诉': 'sù', '告 诉': 'gàosù',
+    '聊': 'liáo', '天': 'tiān', '聊 天': 'liáotiān', '说': 'shuō', '话': 'huà',
+    '说 话': 'shuōhuà', '问': 'wèn', '答': 'dá', '问 答': 'wèndá',
+    '听': 'tīng', '写': 'xiě', '读': 'dú', '看': 'kàn', '读': 'dú',
+    '书': 'shū', '读 书': 'dúshū', '习': 'xí', '学': 'xué', '学 习': 'xuéxí',
+    '工': 'gōng', '作': 'zuò', '工 作': 'gōngzuò', '上班': 'shàngbān', '下班': 'xiàbān',
+    '请': 'qǐng', '问': 'wèn', '请 问': 'qǐngwèn', '谢': 'xiè', '谢 谢': 'xièxie',
+    '对': 'duì', '不': 'bù', '对 不 起': 'duìbùqǐ', '起': 'qǐ', '对': 'duì',
+    '没': 'méi', '关': 'guān', '系': 'xì', '没 关 系': 'méiguānxi',
+    '爱': 'ài', '喜': 'xǐ', '欢': 'huān', '喜 欢': 'xǐhuan', '爱': 'ài',
+    '医': 'yī', '院': 'yuàn', '医 院': 'yīyuàn', '药': 'yào', '药 店': 'yàodiàn',
+    '饭': 'fàn', '吃': 'chī', '吃 饭': 'chīfàn', '店': 'diàn', '酒': 'jiǔ',
+    '酒 店': 'jiǔdiàn', '咖': 'kā', '啡': 'fēi', '咖 啡': 'kāfēi', '茶': 'chá',
+    '水': 'shuǐ', '果': 'guǒ', '水 果': 'shuǐguǒ', '苹': 'píng', '果': 'guǒ',
+    '苹 果': 'píngguǒ', '香': 'xiāng', '蕉': 'jiāo', '香 蕉': 'xiāngjiāo',
+    '葡': 'pú', '萄': 'táo', '葡 萄': 'pútao', '西': 'xī', '瓜': 'guā',
+    '西 瓜': 'xīguā', '肉': 'ròu', '鱼': 'yú', '鸡': 'jī', '鸭': 'yā',
+    '猪': 'zhū', '牛': 'niú', '羊': 'yáng', '蛋': 'dàn', '面': 'miàn',
+    '米': 'mǐ', '米 饭': 'mǐfàn', '包': 'bāo', '面 包': 'miànbāo',
+    '车': 'chē', '汽': 'qì', '汽 车': 'qìchē', '火': 'huǒ', '车': 'chē',
+    '火 车': 'huǒchē', '地': 'dì', '铁': 'tiě', '地 铁': 'dìtiě',
+    '站': 'zhàn', '机': 'jī', '场': 'chǎng', '机 场': 'jīchǎng',
+    '票': 'piào', '钱': 'qián', '买': 'mǎi', '卖': 'mài', '买 东 西': 'mǎi dōngxi',
+    '路': 'lù', '走': 'zǒu', '跑': 'pǎo', '飞': 'fēi', '坐': 'zuò',
+    '躺': 'tǎng', '站': 'zhàn', '开': 'kāi', '关': 'guān', '睡': 'shuì',
+    '觉': 'jiào', '睡 觉': 'shuìjiào', '醒': 'xǐng', '吃': 'chī', '喝': 'hē',
+    '打': 'dǎ', '电': 'diàn', '话': 'huà', '打 电 话': 'dǎ diànhuà',
+    '网': 'wǎng', '络': 'luò', '网 络': 'wǎngluò', '微': 'wēi', '信': 'xìn',
+    '微 信': 'wēixìn', '邮': 'yóu', '件': 'jiàn', '邮 件': 'yóujiàn',
+    '时': 'shí', '间': 'jiān', '时 间': 'shíjiān', '现': 'xiàn', '在': 'zài',
+    '现 在': 'xiànzài', '今': 'jīn', '天': 'tiān', '今 天': 'jīntiān',
+    '昨': 'zuó', '天': 'tiān', '昨 天': 'zuótiān', '明': 'míng', '天': 'tiān',
+    '明 天': 'míngtiān', '年': 'nián', '月': 'yuè', '日': 'rì', '号': 'hào',
+    '今 年': 'jīnnián', '昨 年': 'zuónián', '明 年': 'míngnián',
+    '礼': 'lǐ', '拜': 'bài', '礼 拜': 'lǐbài', '星': 'xīng', '期': 'qī',
+    '星 期': 'xīngqī', '一': 'yī', '二': 'èr', '三': 'sān', '四': 'sì',
+    '五': 'wǔ', '六': 'liù', '七': 'qī', '星 期 一': 'xīngqī yī',
+    '星 期 二': 'xīngqī èr', '星 期 三': 'xīngqī sān', '星 期 四': 'xīngqī sì',
+    '星 期 五': 'xīngqī wǔ', '星 期 六': 'xīngqī liù', '星 期 天': 'xīngqī tiān',
+    '早': 'zǎo', '上': 'shàng', '早 上': 'zǎoshang', '中': 'zhōng', '午': 'wǔ',
+    '中 午': 'zhōngwǔ', '下': 'xià', '午': 'wǔ', '下 午': 'xiàwǔ',
+    '晚': 'wǎn', '上': 'shàng', '晚 上': 'wǎnshang', '夜': 'yè', '晚': 'wǎn',
+    '昨': 'zuó', '晚': 'wǎn', '昨 晚': 'zuówǎn', '夜': 'yè',
+    '半': 'bàn', '点': 'diǎn', '半 点': 'bàndiǎn', '刻': 'kè', '分': 'fēn',
+    '钟': 'zhōng', '秒': 'miǎo', '什': 'shén', '么': 'me', '时': 'shí',
+    '候': 'hòu', '什 么 时 候': 'shénme shíhòu', '怎': 'zěn', '么': 'me',
+    '么': 'me', '怎 么': 'zěnme', '样': 'yàng', '怎 么 样': 'zěnmeyàng',
+    '样': 'yàng', '怎 么 样': 'zěnmeyàng', '还': 'hái', '好': 'hǎo',
+    '还': 'hái', '吗': 'ma', '还 好': 'háihǎo', '不': 'bù', '错': 'cuò',
+    '不 错': 'bùcuò', '棒': 'bàng', '帅': 'shuài', '酷': 'kù',
+    '忙': 'máng', '闲': 'xián', '累': 'lèi', '舒': 'shū', '服': 'fu',
+    '舒 服': 'shūfu', '饿': 'è', '饱': 'bǎo', '渴': 'kě', '口': 'kǒu',
+    '渴': 'kě', '口 渴': 'kǒukě', '痛': 'tòng', '病': 'bìng', '医': 'yī',
+    '医 生': 'yīsheng', '护': 'hù', '士': 'shì', '护 士': 'hùshi',
+    '房': 'fáng', '间': 'jiān', '房 间': 'fángjiān', '厕': 'cè', '所': 'suǒ',
+    '厕 所': 'cèsuǒ', '厨': 'chú', '房': 'fáng', '厨 房': 'chúfáng',
+    '客': 'kè', '厅': 'tīng', '客 厅': 'kètīng', '床': 'chuáng', '桌': 'zhuō',
+    '椅': 'yǐ', '沙': 'shā', '发': 'fā', '沙 发': 'shāfā',
+    '门': 'mén', '窗': 'chuāng', '钥': 'yào', '匙': 'shi', '钥 匙': 'yàoshi',
+    '钥': 'yào', '怎': 'zěn', '怎 么': 'zěnme', '你': 'nǐ', '们': 'men',
+    '三': 'sān', '个': 'gè', '都': 'dōu', '没': 'méi', '事': 'shì',
+    '怎 么 你 们 三 个 都 没 事': 'zěnme nǐmen sān gè dōu méi shì',
+    '你 好': 'nǐhǎo', '再 见': 'zàijiàn', '保 重': 'bǎozhòng', '注': 'zhù',
+    '意': 'yì', '注 意': 'zhùyì', '安': 'ān', '全': 'quán', '安 全': 'ānquán',
+    '健': 'jiàn', '康': 'kāng', '健 康': 'jiànkāng', '祝': 'zhù', '福': 'fú',
+    '祝 福': 'zhùfú', '庆': 'qìng', '祝': 'zhù', '恭': 'gōng', '喜': 'xǐ',
+    '恭 喜': 'gōngxǐ', '新': 'xīn', '年': 'nián', '快': 'kuài', '新 年 快 乐': 'xīnnián kuàilè',
+    '圣': 'shèng', '诞': 'dàn', '快': 'kuài', '圣 诞 快 乐': 'shèngdàn kuàilè',
+    '生': 'shēng', '日': 'rì', '快': 'kuài', '生 日 快 乐': 'shēngrì kuàilè',
+    '永': 'yǒng', '远': 'yuǎn', '永 远': 'yǒngyuǎn', '经': 'jīng', '常': 'cháng',
+    '经 常': 'jīngcháng', '往': 'wǎng', '往': 'wǎng', '以': 'yǐ', '往': 'wǎng',
+    '以 往': 'yǐwǎng', '突': 'tū', '然': 'rán', '突 然': 'tūrán',
+    '必': 'bì', '须': 'xū', '必 须': 'bìxū', '需': 'xū', '要': 'yào',
+    '需 要': 'xūyào', '正': 'zhèng', '在': 'zài', '正 在': 'zhèngzài',
+    '马': 'mǎ', '上': 'shàng', '马 上': 'mǎshàng', '立': 'lì', '刻': 'kè',
+    '立 刻': 'lìkè', '已': 'yǐ', '经': 'jīng', '已 经': 'yǐjing',
+    '马': 'mǎ', '上': 'shàng', '马 上': 'mǎshàng', '准': 'zhǔn', '备': 'bèi',
+    '准 备': 'zhǔnbèi', '开': 'kāi', '始': 'shǐ', '开 始': 'kāishǐ',
+    '结': 'jié', '束': 'shù', '结 束': 'jiéshù', '完': 'wán', '成': 'chéng',
+    '完 成': 'wánchéng', '失': 'shī', '败': 'bài', '失 败': 'shībài',
+    '成': 'chéng', '功': 'gōng', '成 功': 'chénggōng', '进': 'jìn', '步': 'bù',
+    '进 步': 'jìnbù', '欢': 'huān', '迎': 'yíng', '欢 迎': 'huānyíng',
+    '送': 'sòng', '欢': 'huān', '迎': 'yíng', '欢 送': 'huānsòng',
+    '欢': 'huān', '迎': 'yíng', '光': 'guāng', '临': 'lín', '欢 迎 光 临': 'huānyíng guānglín',
+    '参': 'cān', '加': 'jiā', '参 加': 'cānjiā', '参': 'cān', '观': 'guān',
+    '参 观': 'cānguān', '参': 'cān', '考': 'kǎo', '参 考': 'cānkǎo',
+    '考': 'kǎo', '试': 'shì', '考 试': 'kǎoshì', '作': 'zuò', '业': 'yè',
+    '作 业': 'zuòyè', '答': 'dá', '案': 'àn', '答 案': 'dáàn',
+    '题': 'tí', '问': 'wèn', '问 题': 'wèntí', '解': 'jiě', '决': 'jué',
+    '解 决': 'jiějué', '办': 'bàn', '法': 'fǎ', '办 法': 'bànfǎ',
+    '知': 'zhī', '道': 'dào', '知 道': 'zhīdào', '懂': 'dǒng', '不': 'bù',
+    '懂': 'dǒng', '懂 不 懂': 'dǒngbùdǒng', '会': 'huì', '不': 'bù',
+    '会': 'huì', '会 不 会': 'huìbùhuì', '记': 'jì', '得': 'dé',
+    '记 得': 'jìde', '忘': 'wàng', '记': 'jì', '忘 记': 'wàngjì',
+    '明': 'míng', '白': 'bái', '明 白': 'míngbai', '清': 'qīng', '楚': 'chǔ',
+    '清 楚': 'qīngchu', '确': 'què', '定': 'dìng', '确 定': 'quèdìng',
+    '一': 'yī', '定': 'dìng', '一 定': 'yīdìng', '肯': 'kěn', '定': 'dìng',
+    '肯 定': 'kěndìng', '许': 'xǔ', '多': 'duō', '许 多': 'xǔduō',
+    '少': 'shǎo', '一': 'yī', '点': 'diǎn', '少 一 点': 'shǎo yīdiǎn',
+    '帮': 'bāng', '助': 'zhù', '帮 助': 'bāngzhù', '谢': 'xiè', '谢': 'xiè',
+    '谢 谢': 'xièxie', '不': 'bù', '谢': 'xiè', '不 谢': 'bùxiè',
+    '没': 'méi', '事': 'shì', '没 事': 'méishì', '不': 'bù', '用': 'yòng',
+    '不 用': 'bùyòng', '客': 'kè', '气': 'qì', '不 客 气': 'bùkèqi',
+    '没': 'méi', '关': 'guān', '系': 'xì', '没 关 系': 'méiguānxi',
+    '不': 'bù', '好': 'hǎo', '意': 'yì', '思': 'si', '不 好 意 思': 'bùhǎoyìsi',
+    '麻': 'má', '烦': 'fan', '麻 烦': 'máfan', '辛': 'xīn', '苦': 'kǔ',
+    '辛 苦': 'xīnkǔ', '累': 'lèi', '抱': 'bào', '歉': 'qiàn', '抱 歉': 'bàoqiàn',
+    '对': 'duì', '不': 'bù', '起': 'qǐ', '对 不 起': 'duìbùqǐ',
+    '没': 'méi', '关': 'guān', '系': 'xì', '没 关 系': 'méiguānxi'
+  };
+  
+  const results = [];
+  
+  // Extract only Chinese characters and spaces from text
+  const chineseOnly = text.replace(/[^\u4e00-\u9fff\s]/g, '').trim();
+  
+  if (!chineseOnly) {
+    return results;
+  }
+  
+  // Try to match phrases first (longer matches)
+  const phrases = chineseOnly.split(/\s+/);
+  
+  for (const phrase of phrases) {
+    if (!phrase) continue;
+    
+    // Try exact phrase match
+    if (charDict[phrase]) {
+      results.push({ chinese: phrase, pinyin: charDict[phrase] });
+      continue;
+    }
+    
+    // Try character by character
+    let allFound = true;
+    const charPinyins = [];
+    
+    for (const char of phrase) {
+      if (charDict[char]) {
+        charPinyins.push(charDict[char]);
+      } else {
+        allFound = false;
+        break;
+      }
+    }
+    
+    if (allFound && charPinyins.length > 0) {
+      results.push({ chinese: phrase, pinyin: charPinyins.join('') });
+    }
+  }
+  
+  return results;
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+// Comprehensive Korean to Romanization (Revised Romanization by Korean National Institute)
+function koreanToRoman(text) {
+  // Initial consonants ( onset )
+  const onset = {
+    'ㄱ': 'g', 'ㄲ': 'kk', 'ㄴ': 'n', 'ㄷ': 'd', 'ㄸ': 'tt', 'ㄹ': 'r',
+    'ㅁ': 'm', 'ㅂ': 'b', 'ㅃ': 'pp', 'ㅅ': 's', 'ㅆ': 'ss', 'ㅇ': '',
+    'ㅈ': 'j', 'ㅉ': 'jj', 'ㅊ': 'ch', 'ㅋ': 'k', 'ㅌ': 't', 'ㅍ': 'p', 'ㅎ': 'h'
+  };
+  
+  // Medial vowels ( nucleus )
+  const nucleus = {
+    'ㅏ': 'a', 'ㅐ': 'ae', 'ㅑ': 'ya', 'ㅒ': 'yae', 'ㅓ': 'eo', 'ㅔ': 'e',
+    'ㅕ': 'yeo', 'ㅖ': 'ye', 'ㅗ': 'o', 'ㅘ': 'wa', 'ㅙ': 'wae', 'ㅚ': 'oe',
+    'ㅛ': 'yo', 'ㅜ': 'u', 'ㅝ': 'wo', 'ㅞ': 'we', 'ㅟ': 'wi',
+    'ㅠ': 'yu', 'ㅡ': 'eu', 'ㅢ': 'ui', 'ㅣ': 'i'
+  };
+  
+  // Final consonants ( coda )
+  const coda = {
+    '': '', 'ㄱ': 'k', 'ㄲ': 'k', 'ㄳ': 'ks', 'ㄴ': 'n', 'ㄵ': 'nj', 'ㄶ': 'nh',
+    'ㄷ': 't', 'ㄹ': 'l', 'ㄺ': 'lk', 'ㄻ': 'lm', 'ㄼ': 'lp', 'ㄽ': 'ls',
+    'ㄾ': 'lt', 'ㄿ': 'lp', 'ㅀ': 'lh', 'ㅁ': 'm', 'ㅂ': 'p', 'ㅄ': 'ps',
+    'ㅅ': 't', 'ㅆ': 't', 'ㅇ': 'ng', 'ㅈ': 't', 'ㅊ': 't', 'ㅋ': 'k',
+    'ㅌ': 't', 'ㅍ': 'p', 'ㅎ': 't'
+  };
+  
+  const chars = [...text];
+  let result = '';
+  
+  for (const char of chars) {
+    const code = char.charCodeAt(0);
+    
+    // Check if it's a Hangul syllable
+    if (code >= 0xAC00 && code <= 0xD7A3) {
+      const syllableIndex = code - 0xAC00;
+      const onsetIndex = Math.floor(syllableIndex / 588);
+      const nucleusIndex = Math.floor((syllableIndex % 588) / 28);
+      const codaIndex = syllableIndex % 28;
+      
+      const onsetChars = Object.keys(onset);
+      const nucleusChars = Object.keys(nucleus);
+      const codaChars = Object.keys(coda);
+      
+      const o = onset[onsetChars[onsetIndex]] || '';
+      const v = nucleus[nucleusChars[nucleusIndex]] || '';
+      const c = coda[codaChars[codaIndex]] || '';
+      
+      result += o + v + c;
+    } else if (/[a-zA-Z]/.test(char)) {
+      // Keep English letters as is
+      result += char;
+    } else if (/[\u3000-\u303f\u4e00-\u9fff]/.test(char)) {
+      // Chinese character - keep it
+      result += char;
+    } else if (/[.,!?;:'"()\[\]。，！？；：""''（）【】]/.test(char)) {
+      result += char;
+    } else {
+      // Korean jamo or other - keep as is
+      result += char;
+    }
+  }
+  
+  return result;
+}
+
 function detectLanguage() {
   const fromLang = document.getElementById("translateFromLang").value;
   const toLang = document.getElementById("translateToLang").value;
   saveLanguages(fromLang, toLang);
+  
+  // Re-translate if there's input text
+  const inputText = document.getElementById("translateInput").value.trim();
+  if (inputText) {
+    lastTranslatedText = ""; // Reset to force re-translation
+    performTranslation(inputText);
+  }
 }
 
 function saveToLangSelection() {
   const fromLang = document.getElementById("translateFromLang").value;
   const toLang = document.getElementById("translateToLang").value;
   saveLanguages(fromLang, toLang);
+  
+  // Re-translate if there's input text
+  const inputText = document.getElementById("translateInput").value.trim();
+  if (inputText) {
+    lastTranslatedText = ""; // Reset to force re-translation
+    performTranslation(inputText);
+  }
 }
 
 async function performTranslation(text) {
@@ -5128,6 +5570,7 @@ async function performTranslation(text) {
   errorEl.style.display = "none";
   outputEl.value = "";
   detectedEl.classList.remove("show");
+  document.getElementById("translatePronunciation").innerHTML = "";
 
   try {
     let translatedText = "";
@@ -5179,6 +5622,12 @@ async function performTranslation(text) {
     loadingEl.style.display = "none";
     outputEl.value = translatedText;
     lastTranslatedText = input;
+
+    // Auto-load pronunciation if enabled
+    const showPronunciation = document.getElementById("showPronunciation")?.checked;
+    if (showPronunciation && translatedText) {
+      loadPronunciation(translatedText, toLang);
+    }
 
     if (fromLang === "auto" && detectedLanguage) {
       const detectedLang = detectedLanguage.toLowerCase();

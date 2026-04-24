@@ -874,6 +874,16 @@
           <span>Đang dịch...</span>
         </div>
         <div class="translate-error" id="translateError" style="display: none;"></div>
+        <div class="translate-pronunciation-section">
+          <div class="translate-pronunciation-toggle">
+            <label class="toggle-switch">
+              <input type="checkbox" id="showPronunciation" onchange="togglePronunciation()" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Hiển thị phiên âm</span>
+          </div>
+          <div id="translatePronunciation" class="translate-pronunciation" style="display: none;"></div>
+        </div>
         <button onclick="performTranslationFromButton()" class="translate-submit-btn">Dịch</button>
 
         <div class="translate-history-section">

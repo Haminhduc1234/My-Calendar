@@ -483,7 +483,7 @@ body::before {
 }
 
 .today-events-panel {
-  width: min(100%, 450px);
+  width: 100%;
   margin-bottom: 12px;
   animation: panelIn 0.56s ease both;
 }

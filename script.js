@@ -223,12 +223,6 @@ function renderTodayEvents() {
 
   panel.style.display = "block";
   panel.innerHTML = `
-    <div class="today-events-header">
-      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-      </svg>
-      Sự kiện hôm nay
-    </div>
     <div class="today-events-list">${events
       .map((ev) => {
         const timeStr = ev.eventDateTime
@@ -4954,6 +4948,7 @@ document.addEventListener("keydown", function(e) {
 const TRANSLATE_STORAGE_KEY = "translateLanguages";
 const TRANSLATE_API_KEY = "translateApi";
 const TRANSLATE_HISTORY_COLLAPSED_KEY = "translateHistoryCollapsed";
+const PRONUNCIATION_VISIBLE_KEY = "pronunciationVisible";
 let translateDebounceTimer = null;
 let lastTranslatedText = "";
 
@@ -5024,6 +5019,7 @@ function openTranslateModal() {
   modal.style.display = "flex";
   loadSavedLanguages();
   loadApiSelection();
+  loadSavedPronunciation();
   initTranslateHistoryCollapsed();
   document.getElementById("translateInput").focus();
 }
@@ -5102,6 +5098,8 @@ function togglePronunciation() {
   const showPronunciation = document.getElementById("showPronunciation").checked;
   const pronunciationEl = document.getElementById("translatePronunciation");
   
+  localStorage.setItem(PRONUNCIATION_VISIBLE_KEY, showPronunciation ? "true" : "false");
+  
   if (showPronunciation) {
     pronunciationEl.style.display = "block";
     const translatedText = document.getElementById("translateOutput").value;
@@ -5111,6 +5109,14 @@ function togglePronunciation() {
     }
   } else {
     pronunciationEl.style.display = "none";
+  }
+}
+
+function loadSavedPronunciation() {
+  const saved = localStorage.getItem(PRONUNCIATION_VISIBLE_KEY);
+  if (saved === "true") {
+    document.getElementById("showPronunciation").checked = true;
+    document.getElementById("translatePronunciation").style.display = "block";
   }
 }
 

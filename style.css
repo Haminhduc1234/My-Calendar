@@ -7,7 +7,7 @@
   --bg-1: #0e0e1a;
   --bg-2: #141422;
   --surface-0: rgba(12, 12, 22, 0.92);
-  --surface-1: rgba(18, 18, 32, 0.94);
+  --surface-1: rgba(18, 18, 32, 0.64);
   --surface-2: rgba(24, 24, 42, 0.96);
   --line: rgba(255, 255, 255, 0.15);
   --line-strong: rgba(255, 255, 255, 0.32);
@@ -85,7 +85,6 @@ body::before {
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 480px;
   height: 72px;
   background: rgba(10, 10, 18, 0.98);
   backdrop-filter: blur(20px);
@@ -3850,7 +3849,6 @@ input[type="datetime-local"] {
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
-  max-width: 480px;
   height: 72px;
   background: rgba(10, 10, 18, 0.98);
   backdrop-filter: blur(20px);

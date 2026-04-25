@@ -4759,7 +4759,7 @@ input[type="datetime-local"] {
 .translate-output-area textarea {
   width: 100%;
   min-height: 120px;
-  height: auto;
+  height: auto !important;
   padding: 14px 80px 14px 14px;
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -4770,12 +4770,6 @@ input[type="datetime-local"] {
   resize: none;
   line-height: 1.6;
   overflow-y: auto;
-}
-
-.translate-output-area textarea {
-  background: rgba(0, 20, 10, 0.5);
-  height: auto;
-  min-height: 120px;
 }
 
 .translate-input-area textarea::placeholder,

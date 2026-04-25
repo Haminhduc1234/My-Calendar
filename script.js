@@ -5189,7 +5189,8 @@ function loadSavedPronunciation() {
   const saved = localStorage.getItem(PRONUNCIATION_VISIBLE_KEY);
   if (saved === "true") {
     document.getElementById("showPronunciation").checked = true;
-    document.getElementById("translatePronunciation").style.display = "block";
+    // KHÔNG hiện box phiên âm ngay - chỉ bật checkbox,
+    // box sẽ hiện khi bật checkbox hoặc sau khi dịch xong
   }
 }
 
@@ -5851,6 +5852,7 @@ async function performTranslation(text) {
     // Auto-load pronunciation if enabled
     const showPronunciation = document.getElementById("showPronunciation")?.checked;
     if (showPronunciation && translatedText) {
+      document.getElementById("translatePronunciation").style.display = "block";
       loadPronunciation(translatedText, toLang);
     }
 

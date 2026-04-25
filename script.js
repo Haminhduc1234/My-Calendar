@@ -4745,12 +4745,12 @@ async function refreshNews() {
   // Clear cache for current tab
   newsCache[currentNewsTab] = null;
 
-  await fetchNews(currentNewsTab);
-
-  if (btn) {
-    setTimeout(() => {
+  try {
+    await fetchNews(currentNewsTab);
+  } finally {
+    if (btn) {
       btn.classList.remove("spinning");
-    }, 600); // Keep spinning for at least 600ms for visual feel
+    }
   }
 }
 
@@ -4785,24 +4785,24 @@ async function fetchNews(type) {
   const container = document.getElementById("newsContainer");
   container.innerHTML = renderNewsSkeletons();
 
-  const sources = {
-    vn: "vnexpress.net",
-    global: "vnexpress.net/the-gioi",
-    sports: "vnexpress.net/the-thao",
-    business: "vnexpress.net/kinh-doanh",
-    tech: "vnexpress.net/so-hoa",
-    realestate: "vnexpress.net/bat-dong-san",
-    health: "vnexpress.net/suc-khoe",
-    entertainment: "vnexpress.net/giai-tri",
-    cars: "vnexpress.net/oto-xe-may",
-    travel: "vnexpress.net/du-lich"
+  // RSS feeds for VNExpress - much faster than scraping
+  const rssSources = {
+    vn: "https://vnexpress.net/rss/tin-moi-nhat.rss",
+    global: "https://vnexpress.net/rss/the-gioi.rss",
+    sports: "https://vnexpress.net/rss/the-thao.rss",
+    business: "https://vnexpress.net/rss/kinh-doanh.rss",
+    tech: "https://vnexpress.net/rss/so-hoa.rss",
+    realestate: "https://vnexpress.net/rss/bat-dong-san.rss",
+    health: "https://vnexpress.net/rss/suc-khoe.rss",
+    entertainment: "https://vnexpress.net/rss/giai-tri.rss",
+    cars: "https://vnexpress.net/rss/oto-xe-may.rss",
+    travel: "https://vnexpress.net/rss/du-lich.rss"
   };
 
-  const targetUrl = sources[type];
+  const targetUrl = rssSources[type];
 
   try {
-    const markdown = await fetchTextWithCorsFallback(targetUrl);
-    const items = parseNewsMarkdown(markdown);
+    const items = await fetchRSS(targetUrl);
 
     if (items.length === 0) throw new Error("No news found");
 
@@ -4817,67 +4817,49 @@ async function fetchNews(type) {
   }
 }
 
-function parseNewsMarkdown(md) {
-  const items = [];
-  // Use ### instead of ## as Jina uses H3 for news items on VNExpress
-  // Catch both the Title and the Link
-  const pattern = /### \[([^\]]+)\]\((https?:\/\/vnexpress\.net\/[^\)\s]+)(?:\s+"[^"]*")?\)([\s\S]*?)(?=### \[|$)/g;
+// Fetch RSS using rss2json API (fast and reliable)
+async function fetchRSS(rssUrl) {
+  const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+  const res = await fetch(apiUrl, { cache: "no-cache" });
 
-  let match;
-  let count = 0;
+  if (!res.ok) throw new Error("Failed to fetch RSS");
 
-  // To handle shifted thumbnails, we'll first find all image-link pairs in the document
-  // Structure: [![Alt](ImgURL)](LinkURL)
-  const imgLinkPattern = /\[!\[.*?\]\((https?:\/\/.*?)\)\]\((https?:\/\/vnexpress\.net\/[^\)\s]+)(?:\s+"[^"]*")?\)/g;
-  const imgMap = {};
-  let imgMatch;
-  while ((imgMatch = imgLinkPattern.exec(md)) !== null) {
-    const imgUrl = imgMatch[1];
-    const linkUrl = imgMatch[2];
-    imgMap[linkUrl] = imgUrl;
+  const data = await res.json();
+
+  if (data.status !== "ok" || !data.items) {
+    throw new Error("Invalid RSS response");
   }
 
-  while ((match = pattern.exec(md)) !== null && count < 25) {
-    const title = match[1].trim();
-    const link = match[2];
-    const contentChunk = match[3].trim();
+  return data.items.slice(0, 20).map(item => ({
+    title: item.title || "",
+    link: item.link || "",
+    thumb: item.thumbnail || extractThumbFromContent(item.content) || extractThumbFromEnclosure(item) || "",
+    description: stripHtml(item.description || "").substring(0, 200) + "...",
+    pubDate: item.pubDate || new Date().toISOString()
+  }));
+}
 
-    // 1. Try to find thumbnail by matching the article link (Best accuracy)
-    let thumb = imgMap[link] || "";
+// Extract thumbnail from content if not provided
+function extractThumbFromContent(content) {
+  const match = content.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return match ? match[1] : "";
+}
 
-    // 2. Fallback: Find first image in the local content chunk
-    if (!thumb) {
-      const localImgMatch = contentChunk.match(/!\[.*?\]\((https?:\/\/.*?)\)/);
-      thumb = localImgMatch ? localImgMatch[1] : "";
+function extractThumbFromEnclosure(item) {
+  if (item.enclosure && item.enclosure.link) {
+    const type = item.enclosure.type || "";
+    if (type.startsWith("image/") || item.enclosure.link.match(/\.(jpg|jpeg|png|webp)/i)) {
+      return item.enclosure.link;
     }
-
-    // Get description (Joining multiple lines to ensure 3-line requirement is met)
-    const filteredLines = contentChunk
-      .replace(/\[!\[.*?\]\((.*?)\)\]\((.*?)\)/g, "") // Remove image-link markdown
-      .replace(/!\[.*?\]\((.*?)\)/g, "") // Remove image markdown
-      .replace(/\[\d+\]\(.*?#box_comment_vne\)/g, "") // Specifically remove comment counts
-      .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, "$1") // Simplify links to just their text
-      .trim()
-      .split("\n")
-      .map(line => line.trim())
-      .filter(line => line.length > 10 && !line.includes("box_comment_vne"));
-
-    // Take a larger slice to fill the 3-line UI
-    let description = filteredLines.slice(0, 4).join(" ") || "Bấm để xem chi tiết bài viết và các thông tin liên quan từ nguồn VNExpress...";
-    if (description.length > 250) description = description.substring(0, 240).trim() + "...";
-
-    if (title.length < 10 || title.includes("Loại bài") || title.includes("Xem thêm")) continue;
-
-    items.push({
-      title,
-      link,
-      thumb,
-      description: description || "Bấm để xem chi tiết bài viết...",
-      pubDate: new Date().toISOString()
-    });
-    count++;
   }
-  return items;
+  return "";
+}
+
+// Strip HTML tags from text
+function stripHtml(html) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || "";
 }
 
 function renderNewsItems(items) {

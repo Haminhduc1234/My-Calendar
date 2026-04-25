@@ -2504,6 +2504,7 @@ body::before {
   display: flex;
   flex-direction: column;
   background: var(--bg-1);
+  padding: 16px;
 }
 
 .news-header {

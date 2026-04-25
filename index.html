@@ -642,13 +642,15 @@
       <h3>Quick Note</h3>
 
       <div class="quick-note-form">
-        <input type="text" id="quickNoteInput" maxlength="140" placeholder="Nhập việc cần làm..." />
-        <button type="button" id="quickNoteSubmitBtn" class="quick-note-add-btn" onclick="submitQuickNote()">
-          + Thêm
-        </button>
-        <button type="button" id="quickNoteCancelBtn" class="quick-note-cancel-btn" onclick="cancelEditQuickNote()" style="display: none;">
-          Hủy
-        </button>
+        <textarea id="quickNoteInput" maxlength="500" placeholder="Nhập việc cần làm..." rows="3"></textarea>
+        <div class="quick-note-buttons">
+          <button type="button" id="quickNoteCancelBtn" class="quick-note-cancel-btn" onclick="cancelEditQuickNote()" style="display: none;">
+            Hủy
+          </button>
+          <button type="button" id="quickNoteSubmitBtn" class="quick-note-add-btn" onclick="submitQuickNote()">
+            + Thêm
+          </button>
+        </div>
       </div>
 
       <div id="quickNoteList" class="quick-note-list"></div>

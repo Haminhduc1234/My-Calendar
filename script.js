@@ -2548,7 +2548,20 @@ function openQuickNoteModal() {
   document.getElementById("quickNoteModal").style.display = "flex";
 
   const input = document.getElementById("quickNoteInput");
-  if (input) input.focus({ preventScroll: true });
+  if (input) {
+    input.focus({ preventScroll: true });
+    // Remove old listener if exists
+    input.removeEventListener("keydown", handleQuickNoteKeydown);
+    // Add Enter key listener (Shift+Enter for new line, Enter to submit)
+    input.addEventListener("keydown", handleQuickNoteKeydown);
+  }
+}
+
+function handleQuickNoteKeydown(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    submitQuickNote();
+  }
 }
 
 function closeQuickNoteModal() {

@@ -100,13 +100,13 @@ body::before {
 
 .water-drop {
   position: absolute;
-  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-  background: linear-gradient(180deg, rgba(200, 230, 255, 0.3) 0%, rgba(100, 180, 255, 0.15) 50%, rgba(50, 150, 255, 0.05) 100%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.5) 0%, rgba(150, 200, 255, 0.3) 40%, rgba(80, 150, 255, 0.15) 70%, transparent 100%);
   backdrop-filter: blur(2px);
-  animation: dropFloat linear infinite;
+  animation: dropFloatBounce linear infinite;
   box-shadow:
-    0 0 20px rgba(100, 200, 255, 0.2),
-    inset 0 -10px 20px rgba(255, 255, 255, 0.1);
+    0 0 15px rgba(100, 200, 255, 0.25),
+    inset 0 0 10px rgba(255, 255, 255, 0.2);
 }
 
 .water-drop::before {
@@ -116,7 +116,7 @@ body::before {
   left: 20%;
   width: 30%;
   height: 30%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, transparent 70%);
   border-radius: 50%;
 }
 
@@ -263,13 +263,107 @@ body::before {
   animation-delay: 4s;
 }
 
-@keyframes dropFloat {
+.water-bubble:nth-child(16) {
+  width: 4px;
+  height: 4px;
+  left: 8%;
+  top: 100%;
+  animation-duration: 19s;
+  animation-delay: 0.5s;
+}
+
+.water-bubble:nth-child(17) {
+  width: 6px;
+  height: 6px;
+  left: 22%;
+  top: 100%;
+  animation-duration: 23s;
+  animation-delay: 2.2s;
+}
+
+.water-bubble:nth-child(18) {
+  width: 9px;
+  height: 9px;
+  left: 48%;
+  top: 100%;
+  animation-duration: 17s;
+  animation-delay: 1.8s;
+}
+
+.water-bubble:nth-child(19) {
+  width: 5px;
+  height: 5px;
+  left: 62%;
+  top: 100%;
+  animation-duration: 25s;
+  animation-delay: 3.5s;
+}
+
+.water-bubble:nth-child(20) {
+  width: 8px;
+  height: 8px;
+  left: 78%;
+  top: 100%;
+  animation-duration: 20s;
+  animation-delay: 0.8s;
+}
+
+.water-bubble:nth-child(21) {
+  width: 4px;
+  height: 4px;
+  left: 95%;
+  top: 100%;
+  animation-duration: 22s;
+  animation-delay: 4.2s;
+}
+
+.water-bubble:nth-child(22) {
+  width: 6px;
+  height: 6px;
+  left: 12%;
+  top: 100%;
+  animation-duration: 18s;
+  animation-delay: 5s;
+}
+
+.water-bubble:nth-child(23) {
+  width: 10px;
+  height: 10px;
+  left: 35%;
+  top: 100%;
+  animation-duration: 24s;
+  animation-delay: 1.2s;
+}
+
+.water-bubble:nth-child(24) {
+  width: 5px;
+  height: 5px;
+  left: 55%;
+  top: 100%;
+  animation-duration: 21s;
+  animation-delay: 3.8s;
+}
+
+.water-bubble:nth-child(25) {
+  width: 7px;
+  height: 7px;
+  left: 68%;
+  top: 100%;
+  animation-duration: 19s;
+  animation-delay: 2.5s;
+}
+
+@keyframes dropFloatBounce {
   0% {
-    transform: translateY(0) rotate(0deg);
+    transform: translateY(-60px);
     opacity: 0;
   }
 
-  10% {
+  5% {
+    opacity: 0.7;
+  }
+
+  20% {
     opacity: 1;
   }
 
@@ -278,14 +372,14 @@ body::before {
   }
 
   100% {
-    transform: translateY(calc(100vh + 100px)) rotate(360deg);
+    transform: translateY(calc(100vh + 60px));
     opacity: 0;
   }
 }
 
 @keyframes bubbleFloat {
   0% {
-    transform: translateY(0) translateX(0);
+    transform: translateY(0) scale(1);
     opacity: 0;
   }
 
@@ -293,16 +387,12 @@ body::before {
     opacity: 0.8;
   }
 
-  50% {
-    transform: translateY(-50vh) translateX(20px);
-  }
-
   90% {
-    opacity: 0.6;
+    opacity: 0.8;
   }
 
   100% {
-    transform: translateY(-100vh) translateX(-10px);
+    transform: translateY(-110vh);
     opacity: 0;
   }
 }

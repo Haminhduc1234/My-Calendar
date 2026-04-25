@@ -22,6 +22,24 @@
   --rainbow-soft: linear-gradient(75deg, rgba(255, 0, 0, 0.25), rgba(255, 136, 0, 0.25), rgba(255, 221, 0, 0.25), rgba(0, 204, 68, 0.25), rgba(0, 136, 255, 0.25), rgba(68, 0, 204, 0.25), rgba(136, 0, 170, 0.25));
 }
 
+/* Global Custom Orange Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: transparent !important;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -927,7 +945,6 @@ body::before {
   max-height: 100% !important;
   border-radius: 0 !important;
   margin: 0 !important;
-  padding: 20px !important;
   border: none !important;
   background:
     radial-gradient(ellipse at 10% 10%, rgba(255, 0, 0, 0.06), transparent 40%),
@@ -1265,14 +1282,6 @@ body::before {
   padding-bottom: 4px;
 }
 
-.weather-forecast::-webkit-scrollbar {
-  height: 6px;
-}
-
-.weather-forecast::-webkit-scrollbar-thumb {
-  background: rgba(153, 183, 231, 0.42);
-  border-radius: 999px;
-}
 
 .forecast-card {
   min-width: 178px;
@@ -1827,18 +1836,6 @@ body::before {
   font-size: 14px;
 }
 
-.currency-dropdown::-webkit-scrollbar {
-  width: 6px;
-}
-
-.currency-dropdown::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.currency-dropdown::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
 
 .overtime-fab svg {
   width: 26px;
@@ -2571,15 +2568,6 @@ body::before {
   padding-right: 4px;
 }
 
-/* Custom scrollbar for news container */
-.news-list-container::-webkit-scrollbar {
-  width: 4px;
-}
-
-.news-list-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
 
 .news-card {
   display: flex;
@@ -5222,24 +5210,6 @@ input[type="datetime-local"] {
   word-break: break-word;
 }
 
-/* Scrollbar for translate history */
-.translate-history-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.translate-history-list::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 3px;
-}
-
-.translate-history-list::-webkit-scrollbar-thumb {
-  background: rgba(0, 204, 68, 0.3);
-  border-radius: 3px;
-}
-
-.translate-history-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 204, 68, 0.5);
-}
 
 /* Translate View History Button */
 .translate-view-history-btn {

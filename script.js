@@ -278,7 +278,7 @@ function renderCalendar() {
     if (cellDate.getTime() === today.getTime()) div.classList.add("today");
     if (getEventsForDate(key).length > 0) div.classList.add("has-event");
     if (getOvertimeHoursForDateKey(key) > 0) div.classList.add("has-overtime");
-    
+
     const isCustomHoliday = !!getDateData(key).isHoliday;
 
     if (
@@ -298,7 +298,7 @@ function renderCalendar() {
     if (LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`]) {
       holidayName = LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`];
     }
-    
+
     if (isCustomHoliday && !holidayName) {
       holidayName = "Ngày nghỉ lễ";
     }
@@ -1376,7 +1376,7 @@ function toggleDayHoliday() {
   const data = getDateData(selectedKey);
   const checkbox = document.getElementById("dayIsHoliday");
   if (!checkbox) return;
-  
+
   data.isHoliday = checkbox.checked;
   saveDateData(selectedKey, data);
   renderCalendar();
@@ -2443,7 +2443,7 @@ function renderQuickNotes() {
     `;
     })
     .join("");
-    
+
   bindQuickNoteDragDrop();
 }
 
@@ -4933,7 +4933,7 @@ function renderNewsSkeletons() {
 }
 
 // Global keyboard shortcuts
-document.addEventListener("keydown", function(e) {
+document.addEventListener("keydown", function (e) {
   if (e.key === "Escape") {
     // Close confirm popup first
     const confirmPopup = document.getElementById("confirmPopup");
@@ -5007,7 +5007,7 @@ function loadApiSelection() {
 function onApiChange() {
   const input = document.getElementById("translateInput").value.trim();
   saveApiSelection();
-  
+
   if (input) {
     lastTranslatedText = "";
     performTranslation(input);
@@ -5019,7 +5019,7 @@ function toggleApiDropdown() {
   dropdown.classList.toggle("show");
 }
 
-document.addEventListener("click", function(e) {
+document.addEventListener("click", function (e) {
   const dropdown = document.getElementById("translateApiDropdown");
   const btn = document.querySelector(".translate-api-btn");
   if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
@@ -5126,19 +5126,21 @@ function clearTranslateState() {
   document.getElementById("translateDetected").innerText = "";
   document.getElementById("translateLoading").style.display = "none";
   document.getElementById("translateError").style.display = "none";
+  document.getElementById("translatePronunciation").style.display = "none";
   lastTranslatedText = "";
 }
 
 function clearTranslateInput() {
   const inputEl = document.getElementById("translateInput");
   const outputEl = document.getElementById("translateOutput");
-  
+
   inputEl.value = "";
   outputEl.value = "";
-  
+
   document.getElementById("translateDetected").classList.remove("show");
   document.getElementById("translateDetected").innerText = "";
   document.getElementById("translateError").style.display = "none";
+  document.getElementById("translatePronunciation").style.display = "none";
   lastTranslatedText = "";
   document.getElementById("translateInput").focus();
 }
@@ -5151,35 +5153,35 @@ function onTranslateInput() {
     document.getElementById("translateOutput").value = "";
     document.getElementById("translateDetected").classList.remove("show");
     document.getElementById("translateError").style.display = "none";
+    document.getElementById("translatePronunciation").style.display = "none";
   }
 }
 
 function performTranslationFromButton() {
   const input = document.getElementById("translateInput");
   const text = input.value.trim();
-  
+
   if (!text) {
     document.getElementById("translateError").innerText = "Vui lòng nhập văn bản cần dịch.";
     document.getElementById("translateError").style.display = "block";
     return;
   }
-  
+
   performTranslation(text);
 }
 
 function togglePronunciation() {
   const showPronunciation = document.getElementById("showPronunciation").checked;
   const pronunciationEl = document.getElementById("translatePronunciation");
-  
+
   localStorage.setItem(PRONUNCIATION_VISIBLE_KEY, showPronunciation ? "true" : "false");
-  
-  if (showPronunciation) {
+
+  const translatedText = document.getElementById("translateOutput").value;
+  const toLang = document.getElementById("translateToLang").value;
+
+  if (showPronunciation && translatedText) {
     pronunciationEl.style.display = "block";
-    const translatedText = document.getElementById("translateOutput").value;
-    const toLang = document.getElementById("translateToLang").value;
-    if (translatedText) {
-      loadPronunciation(translatedText, toLang);
-    }
+    loadPronunciation(translatedText, toLang);
   } else {
     pronunciationEl.style.display = "none";
   }
@@ -5197,13 +5199,13 @@ function loadSavedPronunciation() {
 async function loadPronunciation(text, lang) {
   const pronunciationEl = document.getElementById("translatePronunciation");
   pronunciationEl.innerHTML = '<div class="pronunciation-loading">Đang tải phiên âm...</div>';
-  
+
   try {
     if (lang === "vi") {
       pronunciationEl.innerHTML = '<div class="pronunciation-note">Tiếng Việt sử dụng bảng chữ cái Latin, không cần phiên âm.</div>';
       return;
     }
-    
+
     if (lang === "en") {
       await loadEnglishPhonetics(text, pronunciationEl);
     } else if (lang === "ko") {
@@ -5221,7 +5223,7 @@ async function loadPronunciation(text, lang) {
 async function loadEnglishPhonetics(text, pronunciationEl) {
   const words = text.split(/\s+/).filter(w => w.length > 1).slice(0, 8);
   const phoneticResults = [];
-  
+
   for (const word of words) {
     const cleanWord = word.replace(/[^\w\s]/g, '').toLowerCase();
     if (cleanWord.length > 1) {
@@ -5230,18 +5232,18 @@ async function loadEnglishPhonetics(text, pronunciationEl) {
         if (response.ok) {
           const data = await response.json();
           if (data[0]?.phonetics) {
-            const phonetic = data[0].phonetics.find(p => p.text && p.text.includes('/')) 
-              || data[0].phonetics.find(p => p.text) 
+            const phonetic = data[0].phonetics.find(p => p.text && p.text.includes('/'))
+              || data[0].phonetics.find(p => p.text)
               || data[0].phonetics[0];
             if (phonetic?.text) {
               phoneticResults.push({ word: cleanWord, phonetic: phonetic.text });
             }
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
   }
-  
+
   if (phoneticResults.length > 0) {
     pronunciationEl.innerHTML = `
       <div class="pronunciation-label">Phiên âm IPA / Pronunciation:</div>
@@ -5255,14 +5257,14 @@ async function loadEnglishPhonetics(text, pronunciationEl) {
 async function loadKoreanRomanization(text, pronunciationEl) {
   const words = text.split(/\s+/).filter(w => w.length > 0).slice(0, 10);
   const results = [];
-  
+
   for (const word of words) {
     const romanized = koreanToRoman(word);
     if (romanized !== word) {
       results.push({ korean: word, roman: romanized });
     }
   }
-  
+
   if (results.length > 0) {
     pronunciationEl.innerHTML = `
       <div class="pronunciation-label">Romanization / 로마자 변환:</div>
@@ -5275,22 +5277,22 @@ async function loadKoreanRomanization(text, pronunciationEl) {
 
 async function loadChinesePinyin(text, pronunciationEl) {
   pronunciationEl.innerHTML = '<div class="pronunciation-loading">Đang tải phiên âm...</div>';
-  
+
   try {
     // Extract only Chinese characters
     const chineseOnly = text.replace(/[^\u4e00-\u9fff]/g, '');
-    
+
     if (!chineseOnly) {
       pronunciationEl.innerHTML = '<div class="pronunciation-note">Không tìm thấy ký tự Trung Quốc trong văn bản này.</div>';
       return;
     }
-    
+
     // Try multiple CDN sources for pinyin-pro
     const cdnUrls = [
       'https://unpkg.com/pinyin-pro@3.18.6/dist/index.js',
       'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.6/dist/index.js'
     ];
-    
+
     let loaded = false;
     for (const url of cdnUrls) {
       if (typeof pinyin !== 'undefined') break;
@@ -5301,11 +5303,11 @@ async function loadChinesePinyin(text, pronunciationEl) {
         continue;
       }
     }
-    
+
     if (typeof pinyin !== 'undefined' && typeof pinyin === 'function') {
       // Process character by character for complete coverage
       let resultHTML = '';
-      
+
       for (const char of chineseOnly) {
         try {
           const py = pinyin(char, { toneType: 'symbol' });
@@ -5318,7 +5320,7 @@ async function loadChinesePinyin(text, pronunciationEl) {
           resultHTML += `<span class="phonetic-item">${char} <span class="phonetic-value">?</span></span>`;
         }
       }
-      
+
       if (resultHTML) {
         pronunciationEl.innerHTML = `
           <div class="pronunciation-label">Pinyin / 拼音:</div>
@@ -5327,137 +5329,137 @@ async function loadChinesePinyin(text, pronunciationEl) {
         return;
       }
     }
-    
+
     // Fallback: embedded pinyin dictionary (subset of common characters)
     const pinyinDict = {
-      '道':'dào','公':'gōng','务':'wù','员':'yuán',
-      '你':'nǐ','好':'hǎo','我':'wǒ','是':'shì','中':'zhōng','国':'guó','人':'rén',
-      '的':'de','在':'zài','有':'yǒu','了':'le','们':'men','不':'bù','这':'zhè','那':'nà',
-      '他':'tā','她':'tā','它':'tā','什':'shén','么':'me','吗':'ma','很':'hěn','会':'huì',
-      '能':'néng','想':'xiǎng','爱':'ài','喜':'xǐ','欢':'huān','谢':'xiè','对':'duì','起':'qǐ',
-      '没':'méi','关':'guān','系':'xì','请':'qǐng','问':'wèn','昨':'zuó','天':'tiān',
-      '今':'jīn','年':'nián','月':'yuè','日':'rì','时':'shí','分':'fēn','钟':'zhōng',
-      '快':'kuài','乐':'lè','东':'dōng','西':'xī','南':'nán','北':'běi','京':'jīng',
-      '上':'shàng','海':'hǎi','广':'guǎng','州':'zhōu','深':'shēn','圳':'zhèn',
-      '见':'jiàn','面':'miàn','认':'rèn','识':'shí','朋':'péng','友':'yǒu','家':'jiā',
-      '工':'gōng','作':'zuò','学':'xué','校':'xiào','老':'lǎo','师':'shī','同':'tóng',
-      '公':'gōng','司':'sī','医':'yī','院':'yuàn','银':'yín','行':'háng',
-      '饭':'fàn','店':'diàn','酒':'jiǔ','吧':'ba','咖':'kā','啡':'fēi','茶':'chá',
-      '水':'shuǐ','果':'guǒ','苹':'píng','香':'xiāng','蕉':'jiāo',
-      '葡':'pú','萄':'táo','西':'xī','瓜':'guā','米':'mǐ','包':'bāo',
-      '蛋':'dàn','肉':'ròu','鱼':'yú','鸡':'jī','鸭':'yā','猪':'zhū','牛':'niú','羊':'yáng',
-      '马':'mǎ','车':'chē','路':'lù','地':'dì','铁':'tiě','站':'zhàn','机':'jī','场':'chǎng',
-      '票':'piào','钱':'qián','买':'mǎi','卖':'mài','贵':'guì','便宜':'piányi',
-      '多':'duō','少':'shǎo','大':'dà','小':'xiǎo','高':'gāo','矮':'ǎi',
-      '长':'cháng','短':'duǎn','宽':'kuān','窄':'zhǎi','新':'xīn','旧':'jiù',
-      '热':'rè','冷':'lěng','暖':'nuǎn','凉':'liáng','早':'zǎo','晚':'wǎn',
-      '忙':'máng','闲':'xián','远':'yuǎn','近':'jìn','难':'nán','易':'yì',
-      '听':'tīng','说':'shuō','读':'dú','写':'xiě','看':'kàn','走':'zǒu',
-      '跑':'pǎo','飞':'fēi','吃':'chī','喝':'hē','睡':'shuì','觉':'jiào','醒':'xǐng',
-      '坐':'zuò','站':'zhàn','躺':'tǎng','开':'kāi','关':'guān',
-      '来':'lái','去':'qù','回':'huí','到':'dào','过':'guò','给':'gěi',
-      '和':'hé','与':'yǔ','或':'huò','但':'dàn','却':'què','因':'yīn','为':'wèi',
-      '所':'suǒ','以':'yǐ','如':'rú','果':'guǒ','虽':'suī','然':'rán',
-      '只':'zhǐ','要':'yào','需':'xū','应':'yīng','该':'gāi','可':'kě',
-      '以':'yǐ','够':'gòu','将':'jiāng','已':'yǐ','经':'jīng','正':'zhèng',
-      '被':'bèi','把':'bǎ','让':'ràng','叫':'jiào','使':'shǐ','令':'lìng',
-      '劝':'quàn','求':'qiú','帮':'bāng','助':'zhù','教':'jiào','答':'dá',
-      '告':'gào','诉':'sù','怎':'zěn','么':'me','怎':'zěn','么':'me',
-      '永':'yǒng','远':'yuǎn','经':'jīng','常':'cháng','往':'wǎng',
-      '突':'tū','然':'rán','须':'xū','须':'xū','准':'zhǔn','备':'bèi',
-      '始':'shǐ','束':'shù','完':'wán','成':'chéng','失':'shī','败':'bài',
-      '功':'gōng','步':'bù','迎':'yíng','送':'sòng','光':'guāng','临':'lín',
-      '参':'cān','加':'jiā','观':'guān','考':'kǎo','试':'shì','业':'yè',
-      '案':'àn','题':'tí','问':'wèn','题':'tí','解':'jiě','决':'jué',
-      '法':'fǎ','懂':'dǒng','记':'jì','得':'dé','忘':'wàng','白':'bái',
-      '楚':'chǔ','确':'què','定':'dìng','一':'yī','定':'dìng','肯':'kěn',
-      '许':'xǔ','点':'diǎn','半':'bàn','刻':'kè','秒':'miǎo','候':'hòu',
-      '样':'yàng','错':'cuò','棒':'bàng','帅':'shuài','酷':'kù',
-      '累':'lèi','舒':'shū','服':'fu','饿':'è','饱':'bǎo','渴':'kě',
-      '痛':'tòng','病':'bìng','士':'shì','护':'hù','房':'fáng','间':'jiān',
-      '厕':'cè','所':'suǒ','厨':'chú','厅':'tīng','床':'chuáng','桌':'zhuō',
-      '椅':'yǐ','沙':'shā','发':'fā','门':'mén','窗':'chuāng','匙':'shi',
-      '永':'yǒng','远':'yuǎn','健':'jiàn','康':'kāng','祝':'zhù','福':'fú',
-      '庆':'qìng','恭':'gōng','喜':'xǐ','诞':'dàn','庆':'qìng','礼':'lǐ',
-      '拜':'bài','星':'xīng','期':'qī',
-      '从':'cóng','池':'chí','市':'shì','环':'huán','保':'bǎo','境':'jìng',
-      '美':'měi','丽':'lì','女':'nǚ','孩':'hái','男':'nán','生':'shēng',
-      '老':'lǎo','板':'bǎn','秘':'mì','书':'shū','助':'zhù','理':'lǐ',
-      '总':'zǒng','经':'jīng','销':'xiāo','售':'shòu','客':'kè',
-      '户':'hù','投':'tóu','资':'zī','金':'jīn','账':'zhàng','单':'dān',
-      '计':'jì','划':'huà','节':'jié','假':'jià','旅':'lǚ','游':'yóu',
-      '剧':'jù','院':'yuàn','百':'bǎi','姓':'xìng','名':'míng','电':'diàn',
-      '话':'huà','号':'hào','码':'mǎ','微':'wēi','信':'xìn','邮':'yóu',
-      '箱':'xiāng','省':'shěng','区':'qū','址':'zhǐ','楼':'lóu','层':'céng',
-      '牌':'pái','照':'zhào','证':'zhèng','签':'qiān','出':'chū','入':'rù',
-      '口':'kǒu','岸':'àn','税':'shuì','免':'miǎn','退':'tuì','换':'huàn',
-      '货':'huò','网':'wǎng','购':'gòu','支':'zhī','付':'fù','宝':'bǎo',
-      '现':'xiàn','用':'yòng','卡':'kǎ','租':'zū','押':'yā','修':'xiū',
-      '装':'zhuāng','价':'jià','格':'gé','便':'biàn','宜':'yí','打':'dǎ',
-      '折':'zhé','扣':'kòu','费':'fèi','优':'yōu','惠':'huì','券':'quàn',
-      '积':'jī','品':'pǐn','赠':'zèng','包':'bāo','量':'liàng','尺':'chǐ',
-      '寸':'cùn','规':'guī','型':'xíng','批':'pī','零':'líng','代':'dài',
-      '招':'zhāo','商':'shāng','盟':'méng','连':'lián','锁':'suǒ','直':'zhí',
-      '营':'yíng','转':'zhuǎn','让':'ràng','兑':'duì','汇':'huì','率':'lǜ',
-      '款':'kuǎn','余':'yú','额':'é','存':'cún','取':'qǔ','利':'lì',
-      '息':'xī','通':'tōng','知':'zhī','催':'cuī','欠':'qiàn','债':'zhài',
-      '借':'jiè','还':'huán','条':'tiáo','约':'yuē','同':'tóng','字':'zì',
-      '章':'zhāng','印':'yìn','明':'míng','暗':'àn','显':'xiǎn','示':'shì',
-      '屏':'píng','幕':'mù','亮':'liàng','控':'kòng','制':'zhì','调':'diào',
-      '温':'wēn','度':'dù','空':'kōng','调':'tiáo','暖':'nuǎn','气':'qì',
-      '线':'xiàn','池':'chí','充':'chōng','宝':'bǎo','耳':'ěr','麦':'mài',
-      '克':'kè','摄':'shè','像':'xiàng','拍':'pāi','录':'lù','视':'shì',
-      '频':'pín','档':'dǎng','输':'shū','印':'yìn','扫':'sǎo','描':'miáo',
-      '夹':'jiá','钉':'dīng','剪':'jiǎn','橡':'xiàng','皮':'pí','擦':'cā',
-      '圆':'yuán','珠':'zhū','铅':'qiān','粉':'fěn','蜡':'là','墨':'mò',
-      '砚':'yàn','镇':'zhèn','规':'guī','三':'sān','角':'jiǎo','算':'suàn',
-      '盘':'pán','器':'qì','脑':'nǎo','平':'píng','本':'běn','台':'tái',
-      '主':'zhǔ','显':'xiǎn','键':'jiàn','鼠':'shǔ','标':'biāo','U':'U',
-      '移':'yí','动':'dòng','硬':'yìng','内':'nèi','显':'xiǎn','声':'shēng',
-      '由':'yóu','猫':'māo','基':'jī','W':'W','I':'I','F':'F','密':'mì',
-      '绑':'bǎng','登':'dēng','录':'lù','注':'zhù','册':'cè','销':'xiāo',
-      '改':'gǎi','验':'yàn','短':'duǎn','众':'zhòng','平':'píng','台':'tái',
-      '程':'chéng','序':'xù','软':'ruǎn','件':'jiàn','硬':'yìng','系':'xì',
-      '统':'tǒng','应':'yìng','设':'shè','计':'jì','测':'cè','运':'yùn',
-      '维':'wéi','更':'gēng','升':'shēng','级':'jí','优':'yōu','化':'huà',
-      '删':'shān','除':'chú','备':'bèi','份':'fèn','恢':'huī','复':'fù',
-      '还':'huán','原':'yuán','格':'gé','化':'huà','磁':'cí','清':'qīng',
-      '理':'lǐ','垃':'lā','圾':'jī','收':'shōu','绿':'lǜ','色':'sè',
-      '碳':'tàn','排':'pái','放':'fàng','减':'jiǎn','再':'zài','生':'shēng',
-      '循':'xún','环':'huán','造':'zào','塑':'sù','料':'liào','玻':'bō',
-      '璃':'lí','属':'shǔ','废':'fèi','物':'wù','处':'chǔ','桶':'tǒng',
-      '袋':'dài','洁':'jié','卫':'wèi','扫':'sǎo','拖':'tuō','布':'bù',
-      '抹':'mā','拭':'shì','洗':'xǐ','消':'xiāo','毒':'dú','杀':'shā',
-      '菌':'jūn','防':'fáng','疫':'yì','罩':'zhào','液':'yè','精':'jīng',
-      '巾':'jīn','湿':'shī','牙':'yá','膏':'gāo','漱':'shù','杯':'bēi',
-      '乳':'rǔ','器':'qì','毛':'máo','浴':'yù','龙':'lóng','头':'tóu',
-      '壶':'hú','瓶':'píng','饮':'yǐn','料':'liào','冰':'bīng','波':'bō',
-      '炉':'lú','电':'diàn','磁':'cí','锅':'guō','铲':'chǎn','勺':'sháo',
-      '碗':'wǎn','筷':'kuài','叉':'chā','羹':'gēng','凳':'dèng','垫':'diàn',
-      '枕':'zhěn','被':'bèi','褥':'rù','毯':'tǎn','蚊':'wén','帐':'zhàng',
-      '纱':'shā','帘':'lián','泡':'pào','管':'guǎn','插':'chā','座':'zuò',
-      '接':'jiē','钥':'yào','锁':'suǒ','盗':'dào','铃':'líng','栏':'lán',
-      '杆':'gǎn','阳':'yáng','台':'tái','露':'lòu','庭':'tíng','院':'yuàn',
-      '园':'yuán','草':'cǎo','坪':'píng','树':'shù','木':'mù','浇':'jiāo',
-      '肥':'féi','农':'nóng','药':'yào','具':'jù','锹':'qiāo','锄':'chú',
-      '锤':'chuí','螺':'luó','丝':'sī','扳':'bān','钳':'qián','锯':'jù',
-      '钻':'zuàn','泵':'bèng','漆':'qī','油':'yóu','滚':'gǔn','筒':'tǒng',
-      '胶':'jiāo','带':'dài','双':'shuāng','壁':'bì','贴':'tiē','框':'kuàng',
-      '挂':'guà','历':'lì','筒':'tǒng','架':'jià','盒':'hé','夹':'jiá',
-      '环':'huán','链':'liàn','胸':'xiōng','针':'zhēn','帽':'mào','檐':'yán',
-      '鞋':'xié','袜':'wà','仔':'zǎi','背':'bèi','七':'qī','九':'jiǔ',
-      '装':'zhuāng','服':'fú','棉':'mián','羽':'yǔ','绒':'róng','皮':'pí',
-      '大':'dài','马':'mǎ','甲':'jiǎ','织':'zhī','衬':'chèn','衫':'shān',
-      '结':'jié','纽':'niǔ','魔':'mó','术':'shù','提':'tí','钱':'qián',
-      '腰':'yāo','尚':'shàng','行':'xíng','李':'lǐ','肩':'jiān','化':'huà',
-      '妆':'zhuāng','肤':'fū','霜':'shuāng','唇':'chún','红':'hóng','眉':'méi',
-      '影':'yǐng','睫':'jié','底':'dǐ','瑕':'xiá','遮':'zhē','散':'sǎn',
-      '腮':'sāi','容':'róng','卡':'kǎ','蜡':'là','胶':'jiāo','粘':'nián',
-      '芯':'xīn','芯':'xīn','蜡':'là','棒':'bàng','转':'zhuǎn','印':'yìn',
-      '戳':'chuō','固':'gù','体':'tǐ','珠':'zhū','石':'shí','锉':'cuò',
-      '砂':'shā','薰':'xūn','灯':'dēng','炉':'lú','固':'gù'
+      '道': 'dào', '公': 'gōng', '务': 'wù', '员': 'yuán',
+      '你': 'nǐ', '好': 'hǎo', '我': 'wǒ', '是': 'shì', '中': 'zhōng', '国': 'guó', '人': 'rén',
+      '的': 'de', '在': 'zài', '有': 'yǒu', '了': 'le', '们': 'men', '不': 'bù', '这': 'zhè', '那': 'nà',
+      '他': 'tā', '她': 'tā', '它': 'tā', '什': 'shén', '么': 'me', '吗': 'ma', '很': 'hěn', '会': 'huì',
+      '能': 'néng', '想': 'xiǎng', '爱': 'ài', '喜': 'xǐ', '欢': 'huān', '谢': 'xiè', '对': 'duì', '起': 'qǐ',
+      '没': 'méi', '关': 'guān', '系': 'xì', '请': 'qǐng', '问': 'wèn', '昨': 'zuó', '天': 'tiān',
+      '今': 'jīn', '年': 'nián', '月': 'yuè', '日': 'rì', '时': 'shí', '分': 'fēn', '钟': 'zhōng',
+      '快': 'kuài', '乐': 'lè', '东': 'dōng', '西': 'xī', '南': 'nán', '北': 'běi', '京': 'jīng',
+      '上': 'shàng', '海': 'hǎi', '广': 'guǎng', '州': 'zhōu', '深': 'shēn', '圳': 'zhèn',
+      '见': 'jiàn', '面': 'miàn', '认': 'rèn', '识': 'shí', '朋': 'péng', '友': 'yǒu', '家': 'jiā',
+      '工': 'gōng', '作': 'zuò', '学': 'xué', '校': 'xiào', '老': 'lǎo', '师': 'shī', '同': 'tóng',
+      '公': 'gōng', '司': 'sī', '医': 'yī', '院': 'yuàn', '银': 'yín', '行': 'háng',
+      '饭': 'fàn', '店': 'diàn', '酒': 'jiǔ', '吧': 'ba', '咖': 'kā', '啡': 'fēi', '茶': 'chá',
+      '水': 'shuǐ', '果': 'guǒ', '苹': 'píng', '香': 'xiāng', '蕉': 'jiāo',
+      '葡': 'pú', '萄': 'táo', '西': 'xī', '瓜': 'guā', '米': 'mǐ', '包': 'bāo',
+      '蛋': 'dàn', '肉': 'ròu', '鱼': 'yú', '鸡': 'jī', '鸭': 'yā', '猪': 'zhū', '牛': 'niú', '羊': 'yáng',
+      '马': 'mǎ', '车': 'chē', '路': 'lù', '地': 'dì', '铁': 'tiě', '站': 'zhàn', '机': 'jī', '场': 'chǎng',
+      '票': 'piào', '钱': 'qián', '买': 'mǎi', '卖': 'mài', '贵': 'guì', '便宜': 'piányi',
+      '多': 'duō', '少': 'shǎo', '大': 'dà', '小': 'xiǎo', '高': 'gāo', '矮': 'ǎi',
+      '长': 'cháng', '短': 'duǎn', '宽': 'kuān', '窄': 'zhǎi', '新': 'xīn', '旧': 'jiù',
+      '热': 'rè', '冷': 'lěng', '暖': 'nuǎn', '凉': 'liáng', '早': 'zǎo', '晚': 'wǎn',
+      '忙': 'máng', '闲': 'xián', '远': 'yuǎn', '近': 'jìn', '难': 'nán', '易': 'yì',
+      '听': 'tīng', '说': 'shuō', '读': 'dú', '写': 'xiě', '看': 'kàn', '走': 'zǒu',
+      '跑': 'pǎo', '飞': 'fēi', '吃': 'chī', '喝': 'hē', '睡': 'shuì', '觉': 'jiào', '醒': 'xǐng',
+      '坐': 'zuò', '站': 'zhàn', '躺': 'tǎng', '开': 'kāi', '关': 'guān',
+      '来': 'lái', '去': 'qù', '回': 'huí', '到': 'dào', '过': 'guò', '给': 'gěi',
+      '和': 'hé', '与': 'yǔ', '或': 'huò', '但': 'dàn', '却': 'què', '因': 'yīn', '为': 'wèi',
+      '所': 'suǒ', '以': 'yǐ', '如': 'rú', '果': 'guǒ', '虽': 'suī', '然': 'rán',
+      '只': 'zhǐ', '要': 'yào', '需': 'xū', '应': 'yīng', '该': 'gāi', '可': 'kě',
+      '以': 'yǐ', '够': 'gòu', '将': 'jiāng', '已': 'yǐ', '经': 'jīng', '正': 'zhèng',
+      '被': 'bèi', '把': 'bǎ', '让': 'ràng', '叫': 'jiào', '使': 'shǐ', '令': 'lìng',
+      '劝': 'quàn', '求': 'qiú', '帮': 'bāng', '助': 'zhù', '教': 'jiào', '答': 'dá',
+      '告': 'gào', '诉': 'sù', '怎': 'zěn', '么': 'me', '怎': 'zěn', '么': 'me',
+      '永': 'yǒng', '远': 'yuǎn', '经': 'jīng', '常': 'cháng', '往': 'wǎng',
+      '突': 'tū', '然': 'rán', '须': 'xū', '须': 'xū', '准': 'zhǔn', '备': 'bèi',
+      '始': 'shǐ', '束': 'shù', '完': 'wán', '成': 'chéng', '失': 'shī', '败': 'bài',
+      '功': 'gōng', '步': 'bù', '迎': 'yíng', '送': 'sòng', '光': 'guāng', '临': 'lín',
+      '参': 'cān', '加': 'jiā', '观': 'guān', '考': 'kǎo', '试': 'shì', '业': 'yè',
+      '案': 'àn', '题': 'tí', '问': 'wèn', '题': 'tí', '解': 'jiě', '决': 'jué',
+      '法': 'fǎ', '懂': 'dǒng', '记': 'jì', '得': 'dé', '忘': 'wàng', '白': 'bái',
+      '楚': 'chǔ', '确': 'què', '定': 'dìng', '一': 'yī', '定': 'dìng', '肯': 'kěn',
+      '许': 'xǔ', '点': 'diǎn', '半': 'bàn', '刻': 'kè', '秒': 'miǎo', '候': 'hòu',
+      '样': 'yàng', '错': 'cuò', '棒': 'bàng', '帅': 'shuài', '酷': 'kù',
+      '累': 'lèi', '舒': 'shū', '服': 'fu', '饿': 'è', '饱': 'bǎo', '渴': 'kě',
+      '痛': 'tòng', '病': 'bìng', '士': 'shì', '护': 'hù', '房': 'fáng', '间': 'jiān',
+      '厕': 'cè', '所': 'suǒ', '厨': 'chú', '厅': 'tīng', '床': 'chuáng', '桌': 'zhuō',
+      '椅': 'yǐ', '沙': 'shā', '发': 'fā', '门': 'mén', '窗': 'chuāng', '匙': 'shi',
+      '永': 'yǒng', '远': 'yuǎn', '健': 'jiàn', '康': 'kāng', '祝': 'zhù', '福': 'fú',
+      '庆': 'qìng', '恭': 'gōng', '喜': 'xǐ', '诞': 'dàn', '庆': 'qìng', '礼': 'lǐ',
+      '拜': 'bài', '星': 'xīng', '期': 'qī',
+      '从': 'cóng', '池': 'chí', '市': 'shì', '环': 'huán', '保': 'bǎo', '境': 'jìng',
+      '美': 'měi', '丽': 'lì', '女': 'nǚ', '孩': 'hái', '男': 'nán', '生': 'shēng',
+      '老': 'lǎo', '板': 'bǎn', '秘': 'mì', '书': 'shū', '助': 'zhù', '理': 'lǐ',
+      '总': 'zǒng', '经': 'jīng', '销': 'xiāo', '售': 'shòu', '客': 'kè',
+      '户': 'hù', '投': 'tóu', '资': 'zī', '金': 'jīn', '账': 'zhàng', '单': 'dān',
+      '计': 'jì', '划': 'huà', '节': 'jié', '假': 'jià', '旅': 'lǚ', '游': 'yóu',
+      '剧': 'jù', '院': 'yuàn', '百': 'bǎi', '姓': 'xìng', '名': 'míng', '电': 'diàn',
+      '话': 'huà', '号': 'hào', '码': 'mǎ', '微': 'wēi', '信': 'xìn', '邮': 'yóu',
+      '箱': 'xiāng', '省': 'shěng', '区': 'qū', '址': 'zhǐ', '楼': 'lóu', '层': 'céng',
+      '牌': 'pái', '照': 'zhào', '证': 'zhèng', '签': 'qiān', '出': 'chū', '入': 'rù',
+      '口': 'kǒu', '岸': 'àn', '税': 'shuì', '免': 'miǎn', '退': 'tuì', '换': 'huàn',
+      '货': 'huò', '网': 'wǎng', '购': 'gòu', '支': 'zhī', '付': 'fù', '宝': 'bǎo',
+      '现': 'xiàn', '用': 'yòng', '卡': 'kǎ', '租': 'zū', '押': 'yā', '修': 'xiū',
+      '装': 'zhuāng', '价': 'jià', '格': 'gé', '便': 'biàn', '宜': 'yí', '打': 'dǎ',
+      '折': 'zhé', '扣': 'kòu', '费': 'fèi', '优': 'yōu', '惠': 'huì', '券': 'quàn',
+      '积': 'jī', '品': 'pǐn', '赠': 'zèng', '包': 'bāo', '量': 'liàng', '尺': 'chǐ',
+      '寸': 'cùn', '规': 'guī', '型': 'xíng', '批': 'pī', '零': 'líng', '代': 'dài',
+      '招': 'zhāo', '商': 'shāng', '盟': 'méng', '连': 'lián', '锁': 'suǒ', '直': 'zhí',
+      '营': 'yíng', '转': 'zhuǎn', '让': 'ràng', '兑': 'duì', '汇': 'huì', '率': 'lǜ',
+      '款': 'kuǎn', '余': 'yú', '额': 'é', '存': 'cún', '取': 'qǔ', '利': 'lì',
+      '息': 'xī', '通': 'tōng', '知': 'zhī', '催': 'cuī', '欠': 'qiàn', '债': 'zhài',
+      '借': 'jiè', '还': 'huán', '条': 'tiáo', '约': 'yuē', '同': 'tóng', '字': 'zì',
+      '章': 'zhāng', '印': 'yìn', '明': 'míng', '暗': 'àn', '显': 'xiǎn', '示': 'shì',
+      '屏': 'píng', '幕': 'mù', '亮': 'liàng', '控': 'kòng', '制': 'zhì', '调': 'diào',
+      '温': 'wēn', '度': 'dù', '空': 'kōng', '调': 'tiáo', '暖': 'nuǎn', '气': 'qì',
+      '线': 'xiàn', '池': 'chí', '充': 'chōng', '宝': 'bǎo', '耳': 'ěr', '麦': 'mài',
+      '克': 'kè', '摄': 'shè', '像': 'xiàng', '拍': 'pāi', '录': 'lù', '视': 'shì',
+      '频': 'pín', '档': 'dǎng', '输': 'shū', '印': 'yìn', '扫': 'sǎo', '描': 'miáo',
+      '夹': 'jiá', '钉': 'dīng', '剪': 'jiǎn', '橡': 'xiàng', '皮': 'pí', '擦': 'cā',
+      '圆': 'yuán', '珠': 'zhū', '铅': 'qiān', '粉': 'fěn', '蜡': 'là', '墨': 'mò',
+      '砚': 'yàn', '镇': 'zhèn', '规': 'guī', '三': 'sān', '角': 'jiǎo', '算': 'suàn',
+      '盘': 'pán', '器': 'qì', '脑': 'nǎo', '平': 'píng', '本': 'běn', '台': 'tái',
+      '主': 'zhǔ', '显': 'xiǎn', '键': 'jiàn', '鼠': 'shǔ', '标': 'biāo', 'U': 'U',
+      '移': 'yí', '动': 'dòng', '硬': 'yìng', '内': 'nèi', '显': 'xiǎn', '声': 'shēng',
+      '由': 'yóu', '猫': 'māo', '基': 'jī', 'W': 'W', 'I': 'I', 'F': 'F', '密': 'mì',
+      '绑': 'bǎng', '登': 'dēng', '录': 'lù', '注': 'zhù', '册': 'cè', '销': 'xiāo',
+      '改': 'gǎi', '验': 'yàn', '短': 'duǎn', '众': 'zhòng', '平': 'píng', '台': 'tái',
+      '程': 'chéng', '序': 'xù', '软': 'ruǎn', '件': 'jiàn', '硬': 'yìng', '系': 'xì',
+      '统': 'tǒng', '应': 'yìng', '设': 'shè', '计': 'jì', '测': 'cè', '运': 'yùn',
+      '维': 'wéi', '更': 'gēng', '升': 'shēng', '级': 'jí', '优': 'yōu', '化': 'huà',
+      '删': 'shān', '除': 'chú', '备': 'bèi', '份': 'fèn', '恢': 'huī', '复': 'fù',
+      '还': 'huán', '原': 'yuán', '格': 'gé', '化': 'huà', '磁': 'cí', '清': 'qīng',
+      '理': 'lǐ', '垃': 'lā', '圾': 'jī', '收': 'shōu', '绿': 'lǜ', '色': 'sè',
+      '碳': 'tàn', '排': 'pái', '放': 'fàng', '减': 'jiǎn', '再': 'zài', '生': 'shēng',
+      '循': 'xún', '环': 'huán', '造': 'zào', '塑': 'sù', '料': 'liào', '玻': 'bō',
+      '璃': 'lí', '属': 'shǔ', '废': 'fèi', '物': 'wù', '处': 'chǔ', '桶': 'tǒng',
+      '袋': 'dài', '洁': 'jié', '卫': 'wèi', '扫': 'sǎo', '拖': 'tuō', '布': 'bù',
+      '抹': 'mā', '拭': 'shì', '洗': 'xǐ', '消': 'xiāo', '毒': 'dú', '杀': 'shā',
+      '菌': 'jūn', '防': 'fáng', '疫': 'yì', '罩': 'zhào', '液': 'yè', '精': 'jīng',
+      '巾': 'jīn', '湿': 'shī', '牙': 'yá', '膏': 'gāo', '漱': 'shù', '杯': 'bēi',
+      '乳': 'rǔ', '器': 'qì', '毛': 'máo', '浴': 'yù', '龙': 'lóng', '头': 'tóu',
+      '壶': 'hú', '瓶': 'píng', '饮': 'yǐn', '料': 'liào', '冰': 'bīng', '波': 'bō',
+      '炉': 'lú', '电': 'diàn', '磁': 'cí', '锅': 'guō', '铲': 'chǎn', '勺': 'sháo',
+      '碗': 'wǎn', '筷': 'kuài', '叉': 'chā', '羹': 'gēng', '凳': 'dèng', '垫': 'diàn',
+      '枕': 'zhěn', '被': 'bèi', '褥': 'rù', '毯': 'tǎn', '蚊': 'wén', '帐': 'zhàng',
+      '纱': 'shā', '帘': 'lián', '泡': 'pào', '管': 'guǎn', '插': 'chā', '座': 'zuò',
+      '接': 'jiē', '钥': 'yào', '锁': 'suǒ', '盗': 'dào', '铃': 'líng', '栏': 'lán',
+      '杆': 'gǎn', '阳': 'yáng', '台': 'tái', '露': 'lòu', '庭': 'tíng', '院': 'yuàn',
+      '园': 'yuán', '草': 'cǎo', '坪': 'píng', '树': 'shù', '木': 'mù', '浇': 'jiāo',
+      '肥': 'féi', '农': 'nóng', '药': 'yào', '具': 'jù', '锹': 'qiāo', '锄': 'chú',
+      '锤': 'chuí', '螺': 'luó', '丝': 'sī', '扳': 'bān', '钳': 'qián', '锯': 'jù',
+      '钻': 'zuàn', '泵': 'bèng', '漆': 'qī', '油': 'yóu', '滚': 'gǔn', '筒': 'tǒng',
+      '胶': 'jiāo', '带': 'dài', '双': 'shuāng', '壁': 'bì', '贴': 'tiē', '框': 'kuàng',
+      '挂': 'guà', '历': 'lì', '筒': 'tǒng', '架': 'jià', '盒': 'hé', '夹': 'jiá',
+      '环': 'huán', '链': 'liàn', '胸': 'xiōng', '针': 'zhēn', '帽': 'mào', '檐': 'yán',
+      '鞋': 'xié', '袜': 'wà', '仔': 'zǎi', '背': 'bèi', '七': 'qī', '九': 'jiǔ',
+      '装': 'zhuāng', '服': 'fú', '棉': 'mián', '羽': 'yǔ', '绒': 'róng', '皮': 'pí',
+      '大': 'dài', '马': 'mǎ', '甲': 'jiǎ', '织': 'zhī', '衬': 'chèn', '衫': 'shān',
+      '结': 'jié', '纽': 'niǔ', '魔': 'mó', '术': 'shù', '提': 'tí', '钱': 'qián',
+      '腰': 'yāo', '尚': 'shàng', '行': 'xíng', '李': 'lǐ', '肩': 'jiān', '化': 'huà',
+      '妆': 'zhuāng', '肤': 'fū', '霜': 'shuāng', '唇': 'chún', '红': 'hóng', '眉': 'méi',
+      '影': 'yǐng', '睫': 'jié', '底': 'dǐ', '瑕': 'xiá', '遮': 'zhē', '散': 'sǎn',
+      '腮': 'sāi', '容': 'róng', '卡': 'kǎ', '蜡': 'là', '胶': 'jiāo', '粘': 'nián',
+      '芯': 'xīn', '芯': 'xīn', '蜡': 'là', '棒': 'bàng', '转': 'zhuǎn', '印': 'yìn',
+      '戳': 'chuō', '固': 'gù', '体': 'tǐ', '珠': 'zhū', '石': 'shí', '锉': 'cuò',
+      '砂': 'shā', '薰': 'xūn', '灯': 'dēng', '炉': 'lú', '固': 'gù'
     };
-    
+
     let resultHTML = '';
     for (const char of chineseOnly) {
       const py = pinyinDict[char];
@@ -5467,7 +5469,7 @@ async function loadChinesePinyin(text, pronunciationEl) {
         resultHTML += `<span class="phonetic-item">${char} <span class="phonetic-value">?</span></span>`;
       }
     }
-    
+
     pronunciationEl.innerHTML = `
       <div class="pronunciation-label">Pinyin / 拼音:</div>
       <div class="pronunciation-text">${resultHTML}</div>
@@ -5634,32 +5636,32 @@ function getBasicPinyin(text) {
     '对': 'duì', '不': 'bù', '起': 'qǐ', '对 不 起': 'duìbùqǐ',
     '没': 'méi', '关': 'guān', '系': 'xì', '没 关 系': 'méiguānxi'
   };
-  
+
   const results = [];
-  
+
   // Extract only Chinese characters and spaces from text
   const chineseOnly = text.replace(/[^\u4e00-\u9fff\s]/g, '').trim();
-  
+
   if (!chineseOnly) {
     return results;
   }
-  
+
   // Try to match phrases first (longer matches)
   const phrases = chineseOnly.split(/\s+/);
-  
+
   for (const phrase of phrases) {
     if (!phrase) continue;
-    
+
     // Try exact phrase match
     if (charDict[phrase]) {
       results.push({ chinese: phrase, pinyin: charDict[phrase] });
       continue;
     }
-    
+
     // Try character by character
     let allFound = true;
     const charPinyins = [];
-    
+
     for (const char of phrase) {
       if (charDict[char]) {
         charPinyins.push(charDict[char]);
@@ -5668,12 +5670,12 @@ function getBasicPinyin(text) {
         break;
       }
     }
-    
+
     if (allFound && charPinyins.length > 0) {
       results.push({ chinese: phrase, pinyin: charPinyins.join('') });
     }
   }
-  
+
   return results;
 }
 
@@ -5695,7 +5697,7 @@ function koreanToRoman(text) {
     'ㅁ': 'm', 'ㅂ': 'b', 'ㅃ': 'pp', 'ㅅ': 's', 'ㅆ': 'ss', 'ㅇ': '',
     'ㅈ': 'j', 'ㅉ': 'jj', 'ㅊ': 'ch', 'ㅋ': 'k', 'ㅌ': 't', 'ㅍ': 'p', 'ㅎ': 'h'
   };
-  
+
   // Medial vowels ( nucleus )
   const nucleus = {
     'ㅏ': 'a', 'ㅐ': 'ae', 'ㅑ': 'ya', 'ㅒ': 'yae', 'ㅓ': 'eo', 'ㅔ': 'e',
@@ -5703,7 +5705,7 @@ function koreanToRoman(text) {
     'ㅛ': 'yo', 'ㅜ': 'u', 'ㅝ': 'wo', 'ㅞ': 'we', 'ㅟ': 'wi',
     'ㅠ': 'yu', 'ㅡ': 'eu', 'ㅢ': 'ui', 'ㅣ': 'i'
   };
-  
+
   // Final consonants ( coda )
   const coda = {
     '': '', 'ㄱ': 'k', 'ㄲ': 'k', 'ㄳ': 'ks', 'ㄴ': 'n', 'ㄵ': 'nj', 'ㄶ': 'nh',
@@ -5712,28 +5714,28 @@ function koreanToRoman(text) {
     'ㅅ': 't', 'ㅆ': 't', 'ㅇ': 'ng', 'ㅈ': 't', 'ㅊ': 't', 'ㅋ': 'k',
     'ㅌ': 't', 'ㅍ': 'p', 'ㅎ': 't'
   };
-  
+
   const chars = [...text];
   let result = '';
-  
+
   for (const char of chars) {
     const code = char.charCodeAt(0);
-    
+
     // Check if it's a Hangul syllable
     if (code >= 0xAC00 && code <= 0xD7A3) {
       const syllableIndex = code - 0xAC00;
       const onsetIndex = Math.floor(syllableIndex / 588);
       const nucleusIndex = Math.floor((syllableIndex % 588) / 28);
       const codaIndex = syllableIndex % 28;
-      
+
       const onsetChars = Object.keys(onset);
       const nucleusChars = Object.keys(nucleus);
       const codaChars = Object.keys(coda);
-      
+
       const o = onset[onsetChars[onsetIndex]] || '';
       const v = nucleus[nucleusChars[nucleusIndex]] || '';
       const c = coda[codaChars[codaIndex]] || '';
-      
+
       result += o + v + c;
     } else if (/[a-zA-Z]/.test(char)) {
       // Keep English letters as is
@@ -5748,7 +5750,7 @@ function koreanToRoman(text) {
       result += char;
     }
   }
-  
+
   return result;
 }
 
@@ -5756,7 +5758,7 @@ function detectLanguage() {
   const fromLang = document.getElementById("translateFromLang").value;
   const toLang = document.getElementById("translateToLang").value;
   saveLanguages(fromLang, toLang);
-  
+
   // Re-translate if there's input text
   const inputText = document.getElementById("translateInput").value.trim();
   if (inputText) {
@@ -5769,7 +5771,7 @@ function saveToLangSelection() {
   const fromLang = document.getElementById("translateFromLang").value;
   const toLang = document.getElementById("translateToLang").value;
   saveLanguages(fromLang, toLang);
-  
+
   // Re-translate if there's input text
   const inputText = document.getElementById("translateInput").value.trim();
   if (inputText) {
@@ -5854,6 +5856,8 @@ async function performTranslation(text) {
     if (showPronunciation && translatedText) {
       document.getElementById("translatePronunciation").style.display = "block";
       loadPronunciation(translatedText, toLang);
+    } else {
+      document.getElementById("translatePronunciation").style.display = "none";
     }
 
     if (fromLang === "auto" && detectedLanguage) {
@@ -5879,6 +5883,7 @@ async function performTranslation(text) {
     loadingEl.style.display = "none";
     errorEl.innerText = "Lỗi dịch: " + err.message + ". Vui lòng thử lại.";
     errorEl.style.display = "block";
+    document.getElementById("translatePronunciation").style.display = "none";
     console.error("Translation error:", err);
   }
 }
@@ -6051,11 +6056,11 @@ async function confirmDeleteAllTranslateHistory() {
   // Close history modal if open, since the action is from there
   const historyModal = document.getElementById("translateHistoryModal");
   const isHistoryModalOpen = historyModal && historyModal.style.display === "flex";
-  
+
   if (isHistoryModalOpen) {
     closeTranslateHistoryModal();
   }
-  
+
   if (!firebaseTranslateHistoryRef) return;
 
   if (translateHistoryCache.length === 0) {
@@ -6133,7 +6138,7 @@ function downloadCsvFile(content, filename) {
 
 // Modify performTranslation to save history - save directly after successful translation
 const originalPerformTranslation = performTranslation;
-performTranslation = async function(text) {
+performTranslation = async function (text) {
   const fromLang = document.getElementById("translateFromLang").value;
   const toLang = document.getElementById("translateToLang").value;
 

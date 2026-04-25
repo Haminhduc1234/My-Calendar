@@ -251,12 +251,15 @@ body::before {
     transform: translateY(0) rotate(0deg);
     opacity: 0;
   }
+
   10% {
     opacity: 1;
   }
+
   90% {
     opacity: 1;
   }
+
   100% {
     transform: translateY(calc(100vh + 100px)) rotate(360deg);
     opacity: 0;
@@ -268,15 +271,19 @@ body::before {
     transform: translateY(0) translateX(0);
     opacity: 0;
   }
+
   10% {
     opacity: 0.8;
   }
+
   50% {
     transform: translateY(-50vh) translateX(20px);
   }
+
   90% {
     opacity: 0.6;
   }
+
   100% {
     transform: translateY(-100vh) translateX(-10px);
     opacity: 0;
@@ -4758,7 +4765,7 @@ input[type="datetime-local"] {
 .translate-input-area textarea,
 .translate-output-area textarea {
   width: 100%;
-  min-height: 120px;
+  min-height: 220px;
   height: auto !important;
   padding: 14px 80px 14px 14px;
   border-radius: 12px;
@@ -4980,11 +4987,11 @@ input[type="datetime-local"] {
   transition: 0.3s;
 }
 
-.toggle-switch input:checked + .toggle-slider {
+.toggle-switch input:checked+.toggle-slider {
   background: linear-gradient(135deg, #00cc44, #00aa88);
 }
 
-.toggle-switch input:checked + .toggle-slider:before {
+.toggle-switch input:checked+.toggle-slider:before {
   transform: translateX(20px);
 }
 

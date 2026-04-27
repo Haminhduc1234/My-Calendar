@@ -4502,7 +4502,23 @@ updateClock();
 function setAppInitLoading(visible) {
   const loading = document.getElementById("appInitLoading");
   if (!loading) return;
-  loading.classList.toggle("is-visible", Boolean(visible));
+  if (visible) {
+    loading.style.display = "flex";
+    loading.classList.add("is-visible");
+  } else {
+    loading.classList.remove("is-visible");
+    // After transition, fully hide from layout
+    loading.addEventListener("transitionend", function handler() {
+      if (!loading.classList.contains("is-visible")) {
+        loading.style.display = "none";
+        loading.removeEventListener("transitionend", handler);
+      }
+    });
+    // Fallback: force hide after 400ms (transition duration)
+    setTimeout(() => {
+      loading.style.display = "none";
+    }, 400);
+  }
 }
 
 /* ========================== CURRENCY DATA ========================== */
@@ -4699,6 +4715,12 @@ function swapCurrency() {
 // Show password modal IMMEDIATELY (before heavy rendering)
 (async () => {
   setAppInitLoading(true);
+
+  // Fallback: ensure loading screen always hides after 8s max
+  const loadingTimeout = setTimeout(() => {
+    setAppInitLoading(false);
+  }, 8000);
+
   try {
     // Priority 1: Show password modal first (non-blocking)
     await initFirebaseServices();
@@ -4713,7 +4735,10 @@ function swapCurrency() {
     loadQuote();
     fetchWeatherByLocation();
     renderTodayLunar();
+  } catch (err) {
+    console.error("[Init] Lỗi khi khởi tạo app:", err);
   } finally {
+    clearTimeout(loadingTimeout);
     setAppInitLoading(false);
   }
 })();

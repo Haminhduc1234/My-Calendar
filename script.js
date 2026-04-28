@@ -3501,7 +3501,7 @@ function renderHourlyForecast(hourly, currentTime) {
   // Highlight next hour after current
   const nextHourIndex = currentHourIndex + 1;
 
-  let html = `<div class="hourly-forecast-title">Dự báo 24 giờ hôm nay</div><div class="hourly-scroll">`;
+  let html = `<div class="hourly-scroll">`;
 
   for (let i = startIndex; i < endIndex && i < hourly.time.length; i++) {
     const timeStr = hourly.time[i];

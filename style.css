@@ -1567,7 +1567,6 @@ body::before {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 4px;
 }
 
 

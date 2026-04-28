@@ -98,11 +98,11 @@ function updateAIStatus() {
   const modelInfo = document.getElementById("aiModelInfo");
   
   if (aiApiKey) {
-    dot.className = "ai-status-dot ready";
-    modelInfo.innerHTML = '<span class="ai-model-badge groq">Groq</span>';
+    if (dot) dot.className = "ai-status-dot ready";
+    if (modelInfo) modelInfo.innerHTML = '<span class="ai-model-badge groq">Groq</span>';
   } else {
-    dot.className = "ai-status-dot error";
-    modelInfo.innerHTML = '<span class="ai-model-badge" style="color: #ef4444;">Chưa có API Key</span>';
+    if (dot) dot.className = "ai-status-dot error";
+    if (modelInfo) modelInfo.innerHTML = '<span class="ai-model-badge" style="color: #ef4444;">Chưa có API Key</span>';
   }
 }
 
@@ -244,8 +244,14 @@ async function sendAIMessage() {
 
 async function sendAICommand(command) {
   openAIAssistantModal();
-  document.getElementById("aiInput").value = command;
-  sendAIMessage();
+  setTimeout(function() {
+    const input = document.getElementById("aiInput");
+    if (input) {
+      input.value = command;
+      input.focus();
+      sendAIMessage();
+    }
+  }, 200);
 }
 
 async function callGroqAPI(message, retryCount) {

@@ -154,6 +154,12 @@
             </svg>
             <span class="fab-label">Tin Tức</span>
           </button>
+          <button class="learn-fab tool-btn" onclick="openLearnModal()" aria-label="Học ngữ pháp và từ vựng">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/>
+            </svg>
+            <span class="fab-label">Học Tiếng</span>
+          </button>
         </div>
       </div>
       <button id="toolboxToggle" class="toolbox-toggle" onclick="toggleToolbox()" aria-label="Thu gọn thanh công cụ"
@@ -946,6 +952,203 @@
       </div>
     </div>
   </div>
+
+  <!-- Learn English Modal -->
+  <div id="learnModal" class="modal">
+    <div class="learn-modal-content">
+      <div class="learn-modal-header">
+        <h3>Học Giao Tiếp Công Việc</h3>
+        <button class="modal-close" onclick="closeLearnModal()">×</button>
+      </div>
+      <div class="learn-tabs">
+        <button class="learn-tab active" onclick="switchLearnTab('vocabulary')" data-tab="vocabulary">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+          </svg>
+          Từ Vựng
+        </button>
+        <button class="learn-tab" onclick="switchLearnTab('grammar')" data-tab="grammar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+          </svg>
+          Ngữ Pháp
+        </button>
+        <button class="learn-tab" onclick="switchLearnTab('phrases')" data-tab="phrases">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/>
+          </svg>
+          Câu Giao Tiếp
+        </button>
+      </div>
+
+      <!-- Vocabulary Section -->
+      <div id="learnVocabularyTab" class="learn-tab-content active">
+        <div class="learn-search-box">
+          <input type="text" id="vocabSearchInput" placeholder="Tìm kiếm từ tiếng Anh..." onkeyup="handleVocabSearch(event)" />
+          <button class="learn-search-btn" onclick="searchVocabFromAPI()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="learn-search-results-wrapper">
+          <div class="learn-search-results-header" onclick="toggleVocabSearchResults()">
+            <span>Kết quả tìm kiếm</span>
+            <span id="vocabSearchResultsArrow" class="learn-search-results-arrow">▼</span>
+          </div>
+          <div id="vocabSearchResults" class="learn-search-results"></div>
+        </div>
+        <div class="learn-category-selector">
+          <button class="learn-category-btn active" onclick="selectVocabCategory('all')" data-cat="all">Tất cả</button>
+          <button class="learn-category-btn" onclick="selectVocabCategory('email')" data-cat="email">Email</button>
+          <button class="learn-category-btn" onclick="selectVocabCategory('meeting')" data-cat="meeting">Họp Hành</button>
+          <button class="learn-category-btn" onclick="selectVocabCategory('presentation')" data-cat="presentation">Thuyết Trình</button>
+          <button class="learn-category-btn" onclick="selectVocabCategory('negotiation')" data-cat="negotiation">Đàm Phán</button>
+          <button class="learn-category-btn" onclick="selectVocabCategory('report')" data-cat="report">Báo Cáo</button>
+          <button class="learn-category-btn" onclick="selectVocabCategory('marketing')" data-cat="marketing">Marketing</button>
+          <button class="learn-category-btn" onclick="selectVocabCategory('it')" data-cat="it">IT</button>
+          <button class="learn-category-btn" onclick="selectVocabCategory('finance')" data-cat="finance">Tài Chính</button>
+          <button class="learn-category-btn" onclick="selectVocabCategory('hr')" data-cat="hr">Nhân Sự</button>
+          <button class="learn-category-btn" onclick="selectVocabCategory('general')" data-cat="general">Tổng Quát</button>
+        </div>
+        <div id="vocabCardContainer" class="learn-card-container">
+          <!-- Vocabulary cards will be loaded here -->
+        </div>
+        <div class="learn-card-controls">
+          <button class="learn-nav-btn" onclick="prevVocabCard()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+            </svg>
+          </button>
+          <span id="vocabCardCounter" class="learn-card-counter">1 / 10</span>
+          <button class="learn-nav-btn" onclick="nextVocabCard()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </button>
+          <button class="learn-quiz-btn" onclick="startVocabQuiz()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/>
+            </svg>
+            Kiểm tra
+          </button>
+        </div>
+      </div>
+
+      <!-- Grammar Section -->
+      <div id="learnGrammarTab" class="learn-tab-content">
+        <div class="learn-category-selector">
+          <button class="learn-category-btn active" onclick="selectGrammarCategory('all')" data-cat="all">Tất cả</button>
+          <button class="learn-category-btn" onclick="selectGrammarCategory('tenses')" data-cat="tenses">Thì</button>
+          <button class="learn-category-btn" onclick="selectGrammarCategory('conditionals')" data-cat="conditionals">Điều Kiện</button>
+          <button class="learn-category-btn" onclick="selectGrammarCategory('passive')" data-cat="passive">Bị Động</button>
+          <button class="learn-category-btn" onclick="selectGrammarCategory('modal')" data-cat="modal">Trợ Động Từ</button>
+          <button class="learn-category-btn" onclick="selectGrammarCategory('reported')" data-cat="reported">Câu Gián Tiếp</button>
+          <button class="learn-category-btn" onclick="selectGrammarCategory('relative')" data-cat="relative">Mệnh Đề Quan Hệ</button>
+        </div>
+        <div id="grammarCardContainer" class="learn-card-container">
+          <!-- Grammar cards will be loaded here -->
+        </div>
+        <div class="learn-card-controls">
+          <button class="learn-nav-btn" onclick="prevGrammarCard()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+            </svg>
+          </button>
+          <span id="grammarCardCounter" class="learn-card-counter">1 / 5</span>
+          <button class="learn-nav-btn" onclick="nextGrammarCard()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </button>
+          <button class="learn-quiz-btn" onclick="startGrammarQuiz()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/>
+            </svg>
+            Kiểm tra
+          </button>
+        </div>
+      </div>
+
+      <!-- Phrases Section -->
+      <div id="learnPhrasesTab" class="learn-tab-content">
+        <div class="learn-category-selector">
+          <button class="learn-category-btn active" onclick="selectPhraseCategory('all')" data-cat="all">Tất cả</button>
+          <button class="learn-category-btn" onclick="selectPhraseCategory('greeting')" data-cat="greeting">Chào Hỏi</button>
+          <button class="learn-category-btn" onclick="selectPhraseCategory('request')" data-cat="request">Yêu Cầu</button>
+          <button class="learn-category-btn" onclick="selectPhraseCategory('opinion')" data-cat="opinion">Ý Kiến</button>
+          <button class="learn-category-btn" onclick="selectPhraseCategory('agreement')" data-cat="agreement">Đồng Ý</button>
+          <button class="learn-category-btn" onclick="selectPhraseCategory('disagreement')" data-cat="disagreement">Từ Chối</button>
+          <button class="learn-category-btn" onclick="selectPhraseCategory('apology')" data-cat="apology">Xin Lỗi</button>
+          <button class="learn-category-btn" onclick="selectPhraseCategory('meeting')" data-cat="meeting">Họp Hành</button>
+          <button class="learn-category-btn" onclick="selectPhraseCategory('telephone')" data-cat="telephone">Điện Thoại</button>
+          <button class="learn-category-btn" onclick="selectPhraseCategory('email')" data-cat="email">Email</button>
+          <button class="learn-category-btn" onclick="selectPhraseCategory('presentation')" data-cat="presentation">Thuyết Trình</button>
+        </div>
+        <div id="phraseCardContainer" class="learn-card-container">
+          <!-- Phrase cards will be loaded here -->
+        </div>
+        <div class="learn-card-controls">
+          <button class="learn-nav-btn" onclick="prevPhraseCard()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+            </svg>
+          </button>
+          <span id="phraseCardCounter" class="learn-card-counter">1 / 10</span>
+          <button class="learn-nav-btn" onclick="nextPhraseCard()">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+            </svg>
+          </button>
+          <button class="learn-quiz-btn" onclick="startPhraseQuiz()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-1 9h-4v4h-2v-4H9V9h4V5h2v4h4v2z"/>
+            </svg>
+            Kiểm tra
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quiz Modal -->
+  <div id="quizModal" class="modal">
+    <div class="quiz-modal-content">
+      <div class="quiz-modal-header">
+        <h3 id="quizTitle">Kiểm Tra Từ Vựng</h3>
+        <button class="modal-close" onclick="closeQuizModal()">×</button>
+      </div>
+      <div class="quiz-progress">
+        <span id="quizProgress">Câu 1/10</span>
+        <div class="quiz-progress-bar">
+          <div id="quizProgressFill" class="quiz-progress-fill"></div>
+        </div>
+      </div>
+      <div id="quizQuestionArea" class="quiz-question-area">
+        <div class="quiz-question" id="quizQuestion">Question goes here</div>
+        <div class="quiz-options" id="quizOptions">
+          <!-- Options will be loaded here -->
+        </div>
+      </div>
+      <div id="quizResultArea" class="quiz-result-area" style="display: none;">
+        <div class="quiz-score">
+          <span id="quizScoreNum">0</span>/<span id="quizScoreTotal">10</span>
+        </div>
+        <div class="quiz-score-label">Điểm của bạn</div>
+        <div id="quizFeedback" class="quiz-feedback"></div>
+        <div class="quiz-result-actions">
+          <button class="quiz-retry-btn" onclick="retryQuiz()">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+            Làm lại
+          </button>
+          <button class="quiz-close-btn" onclick="closeQuizModal()">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- AI Assistant Modal -->
   <div id="aiAssistantModal" class="modal">
     <div class="ai-assistant-modal-content">

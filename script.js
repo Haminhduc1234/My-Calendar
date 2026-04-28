@@ -20,6 +20,7 @@ let firebaseDb = null;
 let firebaseDatesRef = null;
 let firebaseQuickNotesRef = null;
 let firebaseTranslateHistoryRef = null;
+let firebaseAISettingsRef = null;
 let firebaseReady = false;
 let firebaseAuth = null;
 let firebaseProjectsRef = null;
@@ -1123,6 +1124,11 @@ async function initFirebaseRealtime() {
     `${FIREBASE_TRANSLATE_HISTORY_PATH}/${userProfileKey}`,
   );
 
+  // AI Settings reference (API Key + Model)
+  firebaseAISettingsRef = firebaseDb.ref(
+    `aiSettings/${userProfileKey}`,
+  );
+
   // Lắng nghe sự thay đổi của Translate History
   firebaseTranslateHistoryRef.on("value", (snapshot) => {
     const remoteData = snapshot.val() || {};
@@ -1302,8 +1308,78 @@ async function initFirebaseRealtime() {
 
   firebaseReady = true;
 
+  // Load AI Settings from Firebase
+  loadAISettingsFromFirebase();
+
   // Realtime database initialized
   console.log("Firebase Realtime Database connected");
+}
+
+// Load AI Settings from Firebase
+function loadAISettingsFromFirebase() {
+  if (!firebaseAISettingsRef) return;
+
+  firebaseAISettingsRef.once("value").then((snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      // Update global variables
+      if (data.apiKey) {
+        aiApiKey = data.apiKey;
+        localStorage.setItem("aiApiKey", data.apiKey);
+      }
+      if (data.model) {
+        aiModel = data.model;
+        localStorage.setItem("aiModel", data.model);
+      }
+      // Update UI
+      updateAIStatus();
+      console.log("AI Settings loaded from Firebase");
+    }
+  }).catch((err) => {
+    console.error("Error loading AI settings from Firebase:", err);
+  });
+
+  // Listen for real-time updates
+  firebaseAISettingsRef.on("value", (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      if (data.apiKey && data.apiKey !== aiApiKey) {
+        aiApiKey = data.apiKey;
+        localStorage.setItem("aiApiKey", data.apiKey);
+        updateAIStatus();
+        showToast("API Key đã được đồng bộ từ thiết bị khác!");
+      }
+      if (data.model && data.model !== aiModel) {
+        aiModel = data.model;
+        localStorage.setItem("aiModel", data.model);
+      }
+    }
+  });
+}
+
+// Save AI Settings to Firebase
+function saveAISettingsToFirebase(apiKey, model) {
+  if (!firebaseAISettingsRef) {
+    // Fallback to localStorage
+    localStorage.setItem("aiApiKey", apiKey);
+    localStorage.setItem("aiModel", model);
+    return;
+  }
+
+  const settings = {
+    apiKey: apiKey,
+    model: model,
+    updatedAt: Date.now()
+  };
+
+  firebaseAISettingsRef.set(settings).then(() => {
+    console.log("AI Settings saved to Firebase");
+  }).catch((err) => {
+    console.error("Error saving AI settings to Firebase:", err);
+    // Fallback to localStorage
+    localStorage.setItem("aiApiKey", apiKey);
+    localStorage.setItem("aiModel", model);
+  });
 }
 
 function closeAllModals() {

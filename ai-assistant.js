@@ -12,35 +12,251 @@ const MAX_AI_HISTORY = 50;
 // Groq API configuration
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-// System prompt for Groq (Llama)
-const AI_SYSTEM_PROMPT = `Bạn là một trợ lý AI thông minh cho ứng dụng Lịch Việt. Bạn có thể:
-1. Tạo sự kiện với tiêu đề, nội dung và ngày/giờ
-2. Tạo ghi chú nhanh
-3. Trả lời về lịch và sự kiện của người dùng
-4. Chat trực tiếp với người dùng
+// Get user data context for AI - reads directly from Firebase
+async function getUserDataContext() {
+  let context = "";
+  const today = new Date();
+  
+  try {
+    // Fetch all data from Firebase directly
+    const [datesSnap, notesSnap, projectsSnap, translateSnap] = await Promise.all([
+      firebaseDatesRef ? firebaseDatesRef.once("value") : Promise.resolve(null),
+      firebaseQuickNotesRef ? firebaseQuickNotesRef.once("value") : Promise.resolve(null),
+      firebaseProjectsRef ? firebaseProjectsRef.once("value") : Promise.resolve(null),
+      firebaseTranslateHistoryRef ? firebaseTranslateHistoryRef.once("value") : Promise.resolve(null)
+    ]);
+    
+    // Process events from Firebase
+    const events = [];
+    if (datesSnap) {
+      const allDates = datesSnap.val() || {};
+      const dateKeys = Object.keys(allDates).sort();
+      
+      dateKeys.forEach(dateKey => {
+        const data = allDates[dateKey];
+        if (data && data.events && data.events.length > 0) {
+          data.events.forEach(event => {
+            events.push({
+              date: dateKey,
+              title: event.title || "Không có tiêu đề",
+              text: event.text || "",
+              time: event.eventDateTime || ""
+            });
+          });
+        }
+      });
+    }
+    
+    // Get quick notes from Firebase
+    let quickNotes = [];
+    if (notesSnap) {
+      const notesData = notesSnap.val();
+      if (Array.isArray(notesData)) {
+        quickNotes = notesData;
+      } else if (notesData && typeof notesData === "object") {
+        quickNotes = Object.values(notesData);
+      }
+    }
+    
+    // Get projects from Firebase
+    let projects = {};
+    if (projectsSnap) {
+      projects = projectsSnap.val() || {};
+    }
+    
+    // Get translate history from Firebase
+    let translateHistory = [];
+    if (translateSnap) {
+      const translateData = translateSnap.val();
+      if (Array.isArray(translateData)) {
+        translateHistory = translateData;
+      } else if (translateData && typeof translateData === "object") {
+        translateHistory = Object.values(translateData).sort((a, b) => 
+          new Date(b.timestamp || 0) - new Date(a.timestamp || 0)
+        );
+      }
+    }
+    
+    // Build context string
+    context += "=== DỮ LIỆU NGƯỜI DÙNG (TỪ FIREBASE) ===\n\n";
+    
+    if (events.length > 0) {
+      context += "📅 SỰ KIỆN:\n";
+      // Show events from past 30 days to next 90 days
+      const thirtyDaysAgo = new Date(today);
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const ninetyDaysLater = new Date(today);
+      ninetyDaysLater.setDate(ninetyDaysLater.getDate() + 90);
+      
+      events.forEach(event => {
+        const eventDate = new Date(event.date);
+        if (eventDate >= thirtyDaysAgo && eventDate <= ninetyDaysLater) {
+          context += `- ${event.date}: ${event.title}`;
+          if (event.time) context += ` (${event.time})`;
+          if (event.text) context += ` - ${event.text}`;
+          context += "\n";
+        }
+      });
+      context += "\n";
+    } else {
+      context += "📅 SỰ KIỆN: Chưa có sự kiện nào\n\n";
+    }
+    
+    if (quickNotes.length > 0) {
+      context += "📝 GHI CHÚ NHANH:\n";
+      quickNotes.slice(0, 20).forEach(note => {
+        context += `- ${note.text || note.content || note}`;
+        if (note.createdAt) {
+          const noteDate = new Date(note.createdAt);
+          context += ` (${noteDate.toLocaleDateString("vi-VN")})`;
+        }
+        if (note.done) context += " ✓";
+        context += "\n";
+      });
+      context += "\n";
+    } else {
+      context += "📝 GHI CHÚ NHANH: Chưa có ghi chú nào\n\n";
+    }
+    
+    if (projects && Object.keys(projects).length > 0) {
+      context += "📋 DỰ ÁN:\n";
+      Object.values(projects).slice(0, 10).forEach(project => {
+        context += `- ${project.name || project.title || "Dự án không tên"}`;
+        if (project.status) context += ` [${project.status}]`;
+        if (project.description) context += `: ${project.description}`;
+        context += "\n";
+        if (project.tasks) {
+          Object.values(project.tasks).slice(0, 5).forEach(task => {
+            if (task.text || task.title) {
+              context += `  • ${task.text || task.title}`;
+              if (task.completed) context += " ✓";
+              context += "\n";
+            }
+          });
+        }
+      });
+      context += "\n";
+    } else {
+      context += "📋 DỰ ÁN: Chưa có dự án nào\n\n";
+    }
+    
+    if (translateHistory.length > 0) {
+      const langNames = {
+        "vi": "Tiếng Việt",
+        "en": "Tiếng Anh",
+        "zh": "Tiếng Trung",
+        "ja": "Tiếng Nhật",
+        "ko": "Tiếng Hàn",
+        "fr": "Tiếng Pháp",
+        "de": "Tiếng Đức",
+        "es": "Tiếng Tây Ban Nha",
+        "ru": "Tiếng Nga",
+        "th": "Tiếng Thái"
+      };
+      
+      context += "🌐 LỊCH SỬ DỊCH:\n";
+      translateHistory.slice(0, 15).forEach(item => {
+        const date = new Date(item.timestamp);
+        const fromLang = langNames[item.fromLang] || item.fromLang || "N/A";
+        const toLang = langNames[item.toLang] || item.toLang || "N/A";
+        context += `- [${date.toLocaleDateString("vi-VN")}] ${item.original || ""} → ${item.translated || ""} (${fromLang} → ${toLang})\n`;
+      });
+      context += "\n";
+    } else {
+      context += "🌐 LỊCH SỬ DỊCH: Chưa có lịch sử dịch nào\n\n";
+    }
+    
+  } catch (err) {
+    console.error("Error fetching user data for AI:", err);
+    context += "⚠️ Không thể tải dữ liệu từ Firebase\n\n";
+  }
+  
+  return context;
+}
 
-Khi người dùng yêu cầu tạo sự kiện hoặc ghi chú, hãy:
-- Trả lời bằng tiếng Việt
-- Xác nhận thông tin với người dùng
-- Nếu cần tạo sự kiện, trả lời theo định dạng JSON trong code block:
+
+// Dynamic system prompt with user data (async)
+async function getSystemPrompt() {
+  const userData = await getUserDataContext();
+  const currentDate = new Date().toLocaleDateString("vi-VN", {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  
+  return `Bạn là một trợ lý AI thông minh cho ứng dụng Lịch Việt.
+
+${userData}
+
+=== HƯỚNG DẪN TRẢ LỜI ===
+
+1. KHI TRẢ LỜI VỀ LỊCH/SỰ KIỆN:
+   - Dựa vào dữ liệu sự kiện ở trên để trả lời
+   - Nếu hỏi "hôm nay có gì", hãy tìm sự kiện của ngày hiện tại
+   - Nếu hỏi về tuần/tháng, hãy liệt kê các sự kiện trong khoảng thời gian đó
+   - Trả lời bằng tiếng Việt, thân thiện và chi tiết
+
+2. KHI TRẢ LỜI VỀ GHI CHÚ:
+   - Dựa vào danh sách ghi chú ở trên
+   - Có thể tìm kiếm, tổng hợp thông tin từ nhiều ghi chú
+   - Khi được hỏi về ghi chú cũ, hãy tìm và trích dẫn chính xác
+
+3. KHI TRẢ LỜI VỀ DỰ ÁN:
+   - Dựa vào danh sách dự án và công việc ở trên
+   - Cập nhật tiến độ, trạng thái dự án
+   - Liệt kê công việc đã hoàn thành và chưa hoàn thành
+
+4. KHI TRẢ LỜI VỀ LỊCH SỬ DỊCH:
+   - Dựa vào lịch sử dịch ở trên
+   - Có thể tìm bản dịch cũ hoặc tổng hợp các từ đã dịch
+   - Giải thích nghĩa của từ/cụm từ đã dịch
+
+5. KHI TẠO SỰ KIỆN/GHI CHÚ/DỰ ÁN/CÔNG VIỆC:
+   - Luôn xác nhận với người dùng trước khi tạo
+   - Trả lời theo định dạng JSON:
+   
+   Tạo sự kiện:
 \`\`\`json
 {
   "action": "create_event",
   "title": "Tiêu đề sự kiện",
-  "text": "Nội dung sự kiện",
-  "datetime": "YYYY-MM-DDTHH:MM"
+  "text": "Nội dung mô tả",
+  "datetime": "2026-04-28T14:00"
 }
 \`\`\`
-- Nếu cần tạo ghi chú, trả lời theo định dạng:
+   
+   Tạo ghi chú nhanh:
 \`\`\`json
 {
   "action": "create_note",
   "content": "Nội dung ghi chú"
 }
 \`\`\`
-- Nếu là chat thông thường, chỉ cần trả lời bình thường
+   
+   Tạo dự án mới:
+\`\`\`json
+{
+  "action": "create_project",
+  "title": "Tên dự án mới",
+  "description": "Mô tả chi tiết về dự án"
+}
+\`\`\`
+   
+   Tạo công việc trong dự án (cần chỉ định projectTitle để tìm dự án):
+\`\`\`json
+{
+  "action": "create_task",
+  "projectTitle": "Tên dự án đã có",
+  "title": "Tên công việc cần làm",
+  "description": "Mô tả công việc"
+}
+\`\`\`
 
-Ngày hiện tại: ${new Date().toLocaleDateString("vi-VN")}`;
+6. KHI TRẢ LỜI CÂU HỎI CHUNG:
+
+Hãy trả lời một cách tự nhiên, thân thiện và hữu ích nhất! Nếu người dùng hỏi về dữ liệu của họ, hãy dựa vào thông tin ở trên để trả lời chính xác.`;
+}
 
 function loadAIHistory() {
   try {
@@ -258,9 +474,10 @@ async function callGroqAPI(message, retryCount) {
   retryCount = retryCount || 0;
   const maxRetries = 2;
   
-  // Build messages array
+  // Build messages array with dynamic system prompt including user data
+  const systemPrompt = await getSystemPrompt();
   const messages = [
-    { role: "system", content: AI_SYSTEM_PROMPT }
+    { role: "system", content: systemPrompt }
   ];
   
   // Add conversation history (last 10 messages)
@@ -285,13 +502,13 @@ async function callGroqAPI(message, retryCount) {
       body: JSON.stringify({
         model: aiModel,
         messages: messages,
-        max_tokens: 1000,
+        max_tokens: 1500,
         temperature: 0.7
       })
     });
     
     if (!response.ok) {
-      const errorData = await response.json().catch(function() { return { error: { message: "API Error" } }; });
+      const errorData = await response.json().catch(function() { return { error: { message: "Lỗi API" } }; });
       throw new Error(errorData.error ? errorData.error.message : "Lỗi API " + response.status);
     }
     
@@ -324,8 +541,14 @@ async function processAIResponse(response) {
         showEventConfirmation(action);
         appendAIMessage("assistant", response);
       } else if (action.action === "create_note") {
-        createQuickNoteFromAI(action.content);
-        appendAIMessage("assistant", "Đã tạo ghi chú: " + action.content);
+        showNoteConfirmation(action.content);
+        appendAIMessage("assistant", response);
+      } else if (action.action === "create_project") {
+        showProjectConfirmation(action.title, action.description);
+        appendAIMessage("assistant", response);
+      } else if (action.action === "create_task") {
+        showTaskConfirmation(action.projectTitle, action.title, action.description);
+        appendAIMessage("assistant", response);
       } else {
         appendAIMessage("assistant", response);
       }
@@ -376,16 +599,47 @@ function confirmAIAction() {
     closeAIAssistantModal();
     
     showToast("Đã điền thông tin sự kiện. Nhấn Lưu để xác nhận.");
+  } else if (aiPendingAction.type === "create_note") {
+    createQuickNoteFromAI(aiPendingAction.data);
+    closeAIActionModal();
+    appendAIMessage("assistant", "Đã tạo ghi chú: " + aiPendingAction.data);
+    showToast("Đã tạo ghi chú thành công!");
+  } else if (aiPendingAction.type === "create_project") {
+    createProjectFromAI(aiPendingAction.data.title, aiPendingAction.data.description);
+    closeAIActionModal();
+    appendAIMessage("assistant", "Đã tạo dự án: " + aiPendingAction.data.title);
+    showToast("Đã tạo dự án thành công!");
+  } else if (aiPendingAction.type === "create_task") {
+    // If projectId not resolved yet, resolve it now
+    if (!aiPendingAction.data.projectId) {
+      findProjectByTitle(aiPendingAction.data.projectTitle).then(foundProject => {
+        if (foundProject) {
+          createTaskFromAI(foundProject.id, aiPendingAction.data.title, aiPendingAction.data.description);
+          closeAIActionModal();
+          appendAIMessage("assistant", "Đã tạo công việc: " + aiPendingAction.data.title);
+          showToast("Đã tạo công việc thành công!");
+        } else {
+          showToast("Không tìm thấy dự án '" + aiPendingAction.data.projectTitle + "'!");
+          closeAIActionModal();
+        }
+      });
+    } else {
+      createTaskFromAI(aiPendingAction.data.projectId, aiPendingAction.data.title, aiPendingAction.data.description);
+      closeAIActionModal();
+      appendAIMessage("assistant", "Đã tạo công việc: " + aiPendingAction.data.title);
+      showToast("Đã tạo công việc thành công!");
+    }
   }
 }
 
 function createQuickNoteFromAI(content) {
-  const key = QUICK_NOTE_STORAGE_KEY_PREFIX + userProfileKey;
+  const key = getQuickNoteStorageKey();
   let notes = JSON.parse(localStorage.getItem(key) || "[]");
   
   notes.unshift({
     id: generateId(),
-    content: content,
+    text: content,
+    done: false,
     createdAt: Date.now()
   });
   
@@ -395,6 +649,138 @@ function createQuickNoteFromAI(content) {
   if (firebaseReady && firebaseQuickNotesRef) {
     firebaseQuickNotesRef.set(notes);
   }
+  
+  renderQuickNotes();
+}
+
+function showNoteConfirmation(noteContent) {
+  aiPendingAction = { type: "create_note", data: noteContent };
+
+  const title = document.getElementById("aiActionTitle");
+  const message = document.getElementById("aiActionMessage");
+  const preview = document.getElementById("aiActionPreview");
+
+  title.textContent = "Xác nhận tạo ghi chú";
+  message.textContent = "Trợ lý AI muốn tạo ghi chú sau:";
+  preview.innerHTML = "<div style='padding: 10px; background: #f5f5f5; border-radius: 8px;'>" + escapeHtml(noteContent) + "</div>";
+
+  document.getElementById("aiActionModal").style.display = "flex";
+}
+
+function showProjectConfirmation(title, description) {
+  aiPendingAction = { type: "create_project", data: { title, description } };
+
+  const titleEl = document.getElementById("aiActionTitle");
+  const message = document.getElementById("aiActionMessage");
+  const preview = document.getElementById("aiActionPreview");
+
+  titleEl.textContent = "Xác nhận tạo dự án";
+  message.textContent = "Trợ lý AI muốn tạo dự án sau:";
+  preview.innerHTML = "<strong>Tên dự án:</strong> " + escapeHtml(title) + "<br><strong>Mô tả:</strong> " + escapeHtml(description || "Không có");
+
+  document.getElementById("aiActionModal").style.display = "flex";
+}
+
+function showTaskConfirmation(projectTitle, taskTitle, taskDescription) {
+  // Show loading state first
+  aiPendingAction = { 
+    type: "create_task", 
+    data: { 
+      projectTitle: projectTitle,
+      title: taskTitle, 
+      description: taskDescription,
+      projectId: null // Will be resolved in confirmAIAction
+    } 
+  };
+
+  const titleEl = document.getElementById("aiActionTitle");
+  const message = document.getElementById("aiActionMessage");
+  const preview = document.getElementById("aiActionPreview");
+
+  titleEl.textContent = "Đang tìm dự án...";
+  message.textContent = "Vui lòng đợi...";
+  preview.innerHTML = "<em>Đang tìm dự án '" + escapeHtml(projectTitle) + "'...</em>";
+
+  document.getElementById("aiActionModal").style.display = "flex";
+
+  // Find project asynchronously
+  findProjectByTitle(projectTitle).then(foundProject => {
+    const foundProjectId = foundProject ? foundProject.id : null;
+    const foundProjectName = foundProject ? foundProject.title : projectTitle;
+
+    // Update pending action with found projectId
+    aiPendingAction.data.projectId = foundProjectId;
+    aiPendingAction.data.projectTitle = foundProjectName;
+
+    titleEl.textContent = "Xác nhận tạo công việc";
+    if (foundProjectId) {
+      message.textContent = "Trợ lý AI muốn tạo công việc trong dự án: " + escapeHtml(foundProjectName);
+    } else {
+      message.textContent = "Trợ lý AI muốn tạo công việc (Dự án '" + escapeHtml(projectTitle) + "' không tìm thấy!)";
+    }
+    preview.innerHTML = "<strong>Công việc:</strong> " + escapeHtml(taskTitle) + "<br><strong>Mô tả:</strong> " + escapeHtml(taskDescription || "Không có");
+  });
+}
+
+async function findProjectByTitle(searchTitle) {
+  if (!firebaseProjectsRef) return null;
+  
+  try {
+    const snapshot = await firebaseProjectsRef.once("value");
+    const projects = snapshot.val() || {};
+    
+    for (const [id, project] of Object.entries(projects)) {
+      if (project.title && project.title.toLowerCase().includes(searchTitle.toLowerCase())) {
+        return { id, ...project };
+      }
+    }
+  } catch (e) {
+    console.error("Error finding project:", e);
+  }
+  return null;
+}
+
+function createProjectFromAI(title, description) {
+  // Open project form modal
+  openProjectFormModal(false);
+  
+  // Fill in the form
+  setTimeout(() => {
+    const nameInput = document.getElementById("projectFormName");
+    const descInput = document.getElementById("projectFormDesc");
+    
+    if (nameInput) nameInput.value = title;
+    if (descInput) descInput.value = description || "";
+    
+    // Auto submit
+    if (nameInput && title) {
+      handleProjectFormSubmit({ preventDefault: () => {} });
+    }
+  }, 100);
+}
+
+function createTaskFromAI(projectId, title, description) {
+  if (!projectId) {
+    showToast("Không tìm thấy dự án!");
+    return;
+  }
+
+  // Open task form modal
+  openTaskFormModal(false, projectId);
+  
+  // Fill in the form
+  setTimeout(() => {
+    const nameInput = document.getElementById("taskFormName");
+    const descInput = document.getElementById("taskFormDesc");
+    
+    if (nameInput) nameInput.value = title;
+    if (descInput) descInput.value = description || "";
+    
+    // Auto submit
+    if (nameInput && title) {
+      handleTaskFormSubmit({ preventDefault: () => {} });
+    }
+  }, 100);
 }
 
 function showAIError(message) {

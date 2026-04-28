@@ -65,8 +65,8 @@ body {
   padding: 20px;
   font-family: "Be Vietnam Pro", "Segoe UI", sans-serif;
   color: var(--text);
-  background-color: #1a1a2e;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  /* background-color: #1a1a2e; */
+  /* background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); */
   position: relative;
   overflow-x: hidden;
 }

@@ -3337,7 +3337,7 @@ function handleWeather(lat, lon) {
     fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}
 &current_weather=true
-&hourly=relativehumidity_2m
+&hourly=relativehumidity_2m,temperature_2m,weathercode,precipitation_probability
 &daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max,windspeed_10m_max,sunrise,sunset
 &timezone=auto`,
     ).then((res) => res.json()),
@@ -3367,11 +3367,13 @@ function handleWeather(lat, lon) {
               </div>
           `;
 
+      renderHourlyForecast(data.hourly, data.current_weather.time);
       renderForecast(data.daily, data.hourly);
     })
     .catch(() => {
       document.getElementById("todayWeather").innerText =
         "Không lấy được dữ liệu thời tiết";
+      document.getElementById("hourlyForecastContainer").style.display = "none";
     });
 }
 
@@ -3390,17 +3392,101 @@ function getDailyHumidity(hourly, dateStr) {
   return count ? Math.round(sum / count) : "--";
 }
 
+function renderHourlyForecast(hourly, currentTime) {
+  const container = document.getElementById("hourlyForecastContainer");
+  if (!container) return;
+
+  const now = new Date(currentTime);
+  const todayStr = now.toISOString().slice(0, 10);
+  const currentHour = now.getHours();
+
+  // Find the index for today's data that matches current hour
+  let currentHourIndex = -1;
+  for (let i = 0; i < hourly.time.length; i++) {
+    const timeHour = new Date(hourly.time[i]).getHours();
+    const timeDay = hourly.time[i].slice(0, 10);
+    if (timeDay === todayStr && timeHour === currentHour) {
+      currentHourIndex = i;
+      break;
+    }
+  }
+
+  // Fallback: find first entry of today
+  if (currentHourIndex === -1) {
+    currentHourIndex = hourly.time.findIndex(t => t.startsWith(todayStr));
+  }
+
+  if (currentHourIndex === -1) return;
+
+  // Start from 0h of today, show 24 hours
+  const startIndex = hourly.time.findIndex(t => t.startsWith(todayStr));
+  const endIndex = startIndex + 24;
+
+  // Highlight next hour after current
+  const nextHourIndex = currentHourIndex + 1;
+
+  let html = `<div class="hourly-forecast-title">Dự báo 24 giờ hôm nay</div><div class="hourly-scroll">`;
+
+  for (let i = startIndex; i < endIndex && i < hourly.time.length; i++) {
+    const timeStr = hourly.time[i];
+    const hour = new Date(timeStr).getHours();
+    const hourLabel = hour.toString().padStart(2, "0") + ":00";
+    const temp = Math.round(hourly.temperature_2m[i]);
+    const icon = getWeatherIcon(hourly.weathercode[i]);
+    const humidity = hourly.relativehumidity_2m[i];
+    const rain = hourly.precipitation_probability[i] ?? 0;
+
+    // Highlight next hour
+    const isNextHour = i === nextHourIndex;
+    const itemClass = isNextHour ? "hourly-item next-hour" : "hourly-item";
+
+    html += `
+      <div class="${itemClass}">
+        <div class="hourly-time">${hourLabel}</div>
+        <div class="hourly-icon">${icon}</div>
+        <div class="hourly-temp">${temp}°</div>
+        <div class="hourly-extra">
+          <div>💧 ${humidity}%</div>
+          <div>🌧 ${rain}%</div>
+        </div>
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
+  container.style.display = "block";
+
+  // Scroll to next hour after render
+  requestAnimationFrame(() => {
+    const nextHourEl = container.querySelector(".hourly-item.next-hour");
+    if (nextHourEl) {
+      nextHourEl.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
+  });
+}
+
 function renderForecast(daily, hourly) {
   const forecastEl = document.getElementById("weatherForecast");
   forecastEl.innerHTML = "";
+  const today = new Date().toISOString().slice(0, 10);
 
   for (let i = 1; i < daily.time.length; i++) {
     const date = new Date(daily.time[i]);
-    const day = date.toLocaleDateString("vi-VN", {
-      weekday: "long",
-      day: "2-digit",
-      month: "2-digit",
-    });
+    
+    // Format day label: Ngày mai, Ngày kia, or weekday + date
+    let dayLabel;
+    if (i === 1) {
+      dayLabel = "Ngày mai";
+    } else if (i === 2) {
+      dayLabel = "Ngày kia";
+    } else {
+      dayLabel = date.toLocaleDateString("vi-VN", {
+        weekday: "long",
+        day: "2-digit",
+        month: "2-digit",
+      });
+    }
 
     const icon = getWeatherIcon(daily.weathercode[i]);
     const desc = weatherCodeToText(daily.weathercode[i]);
@@ -3416,7 +3502,7 @@ function renderForecast(daily, hourly) {
     forecastEl.innerHTML += `
       <div class="forecast-card">
         <div class="fc-header">
-          <div class="fc-day">${day}</div>
+          <div class="fc-day">${dayLabel}</div>
           <div class="fc-icon">${icon}</div>
         </div>
 
@@ -3441,12 +3527,14 @@ async function fetchWeatherByLocation() {
   if (!navigator.geolocation) {
     document.getElementById("todayWeather").innerText =
       "Thiết bị không hỗ trợ định vị";
+    document.getElementById("hourlyForecastContainer").style.display = "none";
     return;
   }
 
   if (!window.isSecureContext) {
     document.getElementById("todayWeather").innerText =
       "📍 Cần mở bằng HTTPS hoặc localhost để dùng định vị";
+    document.getElementById("hourlyForecastContainer").style.display = "none";
     return;
   }
 
@@ -5046,6 +5134,7 @@ function openTranslateModal() {
 function openTranslateHistoryModal() {
   const modal = document.getElementById("translateHistoryModal");
   modal.style.display = "flex";
+  updateTranslateHistoryBadge();
   renderTranslateHistoryModal();
 }
 
@@ -5053,9 +5142,19 @@ function closeTranslateHistoryModal() {
   document.getElementById("translateHistoryModal").style.display = "none";
 }
 
+function updateTranslateHistoryBadge() {
+  const badge = document.getElementById("translateHistoryBadge");
+  if (!badge) return;
+  const count = translateHistoryCache.length;
+  badge.textContent = count > 0 ? count : "";
+  badge.style.display = count > 0 ? "inline-flex" : "none";
+}
+
 function renderTranslateHistoryModal() {
   const container = document.getElementById("translateHistoryModalList");
   if (!container) return;
+
+  updateTranslateHistoryBadge();
 
   if (translateHistoryCache.length === 0) {
     container.innerHTML = '<div class="translate-history-empty">Chưa có lịch sử dịch</div>';
@@ -6053,6 +6152,7 @@ async function deleteTranslateHistoryItem(id) {
 
   try {
     await firebaseTranslateHistoryRef.child(id).remove();
+    updateTranslateHistoryBadge();
   } catch (err) {
     console.error("Lỗi xóa lịch sử dịch:", err);
     showToast("Lỗi khi xóa lịch sử dịch");
@@ -6083,6 +6183,7 @@ async function confirmDeleteAllTranslateHistory() {
       try {
         await firebaseTranslateHistoryRef.remove();
         showToast("Đã xóa tất cả lịch sử dịch");
+        updateTranslateHistoryBadge();
       } catch (err) {
         console.error("Lỗi xóa tất cả lịch sử dịch:", err);
         showToast("Lỗi khi xóa lịch sử dịch");
@@ -6157,5 +6258,22 @@ performTranslation = async function (text) {
 
   if (translatedText && translatedText.trim() && text && text.trim()) {
     saveTranslateToHistory(text.trim(), translatedText.trim(), fromLang, toLang);
+    updateTranslateHistoryBadge();
   }
 };
+
+// Auto-translate on Enter (Shift+Enter for newline)
+document.addEventListener("DOMContentLoaded", function () {
+  const translateInput = document.getElementById("translateInput");
+  if (translateInput) {
+    translateInput.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        const text = this.value.trim();
+        if (text) {
+          performTranslation(text);
+        }
+      }
+    });
+  }
+});

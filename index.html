@@ -91,8 +91,12 @@
       <div class="today-extra">
         <div id="quoteText" class="quote"></div>
         <div class="weather" id="todayWeather">
-          Lấy thông tin thời tiết...
+          <div class="weather-loading">
+            <span class="loading-spinner"></span>
+            <span>Đang tải thời tiết...</span>
+          </div>
         </div>
+        <div id="hourlyForecastContainer" style="display: none"></div>
         <div class="weather-forecast" id="weatherForecast"></div>
       </div>
     </div>
@@ -862,7 +866,7 @@
         </div>
         <div class="translate-textareas">
           <div class="translate-input-area">
-            <textarea id="translateInput" placeholder="Nhập văn bản cần dịch..."></textarea>
+            <textarea id="translateInput" placeholder="Nhập văn bản cần dịch... (Enter để dịch, Shift+Enter để xuống dòng)"></textarea>
             <button onclick="clearTranslateInput()" class="translate-clear-btn" aria-label="Xóa">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                 <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -920,6 +924,7 @@
             <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
           </svg>
           Xuất CSV
+          <span id="translateHistoryBadge" class="translate-history-badge"></span>
         </button>
         <button class="translate-history-modal-btn danger" onclick="confirmDeleteAllTranslateHistory()">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">

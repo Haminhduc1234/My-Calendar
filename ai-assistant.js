@@ -808,6 +808,15 @@ function closeAIKeyModal() {
   document.getElementById("aiKeyModal").style.display = "none";
 }
 
+function promptAIKeyPassword() {
+  const password = prompt("Nhập mật khẩu để truy cập cài đặt API Key:");
+  if (password === "123123") {
+    openAIKeyModal();
+  } else if (password !== null) {
+    alert("Mật khẩu không đúng!");
+  }
+}
+
 function toggleAIKeyVisibility() {
   const input = document.getElementById("aiApiKeyInput");
   const icon = document.getElementById("aiKeyEyeIcon");

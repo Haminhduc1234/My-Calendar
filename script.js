@@ -6699,6 +6699,207 @@ const VOCABULARY_DATA = {
     { word: "witness", phonetic: "/ˈwɪtnəs/", meaning: "Người làm chứng", example: "Sign as witness.", exampleVi: "Ký làm người làm chứng." },
     { word: "notary", phonetic: "/ˈnoʊtəri/", meaning: "Công chứng", example: "Get it notarized.", exampleVi: "Công chứng nó." },
     { word: "amendment", phonetic: "/əˈmendmənt/", meaning: "Sửa đổi", example: "Propose an amendment.", exampleVi: "Đề xuất sửa đổi." },
+  ],
+  // Daily communication vocabulary
+  restaurant: [
+    { word: "reservation", phonetic: "/ˌrezərˈveɪʃn/", meaning: "Đặt bàn", example: "I'd like to make a reservation.", exampleVi: "Tôi muốn đặt một bàn." },
+    { word: "menu", phonetic: "/ˈmenjuː/", meaning: "Thực đơn", example: "May I see the menu?", exampleVi: "Tôi có thể xem thực đơn không?" },
+    { word: "appetizer", phonetic: "/ˈæpɪtaɪzər/", meaning: "Món khai vị", example: "We'll start with an appetizer.", exampleVi: "Chúng tôi bắt đầu với món khai vị." },
+    { word: "entree", phonetic: "/ˈɒntreɪ/", meaning: "Món chính", example: "What's the entree today?", exampleVi: "Món chính hôm nay là gì?" },
+    { word: "dessert", phonetic: "/dɪˈzɜːrt/", meaning: "Tráng miệng", example: "Can I see the dessert menu?", exampleVi: "Tôi có thể xem thực đơn tráng miệng không?" },
+    { word: "bill", phonetic: "/bɪl/", meaning: "Hóa đơn", example: "Can I have the bill?", exampleVi: "Tôi có thể thanh toán được không?" },
+    { word: "tip", phonetic: "/tɪp/", meaning: "Tiền tip", example: "Leave a tip.", exampleVi: "Để lại tiền tip." },
+    { word: "delicious", phonetic: "/dɪˈlɪʃəs/", meaning: "Ngon", example: "This is delicious!", exampleVi: "Điều này rất ngon!" },
+    { word: "vegetarian", phonetic: "/ˌvedʒəˈteriən/", meaning: "Người ăn chay", example: "Is this vegetarian?", exampleVi: "Đây có phải là món chay không?" },
+    { word: "allergic", phonetic: "/əˈlɜːrdʒɪk/", meaning: "Dị ứng", example: "I'm allergic to peanuts.", exampleVi: "Tôi bị dị ứng với đậu phộng." },
+    { word: "to-go", phonetic: "/tə ˈɡoʊ/", meaning: "Mang đi", example: "Can I get this to-go?", exampleVi: "Tôi có thể mang đi không?" },
+    { word: "refill", phonetic: "/ˈriːfɪl/", meaning: "Thêm nước", example: "Can I get a refill?", exampleVi: "Tôi có thể xin thêm nước không?" },
+    { word: "split the bill", phonetic: "/splɪt ðə bɪl/", meaning: "Chia hóa đơn", example: "Let's split the bill.", exampleVi: "Chúng ta chia hóa đơn nhé." },
+    { word: "drinks", phonetic: "/drɪŋks/", meaning: "Đồ uống", example: "What would you like to drink?", exampleVi: "Bạn muốn uống gì?" },
+    { word: "water", phonetic: "/ˈwɔːtər/", meaning: "Nước", example: "A glass of water, please.", exampleVi: "Một ly nước." },
+    { word: "diet", phonetic: "/ˈdaɪət/", meaning: "Ăn kiêng", example: "I'm on a diet.", exampleVi: "Tôi đang ăn kiêng." },
+    { word: "spicy", phonetic: "/ˈspaɪsi/", meaning: "Cay", example: "Is this dish spicy?", exampleVi: "Món này có cay không?" },
+    { word: "recommend", phonetic: "/ˌrekəˈmend/", meaning: "Khuyên", example: "What do you recommend?", exampleVi: "Bạn khuyên món gì?" },
+  ],
+  shopping: [
+    { word: "discount", phonetic: "/ˈdɪskaʊnt/", meaning: "Giảm giá", example: "Is there a discount?", exampleVi: "Có giảm giá không?" },
+    { word: "price", phonetic: "/praɪs/", meaning: "Giá", example: "What's the price?", exampleVi: "Giá bao nhiêu?" },
+    { word: "sale", phonetic: "/seɪl/", meaning: "Khuyến mãi", example: "Everything is on sale.", exampleVi: "Mọi thứ đang khuyến mãi." },
+    { word: "size", phonetic: "/saɪz/", meaning: "Kích thước", example: "Do you have this in a larger size?", exampleVi: "Bạn có kích thước lớn hơn không?" },
+    { word: "color", phonetic: "/ˈkʌlər/", meaning: "Màu sắc", example: "What colors are available?", exampleVi: "Có những màu nào?" },
+    { word: "fit", phonetic: "/fɪt/", meaning: "Vừa vặn", example: "It doesn't fit.", exampleVi: "Nó không vừa." },
+    { word: "receipt", phonetic: "/rɪˈsiːt/", meaning: "Hóa đơn", example: "I need a receipt.", exampleVi: "Tôi cần hóa đơn." },
+    { word: "return", phonetic: "/rɪˈtɜːrn/", meaning: "Trả lại", example: "Can I return this?", exampleVi: "Tôi có thể trả lại không?" },
+    { word: "exchange", phonetic: "/ɪksˈtʃeɪndʒ/", meaning: "Đổi", example: "I'd like to exchange this.", exampleVi: "Tôi muốn đổi cái này." },
+    { word: "cash", phonetic: "/kæʃ/", meaning: "Tiền mặt", example: "Cash or card?", exampleVi: "Tiền mặt hay thẻ?" },
+    { word: "card", phonetic: "/kɑːrd/", meaning: "Thẻ", example: "Do you accept credit cards?", exampleVi: "Bạn có chấp nhận thẻ tín dụng không?" },
+    { word: "online", phonetic: "/ˈɒnlɪn/", meaning: "Trực tuyến", example: "Is it available online?", exampleVi: "Có bán trực tuyến không?" },
+    { word: "shipping", phonetic: "/ˈʃɪpɪŋ/", meaning: "Vận chuyển", example: "What's the shipping fee?", exampleVi: "Phí vận chuyển bao nhiêu?" },
+    { word: "out of stock", phonetic: "/aʊt əv stɒk/", meaning: "Hết hàng", example: "This item is out of stock.", exampleVi: "Món này đã hết hàng." },
+    { word: "in stock", phonetic: "/ɪn stɒk/", meaning: "Còn hàng", example: "When will it be in stock?", exampleVi: "Khi nào sẽ có hàng?" },
+    { word: "browse", phonetic: "/braʊz/", meaning: "Xem qua", example: "I'm just browsing.", exampleVi: "Tôi chỉ xem qua thôi." },
+    { word: "try on", phonetic: "/traɪ ɒn/", meaning: "Thử", example: "Can I try this on?", exampleVi: "Tôi có thể thử không?" },
+    { word: "checkout", phonetic: "/ˈtʃekaʊt/", meaning: "Thanh toán", example: "Proceed to checkout.", exampleVi: "Tiến hành thanh toán." },
+  ],
+  directions: [
+    { word: "where", phonetic: "/wer/", meaning: "Ở đâu", example: "Where is the restroom?", exampleVi: "Nhà vệ sinh ở đâu?" },
+    { word: "turn", phonetic: "/tɜːrn/", meaning: "Rẽ", example: "Turn left at the corner.", exampleVi: "Rẽ trái ở góc." },
+    { word: "straight", phonetic: "/streɪt/", meaning: "Thẳng", example: "Go straight ahead.", exampleVi: "Đi thẳng phía trước." },
+    { word: "near", phonetic: "/nɪr/", meaning: "Gần", example: "Is it near here?", exampleVi: "Có gần đây không?" },
+    { word: "far", phonetic: "/fɑːr/", meaning: "Xa", example: "How far is it?", exampleVi: "Có xa không?" },
+    { word: "next to", phonetic: "/nekst tuː/", meaning: "Cạnh", example: "It's next to the bank.", exampleVi: "Nó cạnh ngân hàng." },
+    { word: "between", phonetic: "/bɪˈtwiːn/", meaning: "Giữa", example: "It's between the stores.", exampleVi: "Nó ở giữa các cửa hàng." },
+    { word: "behind", phonetic: "/bɪˈhaɪnd/", meaning: "Sau", example: "It's behind the building.", exampleVi: "Nó ở sau tòa nhà." },
+    { word: "in front of", phonetic: "/ɪn frʌnt əv/", meaning: "Trước", example: "It's in front of the park.", exampleVi: "Nó ở trước công viên." },
+    { word: "map", phonetic: "/mæp/", meaning: "Bản đồ", example: "Can I see a map?", exampleVi: "Tôi có thể xem bản đồ không?" },
+    { word: "address", phonetic: "/əˈdres/", meaning: "Địa chỉ", example: "What's the address?", exampleVi: "Địa chỉ là gì?" },
+    { word: "landmark", phonetic: "/ˈlændmɑːrk/", meaning: "Mốc địa điểm", example: "Meet me at the landmark.", exampleVi: "Gặp tôi ở mốc địa điểm." },
+    { word: "block", phonetic: "/blɒk/", meaning: "Dãy nhà", example: "It's two blocks away.", exampleVi: "Cách đây hai dãy nhà." },
+    { word: "traffic", phonetic: "/ˈtræfɪk/", meaning: "Giao thông", example: "There's heavy traffic.", exampleVi: "Giao thông đông đúc." },
+    { word: "downtown", phonetic: "/ˈdaʊntaʊn/", meaning: "Trung tâm thành phố", example: "Go downtown.", exampleVi: "Đi vào trung tâm thành phố." },
+    { word: "subway", phonetic: "/ˈsʌbweɪ/", meaning: "Tàu điện ngầm", example: "Take the subway.", exampleVi: "Đi tàu điện ngầm." },
+    { word: "bus", phonetic: "/bʌs/", meaning: "Xe buýt", example: "Which bus should I take?", exampleVi: "Tôi nên đi xe buýt nào?" },
+    { word: "taxi", phonetic: "/ˈtæksi/", meaning: "Taxi", example: "Call a taxi.", exampleVi: "Gọi một chiếc taxi." },
+  ],
+  health: [
+    { word: "headache", phonetic: "/ˈhedeɪk/", meaning: "Đau đầu", example: "I have a headache.", exampleVi: "Tôi bị đau đầu." },
+    { word: "stomachache", phonetic: "/ˈstʌməkeɪk/", meaning: "Đau bụng", example: "I have a stomachache.", exampleVi: "Tôi bị đau bụng." },
+    { word: "fever", phonetic: "/ˈfiːvər/", meaning: "Sốt", example: "I have a fever.", exampleVi: "Tôi bị sốt." },
+    { word: "cold", phonetic: "/koʊld/", meaning: "Cảm lạnh", example: "I caught a cold.", exampleVi: "Tôi bị cảm lạnh." },
+    { word: "flu", phonetic: "/fluː/", meaning: "Cúm", example: "I have the flu.", exampleVi: "Tôi bị cúm." },
+    { word: "doctor", phonetic: "/ˈdɒktər/", meaning: "Bác sĩ", example: "See a doctor.", exampleVi: "Đi khám bác sĩ." },
+    { word: "medicine", phonetic: "/ˈmedɪsn/", meaning: "Thuốc", example: "Take this medicine.", exampleVi: "Uống thuốc này." },
+    { word: "appointment", phonetic: "/əˈpɔɪntmənt/", meaning: "Lịch hẹn", example: "Make an appointment.", exampleVi: "Đặt lịch hẹn." },
+    { word: "allergy", phonetic: "/ˈælərdʒi/", meaning: "Dị ứng", example: "I have an allergy.", exampleVi: "Tôi bị dị ứng." },
+    { word: "pain", phonetic: "/peɪn/", meaning: "Đau", example: "Where does it hurt?", exampleVi: "Chỗ nào đau?" },
+    { word: "rest", phonetic: "/rest/", meaning: "Nghỉ ngơi", example: "You need to rest.", exampleVi: "Bạn cần nghỉ ngơi." },
+    { word: "hospital", phonetic: "/ˈhɒspɪtl/", meaning: "Bệnh viện", example: "Go to the hospital.", exampleVi: "Đi bệnh viện." },
+    { word: "pharmacy", phonetic: "/ˈfɑːrməsi/", meaning: "Hiệu thuốc", example: "Find a pharmacy.", exampleVi: "Tìm một hiệu thuốc." },
+    { word: "symptom", phonetic: "/ˈsɪmptəm/", meaning: "Triệu chứng", example: "What are your symptoms?", exampleVi: "Bạn có triệu chứng gì?" },
+    { word: "prescription", phonetic: "/prɪˈskrɪpʃn/", meaning: "Đơn thuốc", example: "I need a prescription.", exampleVi: "Tôi cần đơn thuốc." },
+    { word: "health insurance", phonetic: "/helθ ɪnˈʃʊərəns/", meaning: "Bảo hiểm y tế", example: "Do you have health insurance?", exampleVi: "Bạn có bảo hiểm y tế không?" },
+    { word: "checkup", phonetic: "/ˈtʃekʌp/", meaning: "Khám sức khỏe", example: "I need a checkup.", exampleVi: "Tôi cần khám sức khỏe." },
+    { word: "better", phonetic: "/ˈbetər/", meaning: "Tốt hơn", example: "I'm feeling better.", exampleVi: "Tôi cảm thấy tốt hơn." },
+  ],
+  hotel: [
+    { word: "check-in", phonetic: "/ˈtʃek ɪn/", meaning: "Nhận phòng", example: "I'd like to check in.", exampleVi: "Tôi muốn nhận phòng." },
+    { word: "check-out", phonetic: "/ˈtʃek aʊt/", meaning: "Trả phòng", example: "When is checkout?", exampleVi: "Khi nào trả phòng?" },
+    { word: "room", phonetic: "/ruːm/", meaning: "Phòng", example: "I booked a room.", exampleVi: "Tôi đã đặt phòng." },
+    { word: "key", phonetic: "/kiː/", meaning: "Chìa khóa", example: "I lost my key.", exampleVi: "Tôi làm mất chìa khóa." },
+    { word: "wifi", phonetic: "/ˈwaɪfaɪ/", meaning: "Wifi", example: "What's the wifi password?", exampleVi: "Mật khẩu wifi là gì?" },
+    { word: "breakfast", phonetic: "/ˈbrekfəst/", meaning: "Bữa sáng", example: "Is breakfast included?", exampleVi: "Bữa sáng đã bao gồm chưa?" },
+    { word: "air conditioning", phonetic: "/er kənˈdɪʃənɪŋ/", meaning: "Điều hòa", example: "The AC is not working.", exampleVi: "Điều hòa không hoạt động." },
+    { word: "elevator", phonetic: "/ˈelɪveɪtər/", meaning: "Thang máy", example: "Where is the elevator?", exampleVi: "Thang máy ở đâu?" },
+    { word: "floor", phonetic: "/flɔːr/", meaning: "Tầng", example: "What floor is it on?", exampleVi: "Ở tầng nào?" },
+    { word: "single room", phonetic: "/ˈsɪŋɡl ruːm/", meaning: "Phòng đơn", example: "I need a single room.", exampleVi: "Tôi cần phòng đơn." },
+    { word: "double room", phonetic: "/ˈdʌbl ruːm/", meaning: "Phòng đôi", example: "A double room, please.", exampleVi: "Một phòng đôi." },
+    { word: "suite", phonetic: "/swiːt/", meaning: "Phòng suite", example: "Upgrade to a suite.", exampleVi: "Nâng cấp lên phòng suite." },
+    { word: "clean", phonetic: "/kliːn/", meaning: "Sạch", example: "The room is not clean.", exampleVi: "Phòng không sạch." },
+    { word: "towel", phonetic: "/ˈtaʊəl/", meaning: "Khăn", example: "I need more towels.", exampleVi: "Tôi cần thêm khăn." },
+    { word: "laundry", phonetic: "/ˈlɔːndri/", meaning: "Giặt ủi", example: "Is there laundry service?", exampleVi: "Có dịch vụ giặt ủi không?" },
+    { word: "pool", phonetic: "/puːl/", meaning: "Hồ bơi", example: "Where is the pool?", exampleVi: "Hồ bơi ở đâu?" },
+    { word: "gym", phonetic: "/dʒɪm/", meaning: "Phòng gym", example: "Does the hotel have a gym?", exampleVi: "Khách sạn có phòng gym không?" },
+    { word: "bellboy", phonetic: "/ˈbelbɔɪ/", meaning: "Người khuân vác", example: "Call the bellboy.", exampleVi: "Gọi người khuân vác." },
+  ],
+  weather: [
+    { word: "sunny", phonetic: "/ˈsʌni/", meaning: "Nắng", example: "It's sunny today.", exampleVi: "Hôm nay trời nắng." },
+    { word: "rainy", phonetic: "/ˈreɪni/", meaning: "Mưa", example: "It's rainy.", exampleVi: "Trời mưa." },
+    { word: "cloudy", phonetic: "/ˈklaʊdi/", meaning: "Âm u", example: "It's cloudy today.", exampleVi: "Hôm nay âm u." },
+    { word: "windy", phonetic: "/ˈwɪndi/", meaning: "Gió", example: "It's windy.", exampleVi: "Trời có gió." },
+    { word: "cold", phonetic: "/koʊld/", meaning: "Lạnh", example: "It's cold outside.", exampleVi: "Bên ngoài lạnh." },
+    { word: "hot", phonetic: "/hɒt/", meaning: "Nóng", example: "It's very hot.", exampleVi: "Rất nóng." },
+    { word: "warm", phonetic: "/wɔːrm/", meaning: "Ấm", example: "It's warm today.", exampleVi: "Hôm nay ấm áp." },
+    { word: "cool", phonetic: "/kuːl/", meaning: "Mát", example: "It's cool in the evening.", exampleVi: "Buổi tối mát mẻ." },
+    { word: "snow", phonetic: "/snoʊ/", meaning: "Tuyết", example: "It's going to snow.", exampleVi: "Sẽ có tuyết." },
+    { word: "storm", phonetic: "/stɔːrm/", meaning: "Bão", example: "There's a storm coming.", exampleVi: "Có bão sắp đến." },
+    { word: "foggy", phonetic: "/ˈfɒɡi/", meaning: "Sương mù", example: "It's foggy this morning.", exampleVi: "Sáng nay có sương mù." },
+    { word: "humid", phonetic: "/ˈhjuːmɪd/", meaning: "Ẩm ướt", example: "It's humid here.", exampleVi: "Ở đây ẩm ướt." },
+    { word: "forecast", phonetic: "/ˈfɔːrkæst/", meaning: "Dự báo thời tiết", example: "Check the weather forecast.", exampleVi: "Xem dự báo thời tiết." },
+    { word: "temperature", phonetic: "/ˈtemprətʃər/", meaning: "Nhiệt độ", example: "What's the temperature?", exampleVi: "Nhiệt độ là bao nhiêu?" },
+    { word: "umbrella", phonetic: "/ʌmˈbrelə/", meaning: "Ô", example: "Bring an umbrella.", exampleVi: "Mang theo ô." },
+    { word: "jacket", phonetic: "/ˈdʒækɪt/", meaning: "Áo khoác", example: "You need a jacket.", exampleVi: "Bạn cần áo khoác." },
+    { word: "weather", phonetic: "/ˈweðər/", meaning: "Thời tiết", example: "What's the weather like?", exampleVi: "Thời tiết như thế nào?" },
+    { word: "season", phonetic: "/ˈsiːzn/", meaning: "Mùa", example: "What's the season?", exampleVi: "Bây giờ là mùa gì?" },
+  ],
+  time: [
+    { word: "today", phonetic: "/təˈdeɪ/", meaning: "Hôm nay", example: "What are you doing today?", exampleVi: "Hôm nay bạn làm gì?" },
+    { word: "tomorrow", phonetic: "/təˈmɒroʊ/", meaning: "Ngày mai", example: "See you tomorrow.", exampleVi: "Hẹn gặp ngày mai." },
+    { word: "yesterday", phonetic: "/ˈjestərdeɪ/", meaning: "Hôm qua", example: "I saw him yesterday.", exampleVi: "Tôi gặp anh ấy hôm qua." },
+    { word: "week", phonetic: "/wiːk/", meaning: "Tuần", example: "This week is busy.", exampleVi: "Tuần này bận." },
+    { word: "month", phonetic: "/mʌnθ/", meaning: "Tháng", example: "It's my birthday month.", exampleVi: "Đây là tháng sinh nhật tôi." },
+    { word: "year", phonetic: "/jɪr/", meaning: "Năm", example: "Happy New Year!", exampleVi: "Chúc mừng năm mới!" },
+    { word: "morning", phonetic: "/ˈmɔːrnɪŋ/", meaning: "Buổi sáng", example: "Good morning!", exampleVi: "Chào buổi sáng!" },
+    { word: "afternoon", phonetic: "/ˌæftərˈnuːn/", meaning: "Buổi chiều", example: "Good afternoon!", exampleVi: "Chào buổi chiều!" },
+    { word: "evening", phonetic: "/ˈiːvnɪŋ/", meaning: "Buổi tối", example: "Good evening!", exampleVi: "Chào buổi tối!" },
+    { word: "night", phonetic: "/naɪt/", meaning: "Đêm", example: "Good night!", exampleVi: "Chúc ngủ ngon!" },
+    { word: "hour", phonetic: "/ˈaʊər/", meaning: "Giờ", example: "It's been an hour.", exampleVi: "Đã một giờ rồi." },
+    { word: "minute", phonetic: "/ˈmɪnɪt/", meaning: "Phút", example: "Just a minute.", exampleVi: "Chỉ một chút." },
+    { word: "second", phonetic: "/ˈsekənd/", meaning: "Giây", example: "Wait a second.", exampleVi: "Đợi một giây." },
+    { word: "early", phonetic: "/ˈɜːrli/", meaning: "Sớm", example: "I'm early.", exampleVi: "Tôi đến sớm." },
+    { word: "late", phonetic: "/leɪt/", meaning: "Muộn", example: "I'm sorry I'm late.", exampleVi: "Xin lỗi tôi đến muộn." },
+    { word: "on time", phonetic: "/ɒn taɪm/", meaning: "Đúng giờ", example: "Be there on time.", exampleVi: "Hãy đến đúng giờ." },
+    { word: "schedule", phonetic: "/ˈskedʒuːl/", meaning: "Lịch trình", example: "What's your schedule?", exampleVi: "Lịch trình của bạn như thế nào?" },
+    { word: "appointment", phonetic: "/əˈpɔɪntmənt/", meaning: "Cuộc hẹn", example: "I have an appointment.", exampleVi: "Tôi có một cuộc hẹn." },
+  ],
+  numbers: [
+    { word: "one", phonetic: "/wʌn/", meaning: "Một", example: "One, two, three...", exampleVi: "Một, hai, ba..." },
+    { word: "two", phonetic: "/tuː/", meaning: "Hai", example: "Two please.", exampleVi: "Hai cái." },
+    { word: "three", phonetic: "/θriː/", meaning: "Ba", example: "Three is enough.", exampleVi: "Ba là đủ." },
+    { word: "five", phonetic: "/faɪv/", meaning: "Năm", example: "Give me five.", exampleVi: "Đếm đến năm." },
+    { word: "ten", phonetic: "/ten/", meaning: "Mười", example: "Count to ten.", exampleVi: "Đếm đến mười." },
+    { word: "twenty", phonetic: "/ˈtwenti/", meaning: "Hai mươi", example: "I'm twenty years old.", exampleVi: "Tôi hai mươi tuổi." },
+    { word: "hundred", phonetic: "/ˈhʌndrəd/", meaning: "Trăm", example: "One hundred dollars.", exampleVi: "Một trăm đô la." },
+    { word: "thousand", phonetic: "/ˈθaʊzənd/", meaning: "Nghìn", example: "A thousand times.", exampleVi: "Một nghìn lần." },
+    { word: "million", phonetic: "/ˈmɪljən/", meaning: "Triệu", example: "One million.", exampleVi: "Một triệu." },
+    { word: "first", phonetic: "/fɜːrst/", meaning: "Đầu tiên", example: "You're first.", exampleVi: "Bạn là người đầu tiên." },
+    { word: "second", phonetic: "/ˈsekənd/", meaning: "Thứ hai", example: "I'm second.", exampleVi: "Tôi là người thứ hai." },
+    { word: "last", phonetic: "/læst/", meaning: "Cuối cùng", example: "This is the last one.", exampleVi: "Đây là cái cuối cùng." },
+    { word: "next", phonetic: "/nekst/", meaning: "Tiếp theo", example: "What's next?", exampleVi: "Tiếp theo là gì?" },
+    { word: "half", phonetic: "/hæf/", meaning: "Nửa", example: "Half of it.", exampleVi: "Nửa của nó." },
+    { word: "double", phonetic: "/ˈdʌbl/", meaning: "Gấp đôi", example: "I want a double.", exampleVi: "Tôi muốn gấp đôi." },
+    { word: "pair", phonetic: "/per/", meaning: "Đôi", example: "A pair of shoes.", exampleVi: "Một đôi giày." },
+    { word: "dozen", phonetic: "/ˈdʌzn/", meaning: "Tá", example: "A dozen eggs.", exampleVi: "Một tá trứng." },
+    { word: "percent", phonetic: "/pərˈsent/", meaning: "Phần trăm", example: "Ten percent off.", exampleVi: "Giảm mười phần trăm." },
+  ],
+  feelings: [
+    { word: "happy", phonetic: "/ˈhæpi/", meaning: "Vui vẻ", example: "I'm happy.", exampleVi: "Tôi vui vẻ." },
+    { word: "sad", phonetic: "/sæd/", meaning: "Buồn", example: "Don't be sad.", exampleVi: "Đừng buồn." },
+    { word: "angry", phonetic: "/ˈæŋɡri/", meaning: "Tức giận", example: "I'm angry.", exampleVi: "Tôi đang tức giận." },
+    { word: "excited", phonetic: "/ɪkˈsaɪtɪd/", meaning: "Hào hứng", example: "I'm excited!", exampleVi: "Tôi rất hào hứng!" },
+    { word: "tired", phonetic: "/ˈtaɪərd/", meaning: "Mệt mỏi", example: "I'm so tired.", exampleVi: "Tôi mệt quá." },
+    { word: "stressed", phonetic: "/strest/", meaning: "Căng thẳng", example: "I'm stressed.", exampleVi: "Tôi đang căng thẳng." },
+    { word: "worried", phonetic: "/ˈwʌrid/", meaning: "Lo lắng", example: "Don't worry.", exampleVi: "Đừng lo lắng." },
+    { word: "confused", phonetic: "/kənˈfjuːzd/", meaning: "Bối rối", example: "I'm confused.", exampleVi: "Tôi bối rối." },
+    { word: "surprised", phonetic: "/sərˈpraɪzd/", meaning: "Ngạc nhiên", example: "I'm surprised!", exampleVi: "Tôi ngạc nhiên!" },
+    { word: "proud", phonetic: "/praʊd/", meaning: "Tự hào", example: "I'm proud of you.", exampleVi: "Tôi tự hào về bạn." },
+    { word: "nervous", phonetic: "/ˈnɜːrvəs/", meaning: "Hồi hộp", example: "I'm nervous.", exampleVi: "Tôi hồi hộp." },
+    { word: "bored", phonetic: "/bɔːrd/", meaning: "Chán", example: "I'm bored.", exampleVi: "Tôi chán." },
+    { word: "grateful", phonetic: "/ˈɡreɪtfl/", meaning: "Biết ơn", example: "I'm grateful.", exampleVi: "Tôi biết ơn." },
+    { word: "relaxed", phonetic: "/rɪˈlækst/", meaning: "Thư giãn", example: "I feel relaxed.", exampleVi: "Tôi cảm thấy thư giãn." },
+    { word: "hopeful", phonetic: "/ˈhoʊpfl/", meaning: "Hy vọng", example: "I'm hopeful.", exampleVi: "Tôi hy vọng." },
+    { word: "disappointed", phonetic: "/ˌdɪsəˈpɔɪntɪd/", meaning: "Thất vọng", example: "I'm disappointed.", exampleVi: "Tôi thất vọng." },
+    { word: "jealous", phonetic: "/ˈdʒeləs/", meaning: "Ghen tị", example: "Don't be jealous.", exampleVi: "Đừng ghen tị." },
+    { word: "lonely", phonetic: "/ˈloʊnli/", meaning: "Cô đơn", example: "I feel lonely.", exampleVi: "Tôi cảm thấy cô đơn." },
+  ],
+  family: [
+    { word: "mother", phonetic: "/ˈmʌðər/", meaning: "Mẹ", example: "My mother is kind.", exampleVi: "Mẹ tôi dịu dàng." },
+    { word: "father", phonetic: "/ˈfɑːðər/", meaning: "Cha", example: "My father works hard.", exampleVi: "Cha tôi làm việc chăm chỉ." },
+    { word: "brother", phonetic: "/ˈbrʌðər/", meaning: "Anh em trai", example: "My brother is tall.", exampleVi: "Anh tôi cao." },
+    { word: "sister", phonetic: "/ˈsɪstər/", meaning: "Chị em gái", example: "My sister is smart.", exampleVi: "Chị tôi thông minh." },
+    { word: "parents", phonetic: "/ˈperənts/", meaning: "Bố mẹ", example: "My parents are home.", exampleVi: "Bố mẹ tôi ở nhà." },
+    { word: "children", phonetic: "/ˈtʃɪldrən/", meaning: "Con cái", example: "We have three children.", exampleVi: "Chúng tôi có ba con." },
+    { word: "son", phonetic: "/sʌn/", meaning: "Con trai", example: "My son is cute.", exampleVi: "Con trai tôi dễ thương." },
+    { word: "daughter", phonetic: "/ˈdɔːtər/", meaning: "Con gái", example: "My daughter is smart.", exampleVi: "Con gái tôi thông minh." },
+    { word: "grandparents", phonetic: "/ˈɡrænperənts/", meaning: "Ông bà", example: "I visit my grandparents.", exampleVi: "Tôi thăm ông bà." },
+    { word: "uncle", phonetic: "/ˈʌŋkl/", meaning: "Chú, bác", example: "My uncle is funny.", exampleVi: "Chú tôi vui vẻ." },
+    { word: "aunt", phonetic: "/ænt/", meaning: "Cô, dì", example: "My aunt is here.", exampleVi: "Cô tôi ở đây." },
+    { word: "cousin", phonetic: "/ˈkʌzn/", meaning: "Anh chị em họ", example: "My cousin is my age.", exampleVi: "Anh họ tôi cùng tuổi." },
+    { word: "married", phonetic: "/ˈmærid/", meaning: "Đã kết hôn", example: "Are you married?", exampleVi: "Bạn đã kết hôn chưa?" },
+    { word: "single", phonetic: "/ˈsɪŋɡl/", meaning: "Độc thân", example: "I'm single.", exampleVi: "Tôi độc thân." },
+    { word: "divorced", phonetic: "/dɪˈvɔːrst/", meaning: "Ly dị", example: "They are divorced.", exampleVi: "Họ đã ly dị." },
+    { word: "widowed", phonetic: "/ˈwɪdoʊd/", meaning: "Góa phụ", example: "She is widowed.", exampleVi: "Bà ấy góa phụ." },
+    { word: "family", phonetic: "/ˈfæməli/", meaning: "Gia đình", example: "Family is important.", exampleVi: "Gia đình quan trọng." },
+    { word: "relatives", phonetic: "/ˈrelətɪvz/", meaning: "Họ hàng", example: "Visit relatives.", exampleVi: "Thăm họ hàng." },
   ]
 };
 
@@ -6925,102 +7126,245 @@ const GRAMMAR_DATA = {
 // Phrases data for business communication
 const PHRASES_DATA = {
   greeting: [
-    { phrase: "I hope this email finds you well.", situation: "Mở đầu email", meaning: "Hy vọng bạn khỏe mạnh." },
-    { phrase: "Thank you for taking the time to meet with me.", situation: "Sau cuộc họp", meaning: "Cảm ơn bạn đã dành thời gian gặp tôi." },
-    { phrase: "I look forward to hearing from you.", situation: "Kết thúc email", meaning: "Tôi mong sớm nhận được phản hồi." },
-    { phrase: "It's a pleasure to work with you.", situation: "Khen ngợi", meaning: "Rất vui được làm việc với bạn." },
-    { phrase: "Hope you're having a great week!", situation: "Chào hỏi thân mật", meaning: "Chúc bạn một tuần tuyệt vời!" },
-    { phrase: "Just wanted to check in with you.", situation: "Liên lạc lại", meaning: "Tôi chỉ muốn kiểm tra tình hình với bạn." },
-    { phrase: "Thank you for your prompt response.", situation: "Cảm ơn phản hồi nhanh", meaning: "Cảm ơn bạn đã phản hồi nhanh chóng." },
-    { phrase: "I appreciate your patience and understanding.", situation: "Cảm ơn kiên nhẫn", meaning: "Tôi trân trọng sự kiên nhẫn và thấu hiểu của bạn." },
+    // Short phrases
+    { phrase: "Hi there!", situation: "Chào hỏi", meaning: "Này!" },
+    { phrase: "Hey!", situation: "Chào", meaning: "Này!" },
+    { phrase: "Good morning!", situation: "Chào buổi sáng", meaning: "Chào buổi sáng!" },
+    { phrase: "Good afternoon!", situation: "Chào buổi chiều", meaning: "Chào buổi chiều!" },
+    { phrase: "Good evening!", situation: "Chào buổi tối", meaning: "Chào buổi tối!" },
+    { phrase: "How's it going?", situation: "Dạo này sao?", meaning: "Dạo này thế nào?" },
+    { phrase: "How are you?", situation: "Bạn khỏe không?", meaning: "Bạn khỏe không?" },
+    { phrase: "What's up?", situation: "Có gì mới?", meaning: "Có gì mới không?" },
+    { phrase: "Nice to see you!", situation: "Rất vui gặp bạn!", meaning: "Rất vui gặp bạn!" },
+    { phrase: "Long time no see!", situation: "Lâu rồi không gặp", meaning: "Lâu rồi không gặp!" },
+    { phrase: "Hope you're doing well.", situation: "Hy vọng bạn ổn", meaning: "Hy vọng bạn vẫn ổn." },
+    { phrase: "Hope this finds you well.", situation: "Email mở đầu", meaning: "Hy vọng bạn khỏe mạnh." },
+    { phrase: "Thank you for your time.", situation: "Cảm ơn đã dành thời gian", meaning: "Cảm ơn bạn đã dành thời gian." },
+    { phrase: "Thanks for meeting.", situation: "Cảm ơn đã gặp", meaning: "Cảm ơn đã gặp mặt." },
+    { phrase: "Hope you had a great weekend!", situation: "Chúc cuối tuần vui", meaning: "Chúc bạn cuối tuần vui vẻ!" },
+    { phrase: "Welcome back!", situation: "Chào mừng quay lại", meaning: "Chào mừng quay lại!" },
+  ],
+  goodbye: [
+    { phrase: "See you!", situation: "Tạm biệt", meaning: "Hẹn gặp lại!" },
+    { phrase: "See you later!", situation: "Hẹn gặp sau", meaning: "Hẹn gặp sau nhé!" },
+    { phrase: "Talk to you soon.", situation: "Sớm nói chuyện", meaning: "Sớm nói chuyện với bạn." },
+    { phrase: "Have a good one!", situation: "Chúc tốt lành", meaning: "Chúc tốt lành!" },
+    { phrase: "Take care!", situation: "Giữ gìn sức khỏe", meaning: "Giữ gìn sức khỏe nhé!" },
+    { phrase: "Bye for now!", situation: "Tạm biệt", meaning: "Tạm biệt nhé!" },
+    { phrase: "Keep in touch!", situation: "Giữ liên lạc", meaning: "Giữ liên lạc nhé!" },
+    { phrase: "It was great talking to you.", situation: "Rất vui được nói chuyện", meaning: "Rất vui được nói chuyện với bạn." },
+    { phrase: "Looking forward to hearing from you.", situation: "Mong phản hồi", meaning: "Mong sớm nhận được phản hồi." },
+    { phrase: "Best regards.", situation: "Trân trọng", meaning: "Trân trọng." },
+    { phrase: "Kind regards.", situation: "Kính trọng", meaning: "Kính trọng." },
+    { phrase: "Warm regards.", situation: "Chào thân mật", meaning: "Chào thân mật." },
+    { phrase: "All the best!", situation: "Mọi điều tốt đẹp", meaning: "Mọi điều tốt đẹp!" },
+  ],
+  thanks: [
+    { phrase: "Thanks!", situation: "Cảm ơn", meaning: "Cảm ơn!" },
+    { phrase: "Thank you!", situation: "Cảm ơn bạn", meaning: "Cảm ơn bạn!" },
+    { phrase: "Thanks a lot!", situation: "Cảm ơn nhiều", meaning: "Cảm ơn nhiều!" },
+    { phrase: "Thank you so much!", situation: "Cảm ơn rất nhiều", meaning: "Cảm ơn bạn rất nhiều!" },
+    { phrase: "I appreciate it.", situation: "Tôi trân trọng", meaning: "Tôi rất trân trọng điều này." },
+    { phrase: "Much appreciated!", situation: "Rất biết ơn", meaning: "Rất biết ơn!" },
+    { phrase: "Thanks for your help.", situation: "Cảm ơn đã giúp", meaning: "Cảm ơn đã giúp đỡ." },
+    { phrase: "Thanks for getting back to me.", situation: "Cảm ơn đã phản hồi", meaning: "Cảm ơn đã phản hồi." },
+    { phrase: "I really appreciate your help.", situation: "Rất biết ơn sự giúp đỡ", meaning: "Tôi rất biết ơn sự giúp đỡ của bạn." },
+    { phrase: "Thanks for the update.", situation: "Cảm ơn đã cập nhật", meaning: "Cảm ơn đã cập nhật." },
+    { phrase: "Thank you for your patience.", situation: "Cảm ơn đã kiên nhẫn", meaning: "Cảm ơn đã kiên nhẫn." },
+    { phrase: "Thanks for understanding.", situation: "Cảm ơn đã thấu hiểu", meaning: "Cảm ơn đã thấu hiểu." },
   ],
   request: [
-    { phrase: "I was wondering if you could help me with...", situation: "Yêu cầu lịch sự", meaning: "Tôi đang tự hỏi liệu bạn có thể giúp tôi..." },
-    { phrase: "Would it be possible to schedule a call?", situation: "Yêu cầu họp", meaning: "Liệu có thể sắp xếp một cuộc gọi không?" },
-    { phrase: "I would appreciate it if you could send me...", situation: "Yêu cầu tài liệu", meaning: "Tôi sẽ rất biết ơn nếu bạn gửi cho tôi..." },
-    { phrase: "Could you please clarify...?", situation: "Yêu cầu giải thích", meaning: "Bạn có thể làm rõ... không?" },
-    { phrase: "I was hoping we could reschedule our meeting.", situation: "Yêu cầu đổi lịch", meaning: "Tôi hy vọng chúng ta có thể đổi lịch họp." },
-    { phrase: "Would you mind reviewing this document?", situation: "Yêu cầu xem xét", meaning: "Bạn có phiền xem xét tài liệu này không?" },
-    { phrase: "Could I get your approval on this matter?", situation: "Yêu cầu phê duyệt", meaning: "Tôi có thể nhận được sự phê duyệt của bạn về việc này không?" },
-    { phrase: "Is there any chance we could extend the deadline?", situation: "Yêu cầu gia hạn", meaning: "Có cơ hội nào chúng tôi có thể gia hạn thời hạn không?" },
-  ],
-  opinion: [
-    { phrase: "In my opinion, we should consider...", situation: "Đưa ra ý kiến", meaning: "Theo quan điểm của tôi, chúng ta nên xem xét..." },
-    { phrase: "From my perspective, the best approach would be...", situation: "Góc nhìn cá nhân", meaning: "Từ góc nhìn của tôi, cách tiếp cận tốt nhất là..." },
-    { phrase: "I'd like to share my thoughts on this.", situation: "Chia sẻ suy nghĩ", meaning: "Tôi muốn chia sẻ suy nghĩ của mình về điều này." },
-    { phrase: "What are your thoughts on this proposal?", situation: "Hỏi ý kiến", meaning: "Bạn nghĩ gì về đề xuất này?" },
-    { phrase: "I feel strongly that we need to...", situation: "Bày tỏ quan điểm mạnh", meaning: "Tôi cảm thấy mạnh mẽ rằng chúng ta cần phải..." },
-    { phrase: "If I may offer a suggestion...", situation: "Đề xuất ý kiến", meaning: "Nếu tôi có thể đưa ra một gợi ý..." },
-    { phrase: "Based on my experience, I would recommend...", situation: "Khuyến nghị", meaning: "Dựa trên kinh nghiệm của tôi, tôi sẽ khuyên..." },
-    { phrase: "I have some concerns about this approach.", situation: "Bày tỏ lo ngại", meaning: "Tôi có một số lo ngại về cách tiếp cận này." },
+    { phrase: "Can you help me?", situation: "Bạn giúp được không?", meaning: "Bạn có thể giúp tôi không?" },
+    { phrase: "Could you...?", situation: "Bạn có thể...?", meaning: "Bạn có thể...?" },
+    { phrase: "Would you mind...?", situation: "Bạn có phiền...?", meaning: "Bạn có phiền...?" },
+    { phrase: "Can I ask a favor?", situation: "Nhờ giúp một việc", meaning: "Tôi có thể nhờ giúp một việc không?" },
+    { phrase: "I need your help.", situation: "Tôi cần giúp đỡ", meaning: "Tôi cần bạn giúp đỡ." },
+    { phrase: "Please send me...", situation: "Gửi cho tôi...", meaning: "Vui lòng gửi cho tôi..." },
+    { phrase: "Could you check this?", situation: "Kiểm tra giúp", meaning: "Bạn có thể kiểm tra điều này không?" },
+    { phrase: "Can we schedule a call?", situation: "Sắp xếp cuộc gọi", meaning: "Chúng ta có thể sắp xếp một cuộc gọi không?" },
+    { phrase: "I was wondering if...", situation: "Tôi đang tự hỏi liệu...", meaning: "Tôi đang tự hỏi liệu..." },
+    { phrase: "Is it possible to...?", situation: "Có thể...?", meaning: "Có thể...?" },
+    { phrase: "Would it be okay if...?", situation: "Có ổn không nếu...?", meaning: "Có ổn không nếu...?" },
+    { phrase: "I'd like to request...", situation: "Tôi muốn yêu cầu...", meaning: "Tôi muốn yêu cầu..." },
   ],
   agreement: [
-    { phrase: "I completely agree with your point.", situation: "Đồng ý hoàn toàn", meaning: "Tôi hoàn toàn đồng ý với ý kiến của bạn." },
-    { phrase: "That's a great idea. Let's proceed.", situation: "Đồng ý hành động", meaning: "Đó là một ý hay. Hãy tiến hành." },
-    { phrase: "I see your point and I agree.", situation: "Công nhận ý kiến", meaning: "Tôi hiểu ý bạn và tôi đồng ý." },
-    { phrase: "We are on the same page.", situation: "Cùng quan điểm", meaning: "Chúng ta cùng chung quan điểm." },
-    { phrase: "I think that's a sensible approach.", situation: "Đồng ý hợp lý", meaning: "Tôi nghĩ đó là một cách tiếp cận hợp lý." },
-    { phrase: "You're absolutely right about that.", situation: "Hoàn toàn đồng ý", meaning: "Bạn hoàn toàn đúng về điều đó." },
-    { phrase: "I couldn't agree with you more.", situation: "Đồng ý tuyệt đối", meaning: "Tôi không thể đồng ý với bạn hơn được nữa." },
-    { phrase: "That's exactly what I was thinking.", situation: "Cùng suy nghĩ", meaning: "Đó chính xác là những gì tôi đang nghĩ." },
+    { phrase: "Sure!", situation: "Được chứ!", meaning: "Được chứ!" },
+    { phrase: "No problem!", situation: "Không sao!", meaning: "Không sao!" },
+    { phrase: "Sounds good!", situation: "Nghe hay đấy!", meaning: "Nghe hay đấy!" },
+    { phrase: "I agree.", situation: "Tôi đồng ý", meaning: "Tôi đồng ý." },
+    { phrase: "That's fine.", situation: "Được đấy", meaning: "Được đấy." },
+    { phrase: "Perfect!", situation: "Hoàn hảo!", meaning: "Hoàn hảo!" },
+    { phrase: "Absolutely!", situation: "Hoàn toàn đồng ý!", meaning: "Hoàn toàn đồng ý!" },
+    { phrase: "Count me in!", situation: "Tính tôi vào!", meaning: "Tính tôi vào!" },
+    { phrase: "Let's do it!", situation: "Làm thôi!", meaning: "Làm thôi!" },
+    { phrase: "Deal!", situation: "Deal!", meaning: "Thỏa thuận!" },
+    { phrase: "You got it!", situation: "Được rồi!", meaning: "Được rồi!" },
+    { phrase: "I'm in!", situation: "Tôi tham gia!", meaning: "Tôi tham gia!" },
+    { phrase: "We are on the same page.", situation: "Cùng chung quan điểm", meaning: "Chúng ta cùng chung quan điểm." },
+    { phrase: "That's a great idea!", situation: "Ý hay đấy!", meaning: "Đó là một ý hay!" },
   ],
   disagreement: [
-    { phrase: "I understand your perspective, however...", situation: "Phản đối lịch sự", meaning: "Tôi hiểu quan điểm của bạn, tuy nhiên..." },
-    { phrase: "I'm afraid I can't agree with this approach.", situation: "Từ chối lịch sự", meaning: "E ngại, tôi không thể đồng ý với cách tiếp cận này." },
-    { phrase: "While I see your point, I think we should consider alternatives.", situation: "Đề xuất khác", meaning: "Dù tôi thấy ý bạn đúng, tôi nghĩ nên xem xét các phương án khác." },
-    { phrase: "Let's agree to disagree on this matter.", situation: "Kết thúc tranh luận", meaning: "Hãy đồng ý không đồng ý về vấn đề này." },
-    { phrase: "I have a different perspective on this.", situation: "Quan điểm khác", meaning: "Tôi có một góc nhìn khác về vấn đề này." },
-    { phrase: "I'm not sure I follow your reasoning.", situation: "Không hiểu lý lẽ", meaning: "Tôi không chắc tôi theo kịp lý lẽ của bạn." },
-    { phrase: "I'd need more information before I can agree.", situation: "Cần thêm thông tin", meaning: "Tôi cần thêm thông tin trước khi có thể đồng ý." },
-    { phrase: "That might not be feasible given our constraints.", situation: "Không khả thi", meaning: "Điều đó có thể không khả thi với những hạn chế của chúng ta." },
+    { phrase: "I'm not sure.", situation: "Tôi không chắc", meaning: "Tôi không chắc." },
+    { phrase: "I see it differently.", situation: "Tôi nghĩ khác", meaning: "Tôi nhìn nhận khác." },
+    { phrase: "I have concerns.", situation: "Tôi có lo ngại", meaning: "Tôi có một số lo ngại." },
+    { phrase: "That's not ideal.", situation: "Không lý tưởng", meaning: "Đó không phải là lý tưởng." },
+    { phrase: "I don't think that will work.", situation: "Không khả thi", meaning: "Tôi không nghĩ điều đó sẽ hiệu quả." },
+    { phrase: "We might need to reconsider.", situation: "Cần xem xét lại", meaning: "Chúng ta có thể cần xem xét lại." },
+    { phrase: "I see your point, but...", situation: "Hiểu ý bạn, nhưng...", meaning: "Tôi hiểu ý bạn, nhưng..." },
+    { phrase: "Let's find a middle ground.", situation: "Tìm giải pháp trung gian", meaning: "Hãy tìm giải pháp trung gian." },
+    { phrase: "I respectfully disagree.", situation: "Không đồng ý", meaning: "Tôi kính trọng không đồng ý." },
+    { phrase: "That might not work.", situation: "Có thể không ổn", meaning: "Điều đó có thể không ổn." },
   ],
   apology: [
-    { phrase: "I apologize for the inconvenience.", situation: "Xin lỗi về bất tiện", meaning: "Tôi xin lỗi về sự bất tiện." },
-    { phrase: "Please accept my apologies for the delay.", situation: "Xin lỗi về chậm trễ", meaning: "Xin vui lòng chấp nhận lời xin lỗi về sự chậm trễ." },
-    { phrase: "I sincerely apologize for any confusion caused.", situation: "Xin lỗi gây hiểu lầm", meaning: "Tôi chân thành xin lỗi về bất kỳ sự nhầm lẫn nào gây ra." },
-    { phrase: "I take full responsibility for this issue.", situation: "Nhận trách nhiệm", meaning: "Tôi hoàn toàn chịu trách nhiệm cho vấn đề này." },
-    { phrase: "We will make sure this doesn't happen again.", situation: "Cam kết không tái diễn", meaning: "Chúng tôi sẽ đảm bảo điều này không xảy ra lần nữa." },
-    { phrase: "I understand your frustration and I'm sorry.", situation: "Xin lỗi về sự thất vọng", meaning: "Tôi hiểu sự thất vọng của bạn và tôi xin lỗi." },
+    { phrase: "Sorry!", situation: "Xin lỗi!", meaning: "Xin lỗi!" },
+    { phrase: "My bad!", situation: "Lỗi của tôi!", meaning: "Lỗi của tôi!" },
+    { phrase: "I'm sorry.", situation: "Tôi xin lỗi", meaning: "Tôi xin lỗi." },
+    { phrase: "Oops!", situation: "Ồ!", meaning: "Ồ!" },
+    { phrase: "My mistake!", situation: "Sai rồi!", meaning: "Sai rồi!" },
+    { phrase: "I apologize.", situation: "Tôi xin lỗi", meaning: "Tôi xin lỗi." },
+    { phrase: "Sorry about that.", situation: "Xin lỗi về điều đó", meaning: "Xin lỗi về điều đó." },
+    { phrase: "My apologies.", situation: "Xin lỗi", meaning: "Xin lỗi." },
+    { phrase: "I didn't mean to...", situation: "Tôi không có ý...", meaning: "Tôi không có ý..." },
+    { phrase: "Please forgive me.", situation: "Xin hãy tha thứ", meaning: "Xin hãy tha thứ cho tôi." },
+    { phrase: "I'll make it right.", situation: "Tôi sẽ sửa chữa", meaning: "Tôi sẽ sửa chữa." },
+    { phrase: "Sorry for the inconvenience.", situation: "Xin lỗi bất tiện", meaning: "Xin lỗi về sự bất tiện." },
+  ],
+  confirmation: [
+    { phrase: "Got it!", situation: "Hiểu rồi!", meaning: "Hiểu rồi!" },
+    { phrase: "Understood!", situation: "Đã hiểu!", meaning: "Đã hiểu!" },
+    { phrase: "Copy that!", situation: "Nhận được!", meaning: "Nhận được!" },
+    { phrase: "Will do!", situation: "Sẽ làm!", meaning: "Sẽ làm!" },
+    { phrase: "On it!", situation: "Đang làm!", meaning: "Đang làm!" },
+    { phrase: "Noted!", situation: "Đã ghi nhận!", meaning: "Đã ghi nhận!" },
+    { phrase: "Makes sense.", situation: "Hợp lý", meaning: "Hợp lý." },
+    { phrase: "I see.", situation: "Tôi hiểu", meaning: "Tôi hiểu." },
+    { phrase: "Okay, got it.", situation: "Được rồi, hiểu", meaning: "Được rồi, tôi hiểu." },
+    { phrase: "I'll get right on it.", situation: "Sẽ làm ngay", meaning: "Tôi sẽ làm ngay." },
+    { phrase: "Leave it with me.", situation: "Để tôi lo", meaning: "Để tôi lo." },
+    { phrase: "Consider it done.", situation: "Coi như xong", meaning: "Coig như xong rồi." },
+  ],
+  question: [
+    { phrase: "Can I ask...?", situation: "Tôi hỏi được không...?", meaning: "Tôi hỏi được không...?" },
+    { phrase: "Do you have a minute?", situation: "Bạn có thời gian không?", meaning: "Bạn có một chút thời gian không?" },
+    { phrase: "Quick question:", situation: "Câu hỏi nhanh:", meaning: "Câu hỏi nhanh:" },
+    { phrase: "Just curious,", situation: "Tò mò thôi,", meaning: "Tò mò thôi," },
+    { phrase: "Out of curiosity,", situation: "Để tìm hiểu,", meaning: "Để tìm hiểu," },
+    { phrase: "I was wondering...", situation: "Tôi đang tự hỏi...", meaning: "Tôi đang tự hỏi..." },
+    { phrase: "Could you clarify?", situation: "Làm rõ giúp", meaning: "Bạn có thể làm rõ không?" },
+    { phrase: "What do you think?", situation: "Bạn nghĩ sao?", meaning: "Bạn nghĩ sao?" },
+    { phrase: "Does that make sense?", situation: "Hợp lý không?", meaning: "Điều đó có hợp lý không?" },
+    { phrase: "Any questions?", situation: "Có câu hỏi không?", meaning: "Có câu hỏi gì không?" },
+    { phrase: "Is everything clear?", situation: "Rõ ràng chứ?", meaning: "Mọi thứ rõ ràng chứ?" },
   ],
   meeting: [
-    { phrase: "Let's get down to business.", situation: "Bắt đầu cuộc họp", meaning: "Hãy bắt đầu vào việc chính." },
-    { phrase: "Could we move on to the next agenda item?", situation: "Chuyển sang mục tiếp theo", meaning: "Chúng ta có thể chuyển sang mục tiếp theo trong chương trình không?" },
-    { phrase: "Let's circle back to that point later.", situation: "Quay lại vấn đề", meaning: "Hãy quay lại vấn đề đó sau." },
-    { phrase: "Can we table this discussion for now?", situation: "Tạm hoãn", meaning: "Chúng ta có thể tạm hoãn cuộc thảo luận này không?" },
-    { phrase: "I'd like to hand it over to...", situation: "Nhường lời", meaning: "Tôi muốn nhường lời cho..." },
-    { phrase: "Does anyone have any objections?", situation: "Hỏi ý kiến", meaning: "Ai có ý kiến phản đối không?" },
-    { phrase: "Let's take a 5-minute break.", situation: "Nghỉ giải lao", meaning: "Hãy nghỉ 5 phút." },
-    { phrase: "To sum up what we've discussed...", situation: "Tóm tắt", meaning: "Tóm tắt những gì chúng ta đã thảo luận..." },
-  ],
-  telephone: [
-    { phrase: "Thank you for calling [Company Name].", situation: "Trả lời điện thoại", meaning: "Cảm ơn bạn đã gọi đến [Tên Công Ty]." },
-    { phrase: "How may I direct your call?", situation: "Hỏi chuyển cuộc gọi", meaning: "Tôi có thể chuyển cuộc gọi của bạn đến đâu?" },
-    { phrase: "Could you please hold for a moment?", situation: "Yêu cầu đợi", meaning: "Bạn có thể đợi một chút không?" },
-    { phrase: "I'm sorry, he's in a meeting at the moment.", situation: "Người đang họp", meaning: "Xin lỗi, anh ấy đang trong cuộc họp lúc này." },
-    { phrase: "May I take your name and number?", situation: "Xin thông tin", meaning: "Tôi có thể xin tên và số điện thoại của bạn không?" },
-    { phrase: "I'll have him call you back as soon as possible.", situation: "Hẹn gọi lại", meaning: "Tôi sẽ để anh ấy gọi lại cho bạn sớm nhất có thể." },
-    { phrase: "Is this a convenient time to talk?", situation: "Hỏi thời gian", meaning: "Đây có phải là thời gian thuận tiện để nói chuyện không?" },
-    { phrase: "I'm having trouble hearing you. Could you speak up?", situation: "Yêu cầu nói lớn hơn", meaning: "Tôi đang gặp khó khăn khi nghe bạn. Bạn có thể nói lớn hơn không?" },
+    { phrase: "Let's start.", situation: "Bắt đầu thôi", meaning: "Hãy bắt đầu." },
+    { phrase: "Where were we?", situation: "Ở đâu rồi?", meaning: "Chúng ta đang ở đâu rồi?" },
+    { phrase: "Back to the topic.", situation: "Quay lại chủ đề", meaning: "Quay lại chủ đề chính." },
+    { phrase: "Let's move on.", situation: "Chuyển tiếp", meaning: "Hãy chuyển tiếp." },
+    { phrase: "Any updates?", situation: "Có cập nhật gì?", meaning: "Có cập nhật gì không?" },
+    { phrase: "Let's wrap up.", situation: "Kết thúc thôi", meaning: "Hãy kết thúc thôi." },
+    { phrase: "Who's next?", situation: "Ai tiếp?", meaning: "Ai tiếp theo?" },
+    { phrase: "Let's take notes.", situation: "Ghi chép thôi", meaning: "Hãy ghi chép." },
+    { phrase: "Action items?", meaning: "Việc cần làm?", meaning: "Có việc gì cần làm không?" },
+    { phrase: "Next steps?", situation: "Bước tiếp theo?", meaning: "Bước tiếp theo là gì?" },
+    { phrase: "Let's revisit this later.", situation: " Quay lại sau", meaning: "Hãy quay lại vấn đề này sau." },
+    { phrase: "Are we aligned?", situation: "Cùng quan điểm chứ?", meaning: "Chúng ta cùng quan điểm chứ?" },
+    { phrase: "Can we agree on...?", situation: "Thống nhất được không...?", meaning: "Chúng ta thống nhất được không...?" },
+    { phrase: "Let's vote.", situation: "Bỏ phiếu thôi", meaning: "Hãy bỏ phiếu." },
   ],
   email: [
-    { phrase: "Please find attached...", situation: "Gửi file đính kèm", meaning: "Vui lòng xem file đính kèm..." },
-    { phrase: "As per our conversation...", situation: "Theo cuộc trò chuyện", meaning: "Theo như cuộc trò chuyện của chúng ta..." },
-    { phrase: "I am writing to follow up on...", situation: "Theo dõi", meaning: "Tôi viết để theo dõi về..." },
-    { phrase: "I would like to bring to your attention...", situation: "Đưa ra vấn đề", meaning: "Tôi muốn đưa vào sự chú ý của bạn..." },
-    { phrase: "For your reference, please find below...", meaning: "Để bạn tham khảo", meaning: "Để bạn tham khảo, vui lòng xem bên dưới..." },
-    { phrase: "I am pleased to inform you that...", situation: "Thông báo tin tốt", meaning: "Tôi rất vui mừng thông báo rằng..." },
-    { phrase: "Please do not hesitate to contact me if you have any questions.", situation: "Mời liên hệ", meaning: "Xin đừng ngần ngại liên hệ với tôi nếu bạn có bất kỳ câu hỏi nào." },
-    { phrase: "I look forward to your positive response.", situation: "Hy vọng phản hồi tích cực", meaning: "Tôi mong đợi phản hồi tích cực từ bạn." },
+    { phrase: "As discussed,", situation: "Như đã thảo luận,", meaning: "Như đã thảo luận," },
+    { phrase: "Per our conversation,", situation: "Theo cuộc trò chuyện,", meaning: "Theo cuộc trò chuyện của chúng ta," },
+    { phrase: "Please find attached.", situation: "File đính kèm", meaning: "Vui lòng xem file đính kèm." },
+    { phrase: "Following up on...", meaning: "Theo dõi...", meaning: "Theo dõi về..." },
+    { phrase: "Just a reminder...", meaning: "Nhắc nhở...", meaning: "Chỉ là nhắc nhở..." },
+    { phrase: "Quick heads-up...", meaning: "Thông báo nhanh...", meaning: "Thông báo nhanh..." },
+    { phrase: "For your reference.", meaning: "Để bạn tham khảo", meaning: "Để bạn tham khảo." },
+    { phrase: "Please let me know.", meaning: "Cho tôi biết", meaning: "Vui lòng cho tôi biết." },
+    { phrase: "Feel free to reach out.", meaning: "Liên hệ thoải mái", meaning: "Liên hệ thoải mái nhé." },
+    { phrase: "Best regards,", meaning: "Trân trọng,", meaning: "Trân trọng," },
+    { phrase: "Thanks in advance.", meaning: "Cảm ơn trước", meaning: "Cảm ơn trước." },
+    { phrase: "Looking forward to your reply.", meaning: "Mong phản hồi", meaning: "Mong nhận được phản hồi." },
   ],
-  presentation: [
-    { phrase: "Let me walk you through this.", situation: "Hướng dẫn", meaning: "Để tôi hướng dẫn bạn qua điều này." },
-    { phrase: "As you can see from this chart...", situation: "Giải thích biểu đồ", meaning: "Như bạn có thể thấy từ biểu đồ này..." },
-    { phrase: "The key takeaway here is...", situation: "Điểm chính", meaning: "Điểm chính cần nhớ ở đây là..." },
-    { phrase: "To put this into perspective...", situation: "Đặt vào bối cảnh", meaning: "Để đặt điều này vào bối cảnh..." },
-    { phrase: "I'd like to draw your attention to...", situation: "Thu hút sự chú ý", meaning: "Tôi muốn thu hút sự chú ý của bạn đến..." },
-    { phrase: "Let me illustrate this with an example.", situation: "Ví dụ minh họa", meaning: "Để tôi minh họa điều này bằng một ví dụ." },
-    { phrase: "Based on these findings, we recommend...", situation: "Khuyến nghị", meaning: "Dựa trên những phát hiện này, chúng tôi khuyên..." },
-    { phrase: "In conclusion, I'd like to summarize...", situation: "Kết luận", meaning: "Để kết luận, tôi muốn tóm tắt..." },
+  telephone: [
+    { phrase: "Thank you for calling.", situation: "Cảm ơn đã gọi", meaning: "Cảm ơn bạn đã gọi." },
+    { phrase: "How can I help?", situation: "Tôi giúp gì được?", meaning: "Tôi có thể giúp gì cho bạn?" },
+    { phrase: "Who's calling, please?", situation: "Ai gọi vậy?", meaning: "Cho tôi xin tên người gọi?" },
+    { phrase: "Please hold.", situation: "Đợi một chút", meaning: "Vui lòng đợi một chút." },
+    { phrase: "One moment, please.", situation: "Một chút thôi", meaning: "Một chút thôi nhé." },
+    { phrase: "Let me transfer you.", situation: "Chuyển cuộc gọi", meaning: "Để tôi chuyển cuộc gọi." },
+    { phrase: "He's not available.", situation: "Không có mặt", meaning: "Anh ấy hiện không có mặt." },
+    { phrase: "Can I take a message?", situation: "Nhắn tin được không?", meaning: "Tôi có thể nhận tin nhắn không?" },
+    { phrase: "Please call back later.", situation: "Gọi lại sau", meaning: "Vui lòng gọi lại sau." },
+    { phrase: "The line is busy.", situation: "Đường dây bận", meaning: "Đường dây đang bận." },
+    { phrase: "Can you hear me?", situation: "Nghe rõ không?", meaning: "Bạn nghe rõ tôi không?" },
+    { phrase: "You're on speaker.", situation: "Đang mở loa", meaning: "Tôi đang mở loa đấy." },
+  ],
+  problem: [
+    { phrase: "We have an issue.", situation: "Có vấn đề", meaning: "Chúng ta có một vấn đề." },
+    { phrase: "There's a problem.", situation: "Có lỗi", meaning: "Có một lỗi." },
+    { phrase: "It's not working.", situation: "Không hoạt động", meaning: "Nó không hoạt động." },
+    { phrase: "Something went wrong.", situation: "Có gì sai", meaning: "Có gì đó đã sai." },
+    { phrase: "We hit a snag.", situation: "Gặp trở ngại", meaning: "Chúng ta gặp trở ngại." },
+    { phrase: "This is urgent.", situation: "Khẩn cấp", meaning: "Đây là khẩn cấp." },
+    { phrase: "We need to fix this.", situation: "Cần sửa", meaning: "Chúng ta cần sửa điều này." },
+    { phrase: "Can you look into this?", situation: "Kiểm tra giúp", meaning: "Bạn có thể kiểm tra điều này không?" },
+    { phrase: "This is critical.", situation: "Rất quan trọng", meaning: "Điều này rất quan trọng." },
+    { phrase: "We need a solution.", situation: "Cần giải pháp", meaning: "Chúng ta cần một giải pháp." },
+    { phrase: "How do we solve this?", situation: "Giải quyết sao?", meaning: "Chúng ta giải quyết điều này như thế nào?" },
+    { phrase: "Let me check.", situation: "Để tôi kiểm tra", meaning: "Để tôi kiểm tra." },
+  ],
+  celebration: [
+    { phrase: "Great job!", situation: "Làm tốt lắm!", meaning: "Làm tốt lắm!" },
+    { phrase: "Well done!", situation: "Xuất sắc!", meaning: "Xuất sắc!" },
+    { phrase: "Congrats!", situation: "Chúc mừng!", meaning: "Chúc mừng!" },
+    { phrase: "Congratulations!", situation: "Chúc mừng!", meaning: "Chúc mừng!" },
+    { phrase: "Nice work!", situation: "Làm hay đấy!", meaning: "Làm hay đấy!" },
+    { phrase: "Brilliant!", situation: "Tuyệt vời!", meaning: "Tuyệt vời!" },
+    { phrase: "Awesome!", situation: "Tuyệt vời!", meaning: "Tuyệt vời!" },
+    { phrase: "Happy birthday!", situation: "Chúc mừng sinh nhật!", meaning: "Chúc mừng sinh nhật!" },
+    { phrase: "Happy holidays!", situation: "Chúc lễ vui!", meaning: "Chúc các ngày lễ vui vẻ!" },
+    { phrase: "Good luck!", situation: "Chúc may mắn!", meaning: "Chúc may mắn!" },
+    { phrase: "Break a leg!", situation: "May mắn!", meaning: "Chúc may mắn! (trước khi thi)" },
+    { phrase: "Get well soon!", situation: "Chóng khỏe nhé!", meaning: "Chóng khỏe mạnh nhé!" },
+  ],
+  explanation: [
+    { phrase: "Here's the thing:", situation: "Vấn đề là:", meaning: "Vấn đề là:" },
+    { phrase: "The thing is...", situation: "Vấn đề là...", meaning: "Vấn đề là..." },
+    { phrase: "Long story short,", situation: "Nói ngắn gọn,", meaning: "Nói ngắn gọn," },
+    { phrase: "To make a long story short...", situation: "Nói tóm lại...", meaning: "Nói tóm lại..." },
+    { phrase: "In other words,", situation: "Nói cách khác,", meaning: "Nói cách khác," },
+    { phrase: "Let me explain:", situation: "Để tôi giải thích:", meaning: "Để tôi giải thích:" },
+    { phrase: "To put it simply,", situation: "Nói đơn giản,", meaning: "Nói đơn giản," },
+    { phrase: "The bottom line is...", situation: "Kết quả là...", meaning: "Kết quả cuối cùng là..." },
+    { phrase: "What I mean is...", meaning: "Ý tôi là...", meaning: "Ý tôi là..." },
+    { phrase: "In short,", meaning: "Tóm lại,", meaning: "Tóm lại," },
+    { phrase: "Basically,", meaning: "Về cơ bản,", meaning: "Về cơ bản," },
+    { phrase: "Essentially,", meaning: "Về bản chất,", meaning: "Về bản chất," },
+  ],
+  time: [
+    { phrase: "As soon as possible", situation: "Sớm nhất có thể", meaning: "Sớm nhất có thể (ASAP)" },
+    { phrase: "At your earliest convenience", situation: "Khi thuận tiện", meaning: "Khi bạn sớm thuận tiện nhất" },
+    { phrase: "Right away", situation: "Ngay lập tức", meaning: "Ngay lập tức" },
+    { phrase: "No rush", situation: "Không vội", meaning: "Không vội" },
+    { phrase: "Whenever works for you", situation: "Bất cứ khi nào bạn thuận tiện", meaning: "Bất cứ khi nào bạn thuận tiện" },
+    { phrase: "By end of day", situation: "Trước cuối ngày", meaning: "Trước cuối ngày làm việc" },
+    { phrase: "By tomorrow", situation: "Trước ngày mai", meaning: "Trước ngày mai" },
+    { phrase: "Next week", situation: "Tuần sau", meaning: "Tuần sau" },
+    { phrase: "This week", situation: "Tuần này", meaning: "Tuần này" },
+    { phrase: "Anytime", situation: "Bất cứ lúc nào", meaning: "Bất cứ lúc nào" },
+    { phrase: "Later", situation: "Sau", meaning: "Sau" },
+    { phrase: "Soon", situation: "Sớm", meaning: "Sớm" },
+  ],
+  followup: [
+    { phrase: "Just checking in.", situation: "Kiểm tra tình hình", meaning: "Chỉ kiểm tra tình hình thôi." },
+    { phrase: "Any update?", situation: "Có gì mới không?", meaning: "Có cập nhật gì không?" },
+    { phrase: "Following up.", situation: "Theo dõi", meaning: "Theo dõi thôi." },
+    { phrase: "Just wanted to follow up.", situation: "Muốn theo dõi", meaning: "Tôi chỉ muốn theo dõi." },
+    { phrase: "How's it going?", situation: "Tiến triển sao?", meaning: "Mọi thứ tiến triển sao?" },
+    { phrase: "Any progress?", situation: "Có tiến triển gì không?", meaning: "Có tiến triển gì không?" },
+    { phrase: "Just a quick follow-up.", situation: "Theo dõi nhanh", meaning: "Chỉ là theo dõi nhanh thôi." },
+    { phrase: "Wanted to check on this.", situation: "Kiểm tra việc này", meaning: "Muốn kiểm tra việc này." },
   ]
 };
 
@@ -7092,12 +7436,14 @@ async function searchVocabFromAPI() {
 
   const resultsContainer = document.getElementById('vocabSearchResults');
   const arrowEl = document.getElementById('vocabSearchResultsArrow');
+  const wrapper = document.getElementById('vocabSearchResultsWrapper');
   
   // Ensure results are visible when searching
   resultsContainer.classList.remove('collapsed');
   if (arrowEl) arrowEl.classList.remove('collapsed');
+  wrapper.classList.add('has-results');
   
-  resultsContainer.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);">Đang tìm kiếm...</div>';
+  resultsContainer.innerHTML = '<div style="text-align:center;padding:20px;"><div class="loading-spinner" style="margin:0 auto;"></div></div>';
 
   try {
     // Check if input is Vietnamese (contains Vietnamese characters)
@@ -7126,18 +7472,22 @@ async function searchVocabFromAPI() {
       displayAPIVocabularyResultsWithTranslation(data, localResults, query, translatedQuery);
     } else {
       // No API results, show local only
+      const wrapper = document.getElementById('vocabSearchResultsWrapper');
       if (localResults.length > 0) {
         displayLocalVocabularyResults(localResults, translatedQuery);
       } else {
         resultsContainer.innerHTML = getNoResultsHTML();
+        wrapper.classList.remove('has-results');
       }
     }
   } catch (error) {
     // Fallback to local results only
+    const wrapper = document.getElementById('vocabSearchResultsWrapper');
     if (localResults && localResults.length > 0) {
       displayLocalVocabularyResults(localResults);
     } else {
       resultsContainer.innerHTML = getNoResultsHTML('Không thể kết nối API. Vui lòng thử lại.');
+      wrapper.classList.remove('has-results');
     }
   }
 }
@@ -7213,6 +7563,15 @@ function searchLocalVocabulary(query, translatedQuery = null) {
 
 async function displayLocalVocabularyResults(results, translatedQuery = null) {
   const resultsContainer = document.getElementById('vocabSearchResults');
+  const wrapper = document.getElementById('vocabSearchResultsWrapper');
+  
+  if (results.length === 0) {
+    wrapper.classList.remove('has-results');
+    resultsContainer.innerHTML = '';
+    return;
+  }
+  
+  wrapper.classList.add('has-results');
   
   // If there was a Vietnamese input, show header
   let headerHtml = '';
@@ -7237,6 +7596,7 @@ async function displayLocalVocabularyResults(results, translatedQuery = null) {
 // Display API results with Vietnamese translations
 async function displayAPIVocabularyResultsWithTranslation(apiData, localResults, query, translatedQuery = null) {
   const resultsContainer = document.getElementById('vocabSearchResults');
+  const wrapper = document.getElementById('vocabSearchResultsWrapper');
   let html = '';
 
   // Get main Vietnamese translation for the word
@@ -7330,6 +7690,9 @@ async function displayAPIVocabularyResultsWithTranslation(apiData, localResults,
 
   if (!html) {
     html = getNoResultsHTML();
+    wrapper.classList.remove('has-results');
+  } else {
+    wrapper.classList.add('has-results');
   }
 
   resultsContainer.innerHTML = html;
@@ -7357,9 +7720,35 @@ function translatePartOfSpeech(pos) {
 }
 
 function handleVocabSearch(event) {
+  const input = document.getElementById('vocabSearchInput');
+  const clearBtn = document.getElementById('vocabSearchClearBtn');
+  const wrapper = document.getElementById('vocabSearchResultsWrapper');
+  
+  // Toggle clear button visibility
+  if (clearBtn) {
+    clearBtn.style.display = input.value.trim() ? 'flex' : 'none';
+  }
+  
   if (event.key === 'Enter') {
     searchVocabFromAPI();
   }
+}
+
+function clearVocabSearch() {
+  const input = document.getElementById('vocabSearchInput');
+  const clearBtn = document.getElementById('vocabSearchClearBtn');
+  const wrapper = document.getElementById('vocabSearchResultsWrapper');
+  
+  input.value = '';
+  if (clearBtn) clearBtn.style.display = 'none';
+  if (wrapper) wrapper.classList.remove('has-results');
+  
+  input.focus();
+}
+
+function closeVocabSearchResults() {
+  const wrapper = document.getElementById('vocabSearchResultsWrapper');
+  if (wrapper) wrapper.classList.remove('has-results');
 }
 
 // Open Learn Modal

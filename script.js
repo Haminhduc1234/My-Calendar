@@ -8187,6 +8187,7 @@ async function initCountdown() {
     countdownData = snapshot.val() || null;
     console.log("[Countdown] Firebase data changed:", countdownData);
     renderCountdown();
+    startCountdownTimer();
   });
 
   // Render immediately in case no data yet

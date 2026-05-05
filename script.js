@@ -1089,14 +1089,21 @@ async function ensureFirebaseAuth() {
 }
 
 async function initFirebaseRealtime() {
+  console.log("[Firebase] Bắt đầu khởi tạo Firebase Realtime...");
   // Hiển thị PIN ngay để người dùng nhập mà không phải chờ auth Firebase.
   if (!(await ensureProfileKey())) {
     alert("Bạn cần nhập mật khẩu đồng bộ để sử dụng dữ liệu đa thiết bị.");
     return;
   }
 
-  if (!window.firebase || !window.firebase.apps) return;
-  if (!isFirebaseConfigReady()) return;
+  if (!window.firebase || !window.firebase.apps) {
+    console.log("[Firebase] window.firebase không tồn tại");
+    return;
+  }
+  if (!isFirebaseConfigReady()) {
+    console.log("[Firebase] Firebase config chưa sẵn sàng");
+    return;
+  }
 
   if (!window.firebase.apps.length) {
     window.firebase.initializeApp(FIREBASE_CONFIG);
@@ -1128,6 +1135,8 @@ async function initFirebaseRealtime() {
   firebaseAISettingsRef = firebaseDb.ref(
     `aiSettings/${userProfileKey}`,
   );
+
+  console.log("[Firebase] Đã khởi tạo thành công, firebaseDb:", !!firebaseDb);
 
   // Lắng nghe sự thay đổi của Translate History
   firebaseTranslateHistoryRef.on("value", (snapshot) => {
@@ -1307,6 +1316,9 @@ async function initFirebaseRealtime() {
   });
 
   firebaseReady = true;
+
+  // Initialize countdown
+  initCountdown();
 
   // Load AI Settings from Firebase
   loadAISettingsFromFirebase();
@@ -4899,6 +4911,7 @@ function swapCurrency() {
     loadQuote();
     fetchWeatherByLocation();
     renderTodayLunar();
+    loadCountdownFromLocal();
   } catch (err) {
     console.error("[Init] Lỗi khi khởi tạo app:", err);
   } finally {
@@ -8140,4 +8153,222 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+/* ==================== COUNTDOWN ==================== */
+let countdownData = null;
+let countdownTimer = null;
+let firebaseCountdownRef = null;
+let pendingCountdownData = null; // Lưu data chờ sync lên Firebase
+
+const COUNTDOWN_PATH_PREFIX = "countdown";
+
+async function initCountdown() {
+  // Wait for userProfileKey to be ready
+  if (!userProfileKey) {
+    console.log("[Countdown] Chưa có userProfileKey, thử lại sau...");
+    setTimeout(() => initCountdown(), 500);
+    return;
+  }
+
+  if (!firebaseDb) {
+    console.log("[Countdown] Chưa có firebaseDb, thử lại sau...");
+    setTimeout(() => initCountdown(), 500);
+    return;
+  }
+
+  firebaseCountdownRef = firebaseDb.ref(
+    `${COUNTDOWN_PATH_PREFIX}/${userProfileKey}`,
+  );
+
+  console.log("[Countdown] Đã khởi tạo Firebase ref:", `countdown/${userProfileKey}`);
+
+  firebaseCountdownRef.on("value", (snapshot) => {
+    countdownData = snapshot.val() || null;
+    console.log("[Countdown] Firebase data changed:", countdownData);
+    renderCountdown();
+  });
+
+  // Render immediately in case no data yet
+  renderCountdown();
+
+  // Nếu có pending data, sync ngay
+  if (pendingCountdownData) {
+    console.log("[Countdown] Sync pending data lên Firebase:", pendingCountdownData);
+    firebaseCountdownRef.set(pendingCountdownData).catch(console.error);
+    pendingCountdownData = null;
+  }
+}
+
+function renderCountdown() {
+  const section = document.getElementById("countdownSection");
+  const display = document.getElementById("countdownDisplay");
+  const title = document.getElementById("countdownTitle");
+  const clearBtn = document.getElementById("countdownClearBtn");
+
+  // Always show the section
+  section.style.display = "block";
+
+  if (!countdownData || !countdownData.targetDate) {
+    title.textContent = "Đếm ngược";
+    display.innerHTML = `<span class="countdown-msg">Chưa có đếm ngược — click ✏️ để thêm</span>`;
+    if (clearBtn) clearBtn.style.display = "none";
+    return;
+  }
+
+  section.style.display = "block";
+
+  const target = new Date(countdownData.targetDate + "T00:00:00");
+  const now = new Date();
+  const diff = target - now;
+
+  const totalDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const years = Math.floor(totalDays / 365);
+  const months = Math.floor((totalDays % 365) / 30);
+  const days = totalDays % 30;
+
+  if (countdownData.label) {
+    title.textContent = countdownData.label;
+  } else {
+    title.textContent = "Đếm ngược";
+  }
+
+  if (diff <= 0) {
+    const expiredDays = Math.abs(totalDays);
+    let expiredMsg = "Đã đến ngày!";
+    if (expiredDays > 0) expiredMsg = `Đã qua ${expiredDays} ngày`;
+    display.innerHTML = `<span class="countdown-msg expired">${escapeHtml(expiredMsg)}</span>`;
+  } else {
+    const html = [];
+    if (years > 0) {
+      html.push(`<div class="countdown-unit"><span class="countdown-number">${years}</span><span class="countdown-unit-label">Năm</span></div>`);
+      html.push(`<span class="countdown-sep">:</span>`);
+    }
+    if (months > 0 || years > 0) {
+      html.push(`<div class="countdown-unit"><span class="countdown-number">${months}</span><span class="countdown-unit-label">Tháng</span></div>`);
+      html.push(`<span class="countdown-sep">:</span>`);
+    }
+    html.push(`<div class="countdown-unit"><span class="countdown-number">${days}</span><span class="countdown-unit-label">Ngày</span></div>`);
+
+    if (totalDays < 7) {
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs = Math.floor((diff % (1000 * 60)) / 1000);
+      html.push(`<span class="countdown-sep">:</span>`);
+      html.push(`<div class="countdown-unit"><span class="countdown-number">${String(hours).padStart(2,'0')}</span><span class="countdown-unit-label">Giờ</span></div>`);
+      html.push(`<span class="countdown-sep">:</span>`);
+      html.push(`<div class="countdown-unit"><span class="countdown-number">${String(mins).padStart(2,'0')}</span><span class="countdown-unit-label">Phút</span></div>`);
+      html.push(`<span class="countdown-sep">:</span>`);
+      html.push(`<div class="countdown-unit"><span class="countdown-number">${String(secs).padStart(2,'0')}</span><span class="countdown-unit-label">Giây</span></div>`);
+    }
+
+    display.innerHTML = html.join("");
+  }
+
+  if (clearBtn) {
+    clearBtn.style.display = countdownData?.targetDate ? "flex" : "none";
+  }
+}
+
+function startCountdownTimer() {
+  stopCountdownTimer();
+  countdownTimer = setInterval(renderCountdown, 1000);
+}
+
+function stopCountdownTimer() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+}
+
+function openCountdownModal() {
+  const modal = document.getElementById("countdownModal");
+  const labelInput = document.getElementById("countdownLabelInput");
+  const dateInput = document.getElementById("countdownDateInput");
+  const clearBtn = document.getElementById("countdownClearBtn");
+
+  if (countdownData) {
+    labelInput.value = countdownData.label || "";
+    dateInput.value = countdownData.targetDate || "";
+    if (clearBtn) clearBtn.style.display = "flex";
+  } else {
+    labelInput.value = "";
+    dateInput.value = "";
+    if (clearBtn) clearBtn.style.display = "none";
+  }
+
+  modal.style.display = "flex";
+  labelInput.focus();
+}
+
+function closeCountdownModal() {
+  document.getElementById("countdownModal").style.display = "none";
+}
+
+async function saveCountdown() {
+  const label = document.getElementById("countdownLabelInput").value.trim();
+  const targetDate = document.getElementById("countdownDateInput").value;
+
+  if (!targetDate) {
+    alert("Vui lòng chọn ngày đích.");
+    return;
+  }
+
+  const data = { label, targetDate };
+  console.log("[Countdown] Đang lưu:", data);
+
+  // Always save to localStorage first
+  countdownData = data;
+  localStorage.setItem("countdown", JSON.stringify(data));
+  renderCountdown();
+  startCountdownTimer();
+
+  // Then try to save to Firebase if available
+  if (firebaseCountdownRef) {
+    try {
+      await firebaseCountdownRef.set(data);
+      console.log("[Countdown] Đã lưu lên Firebase thành công");
+      pendingCountdownData = null;
+    } catch (err) {
+      console.error("[Countdown] Lỗi lưu Firebase:", err);
+      pendingCountdownData = data;
+      alert("Lỗi khi lưu lên Firebase: " + err.message + "\nĐã lưu local. Sẽ thử lại sau.");
+    }
+  } else {
+    console.warn("[Countdown] firebaseCountdownRef = null, lưu pending:", data);
+    pendingCountdownData = data;
+  }
+
+  closeCountdownModal();
+}
+
+async function clearCountdown() {
+  if (!confirm("Xóa đếm ngược hiện tại?")) return;
+
+  countdownData = null;
+  localStorage.removeItem("countdown");
+  renderCountdown();
+  stopCountdownTimer();
+
+  if (firebaseCountdownRef) {
+    try {
+      await firebaseCountdownRef.remove();
+    } catch (err) {
+      console.error("[Countdown] Lỗi xóa Firebase:", err);
+    }
+  }
+
+  closeCountdownModal();
+}
+
+function loadCountdownFromLocal() {
+  try {
+    const stored = localStorage.getItem("countdown");
+    if (stored) {
+      countdownData = JSON.parse(stored);
+      renderCountdown();
+      startCountdownTimer();
+    }
+  } catch (e) {}
 }

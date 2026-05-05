@@ -1062,6 +1062,46 @@ body::before {
   animation: modalFadeIn 0.2s ease;
 }
 
+/* Center modal content on desktop */
+@media (min-width: 541px) {
+  .modal {
+    align-items: center;
+    justify-content: center;
+  }
+
+  #countdownModal > div,
+  .translate-modal-content,
+  .translate-history-modal-content {
+    width: 100%;
+    max-width: 480px;
+    height: auto;
+    max-height: 90vh;
+    border-radius: 18px;
+    margin: 16px auto;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    overflow-y: auto;
+  }
+
+  /* Override the fullscreen modal-content styles on desktop */
+  .modal-content,
+  .overtime-modal-content,
+  .gold-modal-content,
+  .quick-note-modal-content,
+  .my-music-modal-content,
+  .cashflow-modal-content,
+  .currency-modal-content,
+  .news-modal-content {
+    width: 100% !important;
+    max-width: 540px !important;
+    height: auto !important;
+    max-height: 90vh !important;
+    border-radius: 18px !important;
+    margin: 16px auto !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    overflow-y: auto;
+  }
+}
+
 @keyframes modalFadeIn {
   from {
     opacity: 0;
@@ -7389,3 +7429,231 @@ input[type="datetime-local"] {
     font-size: 12px;
   }
 }
+
+/* ==================== COUNTDOWN SECTION ==================== */
+.countdown-section {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto 8px;
+  padding: 14px 16px;
+  background: rgba(12, 12, 22, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.countdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.countdown-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.countdown-edit-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: var(--muted);
+  transition: color 0.2s, background 0.2s;
+}
+
+.countdown-edit-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.countdown-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.countdown-event-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--accent-strong);
+  margin-right: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.countdown-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 44px;
+}
+
+.countdown-number {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.countdown-unit.is-expired .countdown-number {
+  color: #ff6b6b;
+}
+
+.countdown-unit-label {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.countdown-sep {
+  font-size: 24px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.2);
+  line-height: 1;
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+.countdown-msg {
+  font-size: 14px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.countdown-msg.expired {
+  color: #ff6b6b;
+  font-style: normal;
+  font-weight: 500;
+}
+
+/* Mobile adjustments */
+@media (max-width: 540px) {
+  .countdown-section {
+    max-width: 100%;
+    margin: 0 0 8px;
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .countdown-event-name {
+    max-width: 120px;
+    font-size: 14px;
+  }
+
+  .countdown-number {
+    font-size: 22px;
+  }
+
+  .countdown-unit {
+    min-width: 36px;
+  }
+
+  .countdown-sep {
+    font-size: 18px;
+    margin-top: 2px;
+  }
+}
+
+/* Fallback khi backdrop-filter không hỗ trợ */
+@supports not (backdrop-filter: blur(1px)) {
+  .countdown-section {
+    background: rgba(12, 12, 22, 1);
+  }
+}
+
+/* ==================== COUNTDOWN MODAL ==================== */
+#countdownModal {
+  display: none;
+  align-items: flex-start;
+}
+
+#countdownModal[style*="flex"] {
+  display: flex !important;
+}
+
+#countdownModal .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#countdownModal .form-group label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+#countdownModal .form-group input[type="text"],
+#countdownModal .form-group input[type="date"] {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+#countdownModal .form-group input[type="text"]:focus,
+#countdownModal .form-group input[type="date"]:focus {
+  border-color: var(--accent);
+}
+
+#countdownModal .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+#countdownModal .btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+#countdownModal .btn-primary:hover {
+  background: var(--accent-strong);
+  opacity: 0.9;
+}
+
+#countdownModal .btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#countdownModal .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+

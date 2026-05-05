@@ -55,6 +55,12 @@
         ".write": "auth != null && auth.uid === $uid",
         ".validate": "newData.hasChildren(['token','updatedAt']) && newData.child('token').isString() && newData.child('token').val().length > 20 && newData.child('updatedAt').isNumber() && newData.child('updatedAt').val() <= now + 60000 && (!newData.child('userAgent').exists() || (newData.child('userAgent').isString() && newData.child('userAgent').val().length <= 240))"
       }
+    },
+    "countdown": {
+      "$profileKey": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
     }
   }
 }

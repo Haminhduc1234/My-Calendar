@@ -7468,13 +7468,21 @@ input[type="datetime-local"] {
   top: 0;
   left: 0;
   right: 0;
-  height: 1px;
+  height: 2px;
   background: linear-gradient(90deg, 
-    transparent, 
-    rgba(99, 179, 237, 0.5), 
-    rgba(99, 179, 237, 0.3), 
-    transparent
+    transparent 0%,
+    rgba(99, 179, 237, 0.6) 30%,
+    rgba(168, 85, 247, 0.6) 50%,
+    rgba(236, 72, 153, 0.6) 70%,
+    transparent 100%
   );
+  background-size: 200% 100%;
+  animation: borderFlow 3s linear infinite;
+}
+
+@keyframes borderFlow {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
 }
 
 .countdown-section::after {
@@ -7483,13 +7491,65 @@ input[type="datetime-local"] {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 1px;
+  height: 2px;
   background: linear-gradient(90deg, 
-    transparent, 
-    rgba(236, 72, 153, 0.3), 
-    rgba(168, 85, 247, 0.3), 
-    transparent
+    transparent 0%,
+    rgba(236, 72, 153, 0.6) 30%,
+    rgba(168, 85, 247, 0.6) 50%,
+    rgba(99, 179, 237, 0.6) 70%,
+    transparent 100%
   );
+  background-size: 200% 100%;
+  animation: borderFlowReverse 3s linear infinite;
+}
+
+@keyframes borderFlowReverse {
+  0% { background-position: -100% 0; }
+  100% { background-position: 100% 0; }
+}
+
+.countdown-section .left-border {
+  content: '';
+  position: absolute;
+  top: 10%;
+  left: 0;
+  bottom: 10%;
+  width: 2px;
+  background: linear-gradient(180deg, 
+    transparent 0%,
+    rgba(99, 179, 237, 0.5) 20%,
+    rgba(99, 179, 237, 0.7) 50%,
+    rgba(99, 179, 237, 0.5) 80%,
+    transparent 100%
+  );
+  animation: leftBorderPulse 2s ease-in-out infinite;
+}
+
+@keyframes leftBorderPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.countdown-section .right-border {
+  content: '';
+  position: absolute;
+  top: 10%;
+  right: 0;
+  bottom: 10%;
+  width: 2px;
+  background: linear-gradient(180deg, 
+    transparent 0%,
+    rgba(168, 85, 247, 0.5) 20%,
+    rgba(168, 85, 247, 0.7) 50%,
+    rgba(168, 85, 247, 0.5) 80%,
+    transparent 100%
+  );
+  animation: rightBorderPulse 2s ease-in-out infinite;
+}
+
+@keyframes rightBorderPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 .countdown-header {

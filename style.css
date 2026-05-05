@@ -3200,7 +3200,8 @@ body::before {
   .income-fab,
   .quick-note-fab,
   .music-fab,
-  .currency-fab {
+  .currency-fab,
+  .countdown-fab {
     width: 52px;
     height: 52px;
   }
@@ -7516,23 +7517,40 @@ input[type="datetime-local"] {
   font-size: 14px;
 }
 
-.countdown-edit-btn {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.countdown-fab.tool-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid rgba(99, 179, 237, 0.5);
+  background: linear-gradient(145deg, #0d4a6e, #083a56);
+  color: #e0f4ff;
   cursor: pointer;
-  font-size: 13px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.6);
-  transition: all 0.25s ease;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
 }
 
-.countdown-edit-btn:hover {
-  color: #fff;
-  background: rgba(99, 179, 237, 0.2);
-  border-color: rgba(99, 179, 237, 0.4);
-  transform: scale(1.05);
-  box-shadow: 0 0 12px rgba(99, 179, 237, 0.2);
+.countdown-fab.tool-btn svg {
+  width: 26px;
+  height: 26px;
+  fill: #99ddff;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: fill 0.3s ease;
+}
+
+.countdown-fab.tool-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.1);
+  border-color: rgba(99, 179, 237, 0.7);
+  box-shadow: 0 0 20px rgba(99, 179, 237, 0.35);
+}
+
+.countdown-fab.tool-btn:hover svg {
+  fill: #fff;
 }
 
 .countdown-display {

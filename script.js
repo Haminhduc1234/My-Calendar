@@ -8223,9 +8223,6 @@ function renderCountdown() {
   const diff = target - now;
 
   const totalDays = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const years = Math.floor(totalDays / 365);
-  const months = Math.floor((totalDays % 365) / 30);
-  const days = totalDays % 30;
 
   if (countdownData.label) {
     title.textContent = countdownData.label;
@@ -8239,28 +8236,18 @@ function renderCountdown() {
     if (expiredDays > 0) expiredMsg = `Đã qua ${expiredDays} ngày`;
     display.innerHTML = `<span class="countdown-msg expired">${escapeHtml(expiredMsg)}</span>`;
   } else {
-    const html = [];
-    if (years > 0) {
-      html.push(`<div class="countdown-unit"><span class="countdown-number">${years}</span><span class="countdown-unit-label">Năm</span></div>`);
-      html.push(`<span class="countdown-sep">:</span>`);
-    }
-    if (months > 0 || years > 0) {
-      html.push(`<div class="countdown-unit"><span class="countdown-number">${months}</span><span class="countdown-unit-label">Tháng</span></div>`);
-      html.push(`<span class="countdown-sep">:</span>`);
-    }
-    html.push(`<div class="countdown-unit"><span class="countdown-number">${days}</span><span class="countdown-unit-label">Ngày</span></div>`);
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((diff % (1000 * 60)) / 1000);
 
-    if (totalDays < 7) {
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const secs = Math.floor((diff % (1000 * 60)) / 1000);
-      html.push(`<span class="countdown-sep">:</span>`);
-      html.push(`<div class="countdown-unit"><span class="countdown-number">${String(hours).padStart(2,'0')}</span><span class="countdown-unit-label">Giờ</span></div>`);
-      html.push(`<span class="countdown-sep">:</span>`);
-      html.push(`<div class="countdown-unit"><span class="countdown-number">${String(mins).padStart(2,'0')}</span><span class="countdown-unit-label">Phút</span></div>`);
-      html.push(`<span class="countdown-sep">:</span>`);
-      html.push(`<div class="countdown-unit"><span class="countdown-number">${String(secs).padStart(2,'0')}</span><span class="countdown-unit-label">Giây</span></div>`);
-    }
+    const html = [];
+    html.push(`<div class="countdown-unit"><span class="countdown-number">${totalDays}</span><span class="countdown-unit-label">Ngày</span></div>`);
+    html.push(`<span class="countdown-sep">:</span>`);
+    html.push(`<div class="countdown-unit"><span class="countdown-number">${String(hours).padStart(2,'0')}</span><span class="countdown-unit-label">Giờ</span></div>`);
+    html.push(`<span class="countdown-sep">:</span>`);
+    html.push(`<div class="countdown-unit"><span class="countdown-number">${String(mins).padStart(2,'0')}</span><span class="countdown-unit-label">Phút</span></div>`);
+    html.push(`<span class="countdown-sep">:</span>`);
+    html.push(`<div class="countdown-unit"><span class="countdown-number">${String(secs).padStart(2,'0')}</span><span class="countdown-unit-label">Giây</span></div>`);
 
     display.innerHTML = html.join("");
   }

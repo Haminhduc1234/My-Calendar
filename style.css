@@ -1074,7 +1074,6 @@ body::before {
   [class*="-modal-content"],
   [class*="-modal-"] {
     position: relative !important;
-    margin: auto !important;
     left: auto !important;
     top: auto !important;
     right: auto !important;
@@ -1517,7 +1516,9 @@ body::before {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .weather-forecast {
@@ -1621,7 +1622,6 @@ body::before {
   gap: 8px;
   overflow-x: auto;
 }
-
 
 .hourly-item {
   min-width: 75px;
@@ -5952,13 +5952,16 @@ input[type="datetime-local"] {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
   animation: aiPulse 2s ease-in-out infinite;
 }
 
 @keyframes aiPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
   }
   50% {
@@ -6007,7 +6010,11 @@ input[type="datetime-local"] {
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.2) 0%,
+    rgba(168, 85, 247, 0.15) 100%
+  );
   border-bottom: 1px solid var(--line);
 }
 
@@ -6109,7 +6116,8 @@ input[type="datetime-local"] {
 }
 
 @keyframes pulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 8px 30px rgba(139, 92, 246, 0.4);
   }
   50% {
@@ -6315,12 +6323,20 @@ input[type="datetime-local"] {
   animation: aiTypingBounce 1.4s infinite ease-in-out;
 }
 
-.ai-typing span:nth-child(1) { animation-delay: 0s; }
-.ai-typing span:nth-child(2) { animation-delay: 0.2s; }
-.ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+.ai-typing span:nth-child(1) {
+  animation-delay: 0s;
+}
+.ai-typing span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.ai-typing span:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 @keyframes aiTypingBounce {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     transform: scale(0.6);
     opacity: 0.5;
   }
@@ -6333,7 +6349,11 @@ input[type="datetime-local"] {
 /* AI Input Area - Modern Design */
 .ai-input-area {
   padding: 16px 20px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.5) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
   border-top: 1px solid var(--line);
 }
 
@@ -6350,15 +6370,17 @@ input[type="datetime-local"] {
   border-radius: 20px;
   padding: 6px 6px 6px 20px;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2),
-              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .ai-input-inner:focus-within {
   border-color: rgba(139, 92, 246, 0.5);
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 25px rgba(139, 92, 246, 0.15),
-              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 4px 25px rgba(139, 92, 246, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .ai-input-inner textarea {
@@ -6875,7 +6897,7 @@ input[type="datetime-local"] {
 
 .learn-search-results-close:hover {
   color: var(--text);
-  background: rgba(255,255,255,0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .learn-search-results {
@@ -6945,8 +6967,13 @@ input[type="datetime-local"] {
 }
 
 @keyframes vocab-no-results-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 .vocab-no-results-text {
@@ -7450,26 +7477,31 @@ input[type="datetime-local"] {
   max-width: 520px;
   margin: 0 auto 8px;
   padding: 16px 18px;
-  background: linear-gradient(135deg, rgba(20, 20, 35, 0.95), rgba(12, 12, 22, 0.98));
+  background: linear-gradient(
+    135deg,
+    rgba(20, 20, 35, 0.95),
+    rgba(12, 12, 22, 0.98)
+  );
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   position: relative;
   overflow: hidden;
-  box-shadow: 
+  box-shadow:
     0 4px 24px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .countdown-section::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, 
+  background: linear-gradient(
+    90deg,
     transparent 0%,
     rgba(99, 179, 237, 0.6) 30%,
     rgba(168, 85, 247, 0.6) 50%,
@@ -7481,18 +7513,23 @@ input[type="datetime-local"] {
 }
 
 @keyframes borderFlow {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }
 
 .countdown-section::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(90deg, 
+  background: linear-gradient(
+    90deg,
     transparent 0%,
     rgba(236, 72, 153, 0.6) 30%,
     rgba(168, 85, 247, 0.6) 50%,
@@ -7504,18 +7541,23 @@ input[type="datetime-local"] {
 }
 
 @keyframes borderFlowReverse {
-  0% { background-position: -100% 0; }
-  100% { background-position: 100% 0; }
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 100% 0;
+  }
 }
 
 .countdown-section .left-border {
-  content: '';
+  content: "";
   position: absolute;
   top: 10%;
   left: 0;
   bottom: 10%;
   width: 2px;
-  background: linear-gradient(180deg, 
+  background: linear-gradient(
+    180deg,
     transparent 0%,
     rgba(99, 179, 237, 0.5) 20%,
     rgba(99, 179, 237, 0.7) 50%,
@@ -7526,18 +7568,24 @@ input[type="datetime-local"] {
 }
 
 @keyframes leftBorderPulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .countdown-section .right-border {
-  content: '';
+  content: "";
   position: absolute;
   top: 10%;
   right: 0;
   bottom: 10%;
   width: 2px;
-  background: linear-gradient(180deg, 
+  background: linear-gradient(
+    180deg,
     transparent 0%,
     rgba(168, 85, 247, 0.5) 20%,
     rgba(168, 85, 247, 0.7) 50%,
@@ -7548,8 +7596,13 @@ input[type="datetime-local"] {
 }
 
 @keyframes rightBorderPulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .countdown-header {
@@ -7573,7 +7626,7 @@ input[type="datetime-local"] {
 }
 
 .countdown-title::before {
-  content: '⏱';
+  content: "⏱";
   font-size: 14px;
 }
 
@@ -7623,6 +7676,42 @@ input[type="datetime-local"] {
   z-index: 1;
 }
 
+.work-days-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: rgba(167, 139, 250, 0.08);
+  border: 1px solid rgba(167, 139, 250, 0.2);
+  border-radius: 20px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.work-days-display .work-days-label {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.work-days-display .work-days-number {
+  font-weight: 700;
+  font-size: 18px;
+  color: #a78bfa;
+  text-shadow: 0 0 10px rgba(167, 139, 250, 0.5);
+}
+
+.work-days-display .work-days-unit {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.work-days-display .work-days-note {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
 .countdown-event-name {
   font-size: 16px;
   font-weight: 600;
@@ -7653,11 +7742,12 @@ input[type="datetime-local"] {
 }
 
 @keyframes unitPulse {
-  0%, 100% { 
+  0%,
+  100% {
     border-color: rgba(255, 255, 255, 0.06);
     box-shadow: 0 0 0 rgba(99, 179, 237, 0);
   }
-  50% { 
+  50% {
     border-color: rgba(99, 179, 237, 0.2);
     box-shadow: 0 0 8px rgba(99, 179, 237, 0.12);
   }
@@ -7719,8 +7809,15 @@ input[type="datetime-local"] {
 }
 
 @keyframes sepPulse {
-  0%, 100% { opacity: 0.5; color: rgba(255, 255, 255, 0.4); }
-  50% { opacity: 0.8; color: rgba(99, 179, 237, 0.7); }
+  0%,
+  100% {
+    opacity: 0.5;
+    color: rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    opacity: 0.8;
+    color: rgba(99, 179, 237, 0.7);
+  }
 }
 
 .countdown-unit:hover ~ .countdown-sep,
@@ -7826,7 +7923,9 @@ input[type="datetime-local"] {
   border-color: var(--accent);
 }
 
-#countdownModal .form-group input[type="date"]::-webkit-calendar-picker-indicator {
+#countdownModal
+  .form-group
+  input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
   opacity: 0.6;
   cursor: pointer;
@@ -7842,7 +7941,9 @@ input[type="datetime-local"] {
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.2s, opacity 0.2s;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
 }
 
 #countdownModal .btn-primary:hover {
@@ -7866,4 +7967,3 @@ input[type="datetime-local"] {
 #countdownModal .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.14);
 }
-

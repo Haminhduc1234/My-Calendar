@@ -14,7 +14,8 @@ const LEGACY_MIGRATION_FLAG_PREFIX = "calendarLegacyMigrated:";
 const LEGACY_CASHFLOW_MIGRATION_FLAG_PREFIX = "calendarLegacyCashflowMigrated:";
 const LEGACY_CASHFLOW_STORAGE_KEY = "cashflowEntriesV1";
 const FIREBASE_CONFIG = self.FIREBASE_WEB_CONFIG || {};
-const FIREBASE_TRANSLATE_HISTORY_PATH = self.FIREBASE_TRANSLATE_HISTORY_PATH || "translateHistory";
+const FIREBASE_TRANSLATE_HISTORY_PATH =
+  self.FIREBASE_TRANSLATE_HISTORY_PATH || "translateHistory";
 
 let firebaseDb = null;
 let firebaseDatesRef = null;
@@ -228,9 +229,9 @@ function renderTodayEvents() {
       .map((ev) => {
         const timeStr = ev.eventDateTime
           ? new Date(ev.eventDateTime).toLocaleTimeString("vi-VN", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+              hour: "2-digit",
+              minute: "2-digit",
+            })
           : "";
         return `<div class="today-event-item">
         ${timeStr ? `<span class="today-event-time">${timeStr}</span>` : ""}
@@ -341,8 +342,8 @@ function normalizeDateData(raw) {
     ? payload.events
     : payload.events && typeof payload.events === "object"
       ? Object.keys(payload.events)
-        .sort((a, b) => Number(a) - Number(b))
-        .map((key) => payload.events[key])
+          .sort((a, b) => Number(a) - Number(b))
+          .map((key) => payload.events[key])
       : [];
 
   const events = rawEvents.map((event) => ({
@@ -357,8 +358,8 @@ function normalizeDateData(raw) {
     ? payload.cashflowEntries
     : payload.cashflowEntries && typeof payload.cashflowEntries === "object"
       ? Object.keys(payload.cashflowEntries)
-        .sort((a, b) => Number(a) - Number(b))
-        .map((key) => payload.cashflowEntries[key])
+          .sort((a, b) => Number(a) - Number(b))
+          .map((key) => payload.cashflowEntries[key])
       : [];
 
   const cashflowEntries = rawCashflowEntries
@@ -1018,7 +1019,7 @@ function parseEventRecord(raw) {
         overtimeHours: Math.max(0, parseInt(parsed.overtimeHours, 10) || 0),
       };
     }
-  } catch { }
+  } catch {}
 
   const legacyHours = parseLegacyOvertimeHours(text);
   return {
@@ -1121,31 +1122,31 @@ async function initFirebaseRealtime() {
   firebaseDatesRef = firebaseDb.ref(
     `${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`,
   );
-  firebaseQuickNotesRef = firebaseDb.ref(
-    `quickNotes/${userProfileKey}`,
-  );
-  firebaseProjectsRef = firebaseDb.ref(
-    `projects/${userProfileKey}`,
-  );
+  firebaseQuickNotesRef = firebaseDb.ref(`quickNotes/${userProfileKey}`);
+  firebaseProjectsRef = firebaseDb.ref(`projects/${userProfileKey}`);
   firebaseTranslateHistoryRef = firebaseDb.ref(
     `${FIREBASE_TRANSLATE_HISTORY_PATH}/${userProfileKey}`,
   );
 
   // AI Settings reference (API Key + Model)
-  firebaseAISettingsRef = firebaseDb.ref(
-    `aiSettings/${userProfileKey}`,
-  );
+  firebaseAISettingsRef = firebaseDb.ref(`aiSettings/${userProfileKey}`);
 
   console.log("[Firebase] Đã khởi tạo thành công, firebaseDb:", !!firebaseDb);
 
   // Lắng nghe sự thay đổi của Translate History
   firebaseTranslateHistoryRef.on("value", (snapshot) => {
     const remoteData = snapshot.val() || {};
-    translateHistoryCache = Object.keys(remoteData).map(key => ({
-      id: key,
-      ...remoteData[key]
-    })).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    console.log("Translate history: Loaded", translateHistoryCache.length, "items from Firebase");
+    translateHistoryCache = Object.keys(remoteData)
+      .map((key) => ({
+        id: key,
+        ...remoteData[key],
+      }))
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    console.log(
+      "Translate history: Loaded",
+      translateHistoryCache.length,
+      "items from Firebase",
+    );
     renderTranslateHistory();
   });
 
@@ -1157,7 +1158,7 @@ async function initFirebaseRealtime() {
     projectsDataCache = {};
     const newTasksCache = {};
 
-    Object.keys(remoteData).forEach(key => {
+    Object.keys(remoteData).forEach((key) => {
       const val = remoteData[key];
       if (val && typeof val === "object") {
         if (val.tasks) {
@@ -1245,7 +1246,7 @@ async function initFirebaseRealtime() {
 
   if (remoteProjects && typeof remoteProjects === "object") {
     projectsDataCache = {};
-    Object.keys(remoteProjects).forEach(key => {
+    Object.keys(remoteProjects).forEach((key) => {
       const val = remoteProjects[key];
       if (val && typeof val === "object") {
         if (val.tasks) {
@@ -1257,7 +1258,10 @@ async function initFirebaseRealtime() {
         }
       }
     });
-    localStorage.setItem(`projects:${userProfileKey}`, JSON.stringify(projectsDataCache));
+    localStorage.setItem(
+      `projects:${userProfileKey}`,
+      JSON.stringify(projectsDataCache),
+    );
   } else {
     const localProjects = loadProjectsFromLocalStorage();
     if (localProjects) {
@@ -1267,7 +1271,7 @@ async function initFirebaseRealtime() {
   }
 
   // Load tasks for each project from local storage if not loaded from Firebase
-  Object.keys(projectsDataCache).forEach(projectId => {
+  Object.keys(projectsDataCache).forEach((projectId) => {
     if (!projectTasksCache[projectId]) {
       const localTasks = loadProjectTasksFromLocalStorage(projectId);
       if (localTasks) {
@@ -1307,10 +1311,7 @@ async function initFirebaseRealtime() {
     const incoming = snapshot.val();
     if (Array.isArray(incoming)) {
       quickNotesCache = incoming;
-      localStorage.setItem(
-        getQuickNoteStorageKey(),
-        JSON.stringify(incoming),
-      );
+      localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(incoming));
       renderQuickNotes();
     }
   });
@@ -1331,25 +1332,28 @@ async function initFirebaseRealtime() {
 function loadAISettingsFromFirebase() {
   if (!firebaseAISettingsRef) return;
 
-  firebaseAISettingsRef.once("value").then((snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      // Update global variables
-      if (data.apiKey) {
-        aiApiKey = data.apiKey;
-        localStorage.setItem("aiApiKey", data.apiKey);
+  firebaseAISettingsRef
+    .once("value")
+    .then((snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        // Update global variables
+        if (data.apiKey) {
+          aiApiKey = data.apiKey;
+          localStorage.setItem("aiApiKey", data.apiKey);
+        }
+        if (data.model) {
+          aiModel = data.model;
+          localStorage.setItem("aiModel", data.model);
+        }
+        // Update UI
+        updateAIStatus();
+        console.log("AI Settings loaded from Firebase");
       }
-      if (data.model) {
-        aiModel = data.model;
-        localStorage.setItem("aiModel", data.model);
-      }
-      // Update UI
-      updateAIStatus();
-      console.log("AI Settings loaded from Firebase");
-    }
-  }).catch((err) => {
-    console.error("Error loading AI settings from Firebase:", err);
-  });
+    })
+    .catch((err) => {
+      console.error("Error loading AI settings from Firebase:", err);
+    });
 
   // Listen for real-time updates
   firebaseAISettingsRef.on("value", (snapshot) => {
@@ -1381,17 +1385,20 @@ function saveAISettingsToFirebase(apiKey, model) {
   const settings = {
     apiKey: apiKey,
     model: model,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   };
 
-  firebaseAISettingsRef.set(settings).then(() => {
-    console.log("AI Settings saved to Firebase");
-  }).catch((err) => {
-    console.error("Error saving AI settings to Firebase:", err);
-    // Fallback to localStorage
-    localStorage.setItem("aiApiKey", apiKey);
-    localStorage.setItem("aiModel", model);
-  });
+  firebaseAISettingsRef
+    .set(settings)
+    .then(() => {
+      console.log("AI Settings saved to Firebase");
+    })
+    .catch((err) => {
+      console.error("Error saving AI settings to Firebase:", err);
+      // Fallback to localStorage
+      localStorage.setItem("aiApiKey", apiKey);
+      localStorage.setItem("aiModel", model);
+    });
 }
 
 function closeAllModals() {
@@ -1404,9 +1411,9 @@ function closeAllModals() {
     "myMusicModal",
     "cashflowModal",
     "cashflowDeleteConfirmModal",
-    "currencyModal"
+    "currencyModal",
   ];
-  modals.forEach(id => {
+  modals.forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.style.display = "none";
   });
@@ -1496,9 +1503,9 @@ function openDayDetailsModal(dateKey, d, m, y) {
       eventDiv.className = "event-item";
       const timeStr = event.eventDateTime
         ? new Date(event.eventDateTime).toLocaleTimeString("vi-VN", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
+            hour: "2-digit",
+            minute: "2-digit",
+          })
         : "--:--";
       eventDiv.innerHTML = `
         <div class="event-time">${timeStr}</div>
@@ -1630,7 +1637,8 @@ function closeProjectsModal() {
 
 function openProjectTasksModal(projectId, projectTitle) {
   currentOpenedProjectId = projectId;
-  document.getElementById("currentProjectTitle").textContent = projectTitle || "Dự án";
+  document.getElementById("currentProjectTitle").textContent =
+    projectTitle || "Dự án";
   document.getElementById("projectsModal").style.display = "none";
   document.getElementById("projectTasksModal").style.display = "flex";
   renderProjectTasksList(projectId);
@@ -1666,7 +1674,9 @@ function renderProjectsList() {
     return;
   }
 
-  container.innerHTML = projects.map(project => `
+  container.innerHTML = projects
+    .map(
+      (project) => `
     <div class="project-item" data-project-id="${project.id}" onclick="if(!event.target.closest('.item-actions')) openProjectTasksModal('${project.id}', '${escapeHtml(project.title || "")}')">
       <div class="project-item-header">
         <div class="project-item-title">
@@ -1682,7 +1692,9 @@ function renderProjectsList() {
         <span>${countTasksInProject(project.id)} công việc</span>
       </div>
     </div>
-  `).join("");
+  `,
+    )
+    .join("");
 }
 
 function countTasksInProject(projectId) {
@@ -1743,7 +1755,7 @@ function handleProjectFormSubmit(e) {
         ...project,
         title,
         description,
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
       };
     }
   } else {
@@ -1760,8 +1772,8 @@ function handleProjectFormSubmit(e) {
         description,
         order,
         createdAt: Date.now(),
-        updatedAt: Date.now()
-      }
+        updatedAt: Date.now(),
+      },
     };
   }
 
@@ -1783,7 +1795,7 @@ function deleteProject(projectId) {
     "Bạn có chắc muốn xóa dự án này? Tất cả công việc trong dự án cũng sẽ bị xóa.",
     "Xóa",
     doDeleteProject,
-    projectId
+    projectId,
   );
 }
 
@@ -1813,7 +1825,10 @@ function saveProjectsToFirebase() {
 
 function saveProjectsToLocalStorage() {
   if (!userProfileKey) return;
-  localStorage.setItem(`projects:${userProfileKey}`, JSON.stringify(projectsDataCache));
+  localStorage.setItem(
+    `projects:${userProfileKey}`,
+    JSON.stringify(projectsDataCache),
+  );
 }
 
 function loadProjectsFromLocalStorage() {
@@ -1841,7 +1856,9 @@ function renderProjectTasksList(projectId) {
     return;
   }
 
-  container.innerHTML = tasks.map((task, idx) => `
+  container.innerHTML = tasks
+    .map(
+      (task, idx) => `
     <div class="task-item draggable" draggable="true" data-task-id="${task.id}" data-project-id="${projectId}" data-task-order="${task.order || idx}" onclick="event.stopPropagation();">
       <div class="task-item-header">
         <div class="drag-controls">
@@ -1858,7 +1875,9 @@ function renderProjectTasksList(projectId) {
       </div>
       ${task.description ? `<div class="task-item-text">${escapeHtml(task.description)}</div>` : ""}
     </div>
-  `).join("");
+  `,
+    )
+    .join("");
 
   bindTaskDragDrop(projectId);
 }
@@ -2011,7 +2030,7 @@ function handleTaskFormSubmit(e) {
         ...task,
         title,
         description,
-        updatedAt: Date.now()
+        updatedAt: Date.now(),
       };
     }
   } else {
@@ -2031,7 +2050,7 @@ function handleTaskFormSubmit(e) {
       completed: false,
       order,
       createdAt: Date.now(),
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     };
   }
 
@@ -2056,7 +2075,7 @@ function deleteTask(projectId, taskId) {
     "Bạn có chắc muốn xóa công việc này?",
     "Xóa",
     doDeleteTask,
-    { projectId, taskId }
+    { projectId, taskId },
   );
 }
 
@@ -2078,7 +2097,7 @@ function toggleTaskComplete(projectId, taskId) {
   projectTasksCache[projectId][taskId] = {
     ...task,
     completed: !task.completed,
-    updatedAt: Date.now()
+    updatedAt: Date.now(),
   };
 
   saveProjectTasksToFirebase(projectId);
@@ -2090,7 +2109,7 @@ function moveTaskUp(projectId, taskId) {
     .map(([id, data]) => ({ id, ...data }))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  const idx = tasks.findIndex(t => t.id === taskId);
+  const idx = tasks.findIndex((t) => t.id === taskId);
   if (idx <= 0) return;
 
   // Swap orders
@@ -2100,7 +2119,7 @@ function moveTaskUp(projectId, taskId) {
 
   // Rebuild cache
   const newCache = {};
-  tasks.forEach(t => {
+  tasks.forEach((t) => {
     newCache[t.id] = projectTasksCache[projectId][t.id];
     newCache[t.id].order = t.order;
   });
@@ -2115,7 +2134,7 @@ function moveTaskDown(projectId, taskId) {
     .map(([id, data]) => ({ id, ...data }))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  const idx = tasks.findIndex(t => t.id === taskId);
+  const idx = tasks.findIndex((t) => t.id === taskId);
   if (idx < 0 || idx >= tasks.length - 1) return;
 
   // Swap orders
@@ -2125,7 +2144,7 @@ function moveTaskDown(projectId, taskId) {
 
   // Rebuild cache
   const newCache = {};
-  tasks.forEach(t => {
+  tasks.forEach((t) => {
     newCache[t.id] = projectTasksCache[projectId][t.id];
     newCache[t.id].order = t.order;
   });
@@ -2141,19 +2160,28 @@ function saveProjectTasksToFirebase(projectId) {
     return;
   }
 
-  firebaseProjectsRef.child(projectId).child("tasks").set(projectTasksCache[projectId] || {}).catch(() => {
-    saveProjectTasksToLocalStorage(projectId);
-  });
+  firebaseProjectsRef
+    .child(projectId)
+    .child("tasks")
+    .set(projectTasksCache[projectId] || {})
+    .catch(() => {
+      saveProjectTasksToLocalStorage(projectId);
+    });
 }
 
 function saveProjectTasksToLocalStorage(projectId) {
   if (!userProfileKey) return;
-  localStorage.setItem(`projectTasks:${userProfileKey}:${projectId}`, JSON.stringify(projectTasksCache[projectId] || {}));
+  localStorage.setItem(
+    `projectTasks:${userProfileKey}:${projectId}`,
+    JSON.stringify(projectTasksCache[projectId] || {}),
+  );
 }
 
 function loadProjectTasksFromLocalStorage(projectId) {
   if (!userProfileKey) return null;
-  const data = localStorage.getItem(`projectTasks:${userProfileKey}:${projectId}`);
+  const data = localStorage.getItem(
+    `projectTasks:${userProfileKey}:${projectId}`,
+  );
   return data ? JSON.parse(data) : null;
 }
 
@@ -2166,7 +2194,7 @@ let _touchDragging = false;
 
 function bindTaskDragDrop(projectId) {
   const items = document.querySelectorAll(".task-item.draggable");
-  items.forEach(item => {
+  items.forEach((item) => {
     // Desktop drag events
     item.addEventListener("dragstart", handleTaskDragStart);
     item.addEventListener("dragover", handleTaskDragOver);
@@ -2176,14 +2204,19 @@ function bindTaskDragDrop(projectId) {
     item.addEventListener("dragend", handleTaskDragEnd);
 
     // Mobile touch events
-    item.addEventListener("touchstart", handleTaskTouchStart, { passive: false });
+    item.addEventListener("touchstart", handleTaskTouchStart, {
+      passive: false,
+    });
     item.addEventListener("touchmove", handleTaskTouchMove, { passive: false });
     item.addEventListener("touchend", (e) => handleTaskTouchEnd(e, projectId));
   });
 }
 
 function handleTaskTouchStart(e) {
-  if (e.target.closest(".item-actions") || e.target.closest(".task-drag-handle")) {
+  if (
+    e.target.closest(".item-actions") ||
+    e.target.closest(".task-drag-handle")
+  ) {
     return;
   }
   e.preventDefault();
@@ -2196,7 +2229,7 @@ function handleTaskTouchStart(e) {
   _touchDragSrcEl.classList.add("dragging");
   _touchDragSrcEl.style.opacity = "0.4";
 
-  document.querySelectorAll(".task-item.draggable").forEach(item => {
+  document.querySelectorAll(".task-item.draggable").forEach((item) => {
     if (item.dataset.taskId !== _taskDragSrcId) {
       item.classList.add("drop-target");
     }
@@ -2218,7 +2251,7 @@ function handleTaskTouchMove(e) {
 
     // Highlight drop target
     const items = Array.from(document.querySelectorAll(".task-item.draggable"));
-    items.forEach(item => {
+    items.forEach((item) => {
       if (item === _touchDragSrcEl) return;
       item.style.borderTop = "";
       item.style.borderBottom = "";
@@ -2244,7 +2277,7 @@ function handleTaskTouchEnd(e, projectId) {
   _touchDragSrcEl.style.zIndex = "";
   _touchDragSrcEl.style.position = "";
 
-  document.querySelectorAll(".drop-target, .drag-over").forEach(el => {
+  document.querySelectorAll(".drop-target, .drag-over").forEach((el) => {
     el.classList.remove("drop-target", "drag-over");
     el.style.transform = "";
     el.style.boxShadow = "";
@@ -2257,7 +2290,9 @@ function handleTaskTouchEnd(e, projectId) {
     // Find target element under touch point
     const touch = e.changedTouches[0];
     const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-    const targetItem = targetEl ? targetEl.closest(".task-item.draggable") : null;
+    const targetItem = targetEl
+      ? targetEl.closest(".task-item.draggable")
+      : null;
 
     if (targetItem && targetItem.dataset.taskId !== _taskDragSrcId) {
       const targetId = targetItem.dataset.taskId;
@@ -2279,8 +2314,8 @@ function performTaskReorder(projectId, srcId, targetId, insertAbove) {
     .map(([id, data]) => ({ id, ...data }))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  const srcIdx = tasks.findIndex(t => t.id === srcId);
-  const targetIdx = tasks.findIndex(t => t.id === targetId);
+  const srcIdx = tasks.findIndex((t) => t.id === srcId);
+  const targetIdx = tasks.findIndex((t) => t.id === targetId);
 
   if (srcIdx < 0 || targetIdx < 0) return;
 
@@ -2314,7 +2349,7 @@ function handleTaskDragStart(e) {
   e.dataTransfer.setData("text/plain", _taskDragSrcId);
 
   // Add drop indicator style to all items
-  document.querySelectorAll(".task-item.draggable").forEach(item => {
+  document.querySelectorAll(".task-item.draggable").forEach((item) => {
     if (item.dataset.taskId !== _taskDragSrcId) {
       item.classList.add("drop-target");
     }
@@ -2330,7 +2365,7 @@ function handleTaskDragOver(e) {
   const midY = rect.top + rect.height / 2;
 
   // Remove existing indicator
-  document.querySelectorAll(".drop-indicator").forEach(el => el.remove());
+  document.querySelectorAll(".drop-indicator").forEach((el) => el.remove());
 
   if (e.clientY < midY) {
     e.currentTarget.style.borderTop = "3px solid #66b2ff";
@@ -2360,7 +2395,7 @@ function handleTaskDrop(e, projectId) {
   e.preventDefault();
 
   // Clean up visual indicators first
-  document.querySelectorAll(".drop-target, .drag-over").forEach(el => {
+  document.querySelectorAll(".drop-target, .drag-over").forEach((el) => {
     el.classList.remove("drop-target", "drag-over");
     el.style.transform = "";
     el.style.boxShadow = "";
@@ -2368,7 +2403,7 @@ function handleTaskDrop(e, projectId) {
     el.style.borderTop = "";
     el.style.borderBottom = "";
   });
-  document.querySelectorAll(".drop-indicator").forEach(el => el.remove());
+  document.querySelectorAll(".drop-indicator").forEach((el) => el.remove());
 
   const targetId = e.currentTarget.dataset.taskId;
   if (!_taskDragSrcId || _taskDragSrcId === targetId) return;
@@ -2377,8 +2412,8 @@ function handleTaskDrop(e, projectId) {
     .map(([id, data]) => ({ id, ...data }))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
-  const srcIdx = tasks.findIndex(t => t.id === _taskDragSrcId);
-  const targetIdx = tasks.findIndex(t => t.id === targetId);
+  const srcIdx = tasks.findIndex((t) => t.id === _taskDragSrcId);
+  const targetIdx = tasks.findIndex((t) => t.id === targetId);
 
   if (srcIdx < 0 || targetIdx < 0) return;
 
@@ -2421,7 +2456,7 @@ function handleTaskDragEnd(e) {
   e.currentTarget.style.opacity = "";
 
   // Clean up all drag effects
-  document.querySelectorAll(".task-item").forEach(item => {
+  document.querySelectorAll(".task-item").forEach((item) => {
     item.classList.remove("dragging", "drag-over", "drop-target");
     item.style.opacity = "";
     item.style.transform = "";
@@ -2430,7 +2465,7 @@ function handleTaskDragEnd(e) {
     item.style.borderTop = "";
     item.style.borderBottom = "";
   });
-  document.querySelectorAll(".drop-indicator").forEach(el => el.remove());
+  document.querySelectorAll(".drop-indicator").forEach((el) => el.remove());
 }
 
 function openGoldModal() {
@@ -2478,13 +2513,13 @@ function loadQuickNotes() {
 function saveQuickNotes(notes) {
   const normalized = Array.isArray(notes)
     ? notes
-      .map((note) => ({
-        id: String(note?.id || "").trim(),
-        text: String(note?.text || "").trim(),
-        done: Boolean(note?.done),
-        createdAt: Number(note?.createdAt || Date.now()),
-      }))
-      .filter((note) => note.id && note.text)
+        .map((note) => ({
+          id: String(note?.id || "").trim(),
+          text: String(note?.text || "").trim(),
+          done: Boolean(note?.done),
+          createdAt: Number(note?.createdAt || Date.now()),
+        }))
+        .filter((note) => note.id && note.text)
     : [];
 
   quickNotesCache = normalized;
@@ -2539,7 +2574,7 @@ let _noteDragSrcId = null;
 
 function bindQuickNoteDragDrop() {
   const items = document.querySelectorAll("#quickNoteList .quick-note-item");
-  items.forEach(item => {
+  items.forEach((item) => {
     item.addEventListener("dragstart", handleNoteDragStart);
     item.addEventListener("dragenter", handleNoteDragEnter);
     item.addEventListener("dragover", handleNoteDragOver);
@@ -2580,8 +2615,8 @@ function handleNoteDrop(e) {
   if (!_noteDragSrcId || _noteDragSrcId === targetId) return;
 
   const notes = loadQuickNotes();
-  const srcIdx = notes.findIndex(n => n.id === _noteDragSrcId);
-  const targetIdx = notes.findIndex(n => n.id === targetId);
+  const srcIdx = notes.findIndex((n) => n.id === _noteDragSrcId);
+  const targetIdx = notes.findIndex((n) => n.id === targetId);
 
   if (srcIdx < 0 || targetIdx < 0) return;
 
@@ -2594,16 +2629,18 @@ function handleNoteDrop(e) {
 
 function handleNoteDragEnd(e) {
   _noteDragSrcId = null;
-  document.querySelectorAll("#quickNoteList .quick-note-item").forEach(item => {
-    item.classList.remove("is-dragging", "drag-over");
-  });
+  document
+    .querySelectorAll("#quickNoteList .quick-note-item")
+    .forEach((item) => {
+      item.classList.remove("is-dragging", "drag-over");
+    });
 }
 
 let _editingQuickNoteId = null;
 
 function editQuickNote(noteId) {
   const notes = loadQuickNotes();
-  const note = notes.find(n => n.id === noteId);
+  const note = notes.find((n) => n.id === noteId);
   if (!note) return;
 
   _editingQuickNoteId = noteId;
@@ -2667,7 +2704,7 @@ function submitQuickNote() {
   const notes = loadQuickNotes();
 
   if (_editingQuickNoteId) {
-    const idx = notes.findIndex(n => n.id === _editingQuickNoteId);
+    const idx = notes.findIndex((n) => n.id === _editingQuickNoteId);
     if (idx >= 0) {
       notes[idx].text = text;
     }
@@ -2724,15 +2761,15 @@ function initQuickNoteModal() {
 
 let MY_MUSIC_TRACKS = Array.isArray(self.MY_LOCAL_MUSIC_TRACKS)
   ? self.MY_LOCAL_MUSIC_TRACKS.filter((track) => {
-    return (
-      track &&
-      typeof track.title === "string" &&
-      typeof track.artist === "string" &&
-      typeof track.src === "string" &&
-      typeof track.cover === "string" &&
-      track.src.trim().length > 0
-    );
-  })
+      return (
+        track &&
+        typeof track.title === "string" &&
+        typeof track.artist === "string" &&
+        typeof track.src === "string" &&
+        typeof track.cover === "string" &&
+        track.src.trim().length > 0
+      );
+    })
   : [];
 
 const myMusicState = {
@@ -2870,7 +2907,7 @@ function bindPlaylistDragDrop() {
   if (!listEl) return;
 
   const items = listEl.querySelectorAll(".my-music-track-item");
-  items.forEach(item => {
+  items.forEach((item) => {
     item.addEventListener("dragstart", handleDragStart);
     item.addEventListener("dragenter", handleDragEnter);
     item.addEventListener("dragover", handleDragOver);
@@ -2918,7 +2955,10 @@ function handleDrop(e) {
     const maxIdx = Math.max(_dragSrcIndex, targetIndex);
     if (myMusicState.index > _dragSrcIndex && myMusicState.index <= maxIdx) {
       myMusicState.index--;
-    } else if (myMusicState.index < _dragSrcIndex && myMusicState.index >= minIdx) {
+    } else if (
+      myMusicState.index < _dragSrcIndex &&
+      myMusicState.index >= minIdx
+    ) {
       myMusicState.index++;
     }
   }
@@ -2932,7 +2972,7 @@ function handleDrop(e) {
 
 function handleDragEnd(e) {
   _dragSrcIndex = null;
-  document.querySelectorAll(".my-music-track-item").forEach(item => {
+  document.querySelectorAll(".my-music-track-item").forEach((item) => {
     item.classList.remove("is-dragging", "drag-over");
   });
 }
@@ -2948,7 +2988,8 @@ function setMyMusicPlayUI(isPlaying) {
   const disc = document.getElementById("myMusicDisc");
   if (playBtn)
     playBtn.setAttribute("aria-label", isPlaying ? "Tạm dừng" : "Phát");
-  if (playIcon) playIcon.src = isPlaying ? "public/pause.png" : "public/app.png";
+  if (playIcon)
+    playIcon.src = isPlaying ? "public/pause.png" : "public/app.png";
   if (disc) disc.classList.toggle("is-spinning", isPlaying);
   renderMyMusicPlaylist();
 }
@@ -3501,13 +3542,13 @@ function renderHourlyForecast(hourly, currentTime) {
 
   // Fallback: find first entry of today
   if (currentHourIndex === -1) {
-    currentHourIndex = hourly.time.findIndex(t => t.startsWith(todayStr));
+    currentHourIndex = hourly.time.findIndex((t) => t.startsWith(todayStr));
   }
 
   if (currentHourIndex === -1) return;
 
   // Start from 0h of today, show 24 hours
-  const startIndex = hourly.time.findIndex(t => t.startsWith(todayStr));
+  const startIndex = hourly.time.findIndex((t) => t.startsWith(todayStr));
   const endIndex = startIndex + 24;
 
   // Highlight next hour after current
@@ -3549,7 +3590,11 @@ function renderHourlyForecast(hourly, currentTime) {
   requestAnimationFrame(() => {
     const nextHourEl = container.querySelector(".hourly-item.next-hour");
     if (nextHourEl) {
-      nextHourEl.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      nextHourEl.scrollIntoView({
+        behavior: "smooth",
+        inline: "center",
+        block: "nearest",
+      });
     }
   });
 }
@@ -3561,7 +3606,7 @@ function renderForecast(daily, hourly) {
 
   for (let i = 1; i < daily.time.length; i++) {
     const date = new Date(daily.time[i]);
-    
+
     // Format day label: Ngày mai, Ngày kia, or weekday + date
     let dayLabel;
     if (i === 1) {
@@ -4062,8 +4107,8 @@ async function fetchTextWithCorsFallback(url) {
   const res = await fetch(proxyUrl, {
     cache: "no-cache",
     headers: {
-      "Cache-Control": "no-cache"
-    }
+      "Cache-Control": "no-cache",
+    },
   });
   if (!res.ok) throw new Error("Không thể tải dữ liệu do CORS");
 
@@ -4726,11 +4771,11 @@ const CURRENCY_DATA = {
   SAR: { name: "Riyal Ả Rập Xê Út", flag: "https://flagcdn.com/w40/sa.png" },
   SEK: { name: "Krona Thụy Điển", flag: "https://flagcdn.com/w40/se.png" },
   NOK: { name: "Krone Na Uy", flag: "https://flagcdn.com/w40/no.png" },
-  DKK: { name: "Krone Đan Mạch", flag: "https://flagcdn.com/w40/dk.png" }
+  DKK: { name: "Krone Đan Mạch", flag: "https://flagcdn.com/w40/dk.png" },
 };
 
 function initCurrencySelects() {
-  ["currencyFrom", "currencyTo"].forEach(id => {
+  ["currencyFrom", "currencyTo"].forEach((id) => {
     const select = document.getElementById(id);
     const dropdown = document.getElementById(id + "Dropdown");
     const selectBox = document.getElementById(id + "Select");
@@ -4738,15 +4783,17 @@ function initCurrencySelects() {
     const arrowSpan = selectBox.querySelector(".currency-select-arrow");
 
     const options = Array.from(select.options);
-    dropdown.innerHTML = options.map(opt => {
-      const code = opt.value;
-      const data = CURRENCY_DATA[code];
-      if (!data) return "";
-      return `<div class="currency-option" data-value="${code}">
+    dropdown.innerHTML = options
+      .map((opt) => {
+        const code = opt.value;
+        const data = CURRENCY_DATA[code];
+        if (!data) return "";
+        return `<div class="currency-option" data-value="${code}">
         <img src="${data.flag}" alt="${data.name}" onerror="this.style.display='none'">
         <span>${code} - ${data.name}</span>
       </div>`;
-    }).join("");
+      })
+      .join("");
 
     const updateDisplay = () => {
       const selectedCode = select.value;
@@ -4760,7 +4807,9 @@ function initCurrencySelects() {
       const option = e.target.closest(".currency-option");
       if (option) {
         select.value = option.dataset.value;
-        dropdown.querySelectorAll(".currency-option").forEach(o => o.classList.remove("selected"));
+        dropdown
+          .querySelectorAll(".currency-option")
+          .forEach((o) => o.classList.remove("selected"));
         option.classList.add("selected");
         updateDisplay();
         dropdown.classList.remove("show");
@@ -4778,21 +4827,27 @@ function toggleCurrencySelect(id) {
   const selectBox = document.getElementById(id + "Select");
   const arrowSpan = selectBox.querySelector(".currency-select-arrow");
 
-  document.querySelectorAll(".currency-dropdown").forEach(d => {
+  document.querySelectorAll(".currency-dropdown").forEach((d) => {
     if (d !== dropdown) d.classList.remove("show");
   });
-  document.querySelectorAll(".currency-select-arrow").forEach(a => {
+  document.querySelectorAll(".currency-select-arrow").forEach((a) => {
     if (a !== arrowSpan) a.style.transform = "";
   });
 
   dropdown.classList.toggle("show");
-  arrowSpan.style.transform = dropdown.classList.contains("show") ? "rotate(180deg)" : "";
+  arrowSpan.style.transform = dropdown.classList.contains("show")
+    ? "rotate(180deg)"
+    : "";
 }
 
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".currency-select-wrapper")) {
-    document.querySelectorAll(".currency-dropdown").forEach(d => d.classList.remove("show"));
-    document.querySelectorAll(".currency-select-arrow").forEach(a => a.style.transform = "");
+    document
+      .querySelectorAll(".currency-dropdown")
+      .forEach((d) => d.classList.remove("show"));
+    document
+      .querySelectorAll(".currency-select-arrow")
+      .forEach((a) => (a.style.transform = ""));
   }
 });
 
@@ -4834,7 +4889,9 @@ async function fetchExchangeRates() {
     const data = await response.json();
     if (data && data.rates) {
       window.exchangeRates = data.rates;
-      const lastUpdate = new Date(data.time_last_update_unix * 1000).toLocaleString("vi-VN");
+      const lastUpdate = new Date(
+        data.time_last_update_unix * 1000,
+      ).toLocaleString("vi-VN");
       infoEl.innerText = `Cập nhật lần cuối: ${lastUpdate}`;
       let amountInput = document.getElementById("currencyAmount");
       let value = amountInput.value.replace(/[^\d]/g, "");
@@ -4853,7 +4910,9 @@ async function fetchExchangeRates() {
 
 function convertCurrency() {
   if (!window.exchangeRates) return;
-  let amountStr = document.getElementById("currencyAmount").value.replace(/[^\d]/g, "");
+  let amountStr = document
+    .getElementById("currencyAmount")
+    .value.replace(/[^\d]/g, "");
   const amount = parseFloat(amountStr) || 0;
   const from = document.getElementById("currencyFrom").value;
   const to = document.getElementById("currencyTo").value;
@@ -4867,7 +4926,9 @@ function convertCurrency() {
     if (["VND", "JPY", "KRW", "IDR", "KHR", "LAK", "MMK"].includes(to)) {
       formattedResult = Math.round(result).toLocaleString("vi-VN");
     } else {
-      formattedResult = result.toLocaleString("vi-VN", { maximumFractionDigits: 2 });
+      formattedResult = result.toLocaleString("vi-VN", {
+        maximumFractionDigits: 2,
+      });
     }
     document.getElementById("currencyResult").value = formattedResult;
   }
@@ -4923,9 +4984,16 @@ function swapCurrency() {
 /* ========================== TIN TỨC ========================== */
 let currentNewsTab = "vn";
 let newsCache = {
-  vn: null, global: null, sports: null, business: null,
-  tech: null, realestate: null, health: null,
-  entertainment: null, cars: null, travel: null
+  vn: null,
+  global: null,
+  sports: null,
+  business: null,
+  tech: null,
+  realestate: null,
+  health: null,
+  entertainment: null,
+  cars: null,
+  travel: null,
 };
 
 function openNewsModal() {
@@ -4965,13 +5033,19 @@ function switchNewsTab(type) {
 
   currentNewsTab = type;
   const tabIds = {
-    vn: "newsTabVN", global: "newsTabGlobal", sports: "newsTabSports",
-    business: "newsTabBusiness", tech: "newsTabTech", realestate: "newsTabRealEstate",
-    health: "newsTabHealth", entertainment: "newsTabEntertainment",
-    cars: "newsTabCars", travel: "newsTabTravel"
+    vn: "newsTabVN",
+    global: "newsTabGlobal",
+    sports: "newsTabSports",
+    business: "newsTabBusiness",
+    tech: "newsTabTech",
+    realestate: "newsTabRealEstate",
+    health: "newsTabHealth",
+    entertainment: "newsTabEntertainment",
+    cars: "newsTabCars",
+    travel: "newsTabTravel",
   };
 
-  Object.values(tabIds).forEach(id => {
+  Object.values(tabIds).forEach((id) => {
     document.getElementById(id)?.classList.remove("active");
   });
   document.getElementById(tabIds[type])?.classList.add("active");
@@ -4998,7 +5072,7 @@ async function fetchNews(type) {
     health: "https://vnexpress.net/rss/suc-khoe.rss",
     entertainment: "https://vnexpress.net/rss/giai-tri.rss",
     cars: "https://vnexpress.net/rss/oto-xe-may.rss",
-    travel: "https://vnexpress.net/rss/du-lich.rss"
+    travel: "https://vnexpress.net/rss/du-lich.rss",
   };
 
   const targetUrl = rssSources[type];
@@ -5032,12 +5106,16 @@ async function fetchRSS(rssUrl) {
     throw new Error("Invalid RSS response");
   }
 
-  return data.items.slice(0, 20).map(item => ({
+  return data.items.slice(0, 20).map((item) => ({
     title: item.title || "",
     link: item.link || "",
-    thumb: item.thumbnail || extractThumbFromContent(item.content) || extractThumbFromEnclosure(item) || "",
+    thumb:
+      item.thumbnail ||
+      extractThumbFromContent(item.content) ||
+      extractThumbFromEnclosure(item) ||
+      "",
     description: stripHtml(item.description || "").substring(0, 200) + "...",
-    pubDate: item.pubDate || new Date().toISOString()
+    pubDate: item.pubDate || new Date().toISOString(),
   }));
 }
 
@@ -5050,7 +5128,10 @@ function extractThumbFromContent(content) {
 function extractThumbFromEnclosure(item) {
   if (item.enclosure && item.enclosure.link) {
     const type = item.enclosure.type || "";
-    if (type.startsWith("image/") || item.enclosure.link.match(/\.(jpg|jpeg|png|webp)/i)) {
+    if (
+      type.startsWith("image/") ||
+      item.enclosure.link.match(/\.(jpg|jpeg|png|webp)/i)
+    ) {
       return item.enclosure.link;
     }
   }
@@ -5067,23 +5148,25 @@ function stripHtml(html) {
 function renderNewsItems(items) {
   const container = document.getElementById("newsContainer");
   if (!items || items.length === 0) {
-    container.innerHTML = "<p style='text-align:center; padding: 20px; color: #a6bde2;'>Không có tin nào.</p>";
+    container.innerHTML =
+      "<p style='text-align:center; padding: 20px; color: #a6bde2;'>Không có tin nào.</p>";
     return;
   }
 
-  const html = items.map(item => {
-    const dateStr = new Date(item.pubDate).toLocaleString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+  const html = items
+    .map((item) => {
+      const dateStr = new Date(item.pubDate).toLocaleString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
-    const thumbHtml = item.thumb
-      ? `<img src="${item.thumb}" class="news-card-thumb" loading="lazy" onerror="this.style.display='none'">`
-      : `<div class="news-card-thumb" style="display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05);"><svg viewBox="0 0 24 24" style="width:24px; fill:rgba(255,255,255,0.2)"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div>`;
+      const thumbHtml = item.thumb
+        ? `<img src="${item.thumb}" class="news-card-thumb" loading="lazy" onerror="this.style.display='none'">`
+        : `<div class="news-card-thumb" style="display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05);"><svg viewBox="0 0 24 24" style="width:24px; fill:rgba(255,255,255,0.2)"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div>`;
 
-    return `
+      return `
       <a href="${item.link}" target="_blank" class="news-card">
         ${thumbHtml}
         <div class="news-card-body">
@@ -5096,7 +5179,8 @@ function renderNewsItems(items) {
         </div>
       </a>
     `;
-  }).join("");
+    })
+    .join("");
 
   container.innerHTML = html;
 }
@@ -5162,7 +5246,10 @@ function getSavedLanguages() {
 }
 
 function saveLanguages(fromLang, toLang) {
-  localStorage.setItem(TRANSLATE_STORAGE_KEY, JSON.stringify({ fromLang, toLang }));
+  localStorage.setItem(
+    TRANSLATE_STORAGE_KEY,
+    JSON.stringify({ fromLang, toLang }),
+  );
 }
 
 function loadSavedLanguages() {
@@ -5172,7 +5259,9 @@ function loadSavedLanguages() {
 }
 
 function saveApiSelection() {
-  const selectedApi = document.querySelector('input[name="translateApi"]:checked');
+  const selectedApi = document.querySelector(
+    'input[name="translateApi"]:checked',
+  );
   if (selectedApi) {
     localStorage.setItem(TRANSLATE_API_KEY, selectedApi.value);
   }
@@ -5181,7 +5270,9 @@ function saveApiSelection() {
 function loadApiSelection() {
   const saved = localStorage.getItem(TRANSLATE_API_KEY);
   if (saved) {
-    const radio = document.querySelector(`input[name="translateApi"][value="${saved}"]`);
+    const radio = document.querySelector(
+      `input[name="translateApi"][value="${saved}"]`,
+    );
     if (radio) {
       radio.checked = true;
     }
@@ -5246,29 +5337,31 @@ function renderTranslateHistoryModal() {
   updateTranslateHistoryBadge();
 
   if (translateHistoryCache.length === 0) {
-    container.innerHTML = '<div class="translate-history-empty">Chưa có lịch sử dịch</div>';
+    container.innerHTML =
+      '<div class="translate-history-empty">Chưa có lịch sử dịch</div>';
     return;
   }
 
   const langNames = {
-    "auto": "Tự động",
-    "en": "Tiếng Anh",
-    "ko": "Tiếng Hàn",
-    "zh": "Tiếng Trung",
-    "vi": "Tiếng Việt"
+    auto: "Tự động",
+    en: "Tiếng Anh",
+    ko: "Tiếng Hàn",
+    zh: "Tiếng Trung",
+    vi: "Tiếng Việt",
   };
 
-  container.innerHTML = translateHistoryCache.map(item => {
-    const date = new Date(item.timestamp);
-    const timeStr = date.toLocaleString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+  container.innerHTML = translateHistoryCache
+    .map((item) => {
+      const date = new Date(item.timestamp);
+      const timeStr = date.toLocaleString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
-    return `
+      return `
       <div class="translate-history-item" data-id="${item.id}">
         <div class="translate-history-item-header">
           <span class="translate-history-lang">${langNames[item.fromLang] || item.fromLang} → ${langNames[item.toLang] || item.toLang}</span>
@@ -5287,7 +5380,8 @@ function renderTranslateHistoryModal() {
         <div class="translate-history-translated">${escapeHtml(item.translated)}</div>
       </div>
     `;
-  }).join("");
+    })
+    .join("");
 }
 
 function toggleTranslateHistory() {
@@ -5295,7 +5389,10 @@ function toggleTranslateHistory() {
   const arrowEl = document.getElementById("translateHistoryArrow");
   const isCollapsed = listEl.classList.toggle("collapsed");
   arrowEl.classList.toggle("collapsed", isCollapsed);
-  localStorage.setItem(TRANSLATE_HISTORY_COLLAPSED_KEY, isCollapsed ? "true" : "false");
+  localStorage.setItem(
+    TRANSLATE_HISTORY_COLLAPSED_KEY,
+    isCollapsed ? "true" : "false",
+  );
 }
 
 function initTranslateHistoryCollapsed() {
@@ -5357,7 +5454,8 @@ function performTranslationFromButton() {
   const text = input.value.trim();
 
   if (!text) {
-    document.getElementById("translateError").innerText = "Vui lòng nhập văn bản cần dịch.";
+    document.getElementById("translateError").innerText =
+      "Vui lòng nhập văn bản cần dịch.";
     document.getElementById("translateError").style.display = "block";
     return;
   }
@@ -5366,10 +5464,14 @@ function performTranslationFromButton() {
 }
 
 function togglePronunciation() {
-  const showPronunciation = document.getElementById("showPronunciation").checked;
+  const showPronunciation =
+    document.getElementById("showPronunciation").checked;
   const pronunciationEl = document.getElementById("translatePronunciation");
 
-  localStorage.setItem(PRONUNCIATION_VISIBLE_KEY, showPronunciation ? "true" : "false");
+  localStorage.setItem(
+    PRONUNCIATION_VISIBLE_KEY,
+    showPronunciation ? "true" : "false",
+  );
 
   const translatedText = document.getElementById("translateOutput").value;
   const toLang = document.getElementById("translateToLang").value;
@@ -5393,11 +5495,13 @@ function loadSavedPronunciation() {
 
 async function loadPronunciation(text, lang) {
   const pronunciationEl = document.getElementById("translatePronunciation");
-  pronunciationEl.innerHTML = '<div class="pronunciation-loading">Đang tải phiên âm...</div>';
+  pronunciationEl.innerHTML =
+    '<div class="pronunciation-loading">Đang tải phiên âm...</div>';
 
   try {
     if (lang === "vi") {
-      pronunciationEl.innerHTML = '<div class="pronunciation-note">Tiếng Việt sử dụng bảng chữ cái Latin, không cần phiên âm.</div>';
+      pronunciationEl.innerHTML =
+        '<div class="pronunciation-note">Tiếng Việt sử dụng bảng chữ cái Latin, không cần phiên âm.</div>';
       return;
     }
 
@@ -5408,49 +5512,64 @@ async function loadPronunciation(text, lang) {
     } else if (lang === "zh") {
       await loadChinesePinyin(text, pronunciationEl);
     } else {
-      pronunciationEl.innerHTML = '<div class="pronunciation-note">Ngôn ngữ này chưa được hỗ trợ phiên âm.</div>';
+      pronunciationEl.innerHTML =
+        '<div class="pronunciation-note">Ngôn ngữ này chưa được hỗ trợ phiên âm.</div>';
     }
   } catch (error) {
-    pronunciationEl.innerHTML = '<div class="pronunciation-error">Không thể tải phiên âm. Vui lòng thử lại.</div>';
+    pronunciationEl.innerHTML =
+      '<div class="pronunciation-error">Không thể tải phiên âm. Vui lòng thử lại.</div>';
   }
 }
 
 async function loadEnglishPhonetics(text, pronunciationEl) {
-  const words = text.split(/\s+/).filter(w => w.length > 1).slice(0, 8);
+  const words = text
+    .split(/\s+/)
+    .filter((w) => w.length > 1)
+    .slice(0, 8);
   const phoneticResults = [];
 
   for (const word of words) {
-    const cleanWord = word.replace(/[^\w\s]/g, '').toLowerCase();
+    const cleanWord = word.replace(/[^\w\s]/g, "").toLowerCase();
     if (cleanWord.length > 1) {
       try {
-        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${cleanWord}`);
+        const response = await fetch(
+          `https://api.dictionaryapi.dev/api/v2/entries/en/${cleanWord}`,
+        );
         if (response.ok) {
           const data = await response.json();
           if (data[0]?.phonetics) {
-            const phonetic = data[0].phonetics.find(p => p.text && p.text.includes('/'))
-              || data[0].phonetics.find(p => p.text)
-              || data[0].phonetics[0];
+            const phonetic =
+              data[0].phonetics.find((p) => p.text && p.text.includes("/")) ||
+              data[0].phonetics.find((p) => p.text) ||
+              data[0].phonetics[0];
             if (phonetic?.text) {
-              phoneticResults.push({ word: cleanWord, phonetic: phonetic.text });
+              phoneticResults.push({
+                word: cleanWord,
+                phonetic: phonetic.text,
+              });
             }
           }
         }
-      } catch (e) { }
+      } catch (e) {}
     }
   }
 
   if (phoneticResults.length > 0) {
     pronunciationEl.innerHTML = `
       <div class="pronunciation-label">Phiên âm IPA / Pronunciation:</div>
-      <div class="pronunciation-text">${phoneticResults.map(p => `<span class="phonetic-item">${p.word} <span class="phonetic-value">${p.phonetic}</span></span>`).join(' ')}</div>
+      <div class="pronunciation-text">${phoneticResults.map((p) => `<span class="phonetic-item">${p.word} <span class="phonetic-value">${p.phonetic}</span></span>`).join(" ")}</div>
     `;
   } else {
-    pronunciationEl.innerHTML = '<div class="pronunciation-note">Không tìm thấy phiên âm cho văn bản này.</div>';
+    pronunciationEl.innerHTML =
+      '<div class="pronunciation-note">Không tìm thấy phiên âm cho văn bản này.</div>';
   }
 }
 
 async function loadKoreanRomanization(text, pronunciationEl) {
-  const words = text.split(/\s+/).filter(w => w.length > 0).slice(0, 10);
+  const words = text
+    .split(/\s+/)
+    .filter((w) => w.length > 0)
+    .slice(0, 10);
   const results = [];
 
   for (const word of words) {
@@ -5463,34 +5582,37 @@ async function loadKoreanRomanization(text, pronunciationEl) {
   if (results.length > 0) {
     pronunciationEl.innerHTML = `
       <div class="pronunciation-label">Romanization / 로마자 변환:</div>
-      <div class="pronunciation-text">${results.map(r => `<span class="phonetic-item">${r.korean} <span class="phonetic-value">[${r.roman}]</span></span>`).join(' ')}</div>
+      <div class="pronunciation-text">${results.map((r) => `<span class="phonetic-item">${r.korean} <span class="phonetic-value">[${r.roman}]</span></span>`).join(" ")}</div>
     `;
   } else {
-    pronunciationEl.innerHTML = '<div class="pronunciation-note">Không tìm thấy phiên âm cho văn bản này.</div>';
+    pronunciationEl.innerHTML =
+      '<div class="pronunciation-note">Không tìm thấy phiên âm cho văn bản này.</div>';
   }
 }
 
 async function loadChinesePinyin(text, pronunciationEl) {
-  pronunciationEl.innerHTML = '<div class="pronunciation-loading">Đang tải phiên âm...</div>';
+  pronunciationEl.innerHTML =
+    '<div class="pronunciation-loading">Đang tải phiên âm...</div>';
 
   try {
     // Extract only Chinese characters
-    const chineseOnly = text.replace(/[^\u4e00-\u9fff]/g, '');
+    const chineseOnly = text.replace(/[^\u4e00-\u9fff]/g, "");
 
     if (!chineseOnly) {
-      pronunciationEl.innerHTML = '<div class="pronunciation-note">Không tìm thấy ký tự Trung Quốc trong văn bản này.</div>';
+      pronunciationEl.innerHTML =
+        '<div class="pronunciation-note">Không tìm thấy ký tự Trung Quốc trong văn bản này.</div>';
       return;
     }
 
     // Try multiple CDN sources for pinyin-pro
     const cdnUrls = [
-      'https://unpkg.com/pinyin-pro@3.18.6/dist/index.js',
-      'https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.6/dist/index.js'
+      "https://unpkg.com/pinyin-pro@3.18.6/dist/index.js",
+      "https://cdn.jsdelivr.net/npm/pinyin-pro@3.18.6/dist/index.js",
     ];
 
     let loaded = false;
     for (const url of cdnUrls) {
-      if (typeof pinyin !== 'undefined') break;
+      if (typeof pinyin !== "undefined") break;
       try {
         await loadScript(url);
         loaded = true;
@@ -5499,13 +5621,13 @@ async function loadChinesePinyin(text, pronunciationEl) {
       }
     }
 
-    if (typeof pinyin !== 'undefined' && typeof pinyin === 'function') {
+    if (typeof pinyin !== "undefined" && typeof pinyin === "function") {
       // Process character by character for complete coverage
-      let resultHTML = '';
+      let resultHTML = "";
 
       for (const char of chineseOnly) {
         try {
-          const py = pinyin(char, { toneType: 'symbol' });
+          const py = pinyin(char, { toneType: "symbol" });
           if (py) {
             resultHTML += `<span class="phonetic-item">${char} <span class="phonetic-value">${py}</span></span>`;
           } else {
@@ -5527,135 +5649,774 @@ async function loadChinesePinyin(text, pronunciationEl) {
 
     // Fallback: embedded pinyin dictionary (subset of common characters)
     const pinyinDict = {
-      '道': 'dào', '公': 'gōng', '务': 'wù', '员': 'yuán',
-      '你': 'nǐ', '好': 'hǎo', '我': 'wǒ', '是': 'shì', '中': 'zhōng', '国': 'guó', '人': 'rén',
-      '的': 'de', '在': 'zài', '有': 'yǒu', '了': 'le', '们': 'men', '不': 'bù', '这': 'zhè', '那': 'nà',
-      '他': 'tā', '她': 'tā', '它': 'tā', '什': 'shén', '么': 'me', '吗': 'ma', '很': 'hěn', '会': 'huì',
-      '能': 'néng', '想': 'xiǎng', '爱': 'ài', '喜': 'xǐ', '欢': 'huān', '谢': 'xiè', '对': 'duì', '起': 'qǐ',
-      '没': 'méi', '关': 'guān', '系': 'xì', '请': 'qǐng', '问': 'wèn', '昨': 'zuó', '天': 'tiān',
-      '今': 'jīn', '年': 'nián', '月': 'yuè', '日': 'rì', '时': 'shí', '分': 'fēn', '钟': 'zhōng',
-      '快': 'kuài', '乐': 'lè', '东': 'dōng', '西': 'xī', '南': 'nán', '北': 'běi', '京': 'jīng',
-      '上': 'shàng', '海': 'hǎi', '广': 'guǎng', '州': 'zhōu', '深': 'shēn', '圳': 'zhèn',
-      '见': 'jiàn', '面': 'miàn', '认': 'rèn', '识': 'shí', '朋': 'péng', '友': 'yǒu', '家': 'jiā',
-      '工': 'gōng', '作': 'zuò', '学': 'xué', '校': 'xiào', '老': 'lǎo', '师': 'shī', '同': 'tóng',
-      '公': 'gōng', '司': 'sī', '医': 'yī', '院': 'yuàn', '银': 'yín', '行': 'háng',
-      '饭': 'fàn', '店': 'diàn', '酒': 'jiǔ', '吧': 'ba', '咖': 'kā', '啡': 'fēi', '茶': 'chá',
-      '水': 'shuǐ', '果': 'guǒ', '苹': 'píng', '香': 'xiāng', '蕉': 'jiāo',
-      '葡': 'pú', '萄': 'táo', '西': 'xī', '瓜': 'guā', '米': 'mǐ', '包': 'bāo',
-      '蛋': 'dàn', '肉': 'ròu', '鱼': 'yú', '鸡': 'jī', '鸭': 'yā', '猪': 'zhū', '牛': 'niú', '羊': 'yáng',
-      '马': 'mǎ', '车': 'chē', '路': 'lù', '地': 'dì', '铁': 'tiě', '站': 'zhàn', '机': 'jī', '场': 'chǎng',
-      '票': 'piào', '钱': 'qián', '买': 'mǎi', '卖': 'mài', '贵': 'guì', '便宜': 'piányi',
-      '多': 'duō', '少': 'shǎo', '大': 'dà', '小': 'xiǎo', '高': 'gāo', '矮': 'ǎi',
-      '长': 'cháng', '短': 'duǎn', '宽': 'kuān', '窄': 'zhǎi', '新': 'xīn', '旧': 'jiù',
-      '热': 'rè', '冷': 'lěng', '暖': 'nuǎn', '凉': 'liáng', '早': 'zǎo', '晚': 'wǎn',
-      '忙': 'máng', '闲': 'xián', '远': 'yuǎn', '近': 'jìn', '难': 'nán', '易': 'yì',
-      '听': 'tīng', '说': 'shuō', '读': 'dú', '写': 'xiě', '看': 'kàn', '走': 'zǒu',
-      '跑': 'pǎo', '飞': 'fēi', '吃': 'chī', '喝': 'hē', '睡': 'shuì', '觉': 'jiào', '醒': 'xǐng',
-      '坐': 'zuò', '站': 'zhàn', '躺': 'tǎng', '开': 'kāi', '关': 'guān',
-      '来': 'lái', '去': 'qù', '回': 'huí', '到': 'dào', '过': 'guò', '给': 'gěi',
-      '和': 'hé', '与': 'yǔ', '或': 'huò', '但': 'dàn', '却': 'què', '因': 'yīn', '为': 'wèi',
-      '所': 'suǒ', '以': 'yǐ', '如': 'rú', '果': 'guǒ', '虽': 'suī', '然': 'rán',
-      '只': 'zhǐ', '要': 'yào', '需': 'xū', '应': 'yīng', '该': 'gāi', '可': 'kě',
-      '以': 'yǐ', '够': 'gòu', '将': 'jiāng', '已': 'yǐ', '经': 'jīng', '正': 'zhèng',
-      '被': 'bèi', '把': 'bǎ', '让': 'ràng', '叫': 'jiào', '使': 'shǐ', '令': 'lìng',
-      '劝': 'quàn', '求': 'qiú', '帮': 'bāng', '助': 'zhù', '教': 'jiào', '答': 'dá',
-      '告': 'gào', '诉': 'sù', '怎': 'zěn', '么': 'me', '怎': 'zěn', '么': 'me',
-      '永': 'yǒng', '远': 'yuǎn', '经': 'jīng', '常': 'cháng', '往': 'wǎng',
-      '突': 'tū', '然': 'rán', '须': 'xū', '须': 'xū', '准': 'zhǔn', '备': 'bèi',
-      '始': 'shǐ', '束': 'shù', '完': 'wán', '成': 'chéng', '失': 'shī', '败': 'bài',
-      '功': 'gōng', '步': 'bù', '迎': 'yíng', '送': 'sòng', '光': 'guāng', '临': 'lín',
-      '参': 'cān', '加': 'jiā', '观': 'guān', '考': 'kǎo', '试': 'shì', '业': 'yè',
-      '案': 'àn', '题': 'tí', '问': 'wèn', '题': 'tí', '解': 'jiě', '决': 'jué',
-      '法': 'fǎ', '懂': 'dǒng', '记': 'jì', '得': 'dé', '忘': 'wàng', '白': 'bái',
-      '楚': 'chǔ', '确': 'què', '定': 'dìng', '一': 'yī', '定': 'dìng', '肯': 'kěn',
-      '许': 'xǔ', '点': 'diǎn', '半': 'bàn', '刻': 'kè', '秒': 'miǎo', '候': 'hòu',
-      '样': 'yàng', '错': 'cuò', '棒': 'bàng', '帅': 'shuài', '酷': 'kù',
-      '累': 'lèi', '舒': 'shū', '服': 'fu', '饿': 'è', '饱': 'bǎo', '渴': 'kě',
-      '痛': 'tòng', '病': 'bìng', '士': 'shì', '护': 'hù', '房': 'fáng', '间': 'jiān',
-      '厕': 'cè', '所': 'suǒ', '厨': 'chú', '厅': 'tīng', '床': 'chuáng', '桌': 'zhuō',
-      '椅': 'yǐ', '沙': 'shā', '发': 'fā', '门': 'mén', '窗': 'chuāng', '匙': 'shi',
-      '永': 'yǒng', '远': 'yuǎn', '健': 'jiàn', '康': 'kāng', '祝': 'zhù', '福': 'fú',
-      '庆': 'qìng', '恭': 'gōng', '喜': 'xǐ', '诞': 'dàn', '庆': 'qìng', '礼': 'lǐ',
-      '拜': 'bài', '星': 'xīng', '期': 'qī',
-      '从': 'cóng', '池': 'chí', '市': 'shì', '环': 'huán', '保': 'bǎo', '境': 'jìng',
-      '美': 'měi', '丽': 'lì', '女': 'nǚ', '孩': 'hái', '男': 'nán', '生': 'shēng',
-      '老': 'lǎo', '板': 'bǎn', '秘': 'mì', '书': 'shū', '助': 'zhù', '理': 'lǐ',
-      '总': 'zǒng', '经': 'jīng', '销': 'xiāo', '售': 'shòu', '客': 'kè',
-      '户': 'hù', '投': 'tóu', '资': 'zī', '金': 'jīn', '账': 'zhàng', '单': 'dān',
-      '计': 'jì', '划': 'huà', '节': 'jié', '假': 'jià', '旅': 'lǚ', '游': 'yóu',
-      '剧': 'jù', '院': 'yuàn', '百': 'bǎi', '姓': 'xìng', '名': 'míng', '电': 'diàn',
-      '话': 'huà', '号': 'hào', '码': 'mǎ', '微': 'wēi', '信': 'xìn', '邮': 'yóu',
-      '箱': 'xiāng', '省': 'shěng', '区': 'qū', '址': 'zhǐ', '楼': 'lóu', '层': 'céng',
-      '牌': 'pái', '照': 'zhào', '证': 'zhèng', '签': 'qiān', '出': 'chū', '入': 'rù',
-      '口': 'kǒu', '岸': 'àn', '税': 'shuì', '免': 'miǎn', '退': 'tuì', '换': 'huàn',
-      '货': 'huò', '网': 'wǎng', '购': 'gòu', '支': 'zhī', '付': 'fù', '宝': 'bǎo',
-      '现': 'xiàn', '用': 'yòng', '卡': 'kǎ', '租': 'zū', '押': 'yā', '修': 'xiū',
-      '装': 'zhuāng', '价': 'jià', '格': 'gé', '便': 'biàn', '宜': 'yí', '打': 'dǎ',
-      '折': 'zhé', '扣': 'kòu', '费': 'fèi', '优': 'yōu', '惠': 'huì', '券': 'quàn',
-      '积': 'jī', '品': 'pǐn', '赠': 'zèng', '包': 'bāo', '量': 'liàng', '尺': 'chǐ',
-      '寸': 'cùn', '规': 'guī', '型': 'xíng', '批': 'pī', '零': 'líng', '代': 'dài',
-      '招': 'zhāo', '商': 'shāng', '盟': 'méng', '连': 'lián', '锁': 'suǒ', '直': 'zhí',
-      '营': 'yíng', '转': 'zhuǎn', '让': 'ràng', '兑': 'duì', '汇': 'huì', '率': 'lǜ',
-      '款': 'kuǎn', '余': 'yú', '额': 'é', '存': 'cún', '取': 'qǔ', '利': 'lì',
-      '息': 'xī', '通': 'tōng', '知': 'zhī', '催': 'cuī', '欠': 'qiàn', '债': 'zhài',
-      '借': 'jiè', '还': 'huán', '条': 'tiáo', '约': 'yuē', '同': 'tóng', '字': 'zì',
-      '章': 'zhāng', '印': 'yìn', '明': 'míng', '暗': 'àn', '显': 'xiǎn', '示': 'shì',
-      '屏': 'píng', '幕': 'mù', '亮': 'liàng', '控': 'kòng', '制': 'zhì', '调': 'diào',
-      '温': 'wēn', '度': 'dù', '空': 'kōng', '调': 'tiáo', '暖': 'nuǎn', '气': 'qì',
-      '线': 'xiàn', '池': 'chí', '充': 'chōng', '宝': 'bǎo', '耳': 'ěr', '麦': 'mài',
-      '克': 'kè', '摄': 'shè', '像': 'xiàng', '拍': 'pāi', '录': 'lù', '视': 'shì',
-      '频': 'pín', '档': 'dǎng', '输': 'shū', '印': 'yìn', '扫': 'sǎo', '描': 'miáo',
-      '夹': 'jiá', '钉': 'dīng', '剪': 'jiǎn', '橡': 'xiàng', '皮': 'pí', '擦': 'cā',
-      '圆': 'yuán', '珠': 'zhū', '铅': 'qiān', '粉': 'fěn', '蜡': 'là', '墨': 'mò',
-      '砚': 'yàn', '镇': 'zhèn', '规': 'guī', '三': 'sān', '角': 'jiǎo', '算': 'suàn',
-      '盘': 'pán', '器': 'qì', '脑': 'nǎo', '平': 'píng', '本': 'běn', '台': 'tái',
-      '主': 'zhǔ', '显': 'xiǎn', '键': 'jiàn', '鼠': 'shǔ', '标': 'biāo', 'U': 'U',
-      '移': 'yí', '动': 'dòng', '硬': 'yìng', '内': 'nèi', '显': 'xiǎn', '声': 'shēng',
-      '由': 'yóu', '猫': 'māo', '基': 'jī', 'W': 'W', 'I': 'I', 'F': 'F', '密': 'mì',
-      '绑': 'bǎng', '登': 'dēng', '录': 'lù', '注': 'zhù', '册': 'cè', '销': 'xiāo',
-      '改': 'gǎi', '验': 'yàn', '短': 'duǎn', '众': 'zhòng', '平': 'píng', '台': 'tái',
-      '程': 'chéng', '序': 'xù', '软': 'ruǎn', '件': 'jiàn', '硬': 'yìng', '系': 'xì',
-      '统': 'tǒng', '应': 'yìng', '设': 'shè', '计': 'jì', '测': 'cè', '运': 'yùn',
-      '维': 'wéi', '更': 'gēng', '升': 'shēng', '级': 'jí', '优': 'yōu', '化': 'huà',
-      '删': 'shān', '除': 'chú', '备': 'bèi', '份': 'fèn', '恢': 'huī', '复': 'fù',
-      '还': 'huán', '原': 'yuán', '格': 'gé', '化': 'huà', '磁': 'cí', '清': 'qīng',
-      '理': 'lǐ', '垃': 'lā', '圾': 'jī', '收': 'shōu', '绿': 'lǜ', '色': 'sè',
-      '碳': 'tàn', '排': 'pái', '放': 'fàng', '减': 'jiǎn', '再': 'zài', '生': 'shēng',
-      '循': 'xún', '环': 'huán', '造': 'zào', '塑': 'sù', '料': 'liào', '玻': 'bō',
-      '璃': 'lí', '属': 'shǔ', '废': 'fèi', '物': 'wù', '处': 'chǔ', '桶': 'tǒng',
-      '袋': 'dài', '洁': 'jié', '卫': 'wèi', '扫': 'sǎo', '拖': 'tuō', '布': 'bù',
-      '抹': 'mā', '拭': 'shì', '洗': 'xǐ', '消': 'xiāo', '毒': 'dú', '杀': 'shā',
-      '菌': 'jūn', '防': 'fáng', '疫': 'yì', '罩': 'zhào', '液': 'yè', '精': 'jīng',
-      '巾': 'jīn', '湿': 'shī', '牙': 'yá', '膏': 'gāo', '漱': 'shù', '杯': 'bēi',
-      '乳': 'rǔ', '器': 'qì', '毛': 'máo', '浴': 'yù', '龙': 'lóng', '头': 'tóu',
-      '壶': 'hú', '瓶': 'píng', '饮': 'yǐn', '料': 'liào', '冰': 'bīng', '波': 'bō',
-      '炉': 'lú', '电': 'diàn', '磁': 'cí', '锅': 'guō', '铲': 'chǎn', '勺': 'sháo',
-      '碗': 'wǎn', '筷': 'kuài', '叉': 'chā', '羹': 'gēng', '凳': 'dèng', '垫': 'diàn',
-      '枕': 'zhěn', '被': 'bèi', '褥': 'rù', '毯': 'tǎn', '蚊': 'wén', '帐': 'zhàng',
-      '纱': 'shā', '帘': 'lián', '泡': 'pào', '管': 'guǎn', '插': 'chā', '座': 'zuò',
-      '接': 'jiē', '钥': 'yào', '锁': 'suǒ', '盗': 'dào', '铃': 'líng', '栏': 'lán',
-      '杆': 'gǎn', '阳': 'yáng', '台': 'tái', '露': 'lòu', '庭': 'tíng', '院': 'yuàn',
-      '园': 'yuán', '草': 'cǎo', '坪': 'píng', '树': 'shù', '木': 'mù', '浇': 'jiāo',
-      '肥': 'féi', '农': 'nóng', '药': 'yào', '具': 'jù', '锹': 'qiāo', '锄': 'chú',
-      '锤': 'chuí', '螺': 'luó', '丝': 'sī', '扳': 'bān', '钳': 'qián', '锯': 'jù',
-      '钻': 'zuàn', '泵': 'bèng', '漆': 'qī', '油': 'yóu', '滚': 'gǔn', '筒': 'tǒng',
-      '胶': 'jiāo', '带': 'dài', '双': 'shuāng', '壁': 'bì', '贴': 'tiē', '框': 'kuàng',
-      '挂': 'guà', '历': 'lì', '筒': 'tǒng', '架': 'jià', '盒': 'hé', '夹': 'jiá',
-      '环': 'huán', '链': 'liàn', '胸': 'xiōng', '针': 'zhēn', '帽': 'mào', '檐': 'yán',
-      '鞋': 'xié', '袜': 'wà', '仔': 'zǎi', '背': 'bèi', '七': 'qī', '九': 'jiǔ',
-      '装': 'zhuāng', '服': 'fú', '棉': 'mián', '羽': 'yǔ', '绒': 'róng', '皮': 'pí',
-      '大': 'dài', '马': 'mǎ', '甲': 'jiǎ', '织': 'zhī', '衬': 'chèn', '衫': 'shān',
-      '结': 'jié', '纽': 'niǔ', '魔': 'mó', '术': 'shù', '提': 'tí', '钱': 'qián',
-      '腰': 'yāo', '尚': 'shàng', '行': 'xíng', '李': 'lǐ', '肩': 'jiān', '化': 'huà',
-      '妆': 'zhuāng', '肤': 'fū', '霜': 'shuāng', '唇': 'chún', '红': 'hóng', '眉': 'méi',
-      '影': 'yǐng', '睫': 'jié', '底': 'dǐ', '瑕': 'xiá', '遮': 'zhē', '散': 'sǎn',
-      '腮': 'sāi', '容': 'róng', '卡': 'kǎ', '蜡': 'là', '胶': 'jiāo', '粘': 'nián',
-      '芯': 'xīn', '芯': 'xīn', '蜡': 'là', '棒': 'bàng', '转': 'zhuǎn', '印': 'yìn',
-      '戳': 'chuō', '固': 'gù', '体': 'tǐ', '珠': 'zhū', '石': 'shí', '锉': 'cuò',
-      '砂': 'shā', '薰': 'xūn', '灯': 'dēng', '炉': 'lú', '固': 'gù'
+      道: "dào",
+      公: "gōng",
+      务: "wù",
+      员: "yuán",
+      你: "nǐ",
+      好: "hǎo",
+      我: "wǒ",
+      是: "shì",
+      中: "zhōng",
+      国: "guó",
+      人: "rén",
+      的: "de",
+      在: "zài",
+      有: "yǒu",
+      了: "le",
+      们: "men",
+      不: "bù",
+      这: "zhè",
+      那: "nà",
+      他: "tā",
+      她: "tā",
+      它: "tā",
+      什: "shén",
+      么: "me",
+      吗: "ma",
+      很: "hěn",
+      会: "huì",
+      能: "néng",
+      想: "xiǎng",
+      爱: "ài",
+      喜: "xǐ",
+      欢: "huān",
+      谢: "xiè",
+      对: "duì",
+      起: "qǐ",
+      没: "méi",
+      关: "guān",
+      系: "xì",
+      请: "qǐng",
+      问: "wèn",
+      昨: "zuó",
+      天: "tiān",
+      今: "jīn",
+      年: "nián",
+      月: "yuè",
+      日: "rì",
+      时: "shí",
+      分: "fēn",
+      钟: "zhōng",
+      快: "kuài",
+      乐: "lè",
+      东: "dōng",
+      西: "xī",
+      南: "nán",
+      北: "běi",
+      京: "jīng",
+      上: "shàng",
+      海: "hǎi",
+      广: "guǎng",
+      州: "zhōu",
+      深: "shēn",
+      圳: "zhèn",
+      见: "jiàn",
+      面: "miàn",
+      认: "rèn",
+      识: "shí",
+      朋: "péng",
+      友: "yǒu",
+      家: "jiā",
+      工: "gōng",
+      作: "zuò",
+      学: "xué",
+      校: "xiào",
+      老: "lǎo",
+      师: "shī",
+      同: "tóng",
+      公: "gōng",
+      司: "sī",
+      医: "yī",
+      院: "yuàn",
+      银: "yín",
+      行: "háng",
+      饭: "fàn",
+      店: "diàn",
+      酒: "jiǔ",
+      吧: "ba",
+      咖: "kā",
+      啡: "fēi",
+      茶: "chá",
+      水: "shuǐ",
+      果: "guǒ",
+      苹: "píng",
+      香: "xiāng",
+      蕉: "jiāo",
+      葡: "pú",
+      萄: "táo",
+      西: "xī",
+      瓜: "guā",
+      米: "mǐ",
+      包: "bāo",
+      蛋: "dàn",
+      肉: "ròu",
+      鱼: "yú",
+      鸡: "jī",
+      鸭: "yā",
+      猪: "zhū",
+      牛: "niú",
+      羊: "yáng",
+      马: "mǎ",
+      车: "chē",
+      路: "lù",
+      地: "dì",
+      铁: "tiě",
+      站: "zhàn",
+      机: "jī",
+      场: "chǎng",
+      票: "piào",
+      钱: "qián",
+      买: "mǎi",
+      卖: "mài",
+      贵: "guì",
+      便宜: "piányi",
+      多: "duō",
+      少: "shǎo",
+      大: "dà",
+      小: "xiǎo",
+      高: "gāo",
+      矮: "ǎi",
+      长: "cháng",
+      短: "duǎn",
+      宽: "kuān",
+      窄: "zhǎi",
+      新: "xīn",
+      旧: "jiù",
+      热: "rè",
+      冷: "lěng",
+      暖: "nuǎn",
+      凉: "liáng",
+      早: "zǎo",
+      晚: "wǎn",
+      忙: "máng",
+      闲: "xián",
+      远: "yuǎn",
+      近: "jìn",
+      难: "nán",
+      易: "yì",
+      听: "tīng",
+      说: "shuō",
+      读: "dú",
+      写: "xiě",
+      看: "kàn",
+      走: "zǒu",
+      跑: "pǎo",
+      飞: "fēi",
+      吃: "chī",
+      喝: "hē",
+      睡: "shuì",
+      觉: "jiào",
+      醒: "xǐng",
+      坐: "zuò",
+      站: "zhàn",
+      躺: "tǎng",
+      开: "kāi",
+      关: "guān",
+      来: "lái",
+      去: "qù",
+      回: "huí",
+      到: "dào",
+      过: "guò",
+      给: "gěi",
+      和: "hé",
+      与: "yǔ",
+      或: "huò",
+      但: "dàn",
+      却: "què",
+      因: "yīn",
+      为: "wèi",
+      所: "suǒ",
+      以: "yǐ",
+      如: "rú",
+      果: "guǒ",
+      虽: "suī",
+      然: "rán",
+      只: "zhǐ",
+      要: "yào",
+      需: "xū",
+      应: "yīng",
+      该: "gāi",
+      可: "kě",
+      以: "yǐ",
+      够: "gòu",
+      将: "jiāng",
+      已: "yǐ",
+      经: "jīng",
+      正: "zhèng",
+      被: "bèi",
+      把: "bǎ",
+      让: "ràng",
+      叫: "jiào",
+      使: "shǐ",
+      令: "lìng",
+      劝: "quàn",
+      求: "qiú",
+      帮: "bāng",
+      助: "zhù",
+      教: "jiào",
+      答: "dá",
+      告: "gào",
+      诉: "sù",
+      怎: "zěn",
+      么: "me",
+      怎: "zěn",
+      么: "me",
+      永: "yǒng",
+      远: "yuǎn",
+      经: "jīng",
+      常: "cháng",
+      往: "wǎng",
+      突: "tū",
+      然: "rán",
+      须: "xū",
+      须: "xū",
+      准: "zhǔn",
+      备: "bèi",
+      始: "shǐ",
+      束: "shù",
+      完: "wán",
+      成: "chéng",
+      失: "shī",
+      败: "bài",
+      功: "gōng",
+      步: "bù",
+      迎: "yíng",
+      送: "sòng",
+      光: "guāng",
+      临: "lín",
+      参: "cān",
+      加: "jiā",
+      观: "guān",
+      考: "kǎo",
+      试: "shì",
+      业: "yè",
+      案: "àn",
+      题: "tí",
+      问: "wèn",
+      题: "tí",
+      解: "jiě",
+      决: "jué",
+      法: "fǎ",
+      懂: "dǒng",
+      记: "jì",
+      得: "dé",
+      忘: "wàng",
+      白: "bái",
+      楚: "chǔ",
+      确: "què",
+      定: "dìng",
+      一: "yī",
+      定: "dìng",
+      肯: "kěn",
+      许: "xǔ",
+      点: "diǎn",
+      半: "bàn",
+      刻: "kè",
+      秒: "miǎo",
+      候: "hòu",
+      样: "yàng",
+      错: "cuò",
+      棒: "bàng",
+      帅: "shuài",
+      酷: "kù",
+      累: "lèi",
+      舒: "shū",
+      服: "fu",
+      饿: "è",
+      饱: "bǎo",
+      渴: "kě",
+      痛: "tòng",
+      病: "bìng",
+      士: "shì",
+      护: "hù",
+      房: "fáng",
+      间: "jiān",
+      厕: "cè",
+      所: "suǒ",
+      厨: "chú",
+      厅: "tīng",
+      床: "chuáng",
+      桌: "zhuō",
+      椅: "yǐ",
+      沙: "shā",
+      发: "fā",
+      门: "mén",
+      窗: "chuāng",
+      匙: "shi",
+      永: "yǒng",
+      远: "yuǎn",
+      健: "jiàn",
+      康: "kāng",
+      祝: "zhù",
+      福: "fú",
+      庆: "qìng",
+      恭: "gōng",
+      喜: "xǐ",
+      诞: "dàn",
+      庆: "qìng",
+      礼: "lǐ",
+      拜: "bài",
+      星: "xīng",
+      期: "qī",
+      从: "cóng",
+      池: "chí",
+      市: "shì",
+      环: "huán",
+      保: "bǎo",
+      境: "jìng",
+      美: "měi",
+      丽: "lì",
+      女: "nǚ",
+      孩: "hái",
+      男: "nán",
+      生: "shēng",
+      老: "lǎo",
+      板: "bǎn",
+      秘: "mì",
+      书: "shū",
+      助: "zhù",
+      理: "lǐ",
+      总: "zǒng",
+      经: "jīng",
+      销: "xiāo",
+      售: "shòu",
+      客: "kè",
+      户: "hù",
+      投: "tóu",
+      资: "zī",
+      金: "jīn",
+      账: "zhàng",
+      单: "dān",
+      计: "jì",
+      划: "huà",
+      节: "jié",
+      假: "jià",
+      旅: "lǚ",
+      游: "yóu",
+      剧: "jù",
+      院: "yuàn",
+      百: "bǎi",
+      姓: "xìng",
+      名: "míng",
+      电: "diàn",
+      话: "huà",
+      号: "hào",
+      码: "mǎ",
+      微: "wēi",
+      信: "xìn",
+      邮: "yóu",
+      箱: "xiāng",
+      省: "shěng",
+      区: "qū",
+      址: "zhǐ",
+      楼: "lóu",
+      层: "céng",
+      牌: "pái",
+      照: "zhào",
+      证: "zhèng",
+      签: "qiān",
+      出: "chū",
+      入: "rù",
+      口: "kǒu",
+      岸: "àn",
+      税: "shuì",
+      免: "miǎn",
+      退: "tuì",
+      换: "huàn",
+      货: "huò",
+      网: "wǎng",
+      购: "gòu",
+      支: "zhī",
+      付: "fù",
+      宝: "bǎo",
+      现: "xiàn",
+      用: "yòng",
+      卡: "kǎ",
+      租: "zū",
+      押: "yā",
+      修: "xiū",
+      装: "zhuāng",
+      价: "jià",
+      格: "gé",
+      便: "biàn",
+      宜: "yí",
+      打: "dǎ",
+      折: "zhé",
+      扣: "kòu",
+      费: "fèi",
+      优: "yōu",
+      惠: "huì",
+      券: "quàn",
+      积: "jī",
+      品: "pǐn",
+      赠: "zèng",
+      包: "bāo",
+      量: "liàng",
+      尺: "chǐ",
+      寸: "cùn",
+      规: "guī",
+      型: "xíng",
+      批: "pī",
+      零: "líng",
+      代: "dài",
+      招: "zhāo",
+      商: "shāng",
+      盟: "méng",
+      连: "lián",
+      锁: "suǒ",
+      直: "zhí",
+      营: "yíng",
+      转: "zhuǎn",
+      让: "ràng",
+      兑: "duì",
+      汇: "huì",
+      率: "lǜ",
+      款: "kuǎn",
+      余: "yú",
+      额: "é",
+      存: "cún",
+      取: "qǔ",
+      利: "lì",
+      息: "xī",
+      通: "tōng",
+      知: "zhī",
+      催: "cuī",
+      欠: "qiàn",
+      债: "zhài",
+      借: "jiè",
+      还: "huán",
+      条: "tiáo",
+      约: "yuē",
+      同: "tóng",
+      字: "zì",
+      章: "zhāng",
+      印: "yìn",
+      明: "míng",
+      暗: "àn",
+      显: "xiǎn",
+      示: "shì",
+      屏: "píng",
+      幕: "mù",
+      亮: "liàng",
+      控: "kòng",
+      制: "zhì",
+      调: "diào",
+      温: "wēn",
+      度: "dù",
+      空: "kōng",
+      调: "tiáo",
+      暖: "nuǎn",
+      气: "qì",
+      线: "xiàn",
+      池: "chí",
+      充: "chōng",
+      宝: "bǎo",
+      耳: "ěr",
+      麦: "mài",
+      克: "kè",
+      摄: "shè",
+      像: "xiàng",
+      拍: "pāi",
+      录: "lù",
+      视: "shì",
+      频: "pín",
+      档: "dǎng",
+      输: "shū",
+      印: "yìn",
+      扫: "sǎo",
+      描: "miáo",
+      夹: "jiá",
+      钉: "dīng",
+      剪: "jiǎn",
+      橡: "xiàng",
+      皮: "pí",
+      擦: "cā",
+      圆: "yuán",
+      珠: "zhū",
+      铅: "qiān",
+      粉: "fěn",
+      蜡: "là",
+      墨: "mò",
+      砚: "yàn",
+      镇: "zhèn",
+      规: "guī",
+      三: "sān",
+      角: "jiǎo",
+      算: "suàn",
+      盘: "pán",
+      器: "qì",
+      脑: "nǎo",
+      平: "píng",
+      本: "běn",
+      台: "tái",
+      主: "zhǔ",
+      显: "xiǎn",
+      键: "jiàn",
+      鼠: "shǔ",
+      标: "biāo",
+      U: "U",
+      移: "yí",
+      动: "dòng",
+      硬: "yìng",
+      内: "nèi",
+      显: "xiǎn",
+      声: "shēng",
+      由: "yóu",
+      猫: "māo",
+      基: "jī",
+      W: "W",
+      I: "I",
+      F: "F",
+      密: "mì",
+      绑: "bǎng",
+      登: "dēng",
+      录: "lù",
+      注: "zhù",
+      册: "cè",
+      销: "xiāo",
+      改: "gǎi",
+      验: "yàn",
+      短: "duǎn",
+      众: "zhòng",
+      平: "píng",
+      台: "tái",
+      程: "chéng",
+      序: "xù",
+      软: "ruǎn",
+      件: "jiàn",
+      硬: "yìng",
+      系: "xì",
+      统: "tǒng",
+      应: "yìng",
+      设: "shè",
+      计: "jì",
+      测: "cè",
+      运: "yùn",
+      维: "wéi",
+      更: "gēng",
+      升: "shēng",
+      级: "jí",
+      优: "yōu",
+      化: "huà",
+      删: "shān",
+      除: "chú",
+      备: "bèi",
+      份: "fèn",
+      恢: "huī",
+      复: "fù",
+      还: "huán",
+      原: "yuán",
+      格: "gé",
+      化: "huà",
+      磁: "cí",
+      清: "qīng",
+      理: "lǐ",
+      垃: "lā",
+      圾: "jī",
+      收: "shōu",
+      绿: "lǜ",
+      色: "sè",
+      碳: "tàn",
+      排: "pái",
+      放: "fàng",
+      减: "jiǎn",
+      再: "zài",
+      生: "shēng",
+      循: "xún",
+      环: "huán",
+      造: "zào",
+      塑: "sù",
+      料: "liào",
+      玻: "bō",
+      璃: "lí",
+      属: "shǔ",
+      废: "fèi",
+      物: "wù",
+      处: "chǔ",
+      桶: "tǒng",
+      袋: "dài",
+      洁: "jié",
+      卫: "wèi",
+      扫: "sǎo",
+      拖: "tuō",
+      布: "bù",
+      抹: "mā",
+      拭: "shì",
+      洗: "xǐ",
+      消: "xiāo",
+      毒: "dú",
+      杀: "shā",
+      菌: "jūn",
+      防: "fáng",
+      疫: "yì",
+      罩: "zhào",
+      液: "yè",
+      精: "jīng",
+      巾: "jīn",
+      湿: "shī",
+      牙: "yá",
+      膏: "gāo",
+      漱: "shù",
+      杯: "bēi",
+      乳: "rǔ",
+      器: "qì",
+      毛: "máo",
+      浴: "yù",
+      龙: "lóng",
+      头: "tóu",
+      壶: "hú",
+      瓶: "píng",
+      饮: "yǐn",
+      料: "liào",
+      冰: "bīng",
+      波: "bō",
+      炉: "lú",
+      电: "diàn",
+      磁: "cí",
+      锅: "guō",
+      铲: "chǎn",
+      勺: "sháo",
+      碗: "wǎn",
+      筷: "kuài",
+      叉: "chā",
+      羹: "gēng",
+      凳: "dèng",
+      垫: "diàn",
+      枕: "zhěn",
+      被: "bèi",
+      褥: "rù",
+      毯: "tǎn",
+      蚊: "wén",
+      帐: "zhàng",
+      纱: "shā",
+      帘: "lián",
+      泡: "pào",
+      管: "guǎn",
+      插: "chā",
+      座: "zuò",
+      接: "jiē",
+      钥: "yào",
+      锁: "suǒ",
+      盗: "dào",
+      铃: "líng",
+      栏: "lán",
+      杆: "gǎn",
+      阳: "yáng",
+      台: "tái",
+      露: "lòu",
+      庭: "tíng",
+      院: "yuàn",
+      园: "yuán",
+      草: "cǎo",
+      坪: "píng",
+      树: "shù",
+      木: "mù",
+      浇: "jiāo",
+      肥: "féi",
+      农: "nóng",
+      药: "yào",
+      具: "jù",
+      锹: "qiāo",
+      锄: "chú",
+      锤: "chuí",
+      螺: "luó",
+      丝: "sī",
+      扳: "bān",
+      钳: "qián",
+      锯: "jù",
+      钻: "zuàn",
+      泵: "bèng",
+      漆: "qī",
+      油: "yóu",
+      滚: "gǔn",
+      筒: "tǒng",
+      胶: "jiāo",
+      带: "dài",
+      双: "shuāng",
+      壁: "bì",
+      贴: "tiē",
+      框: "kuàng",
+      挂: "guà",
+      历: "lì",
+      筒: "tǒng",
+      架: "jià",
+      盒: "hé",
+      夹: "jiá",
+      环: "huán",
+      链: "liàn",
+      胸: "xiōng",
+      针: "zhēn",
+      帽: "mào",
+      檐: "yán",
+      鞋: "xié",
+      袜: "wà",
+      仔: "zǎi",
+      背: "bèi",
+      七: "qī",
+      九: "jiǔ",
+      装: "zhuāng",
+      服: "fú",
+      棉: "mián",
+      羽: "yǔ",
+      绒: "róng",
+      皮: "pí",
+      大: "dài",
+      马: "mǎ",
+      甲: "jiǎ",
+      织: "zhī",
+      衬: "chèn",
+      衫: "shān",
+      结: "jié",
+      纽: "niǔ",
+      魔: "mó",
+      术: "shù",
+      提: "tí",
+      钱: "qián",
+      腰: "yāo",
+      尚: "shàng",
+      行: "xíng",
+      李: "lǐ",
+      肩: "jiān",
+      化: "huà",
+      妆: "zhuāng",
+      肤: "fū",
+      霜: "shuāng",
+      唇: "chún",
+      红: "hóng",
+      眉: "méi",
+      影: "yǐng",
+      睫: "jié",
+      底: "dǐ",
+      瑕: "xiá",
+      遮: "zhē",
+      散: "sǎn",
+      腮: "sāi",
+      容: "róng",
+      卡: "kǎ",
+      蜡: "là",
+      胶: "jiāo",
+      粘: "nián",
+      芯: "xīn",
+      芯: "xīn",
+      蜡: "là",
+      棒: "bàng",
+      转: "zhuǎn",
+      印: "yìn",
+      戳: "chuō",
+      固: "gù",
+      体: "tǐ",
+      珠: "zhū",
+      石: "shí",
+      锉: "cuò",
+      砂: "shā",
+      薰: "xūn",
+      灯: "dēng",
+      炉: "lú",
+      固: "gù",
     };
 
-    let resultHTML = '';
+    let resultHTML = "";
     for (const char of chineseOnly) {
       const py = pinyinDict[char];
       if (py) {
@@ -5670,8 +6431,9 @@ async function loadChinesePinyin(text, pronunciationEl) {
       <div class="pronunciation-text">${resultHTML}</div>
     `;
   } catch (error) {
-    console.error('Pinyin error:', error);
-    pronunciationEl.innerHTML = '<div class="pronunciation-error">Lỗi khi tải pinyin.</div>';
+    console.error("Pinyin error:", error);
+    pronunciationEl.innerHTML =
+      '<div class="pronunciation-error">Lỗi khi tải pinyin.</div>';
   }
 }
 
@@ -5679,163 +6441,701 @@ async function loadChinesePinyin(text, pronunciationEl) {
 function getBasicPinyin(text) {
   // Single character pinyin dictionary
   const charDict = {
-    '一': 'yī', '二': 'èr', '三': 'sān', '四': 'sì', '五': 'wǔ',
-    '六': 'liù', '七': 'qī', '八': 'bā', '九': 'jiǔ', '十': 'shí',
-    '百': 'bǎi', '千': 'qiān', '万': 'wàn', '亿': 'yì',
-    '零': 'líng', '两': 'liǎng', '几': 'jǐ', '多': 'duō', '少': 'shǎo',
-    '大': 'dà', '小': 'xiǎo', '高': 'gāo', '低': 'dī', '长': 'cháng',
-    '短': 'duǎn', '宽': 'kuān', '窄': 'zhǎi', '厚': 'hòu', '薄': 'báo',
-    '深': 'shēn', '浅': 'qiǎn', '远': 'yuǎn', '近': 'jìn', '快': 'kuài',
-    '慢': 'màn', '早': 'zǎo', '晚': 'wǎn', '新': 'xīn', '旧': 'jiù',
-    '好': 'hǎo', '坏': 'huài', '对': 'duì', '错': 'cuò', '真': 'zhēn',
-    '假': 'jiǎ', '美': 'měi', '丑': 'chǒu', '贵': 'guì', '便宜': 'piányi',
-    '多': 'duō', '少': 'shǎo', '都': 'dōu', '很': 'hěn', '太': 'tài',
-    '最': 'zuì', '更': 'gèng', '非常': 'fēicháng', '特别': 'tèbié',
-    '我': 'wǒ', '你': 'nǐ', '他': 'tā', '她': 'tā', '它': 'tā',
-    '们': 'men', '的': 'de', '了': 'le', '是': 'shì', '在': 'zài',
-    '有': 'yǒu', '没': 'méi', '无': 'wú', '不': 'bù', '吗': 'ma',
-    '呢': 'ne', '啊': 'a', '吧': 'ba', '呀': 'ya', '哦': 'ó',
-    '这': 'zhè', '那': 'nà', '哪': 'nǎ', '谁': 'shuí', '什么': 'shénme',
-    '怎': 'zěn', '么': 'me', '怎么': 'zěnme', '为': 'wèi', '什么': 'shénme',
-    '为什': 'wèishén', '为什 么': 'wèishénme', '因为': 'yīnwèi', '所以': 'suǒyǐ',
-    '但': 'dàn', '是': 'shì', '然': 'rán', '但是': 'dànshì', '虽然': 'suīrán',
-    '如': 'rú', '果': 'guǒ', '如果': 'rúguǒ', '只': 'zhǐ', '要': 'yào',
-    '需': 'xū', '需 要': 'xūyào', '应': 'yīng', '该': 'gāi', '应该': 'yīnggāi',
-    '能': 'néng', '会': 'huì', '可': 'kě', '以': 'yǐ', '可以': 'kěyǐ',
-    '想': 'xiǎng', '要': 'yào', '得': 'dé', '到': 'dào', '去': 'qù',
-    '来': 'lái', '回': 'huí', '过': 'guò', '出': 'chū', '入': 'rù',
-    '上': 'shàng', '下': 'xià', '左': 'zuǒ', '右': 'yòu', '前': 'qián',
-    '后': 'hòu', '里': 'lǐ', '外': 'wài', '中': 'zhōng', '东': 'dōng',
-    '南': 'nán', '西': 'xī', '北': 'běi',
-    '天': 'tiān', '地': 'dì', '人': 'rén', '国': 'guó', '家': 'jiā',
-    '中 国': 'zhōngguó', '美国': 'Měiguó', '英国': 'Yīngguó', '法国': 'Fàguó',
-    '德国': 'Déguó', '日本': 'Rìběn', '韩国': 'Hánguó', '俄国': 'Éguó',
-    '京': 'jīng', '上海': 'Shànghǎi', '广州': 'Guǎngzhōu', '深圳': 'Shēnzhèn',
-    '香港': 'Xiānggǎng', '澳门': 'Aomen', '台湾': 'Táiwān', '新加坡': 'Xīnjiāpō',
-    '公': 'gōng', '司': 'sī', '公 司': 'gōngsī', '银': 'yín', '行': 'háng',
-    '银 行': 'yínháng', '学': 'xué', '校': 'xiào', '学 校': 'xuéxiào',
-    '老': 'lǎo', '师': 'shī', '老 师': 'lǎoshī', '生': 'shēng', '学 生': 'xuéshēng',
-    '朋': 'péng', '友': 'yǒu', '朋 友': 'péngyǒu', '同': 'tóng', '学': 'xué',
-    '同 学': 'tóngxué', '爸': 'bà', '妈': 'mā', '爸 爸': 'bàba', '妈 妈': 'māma',
-    '父': 'fù', '母': 'mǔ', '亲': 'qīn', '父 母': 'fùmǔ', '亲 戚': 'qīnqi',
-    '哥': 'gē', '弟': 'dì', '姐': 'jiě', '妹': 'mèi', '哥 哥': 'gēge',
-    '弟 弟': 'dìdi', '姐 姐': 'jiějie', '妹 妹': 'mèimei',
-    '见': 'jiàn', '面': 'miàn', '见 面': 'jiànmiàn', '认': 'rèn', '识': 'shí',
-    '认 识': 'rènshi', '告': 'gào', '诉': 'sù', '告 诉': 'gàosù',
-    '聊': 'liáo', '天': 'tiān', '聊 天': 'liáotiān', '说': 'shuō', '话': 'huà',
-    '说 话': 'shuōhuà', '问': 'wèn', '答': 'dá', '问 答': 'wèndá',
-    '听': 'tīng', '写': 'xiě', '读': 'dú', '看': 'kàn', '读': 'dú',
-    '书': 'shū', '读 书': 'dúshū', '习': 'xí', '学': 'xué', '学 习': 'xuéxí',
-    '工': 'gōng', '作': 'zuò', '工 作': 'gōngzuò', '上班': 'shàngbān', '下班': 'xiàbān',
-    '请': 'qǐng', '问': 'wèn', '请 问': 'qǐngwèn', '谢': 'xiè', '谢 谢': 'xièxie',
-    '对': 'duì', '不': 'bù', '对 不 起': 'duìbùqǐ', '起': 'qǐ', '对': 'duì',
-    '没': 'méi', '关': 'guān', '系': 'xì', '没 关 系': 'méiguānxi',
-    '爱': 'ài', '喜': 'xǐ', '欢': 'huān', '喜 欢': 'xǐhuan', '爱': 'ài',
-    '医': 'yī', '院': 'yuàn', '医 院': 'yīyuàn', '药': 'yào', '药 店': 'yàodiàn',
-    '饭': 'fàn', '吃': 'chī', '吃 饭': 'chīfàn', '店': 'diàn', '酒': 'jiǔ',
-    '酒 店': 'jiǔdiàn', '咖': 'kā', '啡': 'fēi', '咖 啡': 'kāfēi', '茶': 'chá',
-    '水': 'shuǐ', '果': 'guǒ', '水 果': 'shuǐguǒ', '苹': 'píng', '果': 'guǒ',
-    '苹 果': 'píngguǒ', '香': 'xiāng', '蕉': 'jiāo', '香 蕉': 'xiāngjiāo',
-    '葡': 'pú', '萄': 'táo', '葡 萄': 'pútao', '西': 'xī', '瓜': 'guā',
-    '西 瓜': 'xīguā', '肉': 'ròu', '鱼': 'yú', '鸡': 'jī', '鸭': 'yā',
-    '猪': 'zhū', '牛': 'niú', '羊': 'yáng', '蛋': 'dàn', '面': 'miàn',
-    '米': 'mǐ', '米 饭': 'mǐfàn', '包': 'bāo', '面 包': 'miànbāo',
-    '车': 'chē', '汽': 'qì', '汽 车': 'qìchē', '火': 'huǒ', '车': 'chē',
-    '火 车': 'huǒchē', '地': 'dì', '铁': 'tiě', '地 铁': 'dìtiě',
-    '站': 'zhàn', '机': 'jī', '场': 'chǎng', '机 场': 'jīchǎng',
-    '票': 'piào', '钱': 'qián', '买': 'mǎi', '卖': 'mài', '买 东 西': 'mǎi dōngxi',
-    '路': 'lù', '走': 'zǒu', '跑': 'pǎo', '飞': 'fēi', '坐': 'zuò',
-    '躺': 'tǎng', '站': 'zhàn', '开': 'kāi', '关': 'guān', '睡': 'shuì',
-    '觉': 'jiào', '睡 觉': 'shuìjiào', '醒': 'xǐng', '吃': 'chī', '喝': 'hē',
-    '打': 'dǎ', '电': 'diàn', '话': 'huà', '打 电 话': 'dǎ diànhuà',
-    '网': 'wǎng', '络': 'luò', '网 络': 'wǎngluò', '微': 'wēi', '信': 'xìn',
-    '微 信': 'wēixìn', '邮': 'yóu', '件': 'jiàn', '邮 件': 'yóujiàn',
-    '时': 'shí', '间': 'jiān', '时 间': 'shíjiān', '现': 'xiàn', '在': 'zài',
-    '现 在': 'xiànzài', '今': 'jīn', '天': 'tiān', '今 天': 'jīntiān',
-    '昨': 'zuó', '天': 'tiān', '昨 天': 'zuótiān', '明': 'míng', '天': 'tiān',
-    '明 天': 'míngtiān', '年': 'nián', '月': 'yuè', '日': 'rì', '号': 'hào',
-    '今 年': 'jīnnián', '昨 年': 'zuónián', '明 年': 'míngnián',
-    '礼': 'lǐ', '拜': 'bài', '礼 拜': 'lǐbài', '星': 'xīng', '期': 'qī',
-    '星 期': 'xīngqī', '一': 'yī', '二': 'èr', '三': 'sān', '四': 'sì',
-    '五': 'wǔ', '六': 'liù', '七': 'qī', '星 期 一': 'xīngqī yī',
-    '星 期 二': 'xīngqī èr', '星 期 三': 'xīngqī sān', '星 期 四': 'xīngqī sì',
-    '星 期 五': 'xīngqī wǔ', '星 期 六': 'xīngqī liù', '星 期 天': 'xīngqī tiān',
-    '早': 'zǎo', '上': 'shàng', '早 上': 'zǎoshang', '中': 'zhōng', '午': 'wǔ',
-    '中 午': 'zhōngwǔ', '下': 'xià', '午': 'wǔ', '下 午': 'xiàwǔ',
-    '晚': 'wǎn', '上': 'shàng', '晚 上': 'wǎnshang', '夜': 'yè', '晚': 'wǎn',
-    '昨': 'zuó', '晚': 'wǎn', '昨 晚': 'zuówǎn', '夜': 'yè',
-    '半': 'bàn', '点': 'diǎn', '半 点': 'bàndiǎn', '刻': 'kè', '分': 'fēn',
-    '钟': 'zhōng', '秒': 'miǎo', '什': 'shén', '么': 'me', '时': 'shí',
-    '候': 'hòu', '什 么 时 候': 'shénme shíhòu', '怎': 'zěn', '么': 'me',
-    '么': 'me', '怎 么': 'zěnme', '样': 'yàng', '怎 么 样': 'zěnmeyàng',
-    '样': 'yàng', '怎 么 样': 'zěnmeyàng', '还': 'hái', '好': 'hǎo',
-    '还': 'hái', '吗': 'ma', '还 好': 'háihǎo', '不': 'bù', '错': 'cuò',
-    '不 错': 'bùcuò', '棒': 'bàng', '帅': 'shuài', '酷': 'kù',
-    '忙': 'máng', '闲': 'xián', '累': 'lèi', '舒': 'shū', '服': 'fu',
-    '舒 服': 'shūfu', '饿': 'è', '饱': 'bǎo', '渴': 'kě', '口': 'kǒu',
-    '渴': 'kě', '口 渴': 'kǒukě', '痛': 'tòng', '病': 'bìng', '医': 'yī',
-    '医 生': 'yīsheng', '护': 'hù', '士': 'shì', '护 士': 'hùshi',
-    '房': 'fáng', '间': 'jiān', '房 间': 'fángjiān', '厕': 'cè', '所': 'suǒ',
-    '厕 所': 'cèsuǒ', '厨': 'chú', '房': 'fáng', '厨 房': 'chúfáng',
-    '客': 'kè', '厅': 'tīng', '客 厅': 'kètīng', '床': 'chuáng', '桌': 'zhuō',
-    '椅': 'yǐ', '沙': 'shā', '发': 'fā', '沙 发': 'shāfā',
-    '门': 'mén', '窗': 'chuāng', '钥': 'yào', '匙': 'shi', '钥 匙': 'yàoshi',
-    '钥': 'yào', '怎': 'zěn', '怎 么': 'zěnme', '你': 'nǐ', '们': 'men',
-    '三': 'sān', '个': 'gè', '都': 'dōu', '没': 'méi', '事': 'shì',
-    '怎 么 你 们 三 个 都 没 事': 'zěnme nǐmen sān gè dōu méi shì',
-    '你 好': 'nǐhǎo', '再 见': 'zàijiàn', '保 重': 'bǎozhòng', '注': 'zhù',
-    '意': 'yì', '注 意': 'zhùyì', '安': 'ān', '全': 'quán', '安 全': 'ānquán',
-    '健': 'jiàn', '康': 'kāng', '健 康': 'jiànkāng', '祝': 'zhù', '福': 'fú',
-    '祝 福': 'zhùfú', '庆': 'qìng', '祝': 'zhù', '恭': 'gōng', '喜': 'xǐ',
-    '恭 喜': 'gōngxǐ', '新': 'xīn', '年': 'nián', '快': 'kuài', '新 年 快 乐': 'xīnnián kuàilè',
-    '圣': 'shèng', '诞': 'dàn', '快': 'kuài', '圣 诞 快 乐': 'shèngdàn kuàilè',
-    '生': 'shēng', '日': 'rì', '快': 'kuài', '生 日 快 乐': 'shēngrì kuàilè',
-    '永': 'yǒng', '远': 'yuǎn', '永 远': 'yǒngyuǎn', '经': 'jīng', '常': 'cháng',
-    '经 常': 'jīngcháng', '往': 'wǎng', '往': 'wǎng', '以': 'yǐ', '往': 'wǎng',
-    '以 往': 'yǐwǎng', '突': 'tū', '然': 'rán', '突 然': 'tūrán',
-    '必': 'bì', '须': 'xū', '必 须': 'bìxū', '需': 'xū', '要': 'yào',
-    '需 要': 'xūyào', '正': 'zhèng', '在': 'zài', '正 在': 'zhèngzài',
-    '马': 'mǎ', '上': 'shàng', '马 上': 'mǎshàng', '立': 'lì', '刻': 'kè',
-    '立 刻': 'lìkè', '已': 'yǐ', '经': 'jīng', '已 经': 'yǐjing',
-    '马': 'mǎ', '上': 'shàng', '马 上': 'mǎshàng', '准': 'zhǔn', '备': 'bèi',
-    '准 备': 'zhǔnbèi', '开': 'kāi', '始': 'shǐ', '开 始': 'kāishǐ',
-    '结': 'jié', '束': 'shù', '结 束': 'jiéshù', '完': 'wán', '成': 'chéng',
-    '完 成': 'wánchéng', '失': 'shī', '败': 'bài', '失 败': 'shībài',
-    '成': 'chéng', '功': 'gōng', '成 功': 'chénggōng', '进': 'jìn', '步': 'bù',
-    '进 步': 'jìnbù', '欢': 'huān', '迎': 'yíng', '欢 迎': 'huānyíng',
-    '送': 'sòng', '欢': 'huān', '迎': 'yíng', '欢 送': 'huānsòng',
-    '欢': 'huān', '迎': 'yíng', '光': 'guāng', '临': 'lín', '欢 迎 光 临': 'huānyíng guānglín',
-    '参': 'cān', '加': 'jiā', '参 加': 'cānjiā', '参': 'cān', '观': 'guān',
-    '参 观': 'cānguān', '参': 'cān', '考': 'kǎo', '参 考': 'cānkǎo',
-    '考': 'kǎo', '试': 'shì', '考 试': 'kǎoshì', '作': 'zuò', '业': 'yè',
-    '作 业': 'zuòyè', '答': 'dá', '案': 'àn', '答 案': 'dáàn',
-    '题': 'tí', '问': 'wèn', '问 题': 'wèntí', '解': 'jiě', '决': 'jué',
-    '解 决': 'jiějué', '办': 'bàn', '法': 'fǎ', '办 法': 'bànfǎ',
-    '知': 'zhī', '道': 'dào', '知 道': 'zhīdào', '懂': 'dǒng', '不': 'bù',
-    '懂': 'dǒng', '懂 不 懂': 'dǒngbùdǒng', '会': 'huì', '不': 'bù',
-    '会': 'huì', '会 不 会': 'huìbùhuì', '记': 'jì', '得': 'dé',
-    '记 得': 'jìde', '忘': 'wàng', '记': 'jì', '忘 记': 'wàngjì',
-    '明': 'míng', '白': 'bái', '明 白': 'míngbai', '清': 'qīng', '楚': 'chǔ',
-    '清 楚': 'qīngchu', '确': 'què', '定': 'dìng', '确 定': 'quèdìng',
-    '一': 'yī', '定': 'dìng', '一 定': 'yīdìng', '肯': 'kěn', '定': 'dìng',
-    '肯 定': 'kěndìng', '许': 'xǔ', '多': 'duō', '许 多': 'xǔduō',
-    '少': 'shǎo', '一': 'yī', '点': 'diǎn', '少 一 点': 'shǎo yīdiǎn',
-    '帮': 'bāng', '助': 'zhù', '帮 助': 'bāngzhù', '谢': 'xiè', '谢': 'xiè',
-    '谢 谢': 'xièxie', '不': 'bù', '谢': 'xiè', '不 谢': 'bùxiè',
-    '没': 'méi', '事': 'shì', '没 事': 'méishì', '不': 'bù', '用': 'yòng',
-    '不 用': 'bùyòng', '客': 'kè', '气': 'qì', '不 客 气': 'bùkèqi',
-    '没': 'méi', '关': 'guān', '系': 'xì', '没 关 系': 'méiguānxi',
-    '不': 'bù', '好': 'hǎo', '意': 'yì', '思': 'si', '不 好 意 思': 'bùhǎoyìsi',
-    '麻': 'má', '烦': 'fan', '麻 烦': 'máfan', '辛': 'xīn', '苦': 'kǔ',
-    '辛 苦': 'xīnkǔ', '累': 'lèi', '抱': 'bào', '歉': 'qiàn', '抱 歉': 'bàoqiàn',
-    '对': 'duì', '不': 'bù', '起': 'qǐ', '对 不 起': 'duìbùqǐ',
-    '没': 'méi', '关': 'guān', '系': 'xì', '没 关 系': 'méiguānxi'
+    一: "yī",
+    二: "èr",
+    三: "sān",
+    四: "sì",
+    五: "wǔ",
+    六: "liù",
+    七: "qī",
+    八: "bā",
+    九: "jiǔ",
+    十: "shí",
+    百: "bǎi",
+    千: "qiān",
+    万: "wàn",
+    亿: "yì",
+    零: "líng",
+    两: "liǎng",
+    几: "jǐ",
+    多: "duō",
+    少: "shǎo",
+    大: "dà",
+    小: "xiǎo",
+    高: "gāo",
+    低: "dī",
+    长: "cháng",
+    短: "duǎn",
+    宽: "kuān",
+    窄: "zhǎi",
+    厚: "hòu",
+    薄: "báo",
+    深: "shēn",
+    浅: "qiǎn",
+    远: "yuǎn",
+    近: "jìn",
+    快: "kuài",
+    慢: "màn",
+    早: "zǎo",
+    晚: "wǎn",
+    新: "xīn",
+    旧: "jiù",
+    好: "hǎo",
+    坏: "huài",
+    对: "duì",
+    错: "cuò",
+    真: "zhēn",
+    假: "jiǎ",
+    美: "měi",
+    丑: "chǒu",
+    贵: "guì",
+    便宜: "piányi",
+    多: "duō",
+    少: "shǎo",
+    都: "dōu",
+    很: "hěn",
+    太: "tài",
+    最: "zuì",
+    更: "gèng",
+    非常: "fēicháng",
+    特别: "tèbié",
+    我: "wǒ",
+    你: "nǐ",
+    他: "tā",
+    她: "tā",
+    它: "tā",
+    们: "men",
+    的: "de",
+    了: "le",
+    是: "shì",
+    在: "zài",
+    有: "yǒu",
+    没: "méi",
+    无: "wú",
+    不: "bù",
+    吗: "ma",
+    呢: "ne",
+    啊: "a",
+    吧: "ba",
+    呀: "ya",
+    哦: "ó",
+    这: "zhè",
+    那: "nà",
+    哪: "nǎ",
+    谁: "shuí",
+    什么: "shénme",
+    怎: "zěn",
+    么: "me",
+    怎么: "zěnme",
+    为: "wèi",
+    什么: "shénme",
+    为什: "wèishén",
+    "为什 么": "wèishénme",
+    因为: "yīnwèi",
+    所以: "suǒyǐ",
+    但: "dàn",
+    是: "shì",
+    然: "rán",
+    但是: "dànshì",
+    虽然: "suīrán",
+    如: "rú",
+    果: "guǒ",
+    如果: "rúguǒ",
+    只: "zhǐ",
+    要: "yào",
+    需: "xū",
+    "需 要": "xūyào",
+    应: "yīng",
+    该: "gāi",
+    应该: "yīnggāi",
+    能: "néng",
+    会: "huì",
+    可: "kě",
+    以: "yǐ",
+    可以: "kěyǐ",
+    想: "xiǎng",
+    要: "yào",
+    得: "dé",
+    到: "dào",
+    去: "qù",
+    来: "lái",
+    回: "huí",
+    过: "guò",
+    出: "chū",
+    入: "rù",
+    上: "shàng",
+    下: "xià",
+    左: "zuǒ",
+    右: "yòu",
+    前: "qián",
+    后: "hòu",
+    里: "lǐ",
+    外: "wài",
+    中: "zhōng",
+    东: "dōng",
+    南: "nán",
+    西: "xī",
+    北: "běi",
+    天: "tiān",
+    地: "dì",
+    人: "rén",
+    国: "guó",
+    家: "jiā",
+    "中 国": "zhōngguó",
+    美国: "Měiguó",
+    英国: "Yīngguó",
+    法国: "Fàguó",
+    德国: "Déguó",
+    日本: "Rìběn",
+    韩国: "Hánguó",
+    俄国: "Éguó",
+    京: "jīng",
+    上海: "Shànghǎi",
+    广州: "Guǎngzhōu",
+    深圳: "Shēnzhèn",
+    香港: "Xiānggǎng",
+    澳门: "Aomen",
+    台湾: "Táiwān",
+    新加坡: "Xīnjiāpō",
+    公: "gōng",
+    司: "sī",
+    "公 司": "gōngsī",
+    银: "yín",
+    行: "háng",
+    "银 行": "yínháng",
+    学: "xué",
+    校: "xiào",
+    "学 校": "xuéxiào",
+    老: "lǎo",
+    师: "shī",
+    "老 师": "lǎoshī",
+    生: "shēng",
+    "学 生": "xuéshēng",
+    朋: "péng",
+    友: "yǒu",
+    "朋 友": "péngyǒu",
+    同: "tóng",
+    学: "xué",
+    "同 学": "tóngxué",
+    爸: "bà",
+    妈: "mā",
+    "爸 爸": "bàba",
+    "妈 妈": "māma",
+    父: "fù",
+    母: "mǔ",
+    亲: "qīn",
+    "父 母": "fùmǔ",
+    "亲 戚": "qīnqi",
+    哥: "gē",
+    弟: "dì",
+    姐: "jiě",
+    妹: "mèi",
+    "哥 哥": "gēge",
+    "弟 弟": "dìdi",
+    "姐 姐": "jiějie",
+    "妹 妹": "mèimei",
+    见: "jiàn",
+    面: "miàn",
+    "见 面": "jiànmiàn",
+    认: "rèn",
+    识: "shí",
+    "认 识": "rènshi",
+    告: "gào",
+    诉: "sù",
+    "告 诉": "gàosù",
+    聊: "liáo",
+    天: "tiān",
+    "聊 天": "liáotiān",
+    说: "shuō",
+    话: "huà",
+    "说 话": "shuōhuà",
+    问: "wèn",
+    答: "dá",
+    "问 答": "wèndá",
+    听: "tīng",
+    写: "xiě",
+    读: "dú",
+    看: "kàn",
+    读: "dú",
+    书: "shū",
+    "读 书": "dúshū",
+    习: "xí",
+    学: "xué",
+    "学 习": "xuéxí",
+    工: "gōng",
+    作: "zuò",
+    "工 作": "gōngzuò",
+    上班: "shàngbān",
+    下班: "xiàbān",
+    请: "qǐng",
+    问: "wèn",
+    "请 问": "qǐngwèn",
+    谢: "xiè",
+    "谢 谢": "xièxie",
+    对: "duì",
+    不: "bù",
+    "对 不 起": "duìbùqǐ",
+    起: "qǐ",
+    对: "duì",
+    没: "méi",
+    关: "guān",
+    系: "xì",
+    "没 关 系": "méiguānxi",
+    爱: "ài",
+    喜: "xǐ",
+    欢: "huān",
+    "喜 欢": "xǐhuan",
+    爱: "ài",
+    医: "yī",
+    院: "yuàn",
+    "医 院": "yīyuàn",
+    药: "yào",
+    "药 店": "yàodiàn",
+    饭: "fàn",
+    吃: "chī",
+    "吃 饭": "chīfàn",
+    店: "diàn",
+    酒: "jiǔ",
+    "酒 店": "jiǔdiàn",
+    咖: "kā",
+    啡: "fēi",
+    "咖 啡": "kāfēi",
+    茶: "chá",
+    水: "shuǐ",
+    果: "guǒ",
+    "水 果": "shuǐguǒ",
+    苹: "píng",
+    果: "guǒ",
+    "苹 果": "píngguǒ",
+    香: "xiāng",
+    蕉: "jiāo",
+    "香 蕉": "xiāngjiāo",
+    葡: "pú",
+    萄: "táo",
+    "葡 萄": "pútao",
+    西: "xī",
+    瓜: "guā",
+    "西 瓜": "xīguā",
+    肉: "ròu",
+    鱼: "yú",
+    鸡: "jī",
+    鸭: "yā",
+    猪: "zhū",
+    牛: "niú",
+    羊: "yáng",
+    蛋: "dàn",
+    面: "miàn",
+    米: "mǐ",
+    "米 饭": "mǐfàn",
+    包: "bāo",
+    "面 包": "miànbāo",
+    车: "chē",
+    汽: "qì",
+    "汽 车": "qìchē",
+    火: "huǒ",
+    车: "chē",
+    "火 车": "huǒchē",
+    地: "dì",
+    铁: "tiě",
+    "地 铁": "dìtiě",
+    站: "zhàn",
+    机: "jī",
+    场: "chǎng",
+    "机 场": "jīchǎng",
+    票: "piào",
+    钱: "qián",
+    买: "mǎi",
+    卖: "mài",
+    "买 东 西": "mǎi dōngxi",
+    路: "lù",
+    走: "zǒu",
+    跑: "pǎo",
+    飞: "fēi",
+    坐: "zuò",
+    躺: "tǎng",
+    站: "zhàn",
+    开: "kāi",
+    关: "guān",
+    睡: "shuì",
+    觉: "jiào",
+    "睡 觉": "shuìjiào",
+    醒: "xǐng",
+    吃: "chī",
+    喝: "hē",
+    打: "dǎ",
+    电: "diàn",
+    话: "huà",
+    "打 电 话": "dǎ diànhuà",
+    网: "wǎng",
+    络: "luò",
+    "网 络": "wǎngluò",
+    微: "wēi",
+    信: "xìn",
+    "微 信": "wēixìn",
+    邮: "yóu",
+    件: "jiàn",
+    "邮 件": "yóujiàn",
+    时: "shí",
+    间: "jiān",
+    "时 间": "shíjiān",
+    现: "xiàn",
+    在: "zài",
+    "现 在": "xiànzài",
+    今: "jīn",
+    天: "tiān",
+    "今 天": "jīntiān",
+    昨: "zuó",
+    天: "tiān",
+    "昨 天": "zuótiān",
+    明: "míng",
+    天: "tiān",
+    "明 天": "míngtiān",
+    年: "nián",
+    月: "yuè",
+    日: "rì",
+    号: "hào",
+    "今 年": "jīnnián",
+    "昨 年": "zuónián",
+    "明 年": "míngnián",
+    礼: "lǐ",
+    拜: "bài",
+    "礼 拜": "lǐbài",
+    星: "xīng",
+    期: "qī",
+    "星 期": "xīngqī",
+    一: "yī",
+    二: "èr",
+    三: "sān",
+    四: "sì",
+    五: "wǔ",
+    六: "liù",
+    七: "qī",
+    "星 期 一": "xīngqī yī",
+    "星 期 二": "xīngqī èr",
+    "星 期 三": "xīngqī sān",
+    "星 期 四": "xīngqī sì",
+    "星 期 五": "xīngqī wǔ",
+    "星 期 六": "xīngqī liù",
+    "星 期 天": "xīngqī tiān",
+    早: "zǎo",
+    上: "shàng",
+    "早 上": "zǎoshang",
+    中: "zhōng",
+    午: "wǔ",
+    "中 午": "zhōngwǔ",
+    下: "xià",
+    午: "wǔ",
+    "下 午": "xiàwǔ",
+    晚: "wǎn",
+    上: "shàng",
+    "晚 上": "wǎnshang",
+    夜: "yè",
+    晚: "wǎn",
+    昨: "zuó",
+    晚: "wǎn",
+    "昨 晚": "zuówǎn",
+    夜: "yè",
+    半: "bàn",
+    点: "diǎn",
+    "半 点": "bàndiǎn",
+    刻: "kè",
+    分: "fēn",
+    钟: "zhōng",
+    秒: "miǎo",
+    什: "shén",
+    么: "me",
+    时: "shí",
+    候: "hòu",
+    "什 么 时 候": "shénme shíhòu",
+    怎: "zěn",
+    么: "me",
+    么: "me",
+    "怎 么": "zěnme",
+    样: "yàng",
+    "怎 么 样": "zěnmeyàng",
+    样: "yàng",
+    "怎 么 样": "zěnmeyàng",
+    还: "hái",
+    好: "hǎo",
+    还: "hái",
+    吗: "ma",
+    "还 好": "háihǎo",
+    不: "bù",
+    错: "cuò",
+    "不 错": "bùcuò",
+    棒: "bàng",
+    帅: "shuài",
+    酷: "kù",
+    忙: "máng",
+    闲: "xián",
+    累: "lèi",
+    舒: "shū",
+    服: "fu",
+    "舒 服": "shūfu",
+    饿: "è",
+    饱: "bǎo",
+    渴: "kě",
+    口: "kǒu",
+    渴: "kě",
+    "口 渴": "kǒukě",
+    痛: "tòng",
+    病: "bìng",
+    医: "yī",
+    "医 生": "yīsheng",
+    护: "hù",
+    士: "shì",
+    "护 士": "hùshi",
+    房: "fáng",
+    间: "jiān",
+    "房 间": "fángjiān",
+    厕: "cè",
+    所: "suǒ",
+    "厕 所": "cèsuǒ",
+    厨: "chú",
+    房: "fáng",
+    "厨 房": "chúfáng",
+    客: "kè",
+    厅: "tīng",
+    "客 厅": "kètīng",
+    床: "chuáng",
+    桌: "zhuō",
+    椅: "yǐ",
+    沙: "shā",
+    发: "fā",
+    "沙 发": "shāfā",
+    门: "mén",
+    窗: "chuāng",
+    钥: "yào",
+    匙: "shi",
+    "钥 匙": "yàoshi",
+    钥: "yào",
+    怎: "zěn",
+    "怎 么": "zěnme",
+    你: "nǐ",
+    们: "men",
+    三: "sān",
+    个: "gè",
+    都: "dōu",
+    没: "méi",
+    事: "shì",
+    "怎 么 你 们 三 个 都 没 事": "zěnme nǐmen sān gè dōu méi shì",
+    "你 好": "nǐhǎo",
+    "再 见": "zàijiàn",
+    "保 重": "bǎozhòng",
+    注: "zhù",
+    意: "yì",
+    "注 意": "zhùyì",
+    安: "ān",
+    全: "quán",
+    "安 全": "ānquán",
+    健: "jiàn",
+    康: "kāng",
+    "健 康": "jiànkāng",
+    祝: "zhù",
+    福: "fú",
+    "祝 福": "zhùfú",
+    庆: "qìng",
+    祝: "zhù",
+    恭: "gōng",
+    喜: "xǐ",
+    "恭 喜": "gōngxǐ",
+    新: "xīn",
+    年: "nián",
+    快: "kuài",
+    "新 年 快 乐": "xīnnián kuàilè",
+    圣: "shèng",
+    诞: "dàn",
+    快: "kuài",
+    "圣 诞 快 乐": "shèngdàn kuàilè",
+    生: "shēng",
+    日: "rì",
+    快: "kuài",
+    "生 日 快 乐": "shēngrì kuàilè",
+    永: "yǒng",
+    远: "yuǎn",
+    "永 远": "yǒngyuǎn",
+    经: "jīng",
+    常: "cháng",
+    "经 常": "jīngcháng",
+    往: "wǎng",
+    往: "wǎng",
+    以: "yǐ",
+    往: "wǎng",
+    "以 往": "yǐwǎng",
+    突: "tū",
+    然: "rán",
+    "突 然": "tūrán",
+    必: "bì",
+    须: "xū",
+    "必 须": "bìxū",
+    需: "xū",
+    要: "yào",
+    "需 要": "xūyào",
+    正: "zhèng",
+    在: "zài",
+    "正 在": "zhèngzài",
+    马: "mǎ",
+    上: "shàng",
+    "马 上": "mǎshàng",
+    立: "lì",
+    刻: "kè",
+    "立 刻": "lìkè",
+    已: "yǐ",
+    经: "jīng",
+    "已 经": "yǐjing",
+    马: "mǎ",
+    上: "shàng",
+    "马 上": "mǎshàng",
+    准: "zhǔn",
+    备: "bèi",
+    "准 备": "zhǔnbèi",
+    开: "kāi",
+    始: "shǐ",
+    "开 始": "kāishǐ",
+    结: "jié",
+    束: "shù",
+    "结 束": "jiéshù",
+    完: "wán",
+    成: "chéng",
+    "完 成": "wánchéng",
+    失: "shī",
+    败: "bài",
+    "失 败": "shībài",
+    成: "chéng",
+    功: "gōng",
+    "成 功": "chénggōng",
+    进: "jìn",
+    步: "bù",
+    "进 步": "jìnbù",
+    欢: "huān",
+    迎: "yíng",
+    "欢 迎": "huānyíng",
+    送: "sòng",
+    欢: "huān",
+    迎: "yíng",
+    "欢 送": "huānsòng",
+    欢: "huān",
+    迎: "yíng",
+    光: "guāng",
+    临: "lín",
+    "欢 迎 光 临": "huānyíng guānglín",
+    参: "cān",
+    加: "jiā",
+    "参 加": "cānjiā",
+    参: "cān",
+    观: "guān",
+    "参 观": "cānguān",
+    参: "cān",
+    考: "kǎo",
+    "参 考": "cānkǎo",
+    考: "kǎo",
+    试: "shì",
+    "考 试": "kǎoshì",
+    作: "zuò",
+    业: "yè",
+    "作 业": "zuòyè",
+    答: "dá",
+    案: "àn",
+    "答 案": "dáàn",
+    题: "tí",
+    问: "wèn",
+    "问 题": "wèntí",
+    解: "jiě",
+    决: "jué",
+    "解 决": "jiějué",
+    办: "bàn",
+    法: "fǎ",
+    "办 法": "bànfǎ",
+    知: "zhī",
+    道: "dào",
+    "知 道": "zhīdào",
+    懂: "dǒng",
+    不: "bù",
+    懂: "dǒng",
+    "懂 不 懂": "dǒngbùdǒng",
+    会: "huì",
+    不: "bù",
+    会: "huì",
+    "会 不 会": "huìbùhuì",
+    记: "jì",
+    得: "dé",
+    "记 得": "jìde",
+    忘: "wàng",
+    记: "jì",
+    "忘 记": "wàngjì",
+    明: "míng",
+    白: "bái",
+    "明 白": "míngbai",
+    清: "qīng",
+    楚: "chǔ",
+    "清 楚": "qīngchu",
+    确: "què",
+    定: "dìng",
+    "确 定": "quèdìng",
+    一: "yī",
+    定: "dìng",
+    "一 定": "yīdìng",
+    肯: "kěn",
+    定: "dìng",
+    "肯 定": "kěndìng",
+    许: "xǔ",
+    多: "duō",
+    "许 多": "xǔduō",
+    少: "shǎo",
+    一: "yī",
+    点: "diǎn",
+    "少 一 点": "shǎo yīdiǎn",
+    帮: "bāng",
+    助: "zhù",
+    "帮 助": "bāngzhù",
+    谢: "xiè",
+    谢: "xiè",
+    "谢 谢": "xièxie",
+    不: "bù",
+    谢: "xiè",
+    "不 谢": "bùxiè",
+    没: "méi",
+    事: "shì",
+    "没 事": "méishì",
+    不: "bù",
+    用: "yòng",
+    "不 用": "bùyòng",
+    客: "kè",
+    气: "qì",
+    "不 客 气": "bùkèqi",
+    没: "méi",
+    关: "guān",
+    系: "xì",
+    "没 关 系": "méiguānxi",
+    不: "bù",
+    好: "hǎo",
+    意: "yì",
+    思: "si",
+    "不 好 意 思": "bùhǎoyìsi",
+    麻: "má",
+    烦: "fan",
+    "麻 烦": "máfan",
+    辛: "xīn",
+    苦: "kǔ",
+    "辛 苦": "xīnkǔ",
+    累: "lèi",
+    抱: "bào",
+    歉: "qiàn",
+    "抱 歉": "bàoqiàn",
+    对: "duì",
+    不: "bù",
+    起: "qǐ",
+    "对 不 起": "duìbùqǐ",
+    没: "méi",
+    关: "guān",
+    系: "xì",
+    "没 关 系": "méiguānxi",
   };
 
   const results = [];
 
   // Extract only Chinese characters and spaces from text
-  const chineseOnly = text.replace(/[^\u4e00-\u9fff\s]/g, '').trim();
+  const chineseOnly = text.replace(/[^\u4e00-\u9fff\s]/g, "").trim();
 
   if (!chineseOnly) {
     return results;
@@ -5867,7 +7167,7 @@ function getBasicPinyin(text) {
     }
 
     if (allFound && charPinyins.length > 0) {
-      results.push({ chinese: phrase, pinyin: charPinyins.join('') });
+      results.push({ chinese: phrase, pinyin: charPinyins.join("") });
     }
   }
 
@@ -5876,7 +7176,7 @@ function getBasicPinyin(text) {
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = src;
     script.onload = resolve;
     script.onerror = reject;
@@ -5888,37 +7188,93 @@ function loadScript(src) {
 function koreanToRoman(text) {
   // Initial consonants ( onset )
   const onset = {
-    'ㄱ': 'g', 'ㄲ': 'kk', 'ㄴ': 'n', 'ㄷ': 'd', 'ㄸ': 'tt', 'ㄹ': 'r',
-    'ㅁ': 'm', 'ㅂ': 'b', 'ㅃ': 'pp', 'ㅅ': 's', 'ㅆ': 'ss', 'ㅇ': '',
-    'ㅈ': 'j', 'ㅉ': 'jj', 'ㅊ': 'ch', 'ㅋ': 'k', 'ㅌ': 't', 'ㅍ': 'p', 'ㅎ': 'h'
+    ㄱ: "g",
+    ㄲ: "kk",
+    ㄴ: "n",
+    ㄷ: "d",
+    ㄸ: "tt",
+    ㄹ: "r",
+    ㅁ: "m",
+    ㅂ: "b",
+    ㅃ: "pp",
+    ㅅ: "s",
+    ㅆ: "ss",
+    ㅇ: "",
+    ㅈ: "j",
+    ㅉ: "jj",
+    ㅊ: "ch",
+    ㅋ: "k",
+    ㅌ: "t",
+    ㅍ: "p",
+    ㅎ: "h",
   };
 
   // Medial vowels ( nucleus )
   const nucleus = {
-    'ㅏ': 'a', 'ㅐ': 'ae', 'ㅑ': 'ya', 'ㅒ': 'yae', 'ㅓ': 'eo', 'ㅔ': 'e',
-    'ㅕ': 'yeo', 'ㅖ': 'ye', 'ㅗ': 'o', 'ㅘ': 'wa', 'ㅙ': 'wae', 'ㅚ': 'oe',
-    'ㅛ': 'yo', 'ㅜ': 'u', 'ㅝ': 'wo', 'ㅞ': 'we', 'ㅟ': 'wi',
-    'ㅠ': 'yu', 'ㅡ': 'eu', 'ㅢ': 'ui', 'ㅣ': 'i'
+    ㅏ: "a",
+    ㅐ: "ae",
+    ㅑ: "ya",
+    ㅒ: "yae",
+    ㅓ: "eo",
+    ㅔ: "e",
+    ㅕ: "yeo",
+    ㅖ: "ye",
+    ㅗ: "o",
+    ㅘ: "wa",
+    ㅙ: "wae",
+    ㅚ: "oe",
+    ㅛ: "yo",
+    ㅜ: "u",
+    ㅝ: "wo",
+    ㅞ: "we",
+    ㅟ: "wi",
+    ㅠ: "yu",
+    ㅡ: "eu",
+    ㅢ: "ui",
+    ㅣ: "i",
   };
 
   // Final consonants ( coda )
   const coda = {
-    '': '', 'ㄱ': 'k', 'ㄲ': 'k', 'ㄳ': 'ks', 'ㄴ': 'n', 'ㄵ': 'nj', 'ㄶ': 'nh',
-    'ㄷ': 't', 'ㄹ': 'l', 'ㄺ': 'lk', 'ㄻ': 'lm', 'ㄼ': 'lp', 'ㄽ': 'ls',
-    'ㄾ': 'lt', 'ㄿ': 'lp', 'ㅀ': 'lh', 'ㅁ': 'm', 'ㅂ': 'p', 'ㅄ': 'ps',
-    'ㅅ': 't', 'ㅆ': 't', 'ㅇ': 'ng', 'ㅈ': 't', 'ㅊ': 't', 'ㅋ': 'k',
-    'ㅌ': 't', 'ㅍ': 'p', 'ㅎ': 't'
+    "": "",
+    ㄱ: "k",
+    ㄲ: "k",
+    ㄳ: "ks",
+    ㄴ: "n",
+    ㄵ: "nj",
+    ㄶ: "nh",
+    ㄷ: "t",
+    ㄹ: "l",
+    ㄺ: "lk",
+    ㄻ: "lm",
+    ㄼ: "lp",
+    ㄽ: "ls",
+    ㄾ: "lt",
+    ㄿ: "lp",
+    ㅀ: "lh",
+    ㅁ: "m",
+    ㅂ: "p",
+    ㅄ: "ps",
+    ㅅ: "t",
+    ㅆ: "t",
+    ㅇ: "ng",
+    ㅈ: "t",
+    ㅊ: "t",
+    ㅋ: "k",
+    ㅌ: "t",
+    ㅍ: "p",
+    ㅎ: "t",
   };
 
   const chars = [...text];
-  let result = '';
+  let result = "";
 
   for (const char of chars) {
     const code = char.charCodeAt(0);
 
     // Check if it's a Hangul syllable
-    if (code >= 0xAC00 && code <= 0xD7A3) {
-      const syllableIndex = code - 0xAC00;
+    if (code >= 0xac00 && code <= 0xd7a3) {
+      const syllableIndex = code - 0xac00;
       const onsetIndex = Math.floor(syllableIndex / 588);
       const nucleusIndex = Math.floor((syllableIndex % 588) / 28);
       const codaIndex = syllableIndex % 28;
@@ -5927,9 +7283,9 @@ function koreanToRoman(text) {
       const nucleusChars = Object.keys(nucleus);
       const codaChars = Object.keys(coda);
 
-      const o = onset[onsetChars[onsetIndex]] || '';
-      const v = nucleus[nucleusChars[nucleusIndex]] || '';
-      const c = coda[codaChars[codaIndex]] || '';
+      const o = onset[onsetChars[onsetIndex]] || "";
+      const v = nucleus[nucleusChars[nucleusIndex]] || "";
+      const c = coda[codaChars[codaIndex]] || "";
 
       result += o + v + c;
     } else if (/[a-zA-Z]/.test(char)) {
@@ -5982,7 +7338,9 @@ async function performTranslation(text) {
 
   const fromLang = document.getElementById("translateFromLang").value;
   const toLang = document.getElementById("translateToLang").value;
-  const api = document.querySelector('input[name="translateApi"]:checked')?.value || 'mymemory';
+  const api =
+    document.querySelector('input[name="translateApi"]:checked')?.value ||
+    "mymemory";
 
   const loadingEl = document.getElementById("translateLoading");
   const errorEl = document.getElementById("translateError");
@@ -6004,7 +7362,7 @@ async function performTranslation(text) {
       const langPair = `${fromLangCode}|${toLang}`;
 
       const response = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(input)}&langpair=${langPair}`
+        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(input)}&langpair=${langPair}`,
       );
 
       if (!response.ok) {
@@ -6024,7 +7382,7 @@ async function performTranslation(text) {
       const targetLang = toLang;
 
       const response = await fetch(
-        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(input)}`
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(input)}`,
       );
 
       if (!response.ok) {
@@ -6033,7 +7391,7 @@ async function performTranslation(text) {
 
       const data = await response.json();
       if (data && data[0]) {
-        translatedText = data[0].map(item => item[0]).join("");
+        translatedText = data[0].map((item) => item[0]).join("");
         if (fromLang === "auto" && data[2]) {
           detectedLanguage = data[2];
         }
@@ -6047,7 +7405,8 @@ async function performTranslation(text) {
     lastTranslatedText = input;
 
     // Auto-load pronunciation if enabled
-    const showPronunciation = document.getElementById("showPronunciation")?.checked;
+    const showPronunciation =
+      document.getElementById("showPronunciation")?.checked;
     if (showPronunciation && translatedText) {
       document.getElementById("translatePronunciation").style.display = "block";
       loadPronunciation(translatedText, toLang);
@@ -6058,16 +7417,16 @@ async function performTranslation(text) {
     if (fromLang === "auto" && detectedLanguage) {
       const detectedLang = detectedLanguage.toLowerCase();
       const langNames = {
-        "en": "Tiếng Anh",
-        "ko": "Tiếng Hàn",
-        "zh": "Tiếng Trung",
-        "vi": "Tiếng Việt"
+        en: "Tiếng Anh",
+        ko: "Tiếng Hàn",
+        zh: "Tiếng Trung",
+        vi: "Tiếng Việt",
       };
       const langEmojis = {
-        "en": "🇬🇧",
-        "ko": "🇰🇷",
-        "zh": "🇨🇳",
-        "vi": "🇻🇳"
+        en: "🇬🇧",
+        ko: "🇰🇷",
+        zh: "🇨🇳",
+        vi: "🇻🇳",
       };
       const langName = langNames[detectedLang] || detectedLang;
       const langEmoji = langEmojis[detectedLang] || "";
@@ -6152,7 +7511,12 @@ async function copyTranslation() {
 
 /* ========================== TRANSLATE HISTORY ========================== */
 
-async function saveTranslateToHistory(originalText, translatedText, fromLang, toLang) {
+async function saveTranslateToHistory(
+  originalText,
+  translatedText,
+  fromLang,
+  toLang,
+) {
   if (!originalText || !translatedText) {
     console.log("Translate history: Missing text, skipping save");
     return;
@@ -6168,7 +7532,7 @@ async function saveTranslateToHistory(originalText, translatedText, fromLang, to
     translated: translatedText,
     fromLang: fromLang,
     toLang: toLang,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
 
   console.log("Translate history: Saving entry", historyEntry);
@@ -6186,29 +7550,31 @@ function renderTranslateHistory() {
   if (!container) return;
 
   if (translateHistoryCache.length === 0) {
-    container.innerHTML = '<div class="translate-history-empty">Chưa có lịch sử dịch</div>';
+    container.innerHTML =
+      '<div class="translate-history-empty">Chưa có lịch sử dịch</div>';
     return;
   }
 
   const langNames = {
-    "auto": "Tự động",
-    "en": "Tiếng Anh",
-    "ko": "Tiếng Hàn",
-    "zh": "Tiếng Trung",
-    "vi": "Tiếng Việt"
+    auto: "Tự động",
+    en: "Tiếng Anh",
+    ko: "Tiếng Hàn",
+    zh: "Tiếng Trung",
+    vi: "Tiếng Việt",
   };
 
-  container.innerHTML = translateHistoryCache.map(item => {
-    const date = new Date(item.timestamp);
-    const timeStr = date.toLocaleString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+  container.innerHTML = translateHistoryCache
+    .map((item) => {
+      const date = new Date(item.timestamp);
+      const timeStr = date.toLocaleString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
-    return `
+      return `
       <div class="translate-history-item" data-id="${item.id}">
         <div class="translate-history-item-header">
           <span class="translate-history-lang">${langNames[item.fromLang] || item.fromLang} → ${langNames[item.toLang] || item.toLang}</span>
@@ -6227,7 +7593,8 @@ function renderTranslateHistory() {
         <div class="translate-history-translated">${escapeHtml(item.translated)}</div>
       </div>
     `;
-  }).join("");
+    })
+    .join("");
 }
 
 function escapeHtml(text) {
@@ -6251,7 +7618,8 @@ async function deleteTranslateHistoryItem(id) {
 async function confirmDeleteAllTranslateHistory() {
   // Close history modal if open, since the action is from there
   const historyModal = document.getElementById("translateHistoryModal");
-  const isHistoryModalOpen = historyModal && historyModal.style.display === "flex";
+  const isHistoryModalOpen =
+    historyModal && historyModal.style.display === "flex";
 
   if (isHistoryModalOpen) {
     closeTranslateHistoryModal();
@@ -6277,7 +7645,7 @@ async function confirmDeleteAllTranslateHistory() {
         console.error("Lỗi xóa tất cả lịch sử dịch:", err);
         showToast("Lỗi khi xóa lịch sử dịch");
       }
-    }
+    },
   );
 }
 
@@ -6288,15 +7656,16 @@ function exportTranslateHistoryCsv() {
   }
 
   const langNames = {
-    "auto": "Tự động",
-    "en": "Tiếng Anh",
-    "ko": "Tiếng Hàn",
-    "zh": "Tiếng Trung",
-    "vi": "Tiếng Việt"
+    auto: "Tự động",
+    en: "Tiếng Anh",
+    ko: "Tiếng Hàn",
+    zh: "Tiếng Trung",
+    vi: "Tiếng Việt",
   };
 
   let csvContent = "\uFEFF"; // BOM for UTF-8
-  csvContent += "STT,Ngày giờ,Ngôn ngữ nguồn,Ngôn ngữ đích,Văn bản gốc,Văn bản dịch\n";
+  csvContent +=
+    "STT,Ngày giờ,Ngôn ngữ nguồn,Ngôn ngữ đích,Văn bản gốc,Văn bản dịch\n";
 
   translateHistoryCache.forEach((item, index) => {
     const date = new Date(item.timestamp).toLocaleString("vi-VN");
@@ -6308,7 +7677,10 @@ function exportTranslateHistoryCsv() {
     csvContent += `${index + 1},"${date}","${fromLang}","${toLang}","${original}","${translated}"\n`;
   });
 
-  downloadCsvFile(csvContent, `lich-su-dich-${formatDateForFilename(new Date())}.csv`);
+  downloadCsvFile(
+    csvContent,
+    `lich-su-dich-${formatDateForFilename(new Date())}.csv`,
+  );
   showToast("Đã xuất file CSV thành công");
 }
 
@@ -6346,7 +7718,12 @@ performTranslation = async function (text) {
   const translatedText = outputEl ? outputEl.value : "";
 
   if (translatedText && translatedText.trim() && text && text.trim()) {
-    saveTranslateToHistory(text.trim(), translatedText.trim(), fromLang, toLang);
+    saveTranslateToHistory(
+      text.trim(),
+      translatedText.trim(),
+      fromLang,
+      toLang,
+    );
     updateTranslateHistoryBadge();
   }
 };
@@ -6373,547 +7750,3463 @@ document.addEventListener("DOMContentLoaded", function () {
 const VOCABULARY_DATA = {
   // Existing categories with expanded words
   email: [
-    { word: "attachment", phonetic: "/əˈtætʃmənt/", meaning: "Tệp đính kèm", example: "Please find the attachment.", exampleVi: "Vui lòng xem tệp đính kèm." },
-    { word: "forward", phonetic: "/fɔːˈwɑːrd/", meaning: "Chuyển tiếp", example: "I'll forward this to the team.", exampleVi: "Tôi sẽ chuyển tiếp điều này cho nhóm." },
-    { word: "cc (carbon copy)", phonetic: "/siː siː/", meaning: "Gửi chồng", example: "Please cc the manager.", exampleVi: "Vui lòng gửi chồng cho quản lý." },
-    { word: "follow up", phonetic: "/ˈfɑːloʊ ʌp/", meaning: "Theo dõi, nhắc nhở", example: "I need to follow up on this email.", exampleVi: "Tôi cần theo dõi email này." },
-    { word: "deadline", phonetic: "/ˈdedlaɪn/", meaning: "Thời hạn cuối cùng", example: "The deadline is Friday.", exampleVi: "Thời hạn là thứ Sáu." },
-    { word: "recipient", phonetic: "/rɪˈsɪpiənt/", meaning: "Người nhận", example: "The recipient has confirmed receipt.", exampleVi: "Người nhận đã xác nhận đã nhận được." },
-    { word: "subject line", phonetic: "/ˈsʌbdʒekt laɪn/", meaning: "Dòng tiêu đề", example: "Use a clear subject line.", exampleVi: "Sử dụng dòng tiêu đề rõ ràng." },
-    { word: "draft", phonetic: "/dræft/", meaning: "Bản nháp", example: "I'll save it as a draft.", exampleVi: "Tôi sẽ lưu nó thành bản nháp." },
-    { word: "acknowledge", phonetic: "/əkˈnɒlɪdʒ/", meaning: "Xác nhận đã nhận", example: "Please acknowledge receipt.", exampleVi: "Vui lòng xác nhận đã nhận được." },
-    { word: "urgent", phonetic: "/ˈɜːrdʒənt/", meaning: "Khẩn cấp", example: "This is urgent, please respond ASAP.", exampleVi: "Đây là khẩn cấp, vui lòng phản hồi sớm nhất có thể." },
-    { word: "bcc", phonetic: "/biː siː siː/", meaning: "Gửi ẩn", example: "Please bcc the legal team.", exampleVi: "Vui lòng gửi ẩn cho pháp lý." },
-    { word: "reply all", phonetic: "/rɪˈplaɪ ɔːl/", meaning: "Trả lời tất cả", example: "Please don't reply all.", exampleVi: "Vui lòng không trả lời tất cả." },
-    { word: "thread", phonetic: "/θred/", meaning: "Chuỗi email", example: "Check the email thread for context.", exampleVi: "Kiểm tra chuỗi email để hiểu ngữ cảnh." },
-    { word: "flag", phonetic: "/flæɡ/", meaning: "Đánh dấu", example: "I'll flag this for follow-up.", exampleVi: "Tôi sẽ đánh dấu điều này để theo dõi." },
-    { word: "archive", phonetic: "/ˈɑːrkaɪv/", meaning: "Lưu trữ", example: "Archive emails you don't need.", exampleVi: "Lưu trữ những email bạn không cần." },
-    { word: "inbox", phonetic: "/ˈɪnbɒks/", meaning: "Hộp thư đến", example: "My inbox is full.", exampleVi: "Hộp thư đến của tôi đầy." },
-    { word: "sent", phonetic: "/sent/", meaning: "Đã gửi", example: "Check your sent folder.", exampleVi: "Kiểm tra thư mục đã gửi." },
-    { word: "compose", phonetic: "/kəmˈpoʊz/", meaning: "Soạn email", example: "Compose a new email.", exampleVi: "Soạn một email mới." },
+    {
+      word: "attachment",
+      phonetic: "/əˈtætʃmənt/",
+      meaning: "Tệp đính kèm",
+      example: "Please find the attachment.",
+      exampleVi: "Vui lòng xem tệp đính kèm.",
+    },
+    {
+      word: "forward",
+      phonetic: "/fɔːˈwɑːrd/",
+      meaning: "Chuyển tiếp",
+      example: "I'll forward this to the team.",
+      exampleVi: "Tôi sẽ chuyển tiếp điều này cho nhóm.",
+    },
+    {
+      word: "cc (carbon copy)",
+      phonetic: "/siː siː/",
+      meaning: "Gửi chồng",
+      example: "Please cc the manager.",
+      exampleVi: "Vui lòng gửi chồng cho quản lý.",
+    },
+    {
+      word: "follow up",
+      phonetic: "/ˈfɑːloʊ ʌp/",
+      meaning: "Theo dõi, nhắc nhở",
+      example: "I need to follow up on this email.",
+      exampleVi: "Tôi cần theo dõi email này.",
+    },
+    {
+      word: "deadline",
+      phonetic: "/ˈdedlaɪn/",
+      meaning: "Thời hạn cuối cùng",
+      example: "The deadline is Friday.",
+      exampleVi: "Thời hạn là thứ Sáu.",
+    },
+    {
+      word: "recipient",
+      phonetic: "/rɪˈsɪpiənt/",
+      meaning: "Người nhận",
+      example: "The recipient has confirmed receipt.",
+      exampleVi: "Người nhận đã xác nhận đã nhận được.",
+    },
+    {
+      word: "subject line",
+      phonetic: "/ˈsʌbdʒekt laɪn/",
+      meaning: "Dòng tiêu đề",
+      example: "Use a clear subject line.",
+      exampleVi: "Sử dụng dòng tiêu đề rõ ràng.",
+    },
+    {
+      word: "draft",
+      phonetic: "/dræft/",
+      meaning: "Bản nháp",
+      example: "I'll save it as a draft.",
+      exampleVi: "Tôi sẽ lưu nó thành bản nháp.",
+    },
+    {
+      word: "acknowledge",
+      phonetic: "/əkˈnɒlɪdʒ/",
+      meaning: "Xác nhận đã nhận",
+      example: "Please acknowledge receipt.",
+      exampleVi: "Vui lòng xác nhận đã nhận được.",
+    },
+    {
+      word: "urgent",
+      phonetic: "/ˈɜːrdʒənt/",
+      meaning: "Khẩn cấp",
+      example: "This is urgent, please respond ASAP.",
+      exampleVi: "Đây là khẩn cấp, vui lòng phản hồi sớm nhất có thể.",
+    },
+    {
+      word: "bcc",
+      phonetic: "/biː siː siː/",
+      meaning: "Gửi ẩn",
+      example: "Please bcc the legal team.",
+      exampleVi: "Vui lòng gửi ẩn cho pháp lý.",
+    },
+    {
+      word: "reply all",
+      phonetic: "/rɪˈplaɪ ɔːl/",
+      meaning: "Trả lời tất cả",
+      example: "Please don't reply all.",
+      exampleVi: "Vui lòng không trả lời tất cả.",
+    },
+    {
+      word: "thread",
+      phonetic: "/θred/",
+      meaning: "Chuỗi email",
+      example: "Check the email thread for context.",
+      exampleVi: "Kiểm tra chuỗi email để hiểu ngữ cảnh.",
+    },
+    {
+      word: "flag",
+      phonetic: "/flæɡ/",
+      meaning: "Đánh dấu",
+      example: "I'll flag this for follow-up.",
+      exampleVi: "Tôi sẽ đánh dấu điều này để theo dõi.",
+    },
+    {
+      word: "archive",
+      phonetic: "/ˈɑːrkaɪv/",
+      meaning: "Lưu trữ",
+      example: "Archive emails you don't need.",
+      exampleVi: "Lưu trữ những email bạn không cần.",
+    },
+    {
+      word: "inbox",
+      phonetic: "/ˈɪnbɒks/",
+      meaning: "Hộp thư đến",
+      example: "My inbox is full.",
+      exampleVi: "Hộp thư đến của tôi đầy.",
+    },
+    {
+      word: "sent",
+      phonetic: "/sent/",
+      meaning: "Đã gửi",
+      example: "Check your sent folder.",
+      exampleVi: "Kiểm tra thư mục đã gửi.",
+    },
+    {
+      word: "compose",
+      phonetic: "/kəmˈpoʊz/",
+      meaning: "Soạn email",
+      example: "Compose a new email.",
+      exampleVi: "Soạn một email mới.",
+    },
   ],
   meeting: [
-    { word: "agenda", phonetic: "/əˈdʒendə/", meaning: "Chương trình cuộc họp", example: "Let's review the agenda.", exampleVi: "Hãy xem lại chương trình họp." },
-    { word: "minutes", phonetic: "/ˈmɪnɪts/", meaning: "Biên bản cuộc họp", example: "I'll take the minutes.", exampleVi: "Tôi sẽ ghi biên bản." },
-    { word: "adjourn", phonetic: "/əˈdʒɜːrn/", meaning: "Hoãn, tạm ngưng", example: "Let's adjourn the meeting.", exampleVi: "Hãy hoãn cuộc họp lại." },
-    { word: "consensus", phonetic: "/kənˈsensəs/", meaning: "Sự đồng thuận", example: "We reached a consensus.", exampleVi: "Chúng tôi đạt được sự đồng thuận." },
-    { word: "action items", phonetic: "/ˈækʃn ˈaɪtəmz/", meaning: "Việc cần làm", example: "Let's list the action items.", exampleVi: "Hãy liệt kê những việc cần làm." },
-    { word: "brainstorm", phonetic: "/ˈbreɪnstɔːrm/", meaning: "Động não, brainstorm", example: "Let's brainstorm some ideas.", exampleVi: "Hãy cùng động não các ý tưởng." },
-    { word: "stakeholder", phonetic: "/ˈsteɪkhoʊldər/", meaning: "Bên liên quan", example: "We need stakeholder buy-in.", exampleVi: "Chúng tôi cần sự ủng hộ từ các bên liên quan." },
-    { word: "logistics", phonetic: "/ləˈdʒɪstɪks/", meaning: "Hậu cần, logistics", example: "Let's discuss the logistics.", exampleVi: "Hãy thảo luận về hậu cần." },
-    { word: "quorum", phonetic: "/ˈkwɔːrəm/", meaning: "Số người tối thiểu", example: "We have quorum to proceed.", exampleVi: "Chúng ta đủ số người để tiến hành." },
-    { word: "virtual meeting", phonetic: "/ˈvɜːrtʃuəl ˈmiːtɪŋ/", meaning: "Họp trực tuyến", example: "Join the virtual meeting at 3 PM.", exampleVi: "Tham gia cuộc họp trực tuyến lúc 3 giờ chiều." },
-    { word: "conference call", phonetic: "/ˈkɒnfərəns kɔːl/", meaning: "Hội nghị gọi điện", example: "Set up a conference call.", exampleVi: "Thiết lập một hội nghị gọi điện." },
-    { word: "agenda item", phonetic: "/əˈdʒendə ˈaɪtəm/", meaning: "Mục trong chương trình", example: "Let's move to the next agenda item.", exampleVi: "Hãy chuyển sang mục tiếp theo trong chương trình." },
-    { word: "recap", phonetic: "/ˈriːkæp/", meaning: "Tóm tắt lại", example: "Let me give you a quick recap.", exampleVi: "Để tôi tóm tắt nhanh cho bạn." },
-    { word: "wrap up", phonetic: "/ræp ʌp/", meaning: "Kết thúc", example: "Let's wrap up this discussion.", exampleVi: "Hãy kết thúc cuộc thảo luận này." },
-    { word: "timekeeper", phonetic: "/ˈtaɪmkiːpər/", meaning: "Người giữ thời gian", example: "Who will be the timekeeper?", exampleVi: "Ai sẽ là người giữ thời gian?" },
-    { word: "facilitator", phonetic: "/fəˈsɪlɪteɪtər/", meaning: "Người điều phối", example: "The facilitator will guide us.", exampleVi: "Người điều phối sẽ hướng dẫn chúng ta." },
-    { word: "propose", phonetic: "/prəˈpoʊz/", meaning: "Đề xuất", example: "I propose we take a vote.", exampleVi: "Tôi đề xuất chúng ta bỏ phiếu." },
-    { word: "veto", phonetic: "/ˈviːtoʊ/", meaning: "Phủ quyết", example: "The manager has veto power.", exampleVi: "Quản lý có quyền phủ quyết." },
+    {
+      word: "agenda",
+      phonetic: "/əˈdʒendə/",
+      meaning: "Chương trình cuộc họp",
+      example: "Let's review the agenda.",
+      exampleVi: "Hãy xem lại chương trình họp.",
+    },
+    {
+      word: "minutes",
+      phonetic: "/ˈmɪnɪts/",
+      meaning: "Biên bản cuộc họp",
+      example: "I'll take the minutes.",
+      exampleVi: "Tôi sẽ ghi biên bản.",
+    },
+    {
+      word: "adjourn",
+      phonetic: "/əˈdʒɜːrn/",
+      meaning: "Hoãn, tạm ngưng",
+      example: "Let's adjourn the meeting.",
+      exampleVi: "Hãy hoãn cuộc họp lại.",
+    },
+    {
+      word: "consensus",
+      phonetic: "/kənˈsensəs/",
+      meaning: "Sự đồng thuận",
+      example: "We reached a consensus.",
+      exampleVi: "Chúng tôi đạt được sự đồng thuận.",
+    },
+    {
+      word: "action items",
+      phonetic: "/ˈækʃn ˈaɪtəmz/",
+      meaning: "Việc cần làm",
+      example: "Let's list the action items.",
+      exampleVi: "Hãy liệt kê những việc cần làm.",
+    },
+    {
+      word: "brainstorm",
+      phonetic: "/ˈbreɪnstɔːrm/",
+      meaning: "Động não, brainstorm",
+      example: "Let's brainstorm some ideas.",
+      exampleVi: "Hãy cùng động não các ý tưởng.",
+    },
+    {
+      word: "stakeholder",
+      phonetic: "/ˈsteɪkhoʊldər/",
+      meaning: "Bên liên quan",
+      example: "We need stakeholder buy-in.",
+      exampleVi: "Chúng tôi cần sự ủng hộ từ các bên liên quan.",
+    },
+    {
+      word: "logistics",
+      phonetic: "/ləˈdʒɪstɪks/",
+      meaning: "Hậu cần, logistics",
+      example: "Let's discuss the logistics.",
+      exampleVi: "Hãy thảo luận về hậu cần.",
+    },
+    {
+      word: "quorum",
+      phonetic: "/ˈkwɔːrəm/",
+      meaning: "Số người tối thiểu",
+      example: "We have quorum to proceed.",
+      exampleVi: "Chúng ta đủ số người để tiến hành.",
+    },
+    {
+      word: "virtual meeting",
+      phonetic: "/ˈvɜːrtʃuəl ˈmiːtɪŋ/",
+      meaning: "Họp trực tuyến",
+      example: "Join the virtual meeting at 3 PM.",
+      exampleVi: "Tham gia cuộc họp trực tuyến lúc 3 giờ chiều.",
+    },
+    {
+      word: "conference call",
+      phonetic: "/ˈkɒnfərəns kɔːl/",
+      meaning: "Hội nghị gọi điện",
+      example: "Set up a conference call.",
+      exampleVi: "Thiết lập một hội nghị gọi điện.",
+    },
+    {
+      word: "agenda item",
+      phonetic: "/əˈdʒendə ˈaɪtəm/",
+      meaning: "Mục trong chương trình",
+      example: "Let's move to the next agenda item.",
+      exampleVi: "Hãy chuyển sang mục tiếp theo trong chương trình.",
+    },
+    {
+      word: "recap",
+      phonetic: "/ˈriːkæp/",
+      meaning: "Tóm tắt lại",
+      example: "Let me give you a quick recap.",
+      exampleVi: "Để tôi tóm tắt nhanh cho bạn.",
+    },
+    {
+      word: "wrap up",
+      phonetic: "/ræp ʌp/",
+      meaning: "Kết thúc",
+      example: "Let's wrap up this discussion.",
+      exampleVi: "Hãy kết thúc cuộc thảo luận này.",
+    },
+    {
+      word: "timekeeper",
+      phonetic: "/ˈtaɪmkiːpər/",
+      meaning: "Người giữ thời gian",
+      example: "Who will be the timekeeper?",
+      exampleVi: "Ai sẽ là người giữ thời gian?",
+    },
+    {
+      word: "facilitator",
+      phonetic: "/fəˈsɪlɪteɪtər/",
+      meaning: "Người điều phối",
+      example: "The facilitator will guide us.",
+      exampleVi: "Người điều phối sẽ hướng dẫn chúng ta.",
+    },
+    {
+      word: "propose",
+      phonetic: "/prəˈpoʊz/",
+      meaning: "Đề xuất",
+      example: "I propose we take a vote.",
+      exampleVi: "Tôi đề xuất chúng ta bỏ phiếu.",
+    },
+    {
+      word: "veto",
+      phonetic: "/ˈviːtoʊ/",
+      meaning: "Phủ quyết",
+      example: "The manager has veto power.",
+      exampleVi: "Quản lý có quyền phủ quyết.",
+    },
   ],
   presentation: [
-    { word: "delegate", phonetic: "/ˈdelɪɡeɪt/", meaning: "Ủy quyền, đại diện", example: "I need to delegate this task.", exampleVi: "Tôi cần ủy quyền công việc này." },
-    { word: "stakeholder", phonetic: "/ˈsteɪkhoʊldər/", meaning: "Bên liên quan", example: "We need stakeholder approval.", exampleVi: "Chúng tôi cần sự chấp thuận của các bên liên quan." },
-    { word: "metrics", phonetic: "/ˈmetrɪks/", meaning: "Chỉ số đo lường", example: "Let's review the key metrics.", exampleVi: "Hãy xem lại các chỉ số chính." },
-    { word: "insights", phonetic: "/ˈɪnsaɪts/", meaning: "Nhận định, hiểu biết", example: "This gives us valuable insights.", exampleVi: "Điều này mang lại những nhận định giá trị." },
-    { word: "benchmark", phonetic: "/ˈbentʃmɑːrk/", meaning: "Mốc chuẩn, tiêu chuẩn", example: "We need to set a benchmark.", exampleVi: "Chúng tôi cần đặt ra một mốc chuẩn." },
-    { word: "slide deck", phonetic: "/slaɪd dek/", meaning: "Bộ trình chiếu", example: "I'll send the slide deck tomorrow.", exampleVi: "Tôi sẽ gửi bộ trình chiếu vào ngày mai." },
-    { word: "takeaway", phonetic: "/ˈteɪkəweɪ/", meaning: "Điểm chính rút ra", example: "Here are the key takeaways.", exampleVi: "Đây là những điểm chính cần nhớ." },
-    { word: "visuals", phonetic: "/ˈvɪʒuəlz/", meaning: "Hình ảnh trực quan", example: "Let's add more visuals.", exampleVi: "Hãy thêm nhiều hình ảnh trực quan hơn." },
-    { word: "rehearse", phonetic: "/rɪˈhɜːrs/", meaning: "Tập dượt", example: "We need to rehearse the presentation.", exampleVi: "Chúng ta cần tập dượt bài thuyết trình." },
-    { word: "deliver", phonetic: "/dɪˈlɪvər/", meaning: "Trình bày, thuyết trình", example: "She will deliver the presentation.", exampleVi: "Cô ấy sẽ trình bày bài thuyết trình." },
-    { word: "Q&A", phonetic: "/kjuː ənd ˈeɪ/", meaning: "Hỏi và đáp", example: "We'll have Q&A at the end.", exampleVi: "Chúng ta sẽ có phần hỏi và đáp vào cuối." },
-    { word: "handout", phonetic: "/ˈhændaʊt/", meaning: "Tài liệu phát", example: "Please distribute the handouts.", exampleVi: "Vui lòng phát tài liệu." },
-    { word: "infographic", phonetic: "/ˈɪnfoʊɡræfɪk/", meaning: "Đồ họa thông tin", example: "Use an infographic for this data.", exampleVi: "Sử dụng đồ họa thông tin cho dữ liệu này." },
-    { word: "bullet points", phonetic: "/ˈbʊlɪt pɔɪnts/", meaning: "Dấu đầu dòng", example: "Keep it to 5 bullet points max.", exampleVi: "Giới hạn tối đa 5 dấu đầu dòng." },
-    { word: "flowchart", phonetic: "/ˈfloʊtʃɑːrt/", meaning: "Sơ đồ quy trình", example: "Add a flowchart for clarity.", exampleVi: "Thêm sơ đồ quy trình để rõ ràng." },
-    { word: "pie chart", phonetic: "/paɪ tʃɑːrt/", meaning: "Biểu đồ tròn", example: "The pie chart shows market share.", exampleVi: "Biểu đồ tròn cho thấy thị phần." },
-    { word: "bar graph", phonetic: "/bɑːr ɡræf/", meaning: "Biểu đồ cột", example: "Use a bar graph for comparison.", exampleVi: "Sử dụng biểu đồ cột để so sánh." },
-    { word: "highlight", phonetic: "/ˈhaɪlaɪt/", meaning: "Nhấn mạnh", example: "Let me highlight the key points.", exampleVi: "Để tôi nhấn mạnh các điểm chính." },
+    {
+      word: "delegate",
+      phonetic: "/ˈdelɪɡeɪt/",
+      meaning: "Ủy quyền, đại diện",
+      example: "I need to delegate this task.",
+      exampleVi: "Tôi cần ủy quyền công việc này.",
+    },
+    {
+      word: "stakeholder",
+      phonetic: "/ˈsteɪkhoʊldər/",
+      meaning: "Bên liên quan",
+      example: "We need stakeholder approval.",
+      exampleVi: "Chúng tôi cần sự chấp thuận của các bên liên quan.",
+    },
+    {
+      word: "metrics",
+      phonetic: "/ˈmetrɪks/",
+      meaning: "Chỉ số đo lường",
+      example: "Let's review the key metrics.",
+      exampleVi: "Hãy xem lại các chỉ số chính.",
+    },
+    {
+      word: "insights",
+      phonetic: "/ˈɪnsaɪts/",
+      meaning: "Nhận định, hiểu biết",
+      example: "This gives us valuable insights.",
+      exampleVi: "Điều này mang lại những nhận định giá trị.",
+    },
+    {
+      word: "benchmark",
+      phonetic: "/ˈbentʃmɑːrk/",
+      meaning: "Mốc chuẩn, tiêu chuẩn",
+      example: "We need to set a benchmark.",
+      exampleVi: "Chúng tôi cần đặt ra một mốc chuẩn.",
+    },
+    {
+      word: "slide deck",
+      phonetic: "/slaɪd dek/",
+      meaning: "Bộ trình chiếu",
+      example: "I'll send the slide deck tomorrow.",
+      exampleVi: "Tôi sẽ gửi bộ trình chiếu vào ngày mai.",
+    },
+    {
+      word: "takeaway",
+      phonetic: "/ˈteɪkəweɪ/",
+      meaning: "Điểm chính rút ra",
+      example: "Here are the key takeaways.",
+      exampleVi: "Đây là những điểm chính cần nhớ.",
+    },
+    {
+      word: "visuals",
+      phonetic: "/ˈvɪʒuəlz/",
+      meaning: "Hình ảnh trực quan",
+      example: "Let's add more visuals.",
+      exampleVi: "Hãy thêm nhiều hình ảnh trực quan hơn.",
+    },
+    {
+      word: "rehearse",
+      phonetic: "/rɪˈhɜːrs/",
+      meaning: "Tập dượt",
+      example: "We need to rehearse the presentation.",
+      exampleVi: "Chúng ta cần tập dượt bài thuyết trình.",
+    },
+    {
+      word: "deliver",
+      phonetic: "/dɪˈlɪvər/",
+      meaning: "Trình bày, thuyết trình",
+      example: "She will deliver the presentation.",
+      exampleVi: "Cô ấy sẽ trình bày bài thuyết trình.",
+    },
+    {
+      word: "Q&A",
+      phonetic: "/kjuː ənd ˈeɪ/",
+      meaning: "Hỏi và đáp",
+      example: "We'll have Q&A at the end.",
+      exampleVi: "Chúng ta sẽ có phần hỏi và đáp vào cuối.",
+    },
+    {
+      word: "handout",
+      phonetic: "/ˈhændaʊt/",
+      meaning: "Tài liệu phát",
+      example: "Please distribute the handouts.",
+      exampleVi: "Vui lòng phát tài liệu.",
+    },
+    {
+      word: "infographic",
+      phonetic: "/ˈɪnfoʊɡræfɪk/",
+      meaning: "Đồ họa thông tin",
+      example: "Use an infographic for this data.",
+      exampleVi: "Sử dụng đồ họa thông tin cho dữ liệu này.",
+    },
+    {
+      word: "bullet points",
+      phonetic: "/ˈbʊlɪt pɔɪnts/",
+      meaning: "Dấu đầu dòng",
+      example: "Keep it to 5 bullet points max.",
+      exampleVi: "Giới hạn tối đa 5 dấu đầu dòng.",
+    },
+    {
+      word: "flowchart",
+      phonetic: "/ˈfloʊtʃɑːrt/",
+      meaning: "Sơ đồ quy trình",
+      example: "Add a flowchart for clarity.",
+      exampleVi: "Thêm sơ đồ quy trình để rõ ràng.",
+    },
+    {
+      word: "pie chart",
+      phonetic: "/paɪ tʃɑːrt/",
+      meaning: "Biểu đồ tròn",
+      example: "The pie chart shows market share.",
+      exampleVi: "Biểu đồ tròn cho thấy thị phần.",
+    },
+    {
+      word: "bar graph",
+      phonetic: "/bɑːr ɡræf/",
+      meaning: "Biểu đồ cột",
+      example: "Use a bar graph for comparison.",
+      exampleVi: "Sử dụng biểu đồ cột để so sánh.",
+    },
+    {
+      word: "highlight",
+      phonetic: "/ˈhaɪlaɪt/",
+      meaning: "Nhấn mạnh",
+      example: "Let me highlight the key points.",
+      exampleVi: "Để tôi nhấn mạnh các điểm chính.",
+    },
   ],
   negotiation: [
-    { word: "proposal", phonetic: "/prəˈpoʊzl/", meaning: "Đề xuất", example: "I'll prepare a proposal.", exampleVi: "Tôi sẽ chuẩn bị một đề xuất." },
-    { word: "compromise", phonetic: "/ˈkɑːmprəmaɪz/", meaning: "Thỏa hiệp, nhượng bộ", example: "We need to find a compromise.", exampleVi: "Chúng tôi cần tìm một giải pháp thỏa hiệp." },
-    { word: "terms", phonetic: "/tɜːrmz/", meaning: "Điều khoản", example: "These are the agreed terms.", exampleVi: "Đây là những điều khoản đã thống nhất." },
-    { word: "leverage", phonetic: "/ˈlevərɪdʒ/", meaning: "Lợi thế, ảnh hưởng", example: "We have leverage in this negotiation.", exampleVi: "Chúng tôi có lợi thế trong cuộc đàm phán này." },
-    { word: "mutual benefit", phonetic: "/ˈmjuːtʃuəl ˈbenɪfɪt/", meaning: "Lợi ích chung", example: "This is for mutual benefit.", exampleVi: "Đây là vì lợi ích chung." },
-    { word: "counteroffer", phonetic: "/ˈkaʊntərˌɔːrfər/", meaning: "Phản đề xuất", example: "We received a counteroffer.", exampleVi: "Chúng tôi nhận được một phản đề xuất." },
-    { word: "concession", phonetic: "/kənˈseʃn/", meaning: "Nhượng bộ", example: "Make a small concession.", exampleVi: "Hãy đưa ra một chút nhượng bộ." },
-    { word: "deadlock", phonetic: "/ˈdedlɒk/", meaning: "Bế tắc", example: "We reached a deadlock.", exampleVi: "Chúng tôi đã đi đến bế tắc." },
-    { word: "win-win", phonetic: "/wɪn wɪn/", meaning: "Cùng có lợi", example: "Let's find a win-win solution.", exampleVi: "Hãy tìm giải pháp mà cả hai đều có lợi." },
-    { word: "sign off", phonetic: "/saɪn ɒf/", meaning: "Phê duyệt, đồng ý", example: "Let's sign off on this deal.", exampleVi: "Hãy đồng ý ký kết thỏa thuận này." },
-    { word: "bid", phonetic: "/bɪd/", meaning: "Giá thầu", example: "Submit your bid by Friday.", exampleVi: "Nộp giá thầu trước thứ Sáu." },
-    { word: "renegotiate", phonetic: "/ˌriːnɪˈɡoʊʃieɪt/", meaning: "Đàm phán lại", example: "We need to renegotiate the terms.", exampleVi: "Chúng tôi cần đàm phán lại các điều khoản." },
-    { word: "contract", phonetic: "/ˈkɒntrækt/", meaning: "Hợp đồng", example: "Review the contract carefully.", exampleVi: "Xem xét hợp đồng cẩn thận." },
-    { word: "clause", phonetic: "/klɔːz/", meaning: "Điều khoản, điều khoản", example: "Check the termination clause.", exampleVi: "Kiểm tra điều khoản chấm dứt." },
-    { word: "ratify", phonetic: "/ˈrætɪfaɪ/", meaning: "Phê chuẩn", example: "The board will ratify the agreement.", exampleVi: "Hội đồng sẽ phê chuẩn thỏa thuận." },
-    { word: "arbitration", phonetic: "/ˌɑːrbɪˈtreɪʃn/", meaning: "Trọng tài", example: "We prefer arbitration over litigation.", exampleVi: "Chúng tôi thích trọng tài hơn kiện tụng." },
-    { word: "guarantee", phonetic: "/ˌɡærənˈtiː/", meaning: "Bảo đảm", example: "We offer a money-back guarantee.", exampleVi: "Chúng tôi cung cấp bảo đảm hoàn tiền." },
-    { word: "deposit", phonetic: "/dɪˈpɒzɪt/", meaning: "Tiền đặt cọc", example: "A 10% deposit is required.", exampleVi: "Yêu cầu đặt cọc 10%." },
+    {
+      word: "proposal",
+      phonetic: "/prəˈpoʊzl/",
+      meaning: "Đề xuất",
+      example: "I'll prepare a proposal.",
+      exampleVi: "Tôi sẽ chuẩn bị một đề xuất.",
+    },
+    {
+      word: "compromise",
+      phonetic: "/ˈkɑːmprəmaɪz/",
+      meaning: "Thỏa hiệp, nhượng bộ",
+      example: "We need to find a compromise.",
+      exampleVi: "Chúng tôi cần tìm một giải pháp thỏa hiệp.",
+    },
+    {
+      word: "terms",
+      phonetic: "/tɜːrmz/",
+      meaning: "Điều khoản",
+      example: "These are the agreed terms.",
+      exampleVi: "Đây là những điều khoản đã thống nhất.",
+    },
+    {
+      word: "leverage",
+      phonetic: "/ˈlevərɪdʒ/",
+      meaning: "Lợi thế, ảnh hưởng",
+      example: "We have leverage in this negotiation.",
+      exampleVi: "Chúng tôi có lợi thế trong cuộc đàm phán này.",
+    },
+    {
+      word: "mutual benefit",
+      phonetic: "/ˈmjuːtʃuəl ˈbenɪfɪt/",
+      meaning: "Lợi ích chung",
+      example: "This is for mutual benefit.",
+      exampleVi: "Đây là vì lợi ích chung.",
+    },
+    {
+      word: "counteroffer",
+      phonetic: "/ˈkaʊntərˌɔːrfər/",
+      meaning: "Phản đề xuất",
+      example: "We received a counteroffer.",
+      exampleVi: "Chúng tôi nhận được một phản đề xuất.",
+    },
+    {
+      word: "concession",
+      phonetic: "/kənˈseʃn/",
+      meaning: "Nhượng bộ",
+      example: "Make a small concession.",
+      exampleVi: "Hãy đưa ra một chút nhượng bộ.",
+    },
+    {
+      word: "deadlock",
+      phonetic: "/ˈdedlɒk/",
+      meaning: "Bế tắc",
+      example: "We reached a deadlock.",
+      exampleVi: "Chúng tôi đã đi đến bế tắc.",
+    },
+    {
+      word: "win-win",
+      phonetic: "/wɪn wɪn/",
+      meaning: "Cùng có lợi",
+      example: "Let's find a win-win solution.",
+      exampleVi: "Hãy tìm giải pháp mà cả hai đều có lợi.",
+    },
+    {
+      word: "sign off",
+      phonetic: "/saɪn ɒf/",
+      meaning: "Phê duyệt, đồng ý",
+      example: "Let's sign off on this deal.",
+      exampleVi: "Hãy đồng ý ký kết thỏa thuận này.",
+    },
+    {
+      word: "bid",
+      phonetic: "/bɪd/",
+      meaning: "Giá thầu",
+      example: "Submit your bid by Friday.",
+      exampleVi: "Nộp giá thầu trước thứ Sáu.",
+    },
+    {
+      word: "renegotiate",
+      phonetic: "/ˌriːnɪˈɡoʊʃieɪt/",
+      meaning: "Đàm phán lại",
+      example: "We need to renegotiate the terms.",
+      exampleVi: "Chúng tôi cần đàm phán lại các điều khoản.",
+    },
+    {
+      word: "contract",
+      phonetic: "/ˈkɒntrækt/",
+      meaning: "Hợp đồng",
+      example: "Review the contract carefully.",
+      exampleVi: "Xem xét hợp đồng cẩn thận.",
+    },
+    {
+      word: "clause",
+      phonetic: "/klɔːz/",
+      meaning: "Điều khoản, điều khoản",
+      example: "Check the termination clause.",
+      exampleVi: "Kiểm tra điều khoản chấm dứt.",
+    },
+    {
+      word: "ratify",
+      phonetic: "/ˈrætɪfaɪ/",
+      meaning: "Phê chuẩn",
+      example: "The board will ratify the agreement.",
+      exampleVi: "Hội đồng sẽ phê chuẩn thỏa thuận.",
+    },
+    {
+      word: "arbitration",
+      phonetic: "/ˌɑːrbɪˈtreɪʃn/",
+      meaning: "Trọng tài",
+      example: "We prefer arbitration over litigation.",
+      exampleVi: "Chúng tôi thích trọng tài hơn kiện tụng.",
+    },
+    {
+      word: "guarantee",
+      phonetic: "/ˌɡærənˈtiː/",
+      meaning: "Bảo đảm",
+      example: "We offer a money-back guarantee.",
+      exampleVi: "Chúng tôi cung cấp bảo đảm hoàn tiền.",
+    },
+    {
+      word: "deposit",
+      phonetic: "/dɪˈpɒzɪt/",
+      meaning: "Tiền đặt cọc",
+      example: "A 10% deposit is required.",
+      exampleVi: "Yêu cầu đặt cọc 10%.",
+    },
   ],
   report: [
-    { word: "quarterly", phonetic: "/ˈkwɔːrtərli/", meaning: "Hàng quý", example: "The quarterly report is ready.", exampleVi: "Báo cáo quý đã sẵn sàng." },
-    { word: "revenue", phonetic: "/ˈrevənuː/", meaning: "Doanh thu", example: "Revenue increased by 15%.", exampleVi: "Doanh thu tăng 15%." },
-    { word: "expense", phonetic: "/ɪkˈspens/", meaning: "Chi phí", example: "We need to cut expenses.", exampleVi: "Chúng tôi cần cắt giảm chi phí." },
-    { word: "forecast", phonetic: "/ˈfɔːrkæst/", meaning: "Dự báo", example: "Sales forecast looks promising.", exampleVi: "Dự báo doanh số rất khả quan." },
-    { word: "ROI (Return on Investment)", phonetic: "/ˌɑːr oʊ ˈaɪ/", meaning: "Lợi tức đầu tư", example: "What's the expected ROI?", exampleVi: "Lợi tức đầu tư dự kiến là bao nhiêu?" },
-    { word: "KPI", phonetic: "/keɪ piː aɪ/", meaning: "Chỉ số hiệu suất", example: "We need to track our KPIs.", exampleVi: "Chúng tôi cần theo dõi các chỉ số hiệu suất." },
-    { word: "bottom line", phonetic: "/ˈbɒtəm laɪn/", meaning: "Kết quả cuối cùng", example: "What's the bottom line?", exampleVi: "Kết quả cuối cùng là gì?" },
-    { word: "breakdown", phonetic: "/ˈbreɪkdaʊn/", meaning: "Phân tích chi tiết", example: "Here's a breakdown of costs.", exampleVi: "Đây là phân tích chi tiết về chi phí." },
-    { word: "snapshot", phonetic: "/ˈsnæpʃɒt/", meaning: "Bức tranh tổng quan", example: "This is a snapshot of Q3 performance.", exampleVi: "Đây là bức tranh tổng quan về hiệu suất Q3." },
-    { word: "trend", phonetic: "/trend/", meaning: "Xu hướng", example: "The trend is upward.", exampleVi: "Xu hướng đang tăng lên." },
-    { word: "margin", phonetic: "/ˈmɑːrdʒɪn/", meaning: "Biên lợi nhuận", example: "Our profit margin improved.", exampleVi: "Biên lợi nhuận của chúng tôi đã cải thiện." },
-    { word: "overhead", phonetic: "/ˈoʊvərhed/", meaning: "Chi phí gián tiếp", example: "Cut overhead costs.", exampleVi: "Cắt giảm chi phí gián tiếp." },
-    { word: "assets", phonetic: "/ˈæsets/", meaning: "Tài sản", example: "Total assets exceed liabilities.", exampleVi: "Tổng tài sản vượt quá nợ phải trả." },
-    { word: "equity", phonetic: "/ˈekwəti/", meaning: "Vốn chủ sở hữu", example: "Maintain equity ratio.", exampleVi: "Duy trì tỷ lệ vốn chủ sở hữu." },
-    { word: "deficit", phonetic: "/ˈdefɪsɪt/", meaning: "Thâm hụt", example: "We have a budget deficit.", exampleVi: "Chúng tôi có thâm hụt ngân sách." },
-    { word: "surplus", phonetic: "/ˈsɜːrpləs/", meaning: "Thặng dư", example: "We have a budget surplus.", exampleVi: "Chúng tôi có thặng dư ngân sách." },
-    { word: "fiscal year", phonetic: "/ˈfɪskl jɪr/", meaning: "Năm tài chính", example: "Our fiscal year ends in December.", exampleVi: "Năm tài chính của chúng tôi kết thúc vào tháng 12." },
-    { word: "amortize", phonetic: "/ˈæmərtaɪz/", meaning: "Khấu hao", example: "We amortize equipment over 5 years.", exampleVi: "Chúng tôi khấu hao thiết bị trong 5 năm." },
+    {
+      word: "quarterly",
+      phonetic: "/ˈkwɔːrtərli/",
+      meaning: "Hàng quý",
+      example: "The quarterly report is ready.",
+      exampleVi: "Báo cáo quý đã sẵn sàng.",
+    },
+    {
+      word: "revenue",
+      phonetic: "/ˈrevənuː/",
+      meaning: "Doanh thu",
+      example: "Revenue increased by 15%.",
+      exampleVi: "Doanh thu tăng 15%.",
+    },
+    {
+      word: "expense",
+      phonetic: "/ɪkˈspens/",
+      meaning: "Chi phí",
+      example: "We need to cut expenses.",
+      exampleVi: "Chúng tôi cần cắt giảm chi phí.",
+    },
+    {
+      word: "forecast",
+      phonetic: "/ˈfɔːrkæst/",
+      meaning: "Dự báo",
+      example: "Sales forecast looks promising.",
+      exampleVi: "Dự báo doanh số rất khả quan.",
+    },
+    {
+      word: "ROI (Return on Investment)",
+      phonetic: "/ˌɑːr oʊ ˈaɪ/",
+      meaning: "Lợi tức đầu tư",
+      example: "What's the expected ROI?",
+      exampleVi: "Lợi tức đầu tư dự kiến là bao nhiêu?",
+    },
+    {
+      word: "KPI",
+      phonetic: "/keɪ piː aɪ/",
+      meaning: "Chỉ số hiệu suất",
+      example: "We need to track our KPIs.",
+      exampleVi: "Chúng tôi cần theo dõi các chỉ số hiệu suất.",
+    },
+    {
+      word: "bottom line",
+      phonetic: "/ˈbɒtəm laɪn/",
+      meaning: "Kết quả cuối cùng",
+      example: "What's the bottom line?",
+      exampleVi: "Kết quả cuối cùng là gì?",
+    },
+    {
+      word: "breakdown",
+      phonetic: "/ˈbreɪkdaʊn/",
+      meaning: "Phân tích chi tiết",
+      example: "Here's a breakdown of costs.",
+      exampleVi: "Đây là phân tích chi tiết về chi phí.",
+    },
+    {
+      word: "snapshot",
+      phonetic: "/ˈsnæpʃɒt/",
+      meaning: "Bức tranh tổng quan",
+      example: "This is a snapshot of Q3 performance.",
+      exampleVi: "Đây là bức tranh tổng quan về hiệu suất Q3.",
+    },
+    {
+      word: "trend",
+      phonetic: "/trend/",
+      meaning: "Xu hướng",
+      example: "The trend is upward.",
+      exampleVi: "Xu hướng đang tăng lên.",
+    },
+    {
+      word: "margin",
+      phonetic: "/ˈmɑːrdʒɪn/",
+      meaning: "Biên lợi nhuận",
+      example: "Our profit margin improved.",
+      exampleVi: "Biên lợi nhuận của chúng tôi đã cải thiện.",
+    },
+    {
+      word: "overhead",
+      phonetic: "/ˈoʊvərhed/",
+      meaning: "Chi phí gián tiếp",
+      example: "Cut overhead costs.",
+      exampleVi: "Cắt giảm chi phí gián tiếp.",
+    },
+    {
+      word: "assets",
+      phonetic: "/ˈæsets/",
+      meaning: "Tài sản",
+      example: "Total assets exceed liabilities.",
+      exampleVi: "Tổng tài sản vượt quá nợ phải trả.",
+    },
+    {
+      word: "equity",
+      phonetic: "/ˈekwəti/",
+      meaning: "Vốn chủ sở hữu",
+      example: "Maintain equity ratio.",
+      exampleVi: "Duy trì tỷ lệ vốn chủ sở hữu.",
+    },
+    {
+      word: "deficit",
+      phonetic: "/ˈdefɪsɪt/",
+      meaning: "Thâm hụt",
+      example: "We have a budget deficit.",
+      exampleVi: "Chúng tôi có thâm hụt ngân sách.",
+    },
+    {
+      word: "surplus",
+      phonetic: "/ˈsɜːrpləs/",
+      meaning: "Thặng dư",
+      example: "We have a budget surplus.",
+      exampleVi: "Chúng tôi có thặng dư ngân sách.",
+    },
+    {
+      word: "fiscal year",
+      phonetic: "/ˈfɪskl jɪr/",
+      meaning: "Năm tài chính",
+      example: "Our fiscal year ends in December.",
+      exampleVi: "Năm tài chính của chúng tôi kết thúc vào tháng 12.",
+    },
+    {
+      word: "amortize",
+      phonetic: "/ˈæmərtaɪz/",
+      meaning: "Khấu hao",
+      example: "We amortize equipment over 5 years.",
+      exampleVi: "Chúng tôi khấu hao thiết bị trong 5 năm.",
+    },
   ],
   marketing: [
-    { word: "campaign", phonetic: "/kæmˈpeɪn/", meaning: "Chiến dịch", example: "Launch the marketing campaign.", exampleVi: "Khởi động chiến dịch marketing." },
-    { word: "target audience", phonetic: "/ˈtɑːrɡɪt ˈɔːdiəns/", meaning: "Đối tượng mục tiêu", example: "Identify the target audience.", exampleVi: "Xác định đối tượng mục tiêu." },
-    { word: "engagement", phonetic: "/ɪnˈɡeɪdʒmənt/", meaning: "Mức độ tương tác", example: "Increase user engagement.", exampleVi: "Tăng mức độ tương tác của người dùng." },
-    { word: "conversion", phonetic: "/kənˈvɜːrʒn/", meaning: "Tỷ lệ chuyển đổi", example: "Our conversion rate improved.", exampleVi: "Tỷ lệ chuyển đổi của chúng tôi đã cải thiện." },
-    { word: "brand awareness", phonetic: "/brænd əˈwerərnəs/", meaning: "Nhận diện thương hiệu", example: "We need to build brand awareness.", exampleVi: "Chúng tôi cần xây dựng nhận diện thương hiệu." },
-    { word: "lead generation", phonetic: "/liːd ˌdʒenəˈreɪʃn/", meaning: "Tạo khách hàng tiềm năng", example: "Focus on lead generation.", exampleVi: "Tập trung vào tạo khách hàng tiềm năng." },
-    { word: "viral", phonetic: "/ˈvaɪrəl/", meaning: "Lan truyền", example: "The content went viral.", exampleVi: "Nội dung đã lan truyền." },
-    { word: "call to action", phonetic: "/kɔːl tuː ˈækʃn/", meaning: "Lời kêu gọi hành động", example: "Add a clear call to action.", exampleVi: "Thêm lời kêu gọi hành động rõ ràng." },
-    { word: "analytics", phonetic: "/ˌænəˈlɪtɪks/", meaning: "Phân tích dữ liệu", example: "Check the analytics dashboard.", exampleVi: "Kiểm tra bảng phân tích dữ liệu." },
-    { word: "outreach", phonetic: "/ˈaʊtriːtʃ/", meaning: "Tiếp cận, mở rộng", example: "Our outreach efforts are working.", exampleVi: "Nỗ lực tiếp cận của chúng tôi đang hiệu quả." },
-    { word: "segmentation", phonetic: "/ˌseɡmenˈteɪʃn/", meaning: "Phân khúc thị trường", example: "Market segmentation is key.", exampleVi: "Phân khúc thị trường là chìa khóa." },
-    { word: "demographics", phonetic: "/ˌdeməˈɡræfɪks/", meaning: "Nhân khẩu học", example: "Analyze demographics data.", exampleVi: "Phân tích dữ liệu nhân khẩu học." },
-    { word: "impressions", phonetic: "/ɪmˈpreʃnz/", meaning: "Số lần hiển thị", example: "We got 10,000 impressions.", exampleVi: "Chúng tôi có 10.000 lần hiển thị." },
-    { word: "click-through rate", phonetic: "/klɪk θruː reɪt/", meaning: "Tỷ lệ nhấp chuột", example: "Improve your click-through rate.", exampleVi: "Cải thiện tỷ lệ nhấp chuột." },
-    { word: "bounce rate", phonetic: "/baʊns reɪt/", meaning: "Tỷ lệ thoát", example: "Reduce the bounce rate.", exampleVi: "Giảm tỷ lệ thoát." },
-    { word: "SEO", phonetic: "/ˌes iː ˈoʊ/", meaning: "Tối ưu hóa tìm kiếm", example: "Invest in SEO.", exampleVi: "Đầu tư vào SEO." },
-    { word: "PPC", phonetic: "/piː piː siː/", meaning: "Quảng cáo trả tiền", example: "Run a PPC campaign.", exampleVi: "Chạy chiến dịch quảng cáo trả tiền." },
-    { word: "affiliate", phonetic: "/əˈfɪlieɪt/", meaning: "Liên kết tiếp thị", example: "Start an affiliate program.", exampleVi: "Bắt đầu chương trình liên kết." },
+    {
+      word: "campaign",
+      phonetic: "/kæmˈpeɪn/",
+      meaning: "Chiến dịch",
+      example: "Launch the marketing campaign.",
+      exampleVi: "Khởi động chiến dịch marketing.",
+    },
+    {
+      word: "target audience",
+      phonetic: "/ˈtɑːrɡɪt ˈɔːdiəns/",
+      meaning: "Đối tượng mục tiêu",
+      example: "Identify the target audience.",
+      exampleVi: "Xác định đối tượng mục tiêu.",
+    },
+    {
+      word: "engagement",
+      phonetic: "/ɪnˈɡeɪdʒmənt/",
+      meaning: "Mức độ tương tác",
+      example: "Increase user engagement.",
+      exampleVi: "Tăng mức độ tương tác của người dùng.",
+    },
+    {
+      word: "conversion",
+      phonetic: "/kənˈvɜːrʒn/",
+      meaning: "Tỷ lệ chuyển đổi",
+      example: "Our conversion rate improved.",
+      exampleVi: "Tỷ lệ chuyển đổi của chúng tôi đã cải thiện.",
+    },
+    {
+      word: "brand awareness",
+      phonetic: "/brænd əˈwerərnəs/",
+      meaning: "Nhận diện thương hiệu",
+      example: "We need to build brand awareness.",
+      exampleVi: "Chúng tôi cần xây dựng nhận diện thương hiệu.",
+    },
+    {
+      word: "lead generation",
+      phonetic: "/liːd ˌdʒenəˈreɪʃn/",
+      meaning: "Tạo khách hàng tiềm năng",
+      example: "Focus on lead generation.",
+      exampleVi: "Tập trung vào tạo khách hàng tiềm năng.",
+    },
+    {
+      word: "viral",
+      phonetic: "/ˈvaɪrəl/",
+      meaning: "Lan truyền",
+      example: "The content went viral.",
+      exampleVi: "Nội dung đã lan truyền.",
+    },
+    {
+      word: "call to action",
+      phonetic: "/kɔːl tuː ˈækʃn/",
+      meaning: "Lời kêu gọi hành động",
+      example: "Add a clear call to action.",
+      exampleVi: "Thêm lời kêu gọi hành động rõ ràng.",
+    },
+    {
+      word: "analytics",
+      phonetic: "/ˌænəˈlɪtɪks/",
+      meaning: "Phân tích dữ liệu",
+      example: "Check the analytics dashboard.",
+      exampleVi: "Kiểm tra bảng phân tích dữ liệu.",
+    },
+    {
+      word: "outreach",
+      phonetic: "/ˈaʊtriːtʃ/",
+      meaning: "Tiếp cận, mở rộng",
+      example: "Our outreach efforts are working.",
+      exampleVi: "Nỗ lực tiếp cận của chúng tôi đang hiệu quả.",
+    },
+    {
+      word: "segmentation",
+      phonetic: "/ˌseɡmenˈteɪʃn/",
+      meaning: "Phân khúc thị trường",
+      example: "Market segmentation is key.",
+      exampleVi: "Phân khúc thị trường là chìa khóa.",
+    },
+    {
+      word: "demographics",
+      phonetic: "/ˌdeməˈɡræfɪks/",
+      meaning: "Nhân khẩu học",
+      example: "Analyze demographics data.",
+      exampleVi: "Phân tích dữ liệu nhân khẩu học.",
+    },
+    {
+      word: "impressions",
+      phonetic: "/ɪmˈpreʃnz/",
+      meaning: "Số lần hiển thị",
+      example: "We got 10,000 impressions.",
+      exampleVi: "Chúng tôi có 10.000 lần hiển thị.",
+    },
+    {
+      word: "click-through rate",
+      phonetic: "/klɪk θruː reɪt/",
+      meaning: "Tỷ lệ nhấp chuột",
+      example: "Improve your click-through rate.",
+      exampleVi: "Cải thiện tỷ lệ nhấp chuột.",
+    },
+    {
+      word: "bounce rate",
+      phonetic: "/baʊns reɪt/",
+      meaning: "Tỷ lệ thoát",
+      example: "Reduce the bounce rate.",
+      exampleVi: "Giảm tỷ lệ thoát.",
+    },
+    {
+      word: "SEO",
+      phonetic: "/ˌes iː ˈoʊ/",
+      meaning: "Tối ưu hóa tìm kiếm",
+      example: "Invest in SEO.",
+      exampleVi: "Đầu tư vào SEO.",
+    },
+    {
+      word: "PPC",
+      phonetic: "/piː piː siː/",
+      meaning: "Quảng cáo trả tiền",
+      example: "Run a PPC campaign.",
+      exampleVi: "Chạy chiến dịch quảng cáo trả tiền.",
+    },
+    {
+      word: "affiliate",
+      phonetic: "/əˈfɪlieɪt/",
+      meaning: "Liên kết tiếp thị",
+      example: "Start an affiliate program.",
+      exampleVi: "Bắt đầu chương trình liên kết.",
+    },
   ],
   it: [
-    { word: "deploy", phonetic: "/dɪˈplɔɪ/", meaning: "Triển khai", example: "We will deploy the update tonight.", exampleVi: "Chúng tôi sẽ triển khai bản cập nhật vào tối nay." },
-    { word: "debug", phonetic: "/diːˈbʌɡ/", meaning: "Gỡ lỗi", example: "I need to debug this code.", exampleVi: "Tôi cần gỡ lỗi đoạn code này." },
-    { word: "scalability", phonetic: "/ˌskeɪləˈbɪləti/", meaning: "Khả năng mở rộng", example: "Check the scalability of the system.", exampleVi: "Kiểm tra khả năng mở rộng của hệ thống." },
-    { word: "infrastructure", phonetic: "/ˈɪnfrəstrʌktʃər/", meaning: "Hạ tầng", example: "Upgrade the infrastructure.", exampleVi: "Nâng cấp hạ tầng." },
-    { word: "backup", phonetic: "/ˈbækʌp/", meaning: "Sao lưu", example: "Create a backup before updating.", exampleVi: "Tạo bản sao lưu trước khi cập nhật." },
-    { word: "server", phonetic: "/ˈsɜːrvər/", meaning: "Máy chủ", example: "The server is down.", exampleVi: "Máy chủ đang gặp sự cố." },
-    { word: "firewall", phonetic: "/ˈfaɪərwɔːl/", meaning: "Tường lửa", example: "Configure the firewall settings.", exampleVi: "Cấu hình cài đặt tường lửa." },
-    { word: "bandwidth", phonetic: "/ˈbændwɪdθ/", meaning: "Băng thông", example: "We need more bandwidth.", exampleVi: "Chúng tôi cần thêm băng thông." },
-    { word: "latency", phonetic: "/ˈleɪtənsi/", meaning: "Độ trễ", example: "Reduce the latency.", exampleVi: "Giảm độ trễ." },
-    { word: "encryption", phonetic: "/ɪnˈkrɪpʃn/", meaning: "Mã hóa", example: "Use strong encryption.", exampleVi: "Sử dụng mã hóa mạnh." },
-    { word: "API", phonetic: "/eɪ piː aɪ/", meaning: "Giao diện lập trình", example: "Use our API.", exampleVi: "Sử dụng API của chúng tôi." },
-    { word: "database", phonetic: "/ˈdeɪtəbeɪs/", meaning: "Cơ sở dữ liệu", example: "Query the database.", exampleVi: "Truy vấn cơ sở dữ liệu." },
-    { word: "cloud", phonetic: "/klaʊd/", meaning: "Đám mây", example: "Move to the cloud.", exampleVi: "Chuyển lên đám mây." },
-    { word: "integration", phonetic: "/ˌɪntɪˈɡreɪʃn/", meaning: "Tích hợp", example: "Complete the integration.", exampleVi: "Hoàn thành tích hợp." },
-    { word: "migration", phonetic: "/maɪˈɡreɪʃn/", meaning: "Di chuyển, chuyển đổi", example: "Plan the data migration.", exampleVi: "Lên kế hoạch di chuyển dữ liệu." },
-    { word: "repository", phonetic: "/rɪˈpɒzətɔːri/", meaning: "Kho lưu trữ", example: "Push to the repository.", exampleVi: "Đẩy lên kho lưu trữ." },
-    { word: "version control", phonetic: "/ˈvɜːrʒn kənˈtroʊl/", meaning: "Kiểm soát phiên bản", example: "Use version control.", exampleVi: "Sử dụng kiểm soát phiên bản." },
-    { word: "agile", phonetic: "/ˈædʒaɪl/", meaning: "Phương pháp linh hoạt", example: "Follow agile methodology.", exampleVi: "Tuân theo phương pháp linh hoạt." },
+    {
+      word: "deploy",
+      phonetic: "/dɪˈplɔɪ/",
+      meaning: "Triển khai",
+      example: "We will deploy the update tonight.",
+      exampleVi: "Chúng tôi sẽ triển khai bản cập nhật vào tối nay.",
+    },
+    {
+      word: "debug",
+      phonetic: "/diːˈbʌɡ/",
+      meaning: "Gỡ lỗi",
+      example: "I need to debug this code.",
+      exampleVi: "Tôi cần gỡ lỗi đoạn code này.",
+    },
+    {
+      word: "scalability",
+      phonetic: "/ˌskeɪləˈbɪləti/",
+      meaning: "Khả năng mở rộng",
+      example: "Check the scalability of the system.",
+      exampleVi: "Kiểm tra khả năng mở rộng của hệ thống.",
+    },
+    {
+      word: "infrastructure",
+      phonetic: "/ˈɪnfrəstrʌktʃər/",
+      meaning: "Hạ tầng",
+      example: "Upgrade the infrastructure.",
+      exampleVi: "Nâng cấp hạ tầng.",
+    },
+    {
+      word: "backup",
+      phonetic: "/ˈbækʌp/",
+      meaning: "Sao lưu",
+      example: "Create a backup before updating.",
+      exampleVi: "Tạo bản sao lưu trước khi cập nhật.",
+    },
+    {
+      word: "server",
+      phonetic: "/ˈsɜːrvər/",
+      meaning: "Máy chủ",
+      example: "The server is down.",
+      exampleVi: "Máy chủ đang gặp sự cố.",
+    },
+    {
+      word: "firewall",
+      phonetic: "/ˈfaɪərwɔːl/",
+      meaning: "Tường lửa",
+      example: "Configure the firewall settings.",
+      exampleVi: "Cấu hình cài đặt tường lửa.",
+    },
+    {
+      word: "bandwidth",
+      phonetic: "/ˈbændwɪdθ/",
+      meaning: "Băng thông",
+      example: "We need more bandwidth.",
+      exampleVi: "Chúng tôi cần thêm băng thông.",
+    },
+    {
+      word: "latency",
+      phonetic: "/ˈleɪtənsi/",
+      meaning: "Độ trễ",
+      example: "Reduce the latency.",
+      exampleVi: "Giảm độ trễ.",
+    },
+    {
+      word: "encryption",
+      phonetic: "/ɪnˈkrɪpʃn/",
+      meaning: "Mã hóa",
+      example: "Use strong encryption.",
+      exampleVi: "Sử dụng mã hóa mạnh.",
+    },
+    {
+      word: "API",
+      phonetic: "/eɪ piː aɪ/",
+      meaning: "Giao diện lập trình",
+      example: "Use our API.",
+      exampleVi: "Sử dụng API của chúng tôi.",
+    },
+    {
+      word: "database",
+      phonetic: "/ˈdeɪtəbeɪs/",
+      meaning: "Cơ sở dữ liệu",
+      example: "Query the database.",
+      exampleVi: "Truy vấn cơ sở dữ liệu.",
+    },
+    {
+      word: "cloud",
+      phonetic: "/klaʊd/",
+      meaning: "Đám mây",
+      example: "Move to the cloud.",
+      exampleVi: "Chuyển lên đám mây.",
+    },
+    {
+      word: "integration",
+      phonetic: "/ˌɪntɪˈɡreɪʃn/",
+      meaning: "Tích hợp",
+      example: "Complete the integration.",
+      exampleVi: "Hoàn thành tích hợp.",
+    },
+    {
+      word: "migration",
+      phonetic: "/maɪˈɡreɪʃn/",
+      meaning: "Di chuyển, chuyển đổi",
+      example: "Plan the data migration.",
+      exampleVi: "Lên kế hoạch di chuyển dữ liệu.",
+    },
+    {
+      word: "repository",
+      phonetic: "/rɪˈpɒzətɔːri/",
+      meaning: "Kho lưu trữ",
+      example: "Push to the repository.",
+      exampleVi: "Đẩy lên kho lưu trữ.",
+    },
+    {
+      word: "version control",
+      phonetic: "/ˈvɜːrʒn kənˈtroʊl/",
+      meaning: "Kiểm soát phiên bản",
+      example: "Use version control.",
+      exampleVi: "Sử dụng kiểm soát phiên bản.",
+    },
+    {
+      word: "agile",
+      phonetic: "/ˈædʒaɪl/",
+      meaning: "Phương pháp linh hoạt",
+      example: "Follow agile methodology.",
+      exampleVi: "Tuân theo phương pháp linh hoạt.",
+    },
   ],
   finance: [
-    { word: "invoice", phonetic: "/ˈɪnvɔɪs/", meaning: "Hóa đơn", example: "Send the invoice to the client.", exampleVi: "Gửi hóa đơn cho khách hàng." },
-    { word: "balance sheet", phonetic: "/ˈbæləns ʃiːt/", meaning: "Bảng cân đối kế toán", example: "Review the balance sheet.", exampleVi: "Xem lại bảng cân đối kế toán." },
-    { word: "cash flow", phonetic: "/kæʃ floʊ/", meaning: "Dòng tiền", example: "Manage the cash flow carefully.", exampleVi: "Quản lý dòng tiền cẩn thận." },
-    { word: "asset", phonetic: "/ˈæset/", meaning: "Tài sản", example: "List all company assets.", exampleVi: "Liệt kê tất cả tài sản công ty." },
-    { word: "liability", phonetic: "/ˌlaɪəˈbɪləti/", meaning: "Nợ phải trả", example: "Reduce company liabilities.", exampleVi: "Giảm nợ phải trả của công ty." },
-    { word: "budget", phonetic: "/ˈbʌdʒɪt/", meaning: "Ngân sách", example: "Stay within budget.", exampleVi: "Giữ trong ngân sách." },
-    { word: "audit", phonetic: "/ˈɔːdɪt/", meaning: "Kiểm toán", example: "Schedule an external audit.", exampleVi: "Lên lịch kiểm toán bên ngoài." },
-    { word: "equity", phonetic: "/ˈekwəti/", meaning: "Vốn chủ sở hữu", example: "Maintain equity ratio.", exampleVi: "Duy trì tỷ lệ vốn chủ sở hữu." },
-    { word: "depreciation", phonetic: "/ˌdiːpriːʃiˈeɪʃn/", meaning: "Khấu hao", example: "Calculate depreciation.", exampleVi: "Tính khấu hao." },
-    { word: "amortization", phonetic: "/ˌæmərtɪˈzeɪʃn/", meaning: "Trả góp, khấu hao", example: "Record amortization expense.", exampleVi: "Ghi nhận chi phí khấu hao." },
-    { word: "dividend", phonetic: "/ˈdɪvɪdend/", meaning: "Cổ tức", example: "The company declared a dividend.", exampleVi: "Công ty đã công bố cổ tức." },
-    { word: "collateral", phonetic: "/kəˈlætərəl/", meaning: "Tài sản thế chấp", example: "Use property as collateral.", exampleVi: "Sử dụng tài sản làm thế chấp." },
-    { word: "interest rate", phonetic: "/ˈɪntrəst reɪt/", meaning: "Lãi suất", example: "The interest rate increased.", exampleVi: "Lãi suất đã tăng." },
-    { word: "principal", phonetic: "/ˈprɪnsəpl/", meaning: "Vốn gốc", example: "Repay the principal.", exampleVi: "Trả vốn gốc." },
-    { word: "fiscal", phonetic: "/ˈfɪskl/", meaning: "Tài khóa", example: "Fiscal year ends in June.", exampleVi: "Năm tài khóa kết thúc vào tháng 6." },
-    { word: "accounts payable", phonetic: "/əˈkaʊnts ˈpeɪəbl/", meaning: "Phải trả người bán", example: "Track accounts payable.", exampleVi: "Theo dõi phải trả người bán." },
-    { word: "accounts receivable", phonetic: "/əˈkaʊnts rɪˈsiːvəbl/", meaning: "Phải thu khách hàng", example: "Collect accounts receivable.", exampleVi: "Thu hồi phải thu khách hàng." },
-    { word: "ledger", phonetic: "/ˈledʒər/", meaning: "Sổ cái", example: "Update the ledger.", exampleVi: "Cập nhật sổ cái." },
+    {
+      word: "invoice",
+      phonetic: "/ˈɪnvɔɪs/",
+      meaning: "Hóa đơn",
+      example: "Send the invoice to the client.",
+      exampleVi: "Gửi hóa đơn cho khách hàng.",
+    },
+    {
+      word: "balance sheet",
+      phonetic: "/ˈbæləns ʃiːt/",
+      meaning: "Bảng cân đối kế toán",
+      example: "Review the balance sheet.",
+      exampleVi: "Xem lại bảng cân đối kế toán.",
+    },
+    {
+      word: "cash flow",
+      phonetic: "/kæʃ floʊ/",
+      meaning: "Dòng tiền",
+      example: "Manage the cash flow carefully.",
+      exampleVi: "Quản lý dòng tiền cẩn thận.",
+    },
+    {
+      word: "asset",
+      phonetic: "/ˈæset/",
+      meaning: "Tài sản",
+      example: "List all company assets.",
+      exampleVi: "Liệt kê tất cả tài sản công ty.",
+    },
+    {
+      word: "liability",
+      phonetic: "/ˌlaɪəˈbɪləti/",
+      meaning: "Nợ phải trả",
+      example: "Reduce company liabilities.",
+      exampleVi: "Giảm nợ phải trả của công ty.",
+    },
+    {
+      word: "budget",
+      phonetic: "/ˈbʌdʒɪt/",
+      meaning: "Ngân sách",
+      example: "Stay within budget.",
+      exampleVi: "Giữ trong ngân sách.",
+    },
+    {
+      word: "audit",
+      phonetic: "/ˈɔːdɪt/",
+      meaning: "Kiểm toán",
+      example: "Schedule an external audit.",
+      exampleVi: "Lên lịch kiểm toán bên ngoài.",
+    },
+    {
+      word: "equity",
+      phonetic: "/ˈekwəti/",
+      meaning: "Vốn chủ sở hữu",
+      example: "Maintain equity ratio.",
+      exampleVi: "Duy trì tỷ lệ vốn chủ sở hữu.",
+    },
+    {
+      word: "depreciation",
+      phonetic: "/ˌdiːpriːʃiˈeɪʃn/",
+      meaning: "Khấu hao",
+      example: "Calculate depreciation.",
+      exampleVi: "Tính khấu hao.",
+    },
+    {
+      word: "amortization",
+      phonetic: "/ˌæmərtɪˈzeɪʃn/",
+      meaning: "Trả góp, khấu hao",
+      example: "Record amortization expense.",
+      exampleVi: "Ghi nhận chi phí khấu hao.",
+    },
+    {
+      word: "dividend",
+      phonetic: "/ˈdɪvɪdend/",
+      meaning: "Cổ tức",
+      example: "The company declared a dividend.",
+      exampleVi: "Công ty đã công bố cổ tức.",
+    },
+    {
+      word: "collateral",
+      phonetic: "/kəˈlætərəl/",
+      meaning: "Tài sản thế chấp",
+      example: "Use property as collateral.",
+      exampleVi: "Sử dụng tài sản làm thế chấp.",
+    },
+    {
+      word: "interest rate",
+      phonetic: "/ˈɪntrəst reɪt/",
+      meaning: "Lãi suất",
+      example: "The interest rate increased.",
+      exampleVi: "Lãi suất đã tăng.",
+    },
+    {
+      word: "principal",
+      phonetic: "/ˈprɪnsəpl/",
+      meaning: "Vốn gốc",
+      example: "Repay the principal.",
+      exampleVi: "Trả vốn gốc.",
+    },
+    {
+      word: "fiscal",
+      phonetic: "/ˈfɪskl/",
+      meaning: "Tài khóa",
+      example: "Fiscal year ends in June.",
+      exampleVi: "Năm tài khóa kết thúc vào tháng 6.",
+    },
+    {
+      word: "accounts payable",
+      phonetic: "/əˈkaʊnts ˈpeɪəbl/",
+      meaning: "Phải trả người bán",
+      example: "Track accounts payable.",
+      exampleVi: "Theo dõi phải trả người bán.",
+    },
+    {
+      word: "accounts receivable",
+      phonetic: "/əˈkaʊnts rɪˈsiːvəbl/",
+      meaning: "Phải thu khách hàng",
+      example: "Collect accounts receivable.",
+      exampleVi: "Thu hồi phải thu khách hàng.",
+    },
+    {
+      word: "ledger",
+      phonetic: "/ˈledʒər/",
+      meaning: "Sổ cái",
+      example: "Update the ledger.",
+      exampleVi: "Cập nhật sổ cái.",
+    },
   ],
   hr: [
-    { word: "onboarding", phonetic: "/ˈɒnbɔːrdɪŋ/", meaning: "Đào tạo nhân viên mới", example: "Complete the onboarding process.", exampleVi: "Hoàn thành quy trình đào tạo nhân viên mới." },
-    { word: "appraisal", phonetic: "/əˈpreɪzl/", meaning: "Đánh giá hiệu suất", example: "Annual performance appraisal.", exampleVi: "Đánh giá hiệu suất hàng năm." },
-    { word: "recruitment", phonetic: "/rɪˈkruːtmənt/", meaning: "Tuyển dụng", example: "Improve recruitment process.", exampleVi: "Cải thiện quy trình tuyển dụng." },
-    { word: "retain", phonetic: "/rɪˈteɪn/", meaning: "Giữ chân", example: "How to retain talent?", exampleVi: "Làm thế nào để giữ chân nhân tài?" },
-    { word: "probation", phonetic: "/proʊˈbeɪʃn/", meaning: "Thời gian thử việc", example: "Complete the probation period.", exampleVi: "Hoàn thành thời gian thử việc." },
-    { word: "resignation", phonetic: "/ˌrezɪɡˈneɪʃn/", meaning: "Đơn xin nghỉ việc", example: "Accept the resignation.", exampleVi: "Chấp nhận đơn xin nghỉ việc." },
-    { word: "redundancy", phonetic: "/rɪˈdʌndənsi/", meaning: "Thuyên chuyển, sa thải", example: "Handle redundancy process.", exampleVi: "Xử lý quy trình sa thải." },
-    { word: "compensation", phonetic: "/ˌkɒmpenˈseɪʃn/", meaning: "Lương, thưởng", example: "Review compensation package.", exampleVi: "Xem lại gói lương thưởng." },
-    { word: "benefits", phonetic: "/ˈbenɪfɪts/", meaning: "Phúc lợi", example: "Explain the benefits package.", exampleVi: "Giải thích gói phúc lợi." },
-    { word: "leave policy", phonetic: "/liːv ˈpɒləsi/", meaning: "Chính sách nghỉ phép", example: "Update the leave policy.", exampleVi: "Cập nhật chính sách nghỉ phép." },
-    { word: "promotion", phonetic: "/prəˈmoʊʃn/", meaning: "Thăng chức", example: "She got a promotion.", exampleVi: "Cô ấy được thăng chức." },
-    { word: "lateral move", phonetic: "/ˈlætərəl muːv/", meaning: "Chuyển vị trí ngang", example: "Consider a lateral move.", exampleVi: "Cân nhắc chuyển vị trí ngang." },
-    { word: "succession planning", phonetic: "/səkˈseʃn ˈplænɪŋ/", meaning: "Kế hoạch kế nhiệm", example: "Implement succession planning.", exampleVi: "Thực hiện kế hoạch kế nhiệm." },
-    { word: "headcount", phonetic: "/ˈhedkaʊnt/", meaning: "Số nhân sự", example: "We need to increase headcount.", exampleVi: "Chúng tôi cần tăng nhân sự." },
-    { word: "job description", phonetic: "/dʒɒb dɪˈskrɪpʃn/", meaning: "Mô tả công việc", example: "Review the job description.", exampleVi: "Xem lại mô tả công việc." },
-    { word: "competency", phonetic: "/ˈkɒmpɪtənsi/", meaning: "Năng lực", example: "Define core competencies.", exampleVi: "Xác định năng lực cốt lõi." },
-    { word: "workforce", phonetic: "/ˈwɜːrkfɔːrs/", meaning: "Lực lượng lao động", example: "Train the workforce.", exampleVi: "Đào tạo lực lượng lao động." },
-    { word: "severance", phonetic: "/ˈsevərəns/", meaning: "Trợ cấp thôi việc", example: "Negotiate severance package.", exampleVi: "Đàm phán gói trợ cấp thôi việc." },
+    {
+      word: "onboarding",
+      phonetic: "/ˈɒnbɔːrdɪŋ/",
+      meaning: "Đào tạo nhân viên mới",
+      example: "Complete the onboarding process.",
+      exampleVi: "Hoàn thành quy trình đào tạo nhân viên mới.",
+    },
+    {
+      word: "appraisal",
+      phonetic: "/əˈpreɪzl/",
+      meaning: "Đánh giá hiệu suất",
+      example: "Annual performance appraisal.",
+      exampleVi: "Đánh giá hiệu suất hàng năm.",
+    },
+    {
+      word: "recruitment",
+      phonetic: "/rɪˈkruːtmənt/",
+      meaning: "Tuyển dụng",
+      example: "Improve recruitment process.",
+      exampleVi: "Cải thiện quy trình tuyển dụng.",
+    },
+    {
+      word: "retain",
+      phonetic: "/rɪˈteɪn/",
+      meaning: "Giữ chân",
+      example: "How to retain talent?",
+      exampleVi: "Làm thế nào để giữ chân nhân tài?",
+    },
+    {
+      word: "probation",
+      phonetic: "/proʊˈbeɪʃn/",
+      meaning: "Thời gian thử việc",
+      example: "Complete the probation period.",
+      exampleVi: "Hoàn thành thời gian thử việc.",
+    },
+    {
+      word: "resignation",
+      phonetic: "/ˌrezɪɡˈneɪʃn/",
+      meaning: "Đơn xin nghỉ việc",
+      example: "Accept the resignation.",
+      exampleVi: "Chấp nhận đơn xin nghỉ việc.",
+    },
+    {
+      word: "redundancy",
+      phonetic: "/rɪˈdʌndənsi/",
+      meaning: "Thuyên chuyển, sa thải",
+      example: "Handle redundancy process.",
+      exampleVi: "Xử lý quy trình sa thải.",
+    },
+    {
+      word: "compensation",
+      phonetic: "/ˌkɒmpenˈseɪʃn/",
+      meaning: "Lương, thưởng",
+      example: "Review compensation package.",
+      exampleVi: "Xem lại gói lương thưởng.",
+    },
+    {
+      word: "benefits",
+      phonetic: "/ˈbenɪfɪts/",
+      meaning: "Phúc lợi",
+      example: "Explain the benefits package.",
+      exampleVi: "Giải thích gói phúc lợi.",
+    },
+    {
+      word: "leave policy",
+      phonetic: "/liːv ˈpɒləsi/",
+      meaning: "Chính sách nghỉ phép",
+      example: "Update the leave policy.",
+      exampleVi: "Cập nhật chính sách nghỉ phép.",
+    },
+    {
+      word: "promotion",
+      phonetic: "/prəˈmoʊʃn/",
+      meaning: "Thăng chức",
+      example: "She got a promotion.",
+      exampleVi: "Cô ấy được thăng chức.",
+    },
+    {
+      word: "lateral move",
+      phonetic: "/ˈlætərəl muːv/",
+      meaning: "Chuyển vị trí ngang",
+      example: "Consider a lateral move.",
+      exampleVi: "Cân nhắc chuyển vị trí ngang.",
+    },
+    {
+      word: "succession planning",
+      phonetic: "/səkˈseʃn ˈplænɪŋ/",
+      meaning: "Kế hoạch kế nhiệm",
+      example: "Implement succession planning.",
+      exampleVi: "Thực hiện kế hoạch kế nhiệm.",
+    },
+    {
+      word: "headcount",
+      phonetic: "/ˈhedkaʊnt/",
+      meaning: "Số nhân sự",
+      example: "We need to increase headcount.",
+      exampleVi: "Chúng tôi cần tăng nhân sự.",
+    },
+    {
+      word: "job description",
+      phonetic: "/dʒɒb dɪˈskrɪpʃn/",
+      meaning: "Mô tả công việc",
+      example: "Review the job description.",
+      exampleVi: "Xem lại mô tả công việc.",
+    },
+    {
+      word: "competency",
+      phonetic: "/ˈkɒmpɪtənsi/",
+      meaning: "Năng lực",
+      example: "Define core competencies.",
+      exampleVi: "Xác định năng lực cốt lõi.",
+    },
+    {
+      word: "workforce",
+      phonetic: "/ˈwɜːrkfɔːrs/",
+      meaning: "Lực lượng lao động",
+      example: "Train the workforce.",
+      exampleVi: "Đào tạo lực lượng lao động.",
+    },
+    {
+      word: "severance",
+      phonetic: "/ˈsevərəns/",
+      meaning: "Trợ cấp thôi việc",
+      example: "Negotiate severance package.",
+      exampleVi: "Đàm phán gói trợ cấp thôi việc.",
+    },
   ],
   general: [
-    { word: "synergy", phonetic: "/ˈsɪnərdʒi/", meaning: "Hiệu quả kết hợp", example: "Create synergy between teams.", exampleVi: "Tạo hiệu quả kết hợp giữa các nhóm." },
-    { word: "pivot", phonetic: "/ˈpɪvət/", meaning: "Chuyển hướng", example: "Pivot the business strategy.", exampleVi: "Chuyển hướng chiến lược kinh doanh." },
-    { word: "streamline", phonetic: "/ˈstriːmlaɪn/", meaning: "Hợp lý hóa", example: "Streamline the process.", exampleVi: "Hợp lý hóa quy trình." },
-    { word: "bandwidth", phonetic: "/ˈbændwɪdθ/", meaning: "Công suất, thời gian", example: "I don't have the bandwidth.", exampleVi: "Tôi không có thời gian/năng lực." },
-    { word: "circle back", phonetic: "/ˈsɜːrkl bæk/", meaning: "Quay lại bàn bạc", example: "Let's circle back on this.", exampleVi: "Hãy quay lại bàn bạc về điều này." },
-    { word: "touch base", phonetic: "/tʌtʃ beɪs/", meaning: "Liên lạc, gặp gỡ", example: "Let's touch base tomorrow.", exampleVi: "Hãy gặp nhau vào ngày mai." },
-    { word: "drill down", phonetic: "/drɪl daʊn/", meaning: "Phân tích sâu", example: "We need to drill down.", exampleVi: "Chúng tôi cần phân tích sâu hơn." },
-    { word: "move the needle", phonetic: "/muːv ðə ˈniːdl/", meaning: "Tạo ra thay đổi", example: "This will move the needle.", exampleVi: "Điều này sẽ tạo ra thay đổi đáng kể." },
-    { word: "low-hanging fruit", phonetic: "/loʊ ˈhæŋɪŋ fruːt/", meaning: "Việc dễ làm trước", example: "Start with low-hanging fruit.", exampleVi: "Bắt đầu với những việc dễ làm trước." },
-    { word: "best practice", phonetic: "/best ˈpræktɪs/", meaning: "Thực hành tốt nhất", example: "Follow best practices.", exampleVi: "Tuân theo các thực hành tốt nhất." },
-    { word: "take ownership", phonetic: "/teɪk ˈoʊnərʃɪp/", meaning: "Chịu trách nhiệm", example: "Take ownership of this project.", exampleVi: "Chịu trách nhiệm về dự án này." },
-    { word: "value proposition", phonetic: "/ˈvæljuː ˌprɒpəˈzɪʃn/", meaning: "Giá trị đề xuất", example: "What's your value proposition?", exampleVi: "Giá trị đề xuất của bạn là gì?" },
-    { word: "scope", phonetic: "/skoʊp/", meaning: "Phạm vi", example: "Define the project scope.", exampleVi: "Xác định phạm vi dự án." },
-    { word: "milestone", phonetic: "/ˈmaɪlstoʊn/", meaning: "Cột mốc", example: "We hit a major milestone.", exampleVi: "Chúng tôi đạt được một cột mốc quan trọng." },
-    { word: "deliverable", phonetic: "/dɪˈlɪvərəbl/", meaning: "Sản phẩm bàn giao", example: "List all deliverables.", exampleVi: "Liệt kê tất cả sản phẩm bàn giao." },
-    { word: "pipeline", phonetic: "/ˈpaɪplaɪn/", meaning: "Quy trình xử lý", example: "Add this to the pipeline.", exampleVi: "Thêm vào quy trình xử lý." },
-    { word: "incentivize", phonetic: "/ɪnˈsentɪvaɪz/", meaning: "Khuyến khích", example: "Incentivize the team.", exampleVi: "Khuyến khích nhóm." },
-    { word: "offshore", phonetic: "/ˈɒfʃɔːr/", meaning: "Thuê ngoài", example: "Offshore the production.", exampleVi: "Thuê ngoài sản xuất." },
+    {
+      word: "synergy",
+      phonetic: "/ˈsɪnərdʒi/",
+      meaning: "Hiệu quả kết hợp",
+      example: "Create synergy between teams.",
+      exampleVi: "Tạo hiệu quả kết hợp giữa các nhóm.",
+    },
+    {
+      word: "pivot",
+      phonetic: "/ˈpɪvət/",
+      meaning: "Chuyển hướng",
+      example: "Pivot the business strategy.",
+      exampleVi: "Chuyển hướng chiến lược kinh doanh.",
+    },
+    {
+      word: "streamline",
+      phonetic: "/ˈstriːmlaɪn/",
+      meaning: "Hợp lý hóa",
+      example: "Streamline the process.",
+      exampleVi: "Hợp lý hóa quy trình.",
+    },
+    {
+      word: "bandwidth",
+      phonetic: "/ˈbændwɪdθ/",
+      meaning: "Công suất, thời gian",
+      example: "I don't have the bandwidth.",
+      exampleVi: "Tôi không có thời gian/năng lực.",
+    },
+    {
+      word: "circle back",
+      phonetic: "/ˈsɜːrkl bæk/",
+      meaning: "Quay lại bàn bạc",
+      example: "Let's circle back on this.",
+      exampleVi: "Hãy quay lại bàn bạc về điều này.",
+    },
+    {
+      word: "touch base",
+      phonetic: "/tʌtʃ beɪs/",
+      meaning: "Liên lạc, gặp gỡ",
+      example: "Let's touch base tomorrow.",
+      exampleVi: "Hãy gặp nhau vào ngày mai.",
+    },
+    {
+      word: "drill down",
+      phonetic: "/drɪl daʊn/",
+      meaning: "Phân tích sâu",
+      example: "We need to drill down.",
+      exampleVi: "Chúng tôi cần phân tích sâu hơn.",
+    },
+    {
+      word: "move the needle",
+      phonetic: "/muːv ðə ˈniːdl/",
+      meaning: "Tạo ra thay đổi",
+      example: "This will move the needle.",
+      exampleVi: "Điều này sẽ tạo ra thay đổi đáng kể.",
+    },
+    {
+      word: "low-hanging fruit",
+      phonetic: "/loʊ ˈhæŋɪŋ fruːt/",
+      meaning: "Việc dễ làm trước",
+      example: "Start with low-hanging fruit.",
+      exampleVi: "Bắt đầu với những việc dễ làm trước.",
+    },
+    {
+      word: "best practice",
+      phonetic: "/best ˈpræktɪs/",
+      meaning: "Thực hành tốt nhất",
+      example: "Follow best practices.",
+      exampleVi: "Tuân theo các thực hành tốt nhất.",
+    },
+    {
+      word: "take ownership",
+      phonetic: "/teɪk ˈoʊnərʃɪp/",
+      meaning: "Chịu trách nhiệm",
+      example: "Take ownership of this project.",
+      exampleVi: "Chịu trách nhiệm về dự án này.",
+    },
+    {
+      word: "value proposition",
+      phonetic: "/ˈvæljuː ˌprɒpəˈzɪʃn/",
+      meaning: "Giá trị đề xuất",
+      example: "What's your value proposition?",
+      exampleVi: "Giá trị đề xuất của bạn là gì?",
+    },
+    {
+      word: "scope",
+      phonetic: "/skoʊp/",
+      meaning: "Phạm vi",
+      example: "Define the project scope.",
+      exampleVi: "Xác định phạm vi dự án.",
+    },
+    {
+      word: "milestone",
+      phonetic: "/ˈmaɪlstoʊn/",
+      meaning: "Cột mốc",
+      example: "We hit a major milestone.",
+      exampleVi: "Chúng tôi đạt được một cột mốc quan trọng.",
+    },
+    {
+      word: "deliverable",
+      phonetic: "/dɪˈlɪvərəbl/",
+      meaning: "Sản phẩm bàn giao",
+      example: "List all deliverables.",
+      exampleVi: "Liệt kê tất cả sản phẩm bàn giao.",
+    },
+    {
+      word: "pipeline",
+      phonetic: "/ˈpaɪplaɪn/",
+      meaning: "Quy trình xử lý",
+      example: "Add this to the pipeline.",
+      exampleVi: "Thêm vào quy trình xử lý.",
+    },
+    {
+      word: "incentivize",
+      phonetic: "/ɪnˈsentɪvaɪz/",
+      meaning: "Khuyến khích",
+      example: "Incentivize the team.",
+      exampleVi: "Khuyến khích nhóm.",
+    },
+    {
+      word: "offshore",
+      phonetic: "/ˈɒfʃɔːr/",
+      meaning: "Thuê ngoài",
+      example: "Offshore the production.",
+      exampleVi: "Thuê ngoài sản xuất.",
+    },
   ],
   // NEW CATEGORIES
   travel: [
-    { word: "itinerary", phonetic: "/aɪˈtɪnəreri/", meaning: "Lịch trình", example: "Check your itinerary.", exampleVi: "Kiểm tra lịch trình của bạn." },
-    { word: "book", phonetic: "/bʊk/", meaning: "Đặt trước", example: "Book a flight.", exampleVi: "Đặt một chuyến bay." },
-    { word: "check-in", phonetic: "/ˈtʃek ɪn/", meaning: "Đăng ký, nhận phòng", example: "Online check-in is available.", exampleVi: "Đăng ký trực tuyến đã có sẵn." },
-    { word: "boarding pass", phonetic: "/ˈbɔːrdɪŋ pæs/", meaning: "Thẻ lên máy bay", example: "Show your boarding pass.", exampleVi: "Xuất trình thẻ lên máy bay." },
-    { word: "departure", phonetic: "/dɪˈpɑːrtʃər/", meaning: "Khởi hành", example: "Departure at 10 AM.", exampleVi: "Khởi hành lúc 10 giờ sáng." },
-    { word: "arrival", phonetic: "/əˈraɪvl/", meaning: "Đến nơi", example: "Arrival scheduled for 3 PM.", exampleVi: "Dự kiến đến nơi lúc 3 giờ chiều." },
-    { word: "accommodation", phonetic: "/əˌkɒməˈdeɪʃn/", meaning: "Chỗ ở", example: "Arrange accommodation.", exampleVi: "Sắp xếp chỗ ở." },
-    { word: "itinerary", phonetic: "/aɪˈtɪnəreri/", meaning: "Lịch trình", example: "Review the itinerary.", exampleVi: "Xem lại lịch trình." },
-    { word: "layover", phonetic: "/ˈleɪoʊvər/", meaning: "Quá cảnh", example: "Short layover in Dubai.", exampleVi: "Quá cảnh ngắn ở Dubai." },
-    { word: "visa", phonetic: "/ˈviːzə/", meaning: "Thị thực", example: "Do you need a visa?", exampleVi: "Bạn có cần visa không?" },
-    { word: "passport", phonetic: "/ˈpæspɔːrt/", meaning: "Hộ chiếu", example: "Your passport is expired.", exampleVi: "Hộ chiếu của bạn đã hết hạn." },
-    { word: "expense report", phonetic: "/ɪkˈspens rɪˈpɔːrt/", meaning: "Báo cáo chi phí", example: "Submit your expense report.", exampleVi: "Nộp báo cáo chi phí của bạn." },
-    { word: "reimburse", phonetic: "/ˌriːɪmˈbɜːrs/", meaning: "Hoàn tiền", example: "They will reimburse expenses.", exampleVi: "Họ sẽ hoàn tiền chi phí." },
-    { word: "per diem", phonetic: "/pɜːr ˈdaɪəm/", meaning: "Phụ cấp ngày", example: "What's the per diem rate?", exampleVi: "Mức phụ cấp ngày là bao nhiêu?" },
-    { word: "travel policy", phonetic: "/ˈtrævl ˈpɒləsi/", meaning: "Chính sách đi công tác", example: "Follow the travel policy.", exampleVi: "Tuân theo chính sách đi công tác." },
-    { word: "car rental", phonetic: "/kɑːr ˈrentl/", meaning: "Thuê xe", example: "Book a car rental.", exampleVi: "Đặt thuê xe." },
-    { word: "corporate rate", phonetic: "/ˈkɔːrpərət reɪt/", meaning: "Giá công ty", example: "Use the corporate rate.", exampleVi: "Sử dụng giá công ty." },
-    { word: "itinerary", phonetic: "/aɪˈtɪnəreri/", meaning: "Lịch trình", example: "Update the itinerary.", exampleVi: "Cập nhật lịch trình." },
+    {
+      word: "itinerary",
+      phonetic: "/aɪˈtɪnəreri/",
+      meaning: "Lịch trình",
+      example: "Check your itinerary.",
+      exampleVi: "Kiểm tra lịch trình của bạn.",
+    },
+    {
+      word: "book",
+      phonetic: "/bʊk/",
+      meaning: "Đặt trước",
+      example: "Book a flight.",
+      exampleVi: "Đặt một chuyến bay.",
+    },
+    {
+      word: "check-in",
+      phonetic: "/ˈtʃek ɪn/",
+      meaning: "Đăng ký, nhận phòng",
+      example: "Online check-in is available.",
+      exampleVi: "Đăng ký trực tuyến đã có sẵn.",
+    },
+    {
+      word: "boarding pass",
+      phonetic: "/ˈbɔːrdɪŋ pæs/",
+      meaning: "Thẻ lên máy bay",
+      example: "Show your boarding pass.",
+      exampleVi: "Xuất trình thẻ lên máy bay.",
+    },
+    {
+      word: "departure",
+      phonetic: "/dɪˈpɑːrtʃər/",
+      meaning: "Khởi hành",
+      example: "Departure at 10 AM.",
+      exampleVi: "Khởi hành lúc 10 giờ sáng.",
+    },
+    {
+      word: "arrival",
+      phonetic: "/əˈraɪvl/",
+      meaning: "Đến nơi",
+      example: "Arrival scheduled for 3 PM.",
+      exampleVi: "Dự kiến đến nơi lúc 3 giờ chiều.",
+    },
+    {
+      word: "accommodation",
+      phonetic: "/əˌkɒməˈdeɪʃn/",
+      meaning: "Chỗ ở",
+      example: "Arrange accommodation.",
+      exampleVi: "Sắp xếp chỗ ở.",
+    },
+    {
+      word: "itinerary",
+      phonetic: "/aɪˈtɪnəreri/",
+      meaning: "Lịch trình",
+      example: "Review the itinerary.",
+      exampleVi: "Xem lại lịch trình.",
+    },
+    {
+      word: "layover",
+      phonetic: "/ˈleɪoʊvər/",
+      meaning: "Quá cảnh",
+      example: "Short layover in Dubai.",
+      exampleVi: "Quá cảnh ngắn ở Dubai.",
+    },
+    {
+      word: "visa",
+      phonetic: "/ˈviːzə/",
+      meaning: "Thị thực",
+      example: "Do you need a visa?",
+      exampleVi: "Bạn có cần visa không?",
+    },
+    {
+      word: "passport",
+      phonetic: "/ˈpæspɔːrt/",
+      meaning: "Hộ chiếu",
+      example: "Your passport is expired.",
+      exampleVi: "Hộ chiếu của bạn đã hết hạn.",
+    },
+    {
+      word: "expense report",
+      phonetic: "/ɪkˈspens rɪˈpɔːrt/",
+      meaning: "Báo cáo chi phí",
+      example: "Submit your expense report.",
+      exampleVi: "Nộp báo cáo chi phí của bạn.",
+    },
+    {
+      word: "reimburse",
+      phonetic: "/ˌriːɪmˈbɜːrs/",
+      meaning: "Hoàn tiền",
+      example: "They will reimburse expenses.",
+      exampleVi: "Họ sẽ hoàn tiền chi phí.",
+    },
+    {
+      word: "per diem",
+      phonetic: "/pɜːr ˈdaɪəm/",
+      meaning: "Phụ cấp ngày",
+      example: "What's the per diem rate?",
+      exampleVi: "Mức phụ cấp ngày là bao nhiêu?",
+    },
+    {
+      word: "travel policy",
+      phonetic: "/ˈtrævl ˈpɒləsi/",
+      meaning: "Chính sách đi công tác",
+      example: "Follow the travel policy.",
+      exampleVi: "Tuân theo chính sách đi công tác.",
+    },
+    {
+      word: "car rental",
+      phonetic: "/kɑːr ˈrentl/",
+      meaning: "Thuê xe",
+      example: "Book a car rental.",
+      exampleVi: "Đặt thuê xe.",
+    },
+    {
+      word: "corporate rate",
+      phonetic: "/ˈkɔːrpərət reɪt/",
+      meaning: "Giá công ty",
+      example: "Use the corporate rate.",
+      exampleVi: "Sử dụng giá công ty.",
+    },
+    {
+      word: "itinerary",
+      phonetic: "/aɪˈtɪnəreri/",
+      meaning: "Lịch trình",
+      example: "Update the itinerary.",
+      exampleVi: "Cập nhật lịch trình.",
+    },
   ],
   networking: [
-    { word: "connect", phonetic: "/kəˈnekt/", meaning: "Kết nối", example: "Let's connect on LinkedIn.", exampleVi: "Hãy kết nối trên LinkedIn." },
-    { word: "introduce", phonetic: "/ˌɪntrəˈdjuːs/", meaning: "Giới thiệu", example: "Allow me to introduce...", exampleVi: "Để tôi giới thiệu..." },
-    { word: "referral", phonetic: "/ˈrefrəl/", meaning: "Giới thiệu", example: "I got a referral.", exampleVi: "Tôi có người giới thiệu." },
-    { word: "mutual contact", phonetic: "/ˈmjuːtʃuəl ˈkɒntækt/", meaning: "Người quen chung", example: "We have a mutual contact.", exampleVi: "Chúng ta có người quen chung." },
-    { word: "business card", phonetic: "/ˈbɪznəs kɑːrd/", meaning: "Danh thiếp", example: "Here's my business card.", exampleVi: "Đây là danh thiếp của tôi." },
-    { word: "follow up", phonetic: "/ˈfɑːloʊ ʌp/", meaning: "Theo dõi sau cuộc gặp", example: "I'll follow up next week.", exampleVi: "Tôi sẽ theo dõi vào tuần sau." },
-    { word: "warm lead", phonetic: "/wɔːrm liːd/", meaning: "Khách hàng tiềm năng", example: "This is a warm lead.", exampleVi: "Đây là khách hàng tiềm năng." },
-    { word: "cold call", phonetic: "/koʊld kɔːl/", meaning: "Gọi điện không hẹn", example: "I hate making cold calls.", exampleVi: "Tôi ghét gọi điện không hẹn." },
-    { word: " rapport", phonetic: "/ræˈpɔːr/", meaning: "Mối quan hệ tốt", example: "Build rapport with clients.", exampleVi: "Xây dựng mối quan hệ tốt với khách hàng." },
-    { word: "leverage", phonetic: "/ˈlevərɪdʒ/", meaning: "Tận dụng", example: "Leverage your network.", exampleVi: "Tận dụng mạng lưới của bạn." },
-    { word: "partnership", phonetic: "/ˈpɑːrtnərʃɪp/", meaning: "Đối tác", example: "Form a strategic partnership.", exampleVi: "Hình thành đối tác chiến lược." },
-    { word: "collaborate", phonetic: "/kəˈlæbəreɪt/", meaning: "Cộng tác", example: "We should collaborate.", exampleVi: "Chúng ta nên cộng tác." },
-    { word: "outreach", phonetic: "/ˈaʊtriːtʃ/", meaning: "Tiếp cận", example: "Increase outreach efforts.", exampleVi: "Tăng nỗ lực tiếp cận." },
-    { word: "introduction", phonetic: "/ˌɪntrəˈdʌkʃn/", meaning: "Lời giới thiệu", example: "Thank you for the introduction.", exampleVi: "Cảm ơn lời giới thiệu." },
-    { word: "refer", phonetic: "/rɪˈfɜːr/", meaning: "Giới thiệu", example: "Can I refer you to someone?", exampleVi: "Tôi có thể giới thiệu bạn đến ai đó không?" },
-    { word: "endorse", phonetic: "/ɪnˈdɔːrs/", meaning: "Đề xuất", example: "I'll endorse your skills.", exampleVi: "Tôi sẽ đề xuất kỹ năng của bạn." },
-    { word: "alumni network", phonetic: "/əˈlʌmnaɪ ˈnetwɜːrk/", meaning: "Mạng lưới cựu sinh viên", example: "Join the alumni network.", exampleVi: "Tham gia mạng lưới cựu sinh viên." },
-    { word: "mentor", phonetic: "/ˈmentɔːr/", meaning: "Người cố vấn", example: "Find a mentor.", exampleVi: "Tìm một người cố vấn." },
+    {
+      word: "connect",
+      phonetic: "/kəˈnekt/",
+      meaning: "Kết nối",
+      example: "Let's connect on LinkedIn.",
+      exampleVi: "Hãy kết nối trên LinkedIn.",
+    },
+    {
+      word: "introduce",
+      phonetic: "/ˌɪntrəˈdjuːs/",
+      meaning: "Giới thiệu",
+      example: "Allow me to introduce...",
+      exampleVi: "Để tôi giới thiệu...",
+    },
+    {
+      word: "referral",
+      phonetic: "/ˈrefrəl/",
+      meaning: "Giới thiệu",
+      example: "I got a referral.",
+      exampleVi: "Tôi có người giới thiệu.",
+    },
+    {
+      word: "mutual contact",
+      phonetic: "/ˈmjuːtʃuəl ˈkɒntækt/",
+      meaning: "Người quen chung",
+      example: "We have a mutual contact.",
+      exampleVi: "Chúng ta có người quen chung.",
+    },
+    {
+      word: "business card",
+      phonetic: "/ˈbɪznəs kɑːrd/",
+      meaning: "Danh thiếp",
+      example: "Here's my business card.",
+      exampleVi: "Đây là danh thiếp của tôi.",
+    },
+    {
+      word: "follow up",
+      phonetic: "/ˈfɑːloʊ ʌp/",
+      meaning: "Theo dõi sau cuộc gặp",
+      example: "I'll follow up next week.",
+      exampleVi: "Tôi sẽ theo dõi vào tuần sau.",
+    },
+    {
+      word: "warm lead",
+      phonetic: "/wɔːrm liːd/",
+      meaning: "Khách hàng tiềm năng",
+      example: "This is a warm lead.",
+      exampleVi: "Đây là khách hàng tiềm năng.",
+    },
+    {
+      word: "cold call",
+      phonetic: "/koʊld kɔːl/",
+      meaning: "Gọi điện không hẹn",
+      example: "I hate making cold calls.",
+      exampleVi: "Tôi ghét gọi điện không hẹn.",
+    },
+    {
+      word: " rapport",
+      phonetic: "/ræˈpɔːr/",
+      meaning: "Mối quan hệ tốt",
+      example: "Build rapport with clients.",
+      exampleVi: "Xây dựng mối quan hệ tốt với khách hàng.",
+    },
+    {
+      word: "leverage",
+      phonetic: "/ˈlevərɪdʒ/",
+      meaning: "Tận dụng",
+      example: "Leverage your network.",
+      exampleVi: "Tận dụng mạng lưới của bạn.",
+    },
+    {
+      word: "partnership",
+      phonetic: "/ˈpɑːrtnərʃɪp/",
+      meaning: "Đối tác",
+      example: "Form a strategic partnership.",
+      exampleVi: "Hình thành đối tác chiến lược.",
+    },
+    {
+      word: "collaborate",
+      phonetic: "/kəˈlæbəreɪt/",
+      meaning: "Cộng tác",
+      example: "We should collaborate.",
+      exampleVi: "Chúng ta nên cộng tác.",
+    },
+    {
+      word: "outreach",
+      phonetic: "/ˈaʊtriːtʃ/",
+      meaning: "Tiếp cận",
+      example: "Increase outreach efforts.",
+      exampleVi: "Tăng nỗ lực tiếp cận.",
+    },
+    {
+      word: "introduction",
+      phonetic: "/ˌɪntrəˈdʌkʃn/",
+      meaning: "Lời giới thiệu",
+      example: "Thank you for the introduction.",
+      exampleVi: "Cảm ơn lời giới thiệu.",
+    },
+    {
+      word: "refer",
+      phonetic: "/rɪˈfɜːr/",
+      meaning: "Giới thiệu",
+      example: "Can I refer you to someone?",
+      exampleVi: "Tôi có thể giới thiệu bạn đến ai đó không?",
+    },
+    {
+      word: "endorse",
+      phonetic: "/ɪnˈdɔːrs/",
+      meaning: "Đề xuất",
+      example: "I'll endorse your skills.",
+      exampleVi: "Tôi sẽ đề xuất kỹ năng của bạn.",
+    },
+    {
+      word: "alumni network",
+      phonetic: "/əˈlʌmnaɪ ˈnetwɜːrk/",
+      meaning: "Mạng lưới cựu sinh viên",
+      example: "Join the alumni network.",
+      exampleVi: "Tham gia mạng lưới cựu sinh viên.",
+    },
+    {
+      word: "mentor",
+      phonetic: "/ˈmentɔːr/",
+      meaning: "Người cố vấn",
+      example: "Find a mentor.",
+      exampleVi: "Tìm một người cố vấn.",
+    },
   ],
   social: [
-    { word: "catch up", phonetic: "/kætʃ ʌp/", meaning: "Cập nhật tin tức", example: "Let's catch up over coffee.", exampleVi: "Hãy cập nhật tin tức uống cà phê." },
-    { word: "how's it going", phonetic: "/haʊz ɪt ˈɡoʊɪŋ/", meaning: "Dạo này thế nào", example: "Hey, how's it going?", exampleVi: "Này, dạo này thế nào?" },
-    { word: "long time no see", phonetic: "/lɔːŋ taɪm noʊ siː/", meaning: "Lâu rồi không gặp", example: "Long time no see!", exampleVi: "Lâu rồi không gặp!" },
-    { word: "what's up", phonetic: "/wɒts ʌp/", meaning: "Có gì mới", example: "Hey, what's up?", exampleVi: "Này, có gì mới không?" },
-    { word: "nice to meet you", phonetic: "/naɪs tuː miːt juː/", meaning: "Rất vui được gặp", example: "Nice to meet you!", exampleVi: "Rất vui được gặp bạn!" },
-    { word: "keep in touch", phonetic: "/kiːp ɪn tʌtʃ/", meaning: "Giữ liên lạc", example: "Let's keep in touch.", exampleVi: "Hãy giữ liên lạc nhé." },
-    { word: "have a good one", phonetic: "/hæv ə ɡʊd wʌn/", meaning: "Chúc tốt lành", example: "Have a good one!", exampleVi: "Chúc tốt lành!" },
-    { word: "take care", phonetic: "/teɪk ker/", meaning: "Giữ gìn sức khỏe", example: "Take care!", exampleVi: "Giữ gìn sức khỏe nhé!" },
-    { word: "cheers", phonetic: "/tʃɪrz/", meaning: "Cảm ơn, chúc mừng", example: "Cheers! Thank you.", exampleVi: "Cảm ơn! Chúc mừng!" },
-    { word: "congratulations", phonetic: "/kənˌrætʃuˈleɪʃnz/", meaning: "Chúc mừng", example: "Congratulations!", exampleVi: "Chúc mừng!" },
-    { word: "best wishes", phonetic: "/best ˈwɪʃɪz/", meaning: "Lời chúc tốt đẹp", example: "Best wishes for your new job.", exampleVi: "Lời chúc tốt đẹp cho công việc mới của bạn." },
-    { word: "get well soon", phonetic: "/ɡet wel suːn/", meaning: "Chóng khỏe mạnh", example: "Get well soon!", exampleVi: "Chóng khỏe mạnh nhé!" },
-    { word: "happy birthday", phonetic: "/ˈhæpi ˈbɜːrθdeɪ/", meaning: "Chúc mừng sinh nhật", example: "Happy birthday!", exampleVi: "Chúc mừng sinh nhật!" },
-    { word: "enjoy", phonetic: "/ɪnˈdʒɔɪ/", meaning: "Tận hưởng", example: "Enjoy your vacation!", exampleVi: "Tận hưởng kỳ nghỉ nhé!" },
-    { word: "good luck", phonetic: "/ɡʊd lʌk/", meaning: "Chúc may mắn", example: "Good luck with your presentation!", exampleVi: "Chúc may mắn với bài thuyết trình!" },
-    { word: "no worries", phonetic: "/noʊ ˈwɜːriz/", meaning: "Không sao đâu", example: "No worries at all!", exampleVi: "Không sao đâu!" },
-    { word: "sounds good", phonetic: "/saʊndz ɡʊd/", meaning: "Nghe hay đấy", example: "That sounds good to me.", exampleVi: "Nghe hay đấy." },
-    { word: "I agree", phonetic: "/aɪ əˈɡriː/", meaning: "Tôi đồng ý", example: "I agree with you.", exampleVi: "Tôi đồng ý với bạn." },
+    {
+      word: "catch up",
+      phonetic: "/kætʃ ʌp/",
+      meaning: "Cập nhật tin tức",
+      example: "Let's catch up over coffee.",
+      exampleVi: "Hãy cập nhật tin tức uống cà phê.",
+    },
+    {
+      word: "how's it going",
+      phonetic: "/haʊz ɪt ˈɡoʊɪŋ/",
+      meaning: "Dạo này thế nào",
+      example: "Hey, how's it going?",
+      exampleVi: "Này, dạo này thế nào?",
+    },
+    {
+      word: "long time no see",
+      phonetic: "/lɔːŋ taɪm noʊ siː/",
+      meaning: "Lâu rồi không gặp",
+      example: "Long time no see!",
+      exampleVi: "Lâu rồi không gặp!",
+    },
+    {
+      word: "what's up",
+      phonetic: "/wɒts ʌp/",
+      meaning: "Có gì mới",
+      example: "Hey, what's up?",
+      exampleVi: "Này, có gì mới không?",
+    },
+    {
+      word: "nice to meet you",
+      phonetic: "/naɪs tuː miːt juː/",
+      meaning: "Rất vui được gặp",
+      example: "Nice to meet you!",
+      exampleVi: "Rất vui được gặp bạn!",
+    },
+    {
+      word: "keep in touch",
+      phonetic: "/kiːp ɪn tʌtʃ/",
+      meaning: "Giữ liên lạc",
+      example: "Let's keep in touch.",
+      exampleVi: "Hãy giữ liên lạc nhé.",
+    },
+    {
+      word: "have a good one",
+      phonetic: "/hæv ə ɡʊd wʌn/",
+      meaning: "Chúc tốt lành",
+      example: "Have a good one!",
+      exampleVi: "Chúc tốt lành!",
+    },
+    {
+      word: "take care",
+      phonetic: "/teɪk ker/",
+      meaning: "Giữ gìn sức khỏe",
+      example: "Take care!",
+      exampleVi: "Giữ gìn sức khỏe nhé!",
+    },
+    {
+      word: "cheers",
+      phonetic: "/tʃɪrz/",
+      meaning: "Cảm ơn, chúc mừng",
+      example: "Cheers! Thank you.",
+      exampleVi: "Cảm ơn! Chúc mừng!",
+    },
+    {
+      word: "congratulations",
+      phonetic: "/kənˌrætʃuˈleɪʃnz/",
+      meaning: "Chúc mừng",
+      example: "Congratulations!",
+      exampleVi: "Chúc mừng!",
+    },
+    {
+      word: "best wishes",
+      phonetic: "/best ˈwɪʃɪz/",
+      meaning: "Lời chúc tốt đẹp",
+      example: "Best wishes for your new job.",
+      exampleVi: "Lời chúc tốt đẹp cho công việc mới của bạn.",
+    },
+    {
+      word: "get well soon",
+      phonetic: "/ɡet wel suːn/",
+      meaning: "Chóng khỏe mạnh",
+      example: "Get well soon!",
+      exampleVi: "Chóng khỏe mạnh nhé!",
+    },
+    {
+      word: "happy birthday",
+      phonetic: "/ˈhæpi ˈbɜːrθdeɪ/",
+      meaning: "Chúc mừng sinh nhật",
+      example: "Happy birthday!",
+      exampleVi: "Chúc mừng sinh nhật!",
+    },
+    {
+      word: "enjoy",
+      phonetic: "/ɪnˈdʒɔɪ/",
+      meaning: "Tận hưởng",
+      example: "Enjoy your vacation!",
+      exampleVi: "Tận hưởng kỳ nghỉ nhé!",
+    },
+    {
+      word: "good luck",
+      phonetic: "/ɡʊd lʌk/",
+      meaning: "Chúc may mắn",
+      example: "Good luck with your presentation!",
+      exampleVi: "Chúc may mắn với bài thuyết trình!",
+    },
+    {
+      word: "no worries",
+      phonetic: "/noʊ ˈwɜːriz/",
+      meaning: "Không sao đâu",
+      example: "No worries at all!",
+      exampleVi: "Không sao đâu!",
+    },
+    {
+      word: "sounds good",
+      phonetic: "/saʊndz ɡʊd/",
+      meaning: "Nghe hay đấy",
+      example: "That sounds good to me.",
+      exampleVi: "Nghe hay đấy.",
+    },
+    {
+      word: "I agree",
+      phonetic: "/aɪ əˈɡriː/",
+      meaning: "Tôi đồng ý",
+      example: "I agree with you.",
+      exampleVi: "Tôi đồng ý với bạn.",
+    },
   ],
   project: [
-    { word: "kick off", phonetic: "/kɪk ɒf/", meaning: "Bắt đầu", example: "Let's kick off the project.", exampleVi: "Hãy bắt đầu dự án." },
-    { word: "roadmap", phonetic: "/ˈroʊdmæp/", meaning: "Lộ trình", example: "Review the project roadmap.", exampleVi: "Xem lại lộ trình dự án." },
-    { word: "sprint", phonetic: "/sprɪnt/", meaning: "Giai đoạn phát triển", example: "Complete this in two sprints.", exampleVi: "Hoàn thành điều này trong hai giai đoạn." },
-    { word: "backlog", phonetic: "/ˈbæklɒɡ/", meaning: "Danh sách công việc", example: "Prioritize the backlog.", exampleVi: "Ưu tiên danh sách công việc." },
-    { word: "scrum", phonetic: "/skrʌm/", meaning: "Phương pháp scrum", example: "Use scrum methodology.", exampleVi: "Sử dụng phương pháp scrum." },
-    { word: "stand-up", phonetic: "/stænd ʌp/", meaning: "Họp ngắn hàng ngày", example: "Daily stand-up at 9 AM.", exampleVi: "Họp ngắn hàng ngày lúc 9 giờ." },
-    { word: "retrospective", phonetic: "/ˌretrəˈspektɪv/", meaning: "Họp rút kinh nghiệm", example: "Let's have a retrospective.", exampleVi: "Hãy họp rút kinh nghiệm." },
-    { word: "burndown chart", phonetic: "/ˈbɜːrndaʊn tʃɑːrt/", meaning: "Biểu đồ tiến độ", example: "Check the burndown chart.", exampleVi: "Kiểm tra biểu đồ tiến độ." },
-    { word: "velocity", phonetic: "/vəˈlɒsəti/", meaning: "Tốc độ làm việc", example: "Our velocity is improving.", exampleVi: "Tốc độ làm việc của chúng tôi đang cải thiện." },
-    { word: "epic", phonetic: "/ˈepɪk/", meaning: "Tính năng lớn", example: "This is a big epic.", exampleVi: "Đây là một tính năng lớn." },
-    { word: "user story", phonetic: "/ˈjuːzər ˈstɔːri/", meaning: "Yêu cầu người dùng", example: "Write a user story.", exampleVi: "Viết yêu cầu người dùng." },
-    { word: "task", phonetic: "/tæsk/", meaning: "Nhiệm vụ", example: "Assign this task.", exampleVi: "Giao nhiệm vụ này." },
-    { word: "subtask", phonetic: "/ˈsʌbtæsk/", meaning: "Công việc con", example: "Create a subtask.", exampleVi: "Tạo công việc con." },
-    { word: "dependency", phonetic: "/dɪˈpendənsi/", meaning: "Phụ thuộc", example: "Check dependencies.", exampleVi: "Kiểm tra các phụ thuộc." },
-    { word: "blocker", phonetic: "/ˈblɒkər/", meaning: "Trở ngại", example: "This is a blocker.", exampleVi: "Đây là một trở ngại." },
-    { word: "scope creep", phonetic: "/skoʊp kriːp/", meaning: "Mở rộng phạm vi", example: "Avoid scope creep.", exampleVi: "Tránh mở rộng phạm vi." },
-    { word: "resource allocation", phonetic: "/ˈriːsɔːrs ˌæləˈkeɪʃn/", meaning: "Phân bổ nguồn lực", example: "Optimize resource allocation.", exampleVi: "Tối ưu hóa phân bổ nguồn lực." },
-    { word: "project charter", phonetic: "/ˈprɒdʒekt ˈtʃɑːrtər/", meaning: "Giấy phép dự án", example: "Sign the project charter.", exampleVi: "Ký giấy phép dự án." },
+    {
+      word: "kick off",
+      phonetic: "/kɪk ɒf/",
+      meaning: "Bắt đầu",
+      example: "Let's kick off the project.",
+      exampleVi: "Hãy bắt đầu dự án.",
+    },
+    {
+      word: "roadmap",
+      phonetic: "/ˈroʊdmæp/",
+      meaning: "Lộ trình",
+      example: "Review the project roadmap.",
+      exampleVi: "Xem lại lộ trình dự án.",
+    },
+    {
+      word: "sprint",
+      phonetic: "/sprɪnt/",
+      meaning: "Giai đoạn phát triển",
+      example: "Complete this in two sprints.",
+      exampleVi: "Hoàn thành điều này trong hai giai đoạn.",
+    },
+    {
+      word: "backlog",
+      phonetic: "/ˈbæklɒɡ/",
+      meaning: "Danh sách công việc",
+      example: "Prioritize the backlog.",
+      exampleVi: "Ưu tiên danh sách công việc.",
+    },
+    {
+      word: "scrum",
+      phonetic: "/skrʌm/",
+      meaning: "Phương pháp scrum",
+      example: "Use scrum methodology.",
+      exampleVi: "Sử dụng phương pháp scrum.",
+    },
+    {
+      word: "stand-up",
+      phonetic: "/stænd ʌp/",
+      meaning: "Họp ngắn hàng ngày",
+      example: "Daily stand-up at 9 AM.",
+      exampleVi: "Họp ngắn hàng ngày lúc 9 giờ.",
+    },
+    {
+      word: "retrospective",
+      phonetic: "/ˌretrəˈspektɪv/",
+      meaning: "Họp rút kinh nghiệm",
+      example: "Let's have a retrospective.",
+      exampleVi: "Hãy họp rút kinh nghiệm.",
+    },
+    {
+      word: "burndown chart",
+      phonetic: "/ˈbɜːrndaʊn tʃɑːrt/",
+      meaning: "Biểu đồ tiến độ",
+      example: "Check the burndown chart.",
+      exampleVi: "Kiểm tra biểu đồ tiến độ.",
+    },
+    {
+      word: "velocity",
+      phonetic: "/vəˈlɒsəti/",
+      meaning: "Tốc độ làm việc",
+      example: "Our velocity is improving.",
+      exampleVi: "Tốc độ làm việc của chúng tôi đang cải thiện.",
+    },
+    {
+      word: "epic",
+      phonetic: "/ˈepɪk/",
+      meaning: "Tính năng lớn",
+      example: "This is a big epic.",
+      exampleVi: "Đây là một tính năng lớn.",
+    },
+    {
+      word: "user story",
+      phonetic: "/ˈjuːzər ˈstɔːri/",
+      meaning: "Yêu cầu người dùng",
+      example: "Write a user story.",
+      exampleVi: "Viết yêu cầu người dùng.",
+    },
+    {
+      word: "task",
+      phonetic: "/tæsk/",
+      meaning: "Nhiệm vụ",
+      example: "Assign this task.",
+      exampleVi: "Giao nhiệm vụ này.",
+    },
+    {
+      word: "subtask",
+      phonetic: "/ˈsʌbtæsk/",
+      meaning: "Công việc con",
+      example: "Create a subtask.",
+      exampleVi: "Tạo công việc con.",
+    },
+    {
+      word: "dependency",
+      phonetic: "/dɪˈpendənsi/",
+      meaning: "Phụ thuộc",
+      example: "Check dependencies.",
+      exampleVi: "Kiểm tra các phụ thuộc.",
+    },
+    {
+      word: "blocker",
+      phonetic: "/ˈblɒkər/",
+      meaning: "Trở ngại",
+      example: "This is a blocker.",
+      exampleVi: "Đây là một trở ngại.",
+    },
+    {
+      word: "scope creep",
+      phonetic: "/skoʊp kriːp/",
+      meaning: "Mở rộng phạm vi",
+      example: "Avoid scope creep.",
+      exampleVi: "Tránh mở rộng phạm vi.",
+    },
+    {
+      word: "resource allocation",
+      phonetic: "/ˈriːsɔːrs ˌæləˈkeɪʃn/",
+      meaning: "Phân bổ nguồn lực",
+      example: "Optimize resource allocation.",
+      exampleVi: "Tối ưu hóa phân bổ nguồn lực.",
+    },
+    {
+      word: "project charter",
+      phonetic: "/ˈprɒdʒekt ˈtʃɑːrtər/",
+      meaning: "Giấy phép dự án",
+      example: "Sign the project charter.",
+      exampleVi: "Ký giấy phép dự án.",
+    },
   ],
   customer: [
-    { word: "complaint", phonetic: "/kəmˈpleɪnt/", meaning: "Khiếu nại", example: "Handle customer complaints.", exampleVi: "Xử lý khiếu nại của khách hàng." },
-    { word: "refund", phonetic: "/ˈriːfʌnd/", meaning: "Hoàn tiền", example: "Process a refund.", exampleVi: "Xử lý hoàn tiền." },
-    { word: "warranty", phonetic: "/ˈwɒrənti/", meaning: "Bảo hành", example: "The warranty is valid.", exampleVi: "Bảo hành còn hiệu lực." },
-    { word: "satisfaction", phonetic: "/ˌsætɪsˈfækʃn/", meaning: "Sự hài lòng", example: "Ensure customer satisfaction.", exampleVi: "Đảm bảo sự hài lòng của khách hàng." },
-    { word: "feedback", phonetic: "/ˈfiːdbæk/", meaning: "Phản hồi", example: "We appreciate your feedback.", exampleVi: "Chúng tôi đánh giá cao phản hồi của bạn." },
-    { word: "resolve", phonetic: "/rɪˈzɒlv/", meaning: "Giải quyết", example: "Resolve the issue quickly.", exampleVi: "Giải quyết vấn đề nhanh chóng." },
-    { word: "escalate", phonetic: "/ˈeskəleɪt/", meaning: "Chuyển lên", example: "Escalate to management.", exampleVi: "Chuyển lên ban quản lý." },
-    { word: "churn", phonetic: "/tʃɜːrn/", meaning: "Mất khách hàng", example: "Reduce customer churn.", exampleVi: "Giảm mất khách hàng." },
-    { word: "retention", phonetic: "/rɪˈtenʃn/", meaning: "Giữ chân khách", example: "Improve customer retention.", exampleVi: "Cải thiện giữ chân khách hàng." },
-    { word: "loyalty", phonetic: "/ˈlɔɪəlti/", meaning: "Lòng trung thành", example: "Build customer loyalty.", exampleVi: "Xây dựng lòng trung thành của khách hàng." },
-    { word: "onboarding", phonetic: "/ˈɒnbɔːrdɪŋ/", meaning: "Đón tiếp khách hàng", example: "Improve onboarding process.", exampleVi: "Cải thiện quy trình đón tiếp khách hàng." },
-    { word: "account manager", phonetic: "/əˈkaʊnt ˈmænɪdʒər/", meaning: "Quản lý tài khoản", example: "Contact your account manager.", exampleVi: "Liên hệ quản lý tài khoản của bạn." },
-    { word: "upsell", phonetic: "/ˈʌpsel/", meaning: "Bán thêm", example: "Try to upsell.", exampleVi: "Cố gắng bán thêm." },
-    { word: "cross-sell", phonetic: "/krɒs sel/", meaning: "Bán kèm", example: "Cross-sell related products.", exampleVi: "Bán kèm các sản phẩm liên quan." },
-    { word: "NPS", phonetic: "/en piː es/", meaning: "Chỉ số hài lòng", example: "Our NPS score is high.", exampleVi: "Điểm NPS của chúng tôi cao." },
-    { word: "CLV", phonetic: "/siː el viː/", meaning: "Giá trị trọn đời", example: "Calculate customer lifetime value.", exampleVi: "Tính giá trị trọn đời của khách hàng." },
-    { word: "support ticket", phonetic: "/səˈpɔːrt ˈtɪkɪt/", meaning: "Phiếu hỗ trợ", example: "Open a support ticket.", exampleVi: "Mở một phiếu hỗ trợ." },
-    { word: " SLA", phonetic: "/es el eɪ/", meaning: "Thỏa thuận dịch vụ", example: "Meet the SLA.", exampleVi: "Đáp ứng thỏa thuận dịch vụ." },
+    {
+      word: "complaint",
+      phonetic: "/kəmˈpleɪnt/",
+      meaning: "Khiếu nại",
+      example: "Handle customer complaints.",
+      exampleVi: "Xử lý khiếu nại của khách hàng.",
+    },
+    {
+      word: "refund",
+      phonetic: "/ˈriːfʌnd/",
+      meaning: "Hoàn tiền",
+      example: "Process a refund.",
+      exampleVi: "Xử lý hoàn tiền.",
+    },
+    {
+      word: "warranty",
+      phonetic: "/ˈwɒrənti/",
+      meaning: "Bảo hành",
+      example: "The warranty is valid.",
+      exampleVi: "Bảo hành còn hiệu lực.",
+    },
+    {
+      word: "satisfaction",
+      phonetic: "/ˌsætɪsˈfækʃn/",
+      meaning: "Sự hài lòng",
+      example: "Ensure customer satisfaction.",
+      exampleVi: "Đảm bảo sự hài lòng của khách hàng.",
+    },
+    {
+      word: "feedback",
+      phonetic: "/ˈfiːdbæk/",
+      meaning: "Phản hồi",
+      example: "We appreciate your feedback.",
+      exampleVi: "Chúng tôi đánh giá cao phản hồi của bạn.",
+    },
+    {
+      word: "resolve",
+      phonetic: "/rɪˈzɒlv/",
+      meaning: "Giải quyết",
+      example: "Resolve the issue quickly.",
+      exampleVi: "Giải quyết vấn đề nhanh chóng.",
+    },
+    {
+      word: "escalate",
+      phonetic: "/ˈeskəleɪt/",
+      meaning: "Chuyển lên",
+      example: "Escalate to management.",
+      exampleVi: "Chuyển lên ban quản lý.",
+    },
+    {
+      word: "churn",
+      phonetic: "/tʃɜːrn/",
+      meaning: "Mất khách hàng",
+      example: "Reduce customer churn.",
+      exampleVi: "Giảm mất khách hàng.",
+    },
+    {
+      word: "retention",
+      phonetic: "/rɪˈtenʃn/",
+      meaning: "Giữ chân khách",
+      example: "Improve customer retention.",
+      exampleVi: "Cải thiện giữ chân khách hàng.",
+    },
+    {
+      word: "loyalty",
+      phonetic: "/ˈlɔɪəlti/",
+      meaning: "Lòng trung thành",
+      example: "Build customer loyalty.",
+      exampleVi: "Xây dựng lòng trung thành của khách hàng.",
+    },
+    {
+      word: "onboarding",
+      phonetic: "/ˈɒnbɔːrdɪŋ/",
+      meaning: "Đón tiếp khách hàng",
+      example: "Improve onboarding process.",
+      exampleVi: "Cải thiện quy trình đón tiếp khách hàng.",
+    },
+    {
+      word: "account manager",
+      phonetic: "/əˈkaʊnt ˈmænɪdʒər/",
+      meaning: "Quản lý tài khoản",
+      example: "Contact your account manager.",
+      exampleVi: "Liên hệ quản lý tài khoản của bạn.",
+    },
+    {
+      word: "upsell",
+      phonetic: "/ˈʌpsel/",
+      meaning: "Bán thêm",
+      example: "Try to upsell.",
+      exampleVi: "Cố gắng bán thêm.",
+    },
+    {
+      word: "cross-sell",
+      phonetic: "/krɒs sel/",
+      meaning: "Bán kèm",
+      example: "Cross-sell related products.",
+      exampleVi: "Bán kèm các sản phẩm liên quan.",
+    },
+    {
+      word: "NPS",
+      phonetic: "/en piː es/",
+      meaning: "Chỉ số hài lòng",
+      example: "Our NPS score is high.",
+      exampleVi: "Điểm NPS của chúng tôi cao.",
+    },
+    {
+      word: "CLV",
+      phonetic: "/siː el viː/",
+      meaning: "Giá trị trọn đời",
+      example: "Calculate customer lifetime value.",
+      exampleVi: "Tính giá trị trọn đời của khách hàng.",
+    },
+    {
+      word: "support ticket",
+      phonetic: "/səˈpɔːrt ˈtɪkɪt/",
+      meaning: "Phiếu hỗ trợ",
+      example: "Open a support ticket.",
+      exampleVi: "Mở một phiếu hỗ trợ.",
+    },
+    {
+      word: " SLA",
+      phonetic: "/es el eɪ/",
+      meaning: "Thỏa thuận dịch vụ",
+      example: "Meet the SLA.",
+      exampleVi: "Đáp ứng thỏa thuận dịch vụ.",
+    },
   ],
   leadership: [
-    { word: "vision", phonetic: "/ˈvɪʒn/", meaning: "Tầm nhìn", example: "Share your vision.", exampleVi: "Chia sẻ tầm nhìn của bạn." },
-    { word: "inspire", phonetic: "/ɪnˈspaɪər/", meaning: "Truyền cảm hứng", example: "Lead and inspire the team.", exampleVi: "Lãnh đạo và truyền cảm hứng cho nhóm." },
-    { word: "empower", phonetic: "/ɪmˈpaʊər/", meaning: "Trao quyền", example: "Empower your employees.", exampleVi: "Trao quyền cho nhân viên của bạn." },
-    { word: "mentor", phonetic: "/ˈmentɔːr/", meaning: "Hướng dẫn", example: "Mentor new team members.", exampleVi: "Hướng dẫn các thành viên mới." },
-    { word: "delegate", phonetic: "/ˈdelɪɡeɪt/", meaning: "Ủy quyền", example: "Learn to delegate.", exampleVi: "Học cách ủy quyền." },
-    { word: "accountability", phonetic: "/əˌkaʊntəˈbɪləti/", meaning: "Trách nhiệm giải trình", example: "Ensure accountability.", exampleVi: "Đảm bảo trách nhiệm giải trình." },
-    { word: "integrity", phonetic: "/ɪnˈteɡrəti/", meaning: "Liêm chính", example: "Show integrity.", exampleVi: "Thể hiện sự liêm chính." },
-    { word: "strategy", phonetic: "/ˈstrætədʒi/", meaning: "Chiến lược", example: "Develop a strategy.", exampleVi: "Phát triển một chiến lược." },
-    { word: "objective", phonetic: "/əbˈdʒektɪv/", meaning: "Mục tiêu", example: "Set clear objectives.", exampleVi: "Đặt ra mục tiêu rõ ràng." },
-    { word: "align", phonetic: "/əˈlaɪn/", meaning: "Căn chỉnh", example: "Align team goals.", exampleVi: "Căn chỉnh mục tiêu nhóm." },
-    { word: "decision", phonetic: "/dɪˈsɪʒn/", meaning: "Quyết định", example: "Make a decision.", exampleVi: "Đưa ra quyết định." },
-    { word: "influence", phonetic: "/ˈɪnfluəns/", meaning: "Ảnh hưởng", example: "Use your influence wisely.", exampleVi: "Sử dụng ảnh hưởng của bạn một cách khôn ngoan." },
-    { word: "change management", phonetic: "/tʃeɪndʒ ˈmænɪdʒmənt/", meaning: "Quản lý thay đổi", example: "Lead change management.", exampleVi: "Lãnh đạo quản lý thay đổi." },
-    { word: "coaching", phonetic: "/ˈkoʊtʃɪŋ/", meaning: "Huấn luyện", example: "Provide coaching.", exampleVi: "Cung cấp huấn luyện." },
-    { word: "conflict", phonetic: "/ˈkɒnflɪkt/", meaning: "Xung đột", example: "Resolve conflict.", exampleVi: "Giải quyết xung đột." },
-    { word: "motivate", phonetic: "/ˈmoʊtɪveɪt/", meaning: "Động viên", example: "Motivate your team.", exampleVi: "Động viên nhóm của bạn." },
-    { word: "recognize", phonetic: "/ˈrekəɡnaɪz/", meaning: "Công nhận", example: "Recognize achievements.", exampleVi: "Công nhận thành tích." },
-    { word: "innovate", phonetic: "/ˈɪnəveɪt/", meaning: "Đổi mới", example: "Encourage innovation.", exampleVi: "Khuyến khích đổi mới." },
+    {
+      word: "vision",
+      phonetic: "/ˈvɪʒn/",
+      meaning: "Tầm nhìn",
+      example: "Share your vision.",
+      exampleVi: "Chia sẻ tầm nhìn của bạn.",
+    },
+    {
+      word: "inspire",
+      phonetic: "/ɪnˈspaɪər/",
+      meaning: "Truyền cảm hứng",
+      example: "Lead and inspire the team.",
+      exampleVi: "Lãnh đạo và truyền cảm hứng cho nhóm.",
+    },
+    {
+      word: "empower",
+      phonetic: "/ɪmˈpaʊər/",
+      meaning: "Trao quyền",
+      example: "Empower your employees.",
+      exampleVi: "Trao quyền cho nhân viên của bạn.",
+    },
+    {
+      word: "mentor",
+      phonetic: "/ˈmentɔːr/",
+      meaning: "Hướng dẫn",
+      example: "Mentor new team members.",
+      exampleVi: "Hướng dẫn các thành viên mới.",
+    },
+    {
+      word: "delegate",
+      phonetic: "/ˈdelɪɡeɪt/",
+      meaning: "Ủy quyền",
+      example: "Learn to delegate.",
+      exampleVi: "Học cách ủy quyền.",
+    },
+    {
+      word: "accountability",
+      phonetic: "/əˌkaʊntəˈbɪləti/",
+      meaning: "Trách nhiệm giải trình",
+      example: "Ensure accountability.",
+      exampleVi: "Đảm bảo trách nhiệm giải trình.",
+    },
+    {
+      word: "integrity",
+      phonetic: "/ɪnˈteɡrəti/",
+      meaning: "Liêm chính",
+      example: "Show integrity.",
+      exampleVi: "Thể hiện sự liêm chính.",
+    },
+    {
+      word: "strategy",
+      phonetic: "/ˈstrætədʒi/",
+      meaning: "Chiến lược",
+      example: "Develop a strategy.",
+      exampleVi: "Phát triển một chiến lược.",
+    },
+    {
+      word: "objective",
+      phonetic: "/əbˈdʒektɪv/",
+      meaning: "Mục tiêu",
+      example: "Set clear objectives.",
+      exampleVi: "Đặt ra mục tiêu rõ ràng.",
+    },
+    {
+      word: "align",
+      phonetic: "/əˈlaɪn/",
+      meaning: "Căn chỉnh",
+      example: "Align team goals.",
+      exampleVi: "Căn chỉnh mục tiêu nhóm.",
+    },
+    {
+      word: "decision",
+      phonetic: "/dɪˈsɪʒn/",
+      meaning: "Quyết định",
+      example: "Make a decision.",
+      exampleVi: "Đưa ra quyết định.",
+    },
+    {
+      word: "influence",
+      phonetic: "/ˈɪnfluəns/",
+      meaning: "Ảnh hưởng",
+      example: "Use your influence wisely.",
+      exampleVi: "Sử dụng ảnh hưởng của bạn một cách khôn ngoan.",
+    },
+    {
+      word: "change management",
+      phonetic: "/tʃeɪndʒ ˈmænɪdʒmənt/",
+      meaning: "Quản lý thay đổi",
+      example: "Lead change management.",
+      exampleVi: "Lãnh đạo quản lý thay đổi.",
+    },
+    {
+      word: "coaching",
+      phonetic: "/ˈkoʊtʃɪŋ/",
+      meaning: "Huấn luyện",
+      example: "Provide coaching.",
+      exampleVi: "Cung cấp huấn luyện.",
+    },
+    {
+      word: "conflict",
+      phonetic: "/ˈkɒnflɪkt/",
+      meaning: "Xung đột",
+      example: "Resolve conflict.",
+      exampleVi: "Giải quyết xung đột.",
+    },
+    {
+      word: "motivate",
+      phonetic: "/ˈmoʊtɪveɪt/",
+      meaning: "Động viên",
+      example: "Motivate your team.",
+      exampleVi: "Động viên nhóm của bạn.",
+    },
+    {
+      word: "recognize",
+      phonetic: "/ˈrekəɡnaɪz/",
+      meaning: "Công nhận",
+      example: "Recognize achievements.",
+      exampleVi: "Công nhận thành tích.",
+    },
+    {
+      word: "innovate",
+      phonetic: "/ˈɪnəveɪt/",
+      meaning: "Đổi mới",
+      example: "Encourage innovation.",
+      exampleVi: "Khuyến khích đổi mới.",
+    },
   ],
   legal: [
-    { word: "contract", phonetic: "/ˈkɒntrækt/", meaning: "Hợp đồng", example: "Sign the contract.", exampleVi: "Ký hợp đồng." },
-    { word: "agreement", phonetic: "/əˈɡriːmənt/", meaning: "Thỏa thuận", example: "Draft an agreement.", exampleVi: "Soạn thảo một thỏa thuận." },
-    { word: "compliance", phonetic: "/kəmˈplaɪəns/", meaning: "Tuân thủ", example: "Ensure compliance.", exampleVi: "Đảm bảo tuân thủ." },
-    { word: "confidential", phonetic: "/ˌkɒnfɪˈdenʃl/", meaning: "Bí mật", example: "Keep it confidential.", exampleVi: "Giữ bí mật." },
-    { word: "intellectual property", phonetic: "/ˌɪntəˈlektʃuəl ˈprɒpərti/", meaning: "Sở hữu trí tuệ", example: "Protect intellectual property.", exampleVi: "Bảo vệ sở hữu trí tuệ." },
-    { word: "liability", phonetic: "/ˌlaɪəˈbɪləti/", meaning: "Trách nhiệm pháp lý", example: "Limit liability.", exampleVi: "Giới hạn trách nhiệm pháp lý." },
-    { word: "indemnify", phonetic: "/ɪnˈdemnɪfaɪ/", meaning: "Bồi thường", example: "Indemnify the parties.", exampleVi: "Bồi thường cho các bên." },
-    { word: "terminate", phonetic: "/ˈtɜːrmɪneɪt/", meaning: "Chấm dứt", example: "Terminate the contract.", exampleVi: "Chấm dứt hợp đồng." },
-    { word: "breach", phonetic: "/briːtʃ/", meaning: "Vi phạm", example: "Breach of contract.", exampleVi: "Vi phạm hợp đồng." },
-    { word: "jurisdiction", phonetic: "/ˌdʒʊərɪsˈdɪkʃn/", meaning: "Thẩm quyền", example: "Specify jurisdiction.", exampleVi: "Xác định thẩm quyền." },
-    { word: "arbitration", phonetic: "/ˌɑːrbɪˈtreɪʃn/", meaning: "Trọng tài", example: "Settle via arbitration.", exampleVi: "Giải quyết qua trọng tài." },
-    { word: "copyright", phonetic: "/ˈkɒpirʌɪt/", meaning: "Bản quyền", example: "Copyright protected.", exampleVi: "Được bảo vệ bản quyền." },
-    { word: "trademark", phonetic: "/ˈtreɪdmɑːrk/", meaning: "Nhãn hiệu", example: "Register a trademark.", exampleVi: "Đăng ký nhãn hiệu." },
-    { word: "dispute", phonetic: "/dɪˈspjuːt/", meaning: "Tranh chấp", example: "Resolve a dispute.", exampleVi: "Giải quyết tranh chấp." },
-    { word: "negotiate", phonetic: "/nɪˈɡoʊʃieɪt/", meaning: "Đàm phán", example: "Negotiate terms.", exampleVi: "Đàm phán các điều khoản." },
-    { word: "witness", phonetic: "/ˈwɪtnəs/", meaning: "Người làm chứng", example: "Sign as witness.", exampleVi: "Ký làm người làm chứng." },
-    { word: "notary", phonetic: "/ˈnoʊtəri/", meaning: "Công chứng", example: "Get it notarized.", exampleVi: "Công chứng nó." },
-    { word: "amendment", phonetic: "/əˈmendmənt/", meaning: "Sửa đổi", example: "Propose an amendment.", exampleVi: "Đề xuất sửa đổi." },
+    {
+      word: "contract",
+      phonetic: "/ˈkɒntrækt/",
+      meaning: "Hợp đồng",
+      example: "Sign the contract.",
+      exampleVi: "Ký hợp đồng.",
+    },
+    {
+      word: "agreement",
+      phonetic: "/əˈɡriːmənt/",
+      meaning: "Thỏa thuận",
+      example: "Draft an agreement.",
+      exampleVi: "Soạn thảo một thỏa thuận.",
+    },
+    {
+      word: "compliance",
+      phonetic: "/kəmˈplaɪəns/",
+      meaning: "Tuân thủ",
+      example: "Ensure compliance.",
+      exampleVi: "Đảm bảo tuân thủ.",
+    },
+    {
+      word: "confidential",
+      phonetic: "/ˌkɒnfɪˈdenʃl/",
+      meaning: "Bí mật",
+      example: "Keep it confidential.",
+      exampleVi: "Giữ bí mật.",
+    },
+    {
+      word: "intellectual property",
+      phonetic: "/ˌɪntəˈlektʃuəl ˈprɒpərti/",
+      meaning: "Sở hữu trí tuệ",
+      example: "Protect intellectual property.",
+      exampleVi: "Bảo vệ sở hữu trí tuệ.",
+    },
+    {
+      word: "liability",
+      phonetic: "/ˌlaɪəˈbɪləti/",
+      meaning: "Trách nhiệm pháp lý",
+      example: "Limit liability.",
+      exampleVi: "Giới hạn trách nhiệm pháp lý.",
+    },
+    {
+      word: "indemnify",
+      phonetic: "/ɪnˈdemnɪfaɪ/",
+      meaning: "Bồi thường",
+      example: "Indemnify the parties.",
+      exampleVi: "Bồi thường cho các bên.",
+    },
+    {
+      word: "terminate",
+      phonetic: "/ˈtɜːrmɪneɪt/",
+      meaning: "Chấm dứt",
+      example: "Terminate the contract.",
+      exampleVi: "Chấm dứt hợp đồng.",
+    },
+    {
+      word: "breach",
+      phonetic: "/briːtʃ/",
+      meaning: "Vi phạm",
+      example: "Breach of contract.",
+      exampleVi: "Vi phạm hợp đồng.",
+    },
+    {
+      word: "jurisdiction",
+      phonetic: "/ˌdʒʊərɪsˈdɪkʃn/",
+      meaning: "Thẩm quyền",
+      example: "Specify jurisdiction.",
+      exampleVi: "Xác định thẩm quyền.",
+    },
+    {
+      word: "arbitration",
+      phonetic: "/ˌɑːrbɪˈtreɪʃn/",
+      meaning: "Trọng tài",
+      example: "Settle via arbitration.",
+      exampleVi: "Giải quyết qua trọng tài.",
+    },
+    {
+      word: "copyright",
+      phonetic: "/ˈkɒpirʌɪt/",
+      meaning: "Bản quyền",
+      example: "Copyright protected.",
+      exampleVi: "Được bảo vệ bản quyền.",
+    },
+    {
+      word: "trademark",
+      phonetic: "/ˈtreɪdmɑːrk/",
+      meaning: "Nhãn hiệu",
+      example: "Register a trademark.",
+      exampleVi: "Đăng ký nhãn hiệu.",
+    },
+    {
+      word: "dispute",
+      phonetic: "/dɪˈspjuːt/",
+      meaning: "Tranh chấp",
+      example: "Resolve a dispute.",
+      exampleVi: "Giải quyết tranh chấp.",
+    },
+    {
+      word: "negotiate",
+      phonetic: "/nɪˈɡoʊʃieɪt/",
+      meaning: "Đàm phán",
+      example: "Negotiate terms.",
+      exampleVi: "Đàm phán các điều khoản.",
+    },
+    {
+      word: "witness",
+      phonetic: "/ˈwɪtnəs/",
+      meaning: "Người làm chứng",
+      example: "Sign as witness.",
+      exampleVi: "Ký làm người làm chứng.",
+    },
+    {
+      word: "notary",
+      phonetic: "/ˈnoʊtəri/",
+      meaning: "Công chứng",
+      example: "Get it notarized.",
+      exampleVi: "Công chứng nó.",
+    },
+    {
+      word: "amendment",
+      phonetic: "/əˈmendmənt/",
+      meaning: "Sửa đổi",
+      example: "Propose an amendment.",
+      exampleVi: "Đề xuất sửa đổi.",
+    },
   ],
   // Daily communication vocabulary
   restaurant: [
-    { word: "reservation", phonetic: "/ˌrezərˈveɪʃn/", meaning: "Đặt bàn", example: "I'd like to make a reservation.", exampleVi: "Tôi muốn đặt một bàn." },
-    { word: "menu", phonetic: "/ˈmenjuː/", meaning: "Thực đơn", example: "May I see the menu?", exampleVi: "Tôi có thể xem thực đơn không?" },
-    { word: "appetizer", phonetic: "/ˈæpɪtaɪzər/", meaning: "Món khai vị", example: "We'll start with an appetizer.", exampleVi: "Chúng tôi bắt đầu với món khai vị." },
-    { word: "entree", phonetic: "/ˈɒntreɪ/", meaning: "Món chính", example: "What's the entree today?", exampleVi: "Món chính hôm nay là gì?" },
-    { word: "dessert", phonetic: "/dɪˈzɜːrt/", meaning: "Tráng miệng", example: "Can I see the dessert menu?", exampleVi: "Tôi có thể xem thực đơn tráng miệng không?" },
-    { word: "bill", phonetic: "/bɪl/", meaning: "Hóa đơn", example: "Can I have the bill?", exampleVi: "Tôi có thể thanh toán được không?" },
-    { word: "tip", phonetic: "/tɪp/", meaning: "Tiền tip", example: "Leave a tip.", exampleVi: "Để lại tiền tip." },
-    { word: "delicious", phonetic: "/dɪˈlɪʃəs/", meaning: "Ngon", example: "This is delicious!", exampleVi: "Điều này rất ngon!" },
-    { word: "vegetarian", phonetic: "/ˌvedʒəˈteriən/", meaning: "Người ăn chay", example: "Is this vegetarian?", exampleVi: "Đây có phải là món chay không?" },
-    { word: "allergic", phonetic: "/əˈlɜːrdʒɪk/", meaning: "Dị ứng", example: "I'm allergic to peanuts.", exampleVi: "Tôi bị dị ứng với đậu phộng." },
-    { word: "to-go", phonetic: "/tə ˈɡoʊ/", meaning: "Mang đi", example: "Can I get this to-go?", exampleVi: "Tôi có thể mang đi không?" },
-    { word: "refill", phonetic: "/ˈriːfɪl/", meaning: "Thêm nước", example: "Can I get a refill?", exampleVi: "Tôi có thể xin thêm nước không?" },
-    { word: "split the bill", phonetic: "/splɪt ðə bɪl/", meaning: "Chia hóa đơn", example: "Let's split the bill.", exampleVi: "Chúng ta chia hóa đơn nhé." },
-    { word: "drinks", phonetic: "/drɪŋks/", meaning: "Đồ uống", example: "What would you like to drink?", exampleVi: "Bạn muốn uống gì?" },
-    { word: "water", phonetic: "/ˈwɔːtər/", meaning: "Nước", example: "A glass of water, please.", exampleVi: "Một ly nước." },
-    { word: "diet", phonetic: "/ˈdaɪət/", meaning: "Ăn kiêng", example: "I'm on a diet.", exampleVi: "Tôi đang ăn kiêng." },
-    { word: "spicy", phonetic: "/ˈspaɪsi/", meaning: "Cay", example: "Is this dish spicy?", exampleVi: "Món này có cay không?" },
-    { word: "recommend", phonetic: "/ˌrekəˈmend/", meaning: "Khuyên", example: "What do you recommend?", exampleVi: "Bạn khuyên món gì?" },
+    {
+      word: "reservation",
+      phonetic: "/ˌrezərˈveɪʃn/",
+      meaning: "Đặt bàn",
+      example: "I'd like to make a reservation.",
+      exampleVi: "Tôi muốn đặt một bàn.",
+    },
+    {
+      word: "menu",
+      phonetic: "/ˈmenjuː/",
+      meaning: "Thực đơn",
+      example: "May I see the menu?",
+      exampleVi: "Tôi có thể xem thực đơn không?",
+    },
+    {
+      word: "appetizer",
+      phonetic: "/ˈæpɪtaɪzər/",
+      meaning: "Món khai vị",
+      example: "We'll start with an appetizer.",
+      exampleVi: "Chúng tôi bắt đầu với món khai vị.",
+    },
+    {
+      word: "entree",
+      phonetic: "/ˈɒntreɪ/",
+      meaning: "Món chính",
+      example: "What's the entree today?",
+      exampleVi: "Món chính hôm nay là gì?",
+    },
+    {
+      word: "dessert",
+      phonetic: "/dɪˈzɜːrt/",
+      meaning: "Tráng miệng",
+      example: "Can I see the dessert menu?",
+      exampleVi: "Tôi có thể xem thực đơn tráng miệng không?",
+    },
+    {
+      word: "bill",
+      phonetic: "/bɪl/",
+      meaning: "Hóa đơn",
+      example: "Can I have the bill?",
+      exampleVi: "Tôi có thể thanh toán được không?",
+    },
+    {
+      word: "tip",
+      phonetic: "/tɪp/",
+      meaning: "Tiền tip",
+      example: "Leave a tip.",
+      exampleVi: "Để lại tiền tip.",
+    },
+    {
+      word: "delicious",
+      phonetic: "/dɪˈlɪʃəs/",
+      meaning: "Ngon",
+      example: "This is delicious!",
+      exampleVi: "Điều này rất ngon!",
+    },
+    {
+      word: "vegetarian",
+      phonetic: "/ˌvedʒəˈteriən/",
+      meaning: "Người ăn chay",
+      example: "Is this vegetarian?",
+      exampleVi: "Đây có phải là món chay không?",
+    },
+    {
+      word: "allergic",
+      phonetic: "/əˈlɜːrdʒɪk/",
+      meaning: "Dị ứng",
+      example: "I'm allergic to peanuts.",
+      exampleVi: "Tôi bị dị ứng với đậu phộng.",
+    },
+    {
+      word: "to-go",
+      phonetic: "/tə ˈɡoʊ/",
+      meaning: "Mang đi",
+      example: "Can I get this to-go?",
+      exampleVi: "Tôi có thể mang đi không?",
+    },
+    {
+      word: "refill",
+      phonetic: "/ˈriːfɪl/",
+      meaning: "Thêm nước",
+      example: "Can I get a refill?",
+      exampleVi: "Tôi có thể xin thêm nước không?",
+    },
+    {
+      word: "split the bill",
+      phonetic: "/splɪt ðə bɪl/",
+      meaning: "Chia hóa đơn",
+      example: "Let's split the bill.",
+      exampleVi: "Chúng ta chia hóa đơn nhé.",
+    },
+    {
+      word: "drinks",
+      phonetic: "/drɪŋks/",
+      meaning: "Đồ uống",
+      example: "What would you like to drink?",
+      exampleVi: "Bạn muốn uống gì?",
+    },
+    {
+      word: "water",
+      phonetic: "/ˈwɔːtər/",
+      meaning: "Nước",
+      example: "A glass of water, please.",
+      exampleVi: "Một ly nước.",
+    },
+    {
+      word: "diet",
+      phonetic: "/ˈdaɪət/",
+      meaning: "Ăn kiêng",
+      example: "I'm on a diet.",
+      exampleVi: "Tôi đang ăn kiêng.",
+    },
+    {
+      word: "spicy",
+      phonetic: "/ˈspaɪsi/",
+      meaning: "Cay",
+      example: "Is this dish spicy?",
+      exampleVi: "Món này có cay không?",
+    },
+    {
+      word: "recommend",
+      phonetic: "/ˌrekəˈmend/",
+      meaning: "Khuyên",
+      example: "What do you recommend?",
+      exampleVi: "Bạn khuyên món gì?",
+    },
   ],
   shopping: [
-    { word: "discount", phonetic: "/ˈdɪskaʊnt/", meaning: "Giảm giá", example: "Is there a discount?", exampleVi: "Có giảm giá không?" },
-    { word: "price", phonetic: "/praɪs/", meaning: "Giá", example: "What's the price?", exampleVi: "Giá bao nhiêu?" },
-    { word: "sale", phonetic: "/seɪl/", meaning: "Khuyến mãi", example: "Everything is on sale.", exampleVi: "Mọi thứ đang khuyến mãi." },
-    { word: "size", phonetic: "/saɪz/", meaning: "Kích thước", example: "Do you have this in a larger size?", exampleVi: "Bạn có kích thước lớn hơn không?" },
-    { word: "color", phonetic: "/ˈkʌlər/", meaning: "Màu sắc", example: "What colors are available?", exampleVi: "Có những màu nào?" },
-    { word: "fit", phonetic: "/fɪt/", meaning: "Vừa vặn", example: "It doesn't fit.", exampleVi: "Nó không vừa." },
-    { word: "receipt", phonetic: "/rɪˈsiːt/", meaning: "Hóa đơn", example: "I need a receipt.", exampleVi: "Tôi cần hóa đơn." },
-    { word: "return", phonetic: "/rɪˈtɜːrn/", meaning: "Trả lại", example: "Can I return this?", exampleVi: "Tôi có thể trả lại không?" },
-    { word: "exchange", phonetic: "/ɪksˈtʃeɪndʒ/", meaning: "Đổi", example: "I'd like to exchange this.", exampleVi: "Tôi muốn đổi cái này." },
-    { word: "cash", phonetic: "/kæʃ/", meaning: "Tiền mặt", example: "Cash or card?", exampleVi: "Tiền mặt hay thẻ?" },
-    { word: "card", phonetic: "/kɑːrd/", meaning: "Thẻ", example: "Do you accept credit cards?", exampleVi: "Bạn có chấp nhận thẻ tín dụng không?" },
-    { word: "online", phonetic: "/ˈɒnlɪn/", meaning: "Trực tuyến", example: "Is it available online?", exampleVi: "Có bán trực tuyến không?" },
-    { word: "shipping", phonetic: "/ˈʃɪpɪŋ/", meaning: "Vận chuyển", example: "What's the shipping fee?", exampleVi: "Phí vận chuyển bao nhiêu?" },
-    { word: "out of stock", phonetic: "/aʊt əv stɒk/", meaning: "Hết hàng", example: "This item is out of stock.", exampleVi: "Món này đã hết hàng." },
-    { word: "in stock", phonetic: "/ɪn stɒk/", meaning: "Còn hàng", example: "When will it be in stock?", exampleVi: "Khi nào sẽ có hàng?" },
-    { word: "browse", phonetic: "/braʊz/", meaning: "Xem qua", example: "I'm just browsing.", exampleVi: "Tôi chỉ xem qua thôi." },
-    { word: "try on", phonetic: "/traɪ ɒn/", meaning: "Thử", example: "Can I try this on?", exampleVi: "Tôi có thể thử không?" },
-    { word: "checkout", phonetic: "/ˈtʃekaʊt/", meaning: "Thanh toán", example: "Proceed to checkout.", exampleVi: "Tiến hành thanh toán." },
+    {
+      word: "discount",
+      phonetic: "/ˈdɪskaʊnt/",
+      meaning: "Giảm giá",
+      example: "Is there a discount?",
+      exampleVi: "Có giảm giá không?",
+    },
+    {
+      word: "price",
+      phonetic: "/praɪs/",
+      meaning: "Giá",
+      example: "What's the price?",
+      exampleVi: "Giá bao nhiêu?",
+    },
+    {
+      word: "sale",
+      phonetic: "/seɪl/",
+      meaning: "Khuyến mãi",
+      example: "Everything is on sale.",
+      exampleVi: "Mọi thứ đang khuyến mãi.",
+    },
+    {
+      word: "size",
+      phonetic: "/saɪz/",
+      meaning: "Kích thước",
+      example: "Do you have this in a larger size?",
+      exampleVi: "Bạn có kích thước lớn hơn không?",
+    },
+    {
+      word: "color",
+      phonetic: "/ˈkʌlər/",
+      meaning: "Màu sắc",
+      example: "What colors are available?",
+      exampleVi: "Có những màu nào?",
+    },
+    {
+      word: "fit",
+      phonetic: "/fɪt/",
+      meaning: "Vừa vặn",
+      example: "It doesn't fit.",
+      exampleVi: "Nó không vừa.",
+    },
+    {
+      word: "receipt",
+      phonetic: "/rɪˈsiːt/",
+      meaning: "Hóa đơn",
+      example: "I need a receipt.",
+      exampleVi: "Tôi cần hóa đơn.",
+    },
+    {
+      word: "return",
+      phonetic: "/rɪˈtɜːrn/",
+      meaning: "Trả lại",
+      example: "Can I return this?",
+      exampleVi: "Tôi có thể trả lại không?",
+    },
+    {
+      word: "exchange",
+      phonetic: "/ɪksˈtʃeɪndʒ/",
+      meaning: "Đổi",
+      example: "I'd like to exchange this.",
+      exampleVi: "Tôi muốn đổi cái này.",
+    },
+    {
+      word: "cash",
+      phonetic: "/kæʃ/",
+      meaning: "Tiền mặt",
+      example: "Cash or card?",
+      exampleVi: "Tiền mặt hay thẻ?",
+    },
+    {
+      word: "card",
+      phonetic: "/kɑːrd/",
+      meaning: "Thẻ",
+      example: "Do you accept credit cards?",
+      exampleVi: "Bạn có chấp nhận thẻ tín dụng không?",
+    },
+    {
+      word: "online",
+      phonetic: "/ˈɒnlɪn/",
+      meaning: "Trực tuyến",
+      example: "Is it available online?",
+      exampleVi: "Có bán trực tuyến không?",
+    },
+    {
+      word: "shipping",
+      phonetic: "/ˈʃɪpɪŋ/",
+      meaning: "Vận chuyển",
+      example: "What's the shipping fee?",
+      exampleVi: "Phí vận chuyển bao nhiêu?",
+    },
+    {
+      word: "out of stock",
+      phonetic: "/aʊt əv stɒk/",
+      meaning: "Hết hàng",
+      example: "This item is out of stock.",
+      exampleVi: "Món này đã hết hàng.",
+    },
+    {
+      word: "in stock",
+      phonetic: "/ɪn stɒk/",
+      meaning: "Còn hàng",
+      example: "When will it be in stock?",
+      exampleVi: "Khi nào sẽ có hàng?",
+    },
+    {
+      word: "browse",
+      phonetic: "/braʊz/",
+      meaning: "Xem qua",
+      example: "I'm just browsing.",
+      exampleVi: "Tôi chỉ xem qua thôi.",
+    },
+    {
+      word: "try on",
+      phonetic: "/traɪ ɒn/",
+      meaning: "Thử",
+      example: "Can I try this on?",
+      exampleVi: "Tôi có thể thử không?",
+    },
+    {
+      word: "checkout",
+      phonetic: "/ˈtʃekaʊt/",
+      meaning: "Thanh toán",
+      example: "Proceed to checkout.",
+      exampleVi: "Tiến hành thanh toán.",
+    },
   ],
   directions: [
-    { word: "where", phonetic: "/wer/", meaning: "Ở đâu", example: "Where is the restroom?", exampleVi: "Nhà vệ sinh ở đâu?" },
-    { word: "turn", phonetic: "/tɜːrn/", meaning: "Rẽ", example: "Turn left at the corner.", exampleVi: "Rẽ trái ở góc." },
-    { word: "straight", phonetic: "/streɪt/", meaning: "Thẳng", example: "Go straight ahead.", exampleVi: "Đi thẳng phía trước." },
-    { word: "near", phonetic: "/nɪr/", meaning: "Gần", example: "Is it near here?", exampleVi: "Có gần đây không?" },
-    { word: "far", phonetic: "/fɑːr/", meaning: "Xa", example: "How far is it?", exampleVi: "Có xa không?" },
-    { word: "next to", phonetic: "/nekst tuː/", meaning: "Cạnh", example: "It's next to the bank.", exampleVi: "Nó cạnh ngân hàng." },
-    { word: "between", phonetic: "/bɪˈtwiːn/", meaning: "Giữa", example: "It's between the stores.", exampleVi: "Nó ở giữa các cửa hàng." },
-    { word: "behind", phonetic: "/bɪˈhaɪnd/", meaning: "Sau", example: "It's behind the building.", exampleVi: "Nó ở sau tòa nhà." },
-    { word: "in front of", phonetic: "/ɪn frʌnt əv/", meaning: "Trước", example: "It's in front of the park.", exampleVi: "Nó ở trước công viên." },
-    { word: "map", phonetic: "/mæp/", meaning: "Bản đồ", example: "Can I see a map?", exampleVi: "Tôi có thể xem bản đồ không?" },
-    { word: "address", phonetic: "/əˈdres/", meaning: "Địa chỉ", example: "What's the address?", exampleVi: "Địa chỉ là gì?" },
-    { word: "landmark", phonetic: "/ˈlændmɑːrk/", meaning: "Mốc địa điểm", example: "Meet me at the landmark.", exampleVi: "Gặp tôi ở mốc địa điểm." },
-    { word: "block", phonetic: "/blɒk/", meaning: "Dãy nhà", example: "It's two blocks away.", exampleVi: "Cách đây hai dãy nhà." },
-    { word: "traffic", phonetic: "/ˈtræfɪk/", meaning: "Giao thông", example: "There's heavy traffic.", exampleVi: "Giao thông đông đúc." },
-    { word: "downtown", phonetic: "/ˈdaʊntaʊn/", meaning: "Trung tâm thành phố", example: "Go downtown.", exampleVi: "Đi vào trung tâm thành phố." },
-    { word: "subway", phonetic: "/ˈsʌbweɪ/", meaning: "Tàu điện ngầm", example: "Take the subway.", exampleVi: "Đi tàu điện ngầm." },
-    { word: "bus", phonetic: "/bʌs/", meaning: "Xe buýt", example: "Which bus should I take?", exampleVi: "Tôi nên đi xe buýt nào?" },
-    { word: "taxi", phonetic: "/ˈtæksi/", meaning: "Taxi", example: "Call a taxi.", exampleVi: "Gọi một chiếc taxi." },
+    {
+      word: "where",
+      phonetic: "/wer/",
+      meaning: "Ở đâu",
+      example: "Where is the restroom?",
+      exampleVi: "Nhà vệ sinh ở đâu?",
+    },
+    {
+      word: "turn",
+      phonetic: "/tɜːrn/",
+      meaning: "Rẽ",
+      example: "Turn left at the corner.",
+      exampleVi: "Rẽ trái ở góc.",
+    },
+    {
+      word: "straight",
+      phonetic: "/streɪt/",
+      meaning: "Thẳng",
+      example: "Go straight ahead.",
+      exampleVi: "Đi thẳng phía trước.",
+    },
+    {
+      word: "near",
+      phonetic: "/nɪr/",
+      meaning: "Gần",
+      example: "Is it near here?",
+      exampleVi: "Có gần đây không?",
+    },
+    {
+      word: "far",
+      phonetic: "/fɑːr/",
+      meaning: "Xa",
+      example: "How far is it?",
+      exampleVi: "Có xa không?",
+    },
+    {
+      word: "next to",
+      phonetic: "/nekst tuː/",
+      meaning: "Cạnh",
+      example: "It's next to the bank.",
+      exampleVi: "Nó cạnh ngân hàng.",
+    },
+    {
+      word: "between",
+      phonetic: "/bɪˈtwiːn/",
+      meaning: "Giữa",
+      example: "It's between the stores.",
+      exampleVi: "Nó ở giữa các cửa hàng.",
+    },
+    {
+      word: "behind",
+      phonetic: "/bɪˈhaɪnd/",
+      meaning: "Sau",
+      example: "It's behind the building.",
+      exampleVi: "Nó ở sau tòa nhà.",
+    },
+    {
+      word: "in front of",
+      phonetic: "/ɪn frʌnt əv/",
+      meaning: "Trước",
+      example: "It's in front of the park.",
+      exampleVi: "Nó ở trước công viên.",
+    },
+    {
+      word: "map",
+      phonetic: "/mæp/",
+      meaning: "Bản đồ",
+      example: "Can I see a map?",
+      exampleVi: "Tôi có thể xem bản đồ không?",
+    },
+    {
+      word: "address",
+      phonetic: "/əˈdres/",
+      meaning: "Địa chỉ",
+      example: "What's the address?",
+      exampleVi: "Địa chỉ là gì?",
+    },
+    {
+      word: "landmark",
+      phonetic: "/ˈlændmɑːrk/",
+      meaning: "Mốc địa điểm",
+      example: "Meet me at the landmark.",
+      exampleVi: "Gặp tôi ở mốc địa điểm.",
+    },
+    {
+      word: "block",
+      phonetic: "/blɒk/",
+      meaning: "Dãy nhà",
+      example: "It's two blocks away.",
+      exampleVi: "Cách đây hai dãy nhà.",
+    },
+    {
+      word: "traffic",
+      phonetic: "/ˈtræfɪk/",
+      meaning: "Giao thông",
+      example: "There's heavy traffic.",
+      exampleVi: "Giao thông đông đúc.",
+    },
+    {
+      word: "downtown",
+      phonetic: "/ˈdaʊntaʊn/",
+      meaning: "Trung tâm thành phố",
+      example: "Go downtown.",
+      exampleVi: "Đi vào trung tâm thành phố.",
+    },
+    {
+      word: "subway",
+      phonetic: "/ˈsʌbweɪ/",
+      meaning: "Tàu điện ngầm",
+      example: "Take the subway.",
+      exampleVi: "Đi tàu điện ngầm.",
+    },
+    {
+      word: "bus",
+      phonetic: "/bʌs/",
+      meaning: "Xe buýt",
+      example: "Which bus should I take?",
+      exampleVi: "Tôi nên đi xe buýt nào?",
+    },
+    {
+      word: "taxi",
+      phonetic: "/ˈtæksi/",
+      meaning: "Taxi",
+      example: "Call a taxi.",
+      exampleVi: "Gọi một chiếc taxi.",
+    },
   ],
   health: [
-    { word: "headache", phonetic: "/ˈhedeɪk/", meaning: "Đau đầu", example: "I have a headache.", exampleVi: "Tôi bị đau đầu." },
-    { word: "stomachache", phonetic: "/ˈstʌməkeɪk/", meaning: "Đau bụng", example: "I have a stomachache.", exampleVi: "Tôi bị đau bụng." },
-    { word: "fever", phonetic: "/ˈfiːvər/", meaning: "Sốt", example: "I have a fever.", exampleVi: "Tôi bị sốt." },
-    { word: "cold", phonetic: "/koʊld/", meaning: "Cảm lạnh", example: "I caught a cold.", exampleVi: "Tôi bị cảm lạnh." },
-    { word: "flu", phonetic: "/fluː/", meaning: "Cúm", example: "I have the flu.", exampleVi: "Tôi bị cúm." },
-    { word: "doctor", phonetic: "/ˈdɒktər/", meaning: "Bác sĩ", example: "See a doctor.", exampleVi: "Đi khám bác sĩ." },
-    { word: "medicine", phonetic: "/ˈmedɪsn/", meaning: "Thuốc", example: "Take this medicine.", exampleVi: "Uống thuốc này." },
-    { word: "appointment", phonetic: "/əˈpɔɪntmənt/", meaning: "Lịch hẹn", example: "Make an appointment.", exampleVi: "Đặt lịch hẹn." },
-    { word: "allergy", phonetic: "/ˈælərdʒi/", meaning: "Dị ứng", example: "I have an allergy.", exampleVi: "Tôi bị dị ứng." },
-    { word: "pain", phonetic: "/peɪn/", meaning: "Đau", example: "Where does it hurt?", exampleVi: "Chỗ nào đau?" },
-    { word: "rest", phonetic: "/rest/", meaning: "Nghỉ ngơi", example: "You need to rest.", exampleVi: "Bạn cần nghỉ ngơi." },
-    { word: "hospital", phonetic: "/ˈhɒspɪtl/", meaning: "Bệnh viện", example: "Go to the hospital.", exampleVi: "Đi bệnh viện." },
-    { word: "pharmacy", phonetic: "/ˈfɑːrməsi/", meaning: "Hiệu thuốc", example: "Find a pharmacy.", exampleVi: "Tìm một hiệu thuốc." },
-    { word: "symptom", phonetic: "/ˈsɪmptəm/", meaning: "Triệu chứng", example: "What are your symptoms?", exampleVi: "Bạn có triệu chứng gì?" },
-    { word: "prescription", phonetic: "/prɪˈskrɪpʃn/", meaning: "Đơn thuốc", example: "I need a prescription.", exampleVi: "Tôi cần đơn thuốc." },
-    { word: "health insurance", phonetic: "/helθ ɪnˈʃʊərəns/", meaning: "Bảo hiểm y tế", example: "Do you have health insurance?", exampleVi: "Bạn có bảo hiểm y tế không?" },
-    { word: "checkup", phonetic: "/ˈtʃekʌp/", meaning: "Khám sức khỏe", example: "I need a checkup.", exampleVi: "Tôi cần khám sức khỏe." },
-    { word: "better", phonetic: "/ˈbetər/", meaning: "Tốt hơn", example: "I'm feeling better.", exampleVi: "Tôi cảm thấy tốt hơn." },
+    {
+      word: "headache",
+      phonetic: "/ˈhedeɪk/",
+      meaning: "Đau đầu",
+      example: "I have a headache.",
+      exampleVi: "Tôi bị đau đầu.",
+    },
+    {
+      word: "stomachache",
+      phonetic: "/ˈstʌməkeɪk/",
+      meaning: "Đau bụng",
+      example: "I have a stomachache.",
+      exampleVi: "Tôi bị đau bụng.",
+    },
+    {
+      word: "fever",
+      phonetic: "/ˈfiːvər/",
+      meaning: "Sốt",
+      example: "I have a fever.",
+      exampleVi: "Tôi bị sốt.",
+    },
+    {
+      word: "cold",
+      phonetic: "/koʊld/",
+      meaning: "Cảm lạnh",
+      example: "I caught a cold.",
+      exampleVi: "Tôi bị cảm lạnh.",
+    },
+    {
+      word: "flu",
+      phonetic: "/fluː/",
+      meaning: "Cúm",
+      example: "I have the flu.",
+      exampleVi: "Tôi bị cúm.",
+    },
+    {
+      word: "doctor",
+      phonetic: "/ˈdɒktər/",
+      meaning: "Bác sĩ",
+      example: "See a doctor.",
+      exampleVi: "Đi khám bác sĩ.",
+    },
+    {
+      word: "medicine",
+      phonetic: "/ˈmedɪsn/",
+      meaning: "Thuốc",
+      example: "Take this medicine.",
+      exampleVi: "Uống thuốc này.",
+    },
+    {
+      word: "appointment",
+      phonetic: "/əˈpɔɪntmənt/",
+      meaning: "Lịch hẹn",
+      example: "Make an appointment.",
+      exampleVi: "Đặt lịch hẹn.",
+    },
+    {
+      word: "allergy",
+      phonetic: "/ˈælərdʒi/",
+      meaning: "Dị ứng",
+      example: "I have an allergy.",
+      exampleVi: "Tôi bị dị ứng.",
+    },
+    {
+      word: "pain",
+      phonetic: "/peɪn/",
+      meaning: "Đau",
+      example: "Where does it hurt?",
+      exampleVi: "Chỗ nào đau?",
+    },
+    {
+      word: "rest",
+      phonetic: "/rest/",
+      meaning: "Nghỉ ngơi",
+      example: "You need to rest.",
+      exampleVi: "Bạn cần nghỉ ngơi.",
+    },
+    {
+      word: "hospital",
+      phonetic: "/ˈhɒspɪtl/",
+      meaning: "Bệnh viện",
+      example: "Go to the hospital.",
+      exampleVi: "Đi bệnh viện.",
+    },
+    {
+      word: "pharmacy",
+      phonetic: "/ˈfɑːrməsi/",
+      meaning: "Hiệu thuốc",
+      example: "Find a pharmacy.",
+      exampleVi: "Tìm một hiệu thuốc.",
+    },
+    {
+      word: "symptom",
+      phonetic: "/ˈsɪmptəm/",
+      meaning: "Triệu chứng",
+      example: "What are your symptoms?",
+      exampleVi: "Bạn có triệu chứng gì?",
+    },
+    {
+      word: "prescription",
+      phonetic: "/prɪˈskrɪpʃn/",
+      meaning: "Đơn thuốc",
+      example: "I need a prescription.",
+      exampleVi: "Tôi cần đơn thuốc.",
+    },
+    {
+      word: "health insurance",
+      phonetic: "/helθ ɪnˈʃʊərəns/",
+      meaning: "Bảo hiểm y tế",
+      example: "Do you have health insurance?",
+      exampleVi: "Bạn có bảo hiểm y tế không?",
+    },
+    {
+      word: "checkup",
+      phonetic: "/ˈtʃekʌp/",
+      meaning: "Khám sức khỏe",
+      example: "I need a checkup.",
+      exampleVi: "Tôi cần khám sức khỏe.",
+    },
+    {
+      word: "better",
+      phonetic: "/ˈbetər/",
+      meaning: "Tốt hơn",
+      example: "I'm feeling better.",
+      exampleVi: "Tôi cảm thấy tốt hơn.",
+    },
   ],
   hotel: [
-    { word: "check-in", phonetic: "/ˈtʃek ɪn/", meaning: "Nhận phòng", example: "I'd like to check in.", exampleVi: "Tôi muốn nhận phòng." },
-    { word: "check-out", phonetic: "/ˈtʃek aʊt/", meaning: "Trả phòng", example: "When is checkout?", exampleVi: "Khi nào trả phòng?" },
-    { word: "room", phonetic: "/ruːm/", meaning: "Phòng", example: "I booked a room.", exampleVi: "Tôi đã đặt phòng." },
-    { word: "key", phonetic: "/kiː/", meaning: "Chìa khóa", example: "I lost my key.", exampleVi: "Tôi làm mất chìa khóa." },
-    { word: "wifi", phonetic: "/ˈwaɪfaɪ/", meaning: "Wifi", example: "What's the wifi password?", exampleVi: "Mật khẩu wifi là gì?" },
-    { word: "breakfast", phonetic: "/ˈbrekfəst/", meaning: "Bữa sáng", example: "Is breakfast included?", exampleVi: "Bữa sáng đã bao gồm chưa?" },
-    { word: "air conditioning", phonetic: "/er kənˈdɪʃənɪŋ/", meaning: "Điều hòa", example: "The AC is not working.", exampleVi: "Điều hòa không hoạt động." },
-    { word: "elevator", phonetic: "/ˈelɪveɪtər/", meaning: "Thang máy", example: "Where is the elevator?", exampleVi: "Thang máy ở đâu?" },
-    { word: "floor", phonetic: "/flɔːr/", meaning: "Tầng", example: "What floor is it on?", exampleVi: "Ở tầng nào?" },
-    { word: "single room", phonetic: "/ˈsɪŋɡl ruːm/", meaning: "Phòng đơn", example: "I need a single room.", exampleVi: "Tôi cần phòng đơn." },
-    { word: "double room", phonetic: "/ˈdʌbl ruːm/", meaning: "Phòng đôi", example: "A double room, please.", exampleVi: "Một phòng đôi." },
-    { word: "suite", phonetic: "/swiːt/", meaning: "Phòng suite", example: "Upgrade to a suite.", exampleVi: "Nâng cấp lên phòng suite." },
-    { word: "clean", phonetic: "/kliːn/", meaning: "Sạch", example: "The room is not clean.", exampleVi: "Phòng không sạch." },
-    { word: "towel", phonetic: "/ˈtaʊəl/", meaning: "Khăn", example: "I need more towels.", exampleVi: "Tôi cần thêm khăn." },
-    { word: "laundry", phonetic: "/ˈlɔːndri/", meaning: "Giặt ủi", example: "Is there laundry service?", exampleVi: "Có dịch vụ giặt ủi không?" },
-    { word: "pool", phonetic: "/puːl/", meaning: "Hồ bơi", example: "Where is the pool?", exampleVi: "Hồ bơi ở đâu?" },
-    { word: "gym", phonetic: "/dʒɪm/", meaning: "Phòng gym", example: "Does the hotel have a gym?", exampleVi: "Khách sạn có phòng gym không?" },
-    { word: "bellboy", phonetic: "/ˈbelbɔɪ/", meaning: "Người khuân vác", example: "Call the bellboy.", exampleVi: "Gọi người khuân vác." },
+    {
+      word: "check-in",
+      phonetic: "/ˈtʃek ɪn/",
+      meaning: "Nhận phòng",
+      example: "I'd like to check in.",
+      exampleVi: "Tôi muốn nhận phòng.",
+    },
+    {
+      word: "check-out",
+      phonetic: "/ˈtʃek aʊt/",
+      meaning: "Trả phòng",
+      example: "When is checkout?",
+      exampleVi: "Khi nào trả phòng?",
+    },
+    {
+      word: "room",
+      phonetic: "/ruːm/",
+      meaning: "Phòng",
+      example: "I booked a room.",
+      exampleVi: "Tôi đã đặt phòng.",
+    },
+    {
+      word: "key",
+      phonetic: "/kiː/",
+      meaning: "Chìa khóa",
+      example: "I lost my key.",
+      exampleVi: "Tôi làm mất chìa khóa.",
+    },
+    {
+      word: "wifi",
+      phonetic: "/ˈwaɪfaɪ/",
+      meaning: "Wifi",
+      example: "What's the wifi password?",
+      exampleVi: "Mật khẩu wifi là gì?",
+    },
+    {
+      word: "breakfast",
+      phonetic: "/ˈbrekfəst/",
+      meaning: "Bữa sáng",
+      example: "Is breakfast included?",
+      exampleVi: "Bữa sáng đã bao gồm chưa?",
+    },
+    {
+      word: "air conditioning",
+      phonetic: "/er kənˈdɪʃənɪŋ/",
+      meaning: "Điều hòa",
+      example: "The AC is not working.",
+      exampleVi: "Điều hòa không hoạt động.",
+    },
+    {
+      word: "elevator",
+      phonetic: "/ˈelɪveɪtər/",
+      meaning: "Thang máy",
+      example: "Where is the elevator?",
+      exampleVi: "Thang máy ở đâu?",
+    },
+    {
+      word: "floor",
+      phonetic: "/flɔːr/",
+      meaning: "Tầng",
+      example: "What floor is it on?",
+      exampleVi: "Ở tầng nào?",
+    },
+    {
+      word: "single room",
+      phonetic: "/ˈsɪŋɡl ruːm/",
+      meaning: "Phòng đơn",
+      example: "I need a single room.",
+      exampleVi: "Tôi cần phòng đơn.",
+    },
+    {
+      word: "double room",
+      phonetic: "/ˈdʌbl ruːm/",
+      meaning: "Phòng đôi",
+      example: "A double room, please.",
+      exampleVi: "Một phòng đôi.",
+    },
+    {
+      word: "suite",
+      phonetic: "/swiːt/",
+      meaning: "Phòng suite",
+      example: "Upgrade to a suite.",
+      exampleVi: "Nâng cấp lên phòng suite.",
+    },
+    {
+      word: "clean",
+      phonetic: "/kliːn/",
+      meaning: "Sạch",
+      example: "The room is not clean.",
+      exampleVi: "Phòng không sạch.",
+    },
+    {
+      word: "towel",
+      phonetic: "/ˈtaʊəl/",
+      meaning: "Khăn",
+      example: "I need more towels.",
+      exampleVi: "Tôi cần thêm khăn.",
+    },
+    {
+      word: "laundry",
+      phonetic: "/ˈlɔːndri/",
+      meaning: "Giặt ủi",
+      example: "Is there laundry service?",
+      exampleVi: "Có dịch vụ giặt ủi không?",
+    },
+    {
+      word: "pool",
+      phonetic: "/puːl/",
+      meaning: "Hồ bơi",
+      example: "Where is the pool?",
+      exampleVi: "Hồ bơi ở đâu?",
+    },
+    {
+      word: "gym",
+      phonetic: "/dʒɪm/",
+      meaning: "Phòng gym",
+      example: "Does the hotel have a gym?",
+      exampleVi: "Khách sạn có phòng gym không?",
+    },
+    {
+      word: "bellboy",
+      phonetic: "/ˈbelbɔɪ/",
+      meaning: "Người khuân vác",
+      example: "Call the bellboy.",
+      exampleVi: "Gọi người khuân vác.",
+    },
   ],
   weather: [
-    { word: "sunny", phonetic: "/ˈsʌni/", meaning: "Nắng", example: "It's sunny today.", exampleVi: "Hôm nay trời nắng." },
-    { word: "rainy", phonetic: "/ˈreɪni/", meaning: "Mưa", example: "It's rainy.", exampleVi: "Trời mưa." },
-    { word: "cloudy", phonetic: "/ˈklaʊdi/", meaning: "Âm u", example: "It's cloudy today.", exampleVi: "Hôm nay âm u." },
-    { word: "windy", phonetic: "/ˈwɪndi/", meaning: "Gió", example: "It's windy.", exampleVi: "Trời có gió." },
-    { word: "cold", phonetic: "/koʊld/", meaning: "Lạnh", example: "It's cold outside.", exampleVi: "Bên ngoài lạnh." },
-    { word: "hot", phonetic: "/hɒt/", meaning: "Nóng", example: "It's very hot.", exampleVi: "Rất nóng." },
-    { word: "warm", phonetic: "/wɔːrm/", meaning: "Ấm", example: "It's warm today.", exampleVi: "Hôm nay ấm áp." },
-    { word: "cool", phonetic: "/kuːl/", meaning: "Mát", example: "It's cool in the evening.", exampleVi: "Buổi tối mát mẻ." },
-    { word: "snow", phonetic: "/snoʊ/", meaning: "Tuyết", example: "It's going to snow.", exampleVi: "Sẽ có tuyết." },
-    { word: "storm", phonetic: "/stɔːrm/", meaning: "Bão", example: "There's a storm coming.", exampleVi: "Có bão sắp đến." },
-    { word: "foggy", phonetic: "/ˈfɒɡi/", meaning: "Sương mù", example: "It's foggy this morning.", exampleVi: "Sáng nay có sương mù." },
-    { word: "humid", phonetic: "/ˈhjuːmɪd/", meaning: "Ẩm ướt", example: "It's humid here.", exampleVi: "Ở đây ẩm ướt." },
-    { word: "forecast", phonetic: "/ˈfɔːrkæst/", meaning: "Dự báo thời tiết", example: "Check the weather forecast.", exampleVi: "Xem dự báo thời tiết." },
-    { word: "temperature", phonetic: "/ˈtemprətʃər/", meaning: "Nhiệt độ", example: "What's the temperature?", exampleVi: "Nhiệt độ là bao nhiêu?" },
-    { word: "umbrella", phonetic: "/ʌmˈbrelə/", meaning: "Ô", example: "Bring an umbrella.", exampleVi: "Mang theo ô." },
-    { word: "jacket", phonetic: "/ˈdʒækɪt/", meaning: "Áo khoác", example: "You need a jacket.", exampleVi: "Bạn cần áo khoác." },
-    { word: "weather", phonetic: "/ˈweðər/", meaning: "Thời tiết", example: "What's the weather like?", exampleVi: "Thời tiết như thế nào?" },
-    { word: "season", phonetic: "/ˈsiːzn/", meaning: "Mùa", example: "What's the season?", exampleVi: "Bây giờ là mùa gì?" },
+    {
+      word: "sunny",
+      phonetic: "/ˈsʌni/",
+      meaning: "Nắng",
+      example: "It's sunny today.",
+      exampleVi: "Hôm nay trời nắng.",
+    },
+    {
+      word: "rainy",
+      phonetic: "/ˈreɪni/",
+      meaning: "Mưa",
+      example: "It's rainy.",
+      exampleVi: "Trời mưa.",
+    },
+    {
+      word: "cloudy",
+      phonetic: "/ˈklaʊdi/",
+      meaning: "Âm u",
+      example: "It's cloudy today.",
+      exampleVi: "Hôm nay âm u.",
+    },
+    {
+      word: "windy",
+      phonetic: "/ˈwɪndi/",
+      meaning: "Gió",
+      example: "It's windy.",
+      exampleVi: "Trời có gió.",
+    },
+    {
+      word: "cold",
+      phonetic: "/koʊld/",
+      meaning: "Lạnh",
+      example: "It's cold outside.",
+      exampleVi: "Bên ngoài lạnh.",
+    },
+    {
+      word: "hot",
+      phonetic: "/hɒt/",
+      meaning: "Nóng",
+      example: "It's very hot.",
+      exampleVi: "Rất nóng.",
+    },
+    {
+      word: "warm",
+      phonetic: "/wɔːrm/",
+      meaning: "Ấm",
+      example: "It's warm today.",
+      exampleVi: "Hôm nay ấm áp.",
+    },
+    {
+      word: "cool",
+      phonetic: "/kuːl/",
+      meaning: "Mát",
+      example: "It's cool in the evening.",
+      exampleVi: "Buổi tối mát mẻ.",
+    },
+    {
+      word: "snow",
+      phonetic: "/snoʊ/",
+      meaning: "Tuyết",
+      example: "It's going to snow.",
+      exampleVi: "Sẽ có tuyết.",
+    },
+    {
+      word: "storm",
+      phonetic: "/stɔːrm/",
+      meaning: "Bão",
+      example: "There's a storm coming.",
+      exampleVi: "Có bão sắp đến.",
+    },
+    {
+      word: "foggy",
+      phonetic: "/ˈfɒɡi/",
+      meaning: "Sương mù",
+      example: "It's foggy this morning.",
+      exampleVi: "Sáng nay có sương mù.",
+    },
+    {
+      word: "humid",
+      phonetic: "/ˈhjuːmɪd/",
+      meaning: "Ẩm ướt",
+      example: "It's humid here.",
+      exampleVi: "Ở đây ẩm ướt.",
+    },
+    {
+      word: "forecast",
+      phonetic: "/ˈfɔːrkæst/",
+      meaning: "Dự báo thời tiết",
+      example: "Check the weather forecast.",
+      exampleVi: "Xem dự báo thời tiết.",
+    },
+    {
+      word: "temperature",
+      phonetic: "/ˈtemprətʃər/",
+      meaning: "Nhiệt độ",
+      example: "What's the temperature?",
+      exampleVi: "Nhiệt độ là bao nhiêu?",
+    },
+    {
+      word: "umbrella",
+      phonetic: "/ʌmˈbrelə/",
+      meaning: "Ô",
+      example: "Bring an umbrella.",
+      exampleVi: "Mang theo ô.",
+    },
+    {
+      word: "jacket",
+      phonetic: "/ˈdʒækɪt/",
+      meaning: "Áo khoác",
+      example: "You need a jacket.",
+      exampleVi: "Bạn cần áo khoác.",
+    },
+    {
+      word: "weather",
+      phonetic: "/ˈweðər/",
+      meaning: "Thời tiết",
+      example: "What's the weather like?",
+      exampleVi: "Thời tiết như thế nào?",
+    },
+    {
+      word: "season",
+      phonetic: "/ˈsiːzn/",
+      meaning: "Mùa",
+      example: "What's the season?",
+      exampleVi: "Bây giờ là mùa gì?",
+    },
   ],
   time: [
-    { word: "today", phonetic: "/təˈdeɪ/", meaning: "Hôm nay", example: "What are you doing today?", exampleVi: "Hôm nay bạn làm gì?" },
-    { word: "tomorrow", phonetic: "/təˈmɒroʊ/", meaning: "Ngày mai", example: "See you tomorrow.", exampleVi: "Hẹn gặp ngày mai." },
-    { word: "yesterday", phonetic: "/ˈjestərdeɪ/", meaning: "Hôm qua", example: "I saw him yesterday.", exampleVi: "Tôi gặp anh ấy hôm qua." },
-    { word: "week", phonetic: "/wiːk/", meaning: "Tuần", example: "This week is busy.", exampleVi: "Tuần này bận." },
-    { word: "month", phonetic: "/mʌnθ/", meaning: "Tháng", example: "It's my birthday month.", exampleVi: "Đây là tháng sinh nhật tôi." },
-    { word: "year", phonetic: "/jɪr/", meaning: "Năm", example: "Happy New Year!", exampleVi: "Chúc mừng năm mới!" },
-    { word: "morning", phonetic: "/ˈmɔːrnɪŋ/", meaning: "Buổi sáng", example: "Good morning!", exampleVi: "Chào buổi sáng!" },
-    { word: "afternoon", phonetic: "/ˌæftərˈnuːn/", meaning: "Buổi chiều", example: "Good afternoon!", exampleVi: "Chào buổi chiều!" },
-    { word: "evening", phonetic: "/ˈiːvnɪŋ/", meaning: "Buổi tối", example: "Good evening!", exampleVi: "Chào buổi tối!" },
-    { word: "night", phonetic: "/naɪt/", meaning: "Đêm", example: "Good night!", exampleVi: "Chúc ngủ ngon!" },
-    { word: "hour", phonetic: "/ˈaʊər/", meaning: "Giờ", example: "It's been an hour.", exampleVi: "Đã một giờ rồi." },
-    { word: "minute", phonetic: "/ˈmɪnɪt/", meaning: "Phút", example: "Just a minute.", exampleVi: "Chỉ một chút." },
-    { word: "second", phonetic: "/ˈsekənd/", meaning: "Giây", example: "Wait a second.", exampleVi: "Đợi một giây." },
-    { word: "early", phonetic: "/ˈɜːrli/", meaning: "Sớm", example: "I'm early.", exampleVi: "Tôi đến sớm." },
-    { word: "late", phonetic: "/leɪt/", meaning: "Muộn", example: "I'm sorry I'm late.", exampleVi: "Xin lỗi tôi đến muộn." },
-    { word: "on time", phonetic: "/ɒn taɪm/", meaning: "Đúng giờ", example: "Be there on time.", exampleVi: "Hãy đến đúng giờ." },
-    { word: "schedule", phonetic: "/ˈskedʒuːl/", meaning: "Lịch trình", example: "What's your schedule?", exampleVi: "Lịch trình của bạn như thế nào?" },
-    { word: "appointment", phonetic: "/əˈpɔɪntmənt/", meaning: "Cuộc hẹn", example: "I have an appointment.", exampleVi: "Tôi có một cuộc hẹn." },
+    {
+      word: "today",
+      phonetic: "/təˈdeɪ/",
+      meaning: "Hôm nay",
+      example: "What are you doing today?",
+      exampleVi: "Hôm nay bạn làm gì?",
+    },
+    {
+      word: "tomorrow",
+      phonetic: "/təˈmɒroʊ/",
+      meaning: "Ngày mai",
+      example: "See you tomorrow.",
+      exampleVi: "Hẹn gặp ngày mai.",
+    },
+    {
+      word: "yesterday",
+      phonetic: "/ˈjestərdeɪ/",
+      meaning: "Hôm qua",
+      example: "I saw him yesterday.",
+      exampleVi: "Tôi gặp anh ấy hôm qua.",
+    },
+    {
+      word: "week",
+      phonetic: "/wiːk/",
+      meaning: "Tuần",
+      example: "This week is busy.",
+      exampleVi: "Tuần này bận.",
+    },
+    {
+      word: "month",
+      phonetic: "/mʌnθ/",
+      meaning: "Tháng",
+      example: "It's my birthday month.",
+      exampleVi: "Đây là tháng sinh nhật tôi.",
+    },
+    {
+      word: "year",
+      phonetic: "/jɪr/",
+      meaning: "Năm",
+      example: "Happy New Year!",
+      exampleVi: "Chúc mừng năm mới!",
+    },
+    {
+      word: "morning",
+      phonetic: "/ˈmɔːrnɪŋ/",
+      meaning: "Buổi sáng",
+      example: "Good morning!",
+      exampleVi: "Chào buổi sáng!",
+    },
+    {
+      word: "afternoon",
+      phonetic: "/ˌæftərˈnuːn/",
+      meaning: "Buổi chiều",
+      example: "Good afternoon!",
+      exampleVi: "Chào buổi chiều!",
+    },
+    {
+      word: "evening",
+      phonetic: "/ˈiːvnɪŋ/",
+      meaning: "Buổi tối",
+      example: "Good evening!",
+      exampleVi: "Chào buổi tối!",
+    },
+    {
+      word: "night",
+      phonetic: "/naɪt/",
+      meaning: "Đêm",
+      example: "Good night!",
+      exampleVi: "Chúc ngủ ngon!",
+    },
+    {
+      word: "hour",
+      phonetic: "/ˈaʊər/",
+      meaning: "Giờ",
+      example: "It's been an hour.",
+      exampleVi: "Đã một giờ rồi.",
+    },
+    {
+      word: "minute",
+      phonetic: "/ˈmɪnɪt/",
+      meaning: "Phút",
+      example: "Just a minute.",
+      exampleVi: "Chỉ một chút.",
+    },
+    {
+      word: "second",
+      phonetic: "/ˈsekənd/",
+      meaning: "Giây",
+      example: "Wait a second.",
+      exampleVi: "Đợi một giây.",
+    },
+    {
+      word: "early",
+      phonetic: "/ˈɜːrli/",
+      meaning: "Sớm",
+      example: "I'm early.",
+      exampleVi: "Tôi đến sớm.",
+    },
+    {
+      word: "late",
+      phonetic: "/leɪt/",
+      meaning: "Muộn",
+      example: "I'm sorry I'm late.",
+      exampleVi: "Xin lỗi tôi đến muộn.",
+    },
+    {
+      word: "on time",
+      phonetic: "/ɒn taɪm/",
+      meaning: "Đúng giờ",
+      example: "Be there on time.",
+      exampleVi: "Hãy đến đúng giờ.",
+    },
+    {
+      word: "schedule",
+      phonetic: "/ˈskedʒuːl/",
+      meaning: "Lịch trình",
+      example: "What's your schedule?",
+      exampleVi: "Lịch trình của bạn như thế nào?",
+    },
+    {
+      word: "appointment",
+      phonetic: "/əˈpɔɪntmənt/",
+      meaning: "Cuộc hẹn",
+      example: "I have an appointment.",
+      exampleVi: "Tôi có một cuộc hẹn.",
+    },
   ],
   numbers: [
-    { word: "one", phonetic: "/wʌn/", meaning: "Một", example: "One, two, three...", exampleVi: "Một, hai, ba..." },
-    { word: "two", phonetic: "/tuː/", meaning: "Hai", example: "Two please.", exampleVi: "Hai cái." },
-    { word: "three", phonetic: "/θriː/", meaning: "Ba", example: "Three is enough.", exampleVi: "Ba là đủ." },
-    { word: "five", phonetic: "/faɪv/", meaning: "Năm", example: "Give me five.", exampleVi: "Đếm đến năm." },
-    { word: "ten", phonetic: "/ten/", meaning: "Mười", example: "Count to ten.", exampleVi: "Đếm đến mười." },
-    { word: "twenty", phonetic: "/ˈtwenti/", meaning: "Hai mươi", example: "I'm twenty years old.", exampleVi: "Tôi hai mươi tuổi." },
-    { word: "hundred", phonetic: "/ˈhʌndrəd/", meaning: "Trăm", example: "One hundred dollars.", exampleVi: "Một trăm đô la." },
-    { word: "thousand", phonetic: "/ˈθaʊzənd/", meaning: "Nghìn", example: "A thousand times.", exampleVi: "Một nghìn lần." },
-    { word: "million", phonetic: "/ˈmɪljən/", meaning: "Triệu", example: "One million.", exampleVi: "Một triệu." },
-    { word: "first", phonetic: "/fɜːrst/", meaning: "Đầu tiên", example: "You're first.", exampleVi: "Bạn là người đầu tiên." },
-    { word: "second", phonetic: "/ˈsekənd/", meaning: "Thứ hai", example: "I'm second.", exampleVi: "Tôi là người thứ hai." },
-    { word: "last", phonetic: "/læst/", meaning: "Cuối cùng", example: "This is the last one.", exampleVi: "Đây là cái cuối cùng." },
-    { word: "next", phonetic: "/nekst/", meaning: "Tiếp theo", example: "What's next?", exampleVi: "Tiếp theo là gì?" },
-    { word: "half", phonetic: "/hæf/", meaning: "Nửa", example: "Half of it.", exampleVi: "Nửa của nó." },
-    { word: "double", phonetic: "/ˈdʌbl/", meaning: "Gấp đôi", example: "I want a double.", exampleVi: "Tôi muốn gấp đôi." },
-    { word: "pair", phonetic: "/per/", meaning: "Đôi", example: "A pair of shoes.", exampleVi: "Một đôi giày." },
-    { word: "dozen", phonetic: "/ˈdʌzn/", meaning: "Tá", example: "A dozen eggs.", exampleVi: "Một tá trứng." },
-    { word: "percent", phonetic: "/pərˈsent/", meaning: "Phần trăm", example: "Ten percent off.", exampleVi: "Giảm mười phần trăm." },
+    {
+      word: "one",
+      phonetic: "/wʌn/",
+      meaning: "Một",
+      example: "One, two, three...",
+      exampleVi: "Một, hai, ba...",
+    },
+    {
+      word: "two",
+      phonetic: "/tuː/",
+      meaning: "Hai",
+      example: "Two please.",
+      exampleVi: "Hai cái.",
+    },
+    {
+      word: "three",
+      phonetic: "/θriː/",
+      meaning: "Ba",
+      example: "Three is enough.",
+      exampleVi: "Ba là đủ.",
+    },
+    {
+      word: "five",
+      phonetic: "/faɪv/",
+      meaning: "Năm",
+      example: "Give me five.",
+      exampleVi: "Đếm đến năm.",
+    },
+    {
+      word: "ten",
+      phonetic: "/ten/",
+      meaning: "Mười",
+      example: "Count to ten.",
+      exampleVi: "Đếm đến mười.",
+    },
+    {
+      word: "twenty",
+      phonetic: "/ˈtwenti/",
+      meaning: "Hai mươi",
+      example: "I'm twenty years old.",
+      exampleVi: "Tôi hai mươi tuổi.",
+    },
+    {
+      word: "hundred",
+      phonetic: "/ˈhʌndrəd/",
+      meaning: "Trăm",
+      example: "One hundred dollars.",
+      exampleVi: "Một trăm đô la.",
+    },
+    {
+      word: "thousand",
+      phonetic: "/ˈθaʊzənd/",
+      meaning: "Nghìn",
+      example: "A thousand times.",
+      exampleVi: "Một nghìn lần.",
+    },
+    {
+      word: "million",
+      phonetic: "/ˈmɪljən/",
+      meaning: "Triệu",
+      example: "One million.",
+      exampleVi: "Một triệu.",
+    },
+    {
+      word: "first",
+      phonetic: "/fɜːrst/",
+      meaning: "Đầu tiên",
+      example: "You're first.",
+      exampleVi: "Bạn là người đầu tiên.",
+    },
+    {
+      word: "second",
+      phonetic: "/ˈsekənd/",
+      meaning: "Thứ hai",
+      example: "I'm second.",
+      exampleVi: "Tôi là người thứ hai.",
+    },
+    {
+      word: "last",
+      phonetic: "/læst/",
+      meaning: "Cuối cùng",
+      example: "This is the last one.",
+      exampleVi: "Đây là cái cuối cùng.",
+    },
+    {
+      word: "next",
+      phonetic: "/nekst/",
+      meaning: "Tiếp theo",
+      example: "What's next?",
+      exampleVi: "Tiếp theo là gì?",
+    },
+    {
+      word: "half",
+      phonetic: "/hæf/",
+      meaning: "Nửa",
+      example: "Half of it.",
+      exampleVi: "Nửa của nó.",
+    },
+    {
+      word: "double",
+      phonetic: "/ˈdʌbl/",
+      meaning: "Gấp đôi",
+      example: "I want a double.",
+      exampleVi: "Tôi muốn gấp đôi.",
+    },
+    {
+      word: "pair",
+      phonetic: "/per/",
+      meaning: "Đôi",
+      example: "A pair of shoes.",
+      exampleVi: "Một đôi giày.",
+    },
+    {
+      word: "dozen",
+      phonetic: "/ˈdʌzn/",
+      meaning: "Tá",
+      example: "A dozen eggs.",
+      exampleVi: "Một tá trứng.",
+    },
+    {
+      word: "percent",
+      phonetic: "/pərˈsent/",
+      meaning: "Phần trăm",
+      example: "Ten percent off.",
+      exampleVi: "Giảm mười phần trăm.",
+    },
   ],
   feelings: [
-    { word: "happy", phonetic: "/ˈhæpi/", meaning: "Vui vẻ", example: "I'm happy.", exampleVi: "Tôi vui vẻ." },
-    { word: "sad", phonetic: "/sæd/", meaning: "Buồn", example: "Don't be sad.", exampleVi: "Đừng buồn." },
-    { word: "angry", phonetic: "/ˈæŋɡri/", meaning: "Tức giận", example: "I'm angry.", exampleVi: "Tôi đang tức giận." },
-    { word: "excited", phonetic: "/ɪkˈsaɪtɪd/", meaning: "Hào hứng", example: "I'm excited!", exampleVi: "Tôi rất hào hứng!" },
-    { word: "tired", phonetic: "/ˈtaɪərd/", meaning: "Mệt mỏi", example: "I'm so tired.", exampleVi: "Tôi mệt quá." },
-    { word: "stressed", phonetic: "/strest/", meaning: "Căng thẳng", example: "I'm stressed.", exampleVi: "Tôi đang căng thẳng." },
-    { word: "worried", phonetic: "/ˈwʌrid/", meaning: "Lo lắng", example: "Don't worry.", exampleVi: "Đừng lo lắng." },
-    { word: "confused", phonetic: "/kənˈfjuːzd/", meaning: "Bối rối", example: "I'm confused.", exampleVi: "Tôi bối rối." },
-    { word: "surprised", phonetic: "/sərˈpraɪzd/", meaning: "Ngạc nhiên", example: "I'm surprised!", exampleVi: "Tôi ngạc nhiên!" },
-    { word: "proud", phonetic: "/praʊd/", meaning: "Tự hào", example: "I'm proud of you.", exampleVi: "Tôi tự hào về bạn." },
-    { word: "nervous", phonetic: "/ˈnɜːrvəs/", meaning: "Hồi hộp", example: "I'm nervous.", exampleVi: "Tôi hồi hộp." },
-    { word: "bored", phonetic: "/bɔːrd/", meaning: "Chán", example: "I'm bored.", exampleVi: "Tôi chán." },
-    { word: "grateful", phonetic: "/ˈɡreɪtfl/", meaning: "Biết ơn", example: "I'm grateful.", exampleVi: "Tôi biết ơn." },
-    { word: "relaxed", phonetic: "/rɪˈlækst/", meaning: "Thư giãn", example: "I feel relaxed.", exampleVi: "Tôi cảm thấy thư giãn." },
-    { word: "hopeful", phonetic: "/ˈhoʊpfl/", meaning: "Hy vọng", example: "I'm hopeful.", exampleVi: "Tôi hy vọng." },
-    { word: "disappointed", phonetic: "/ˌdɪsəˈpɔɪntɪd/", meaning: "Thất vọng", example: "I'm disappointed.", exampleVi: "Tôi thất vọng." },
-    { word: "jealous", phonetic: "/ˈdʒeləs/", meaning: "Ghen tị", example: "Don't be jealous.", exampleVi: "Đừng ghen tị." },
-    { word: "lonely", phonetic: "/ˈloʊnli/", meaning: "Cô đơn", example: "I feel lonely.", exampleVi: "Tôi cảm thấy cô đơn." },
+    {
+      word: "happy",
+      phonetic: "/ˈhæpi/",
+      meaning: "Vui vẻ",
+      example: "I'm happy.",
+      exampleVi: "Tôi vui vẻ.",
+    },
+    {
+      word: "sad",
+      phonetic: "/sæd/",
+      meaning: "Buồn",
+      example: "Don't be sad.",
+      exampleVi: "Đừng buồn.",
+    },
+    {
+      word: "angry",
+      phonetic: "/ˈæŋɡri/",
+      meaning: "Tức giận",
+      example: "I'm angry.",
+      exampleVi: "Tôi đang tức giận.",
+    },
+    {
+      word: "excited",
+      phonetic: "/ɪkˈsaɪtɪd/",
+      meaning: "Hào hứng",
+      example: "I'm excited!",
+      exampleVi: "Tôi rất hào hứng!",
+    },
+    {
+      word: "tired",
+      phonetic: "/ˈtaɪərd/",
+      meaning: "Mệt mỏi",
+      example: "I'm so tired.",
+      exampleVi: "Tôi mệt quá.",
+    },
+    {
+      word: "stressed",
+      phonetic: "/strest/",
+      meaning: "Căng thẳng",
+      example: "I'm stressed.",
+      exampleVi: "Tôi đang căng thẳng.",
+    },
+    {
+      word: "worried",
+      phonetic: "/ˈwʌrid/",
+      meaning: "Lo lắng",
+      example: "Don't worry.",
+      exampleVi: "Đừng lo lắng.",
+    },
+    {
+      word: "confused",
+      phonetic: "/kənˈfjuːzd/",
+      meaning: "Bối rối",
+      example: "I'm confused.",
+      exampleVi: "Tôi bối rối.",
+    },
+    {
+      word: "surprised",
+      phonetic: "/sərˈpraɪzd/",
+      meaning: "Ngạc nhiên",
+      example: "I'm surprised!",
+      exampleVi: "Tôi ngạc nhiên!",
+    },
+    {
+      word: "proud",
+      phonetic: "/praʊd/",
+      meaning: "Tự hào",
+      example: "I'm proud of you.",
+      exampleVi: "Tôi tự hào về bạn.",
+    },
+    {
+      word: "nervous",
+      phonetic: "/ˈnɜːrvəs/",
+      meaning: "Hồi hộp",
+      example: "I'm nervous.",
+      exampleVi: "Tôi hồi hộp.",
+    },
+    {
+      word: "bored",
+      phonetic: "/bɔːrd/",
+      meaning: "Chán",
+      example: "I'm bored.",
+      exampleVi: "Tôi chán.",
+    },
+    {
+      word: "grateful",
+      phonetic: "/ˈɡreɪtfl/",
+      meaning: "Biết ơn",
+      example: "I'm grateful.",
+      exampleVi: "Tôi biết ơn.",
+    },
+    {
+      word: "relaxed",
+      phonetic: "/rɪˈlækst/",
+      meaning: "Thư giãn",
+      example: "I feel relaxed.",
+      exampleVi: "Tôi cảm thấy thư giãn.",
+    },
+    {
+      word: "hopeful",
+      phonetic: "/ˈhoʊpfl/",
+      meaning: "Hy vọng",
+      example: "I'm hopeful.",
+      exampleVi: "Tôi hy vọng.",
+    },
+    {
+      word: "disappointed",
+      phonetic: "/ˌdɪsəˈpɔɪntɪd/",
+      meaning: "Thất vọng",
+      example: "I'm disappointed.",
+      exampleVi: "Tôi thất vọng.",
+    },
+    {
+      word: "jealous",
+      phonetic: "/ˈdʒeləs/",
+      meaning: "Ghen tị",
+      example: "Don't be jealous.",
+      exampleVi: "Đừng ghen tị.",
+    },
+    {
+      word: "lonely",
+      phonetic: "/ˈloʊnli/",
+      meaning: "Cô đơn",
+      example: "I feel lonely.",
+      exampleVi: "Tôi cảm thấy cô đơn.",
+    },
   ],
   family: [
-    { word: "mother", phonetic: "/ˈmʌðər/", meaning: "Mẹ", example: "My mother is kind.", exampleVi: "Mẹ tôi dịu dàng." },
-    { word: "father", phonetic: "/ˈfɑːðər/", meaning: "Cha", example: "My father works hard.", exampleVi: "Cha tôi làm việc chăm chỉ." },
-    { word: "brother", phonetic: "/ˈbrʌðər/", meaning: "Anh em trai", example: "My brother is tall.", exampleVi: "Anh tôi cao." },
-    { word: "sister", phonetic: "/ˈsɪstər/", meaning: "Chị em gái", example: "My sister is smart.", exampleVi: "Chị tôi thông minh." },
-    { word: "parents", phonetic: "/ˈperənts/", meaning: "Bố mẹ", example: "My parents are home.", exampleVi: "Bố mẹ tôi ở nhà." },
-    { word: "children", phonetic: "/ˈtʃɪldrən/", meaning: "Con cái", example: "We have three children.", exampleVi: "Chúng tôi có ba con." },
-    { word: "son", phonetic: "/sʌn/", meaning: "Con trai", example: "My son is cute.", exampleVi: "Con trai tôi dễ thương." },
-    { word: "daughter", phonetic: "/ˈdɔːtər/", meaning: "Con gái", example: "My daughter is smart.", exampleVi: "Con gái tôi thông minh." },
-    { word: "grandparents", phonetic: "/ˈɡrænperənts/", meaning: "Ông bà", example: "I visit my grandparents.", exampleVi: "Tôi thăm ông bà." },
-    { word: "uncle", phonetic: "/ˈʌŋkl/", meaning: "Chú, bác", example: "My uncle is funny.", exampleVi: "Chú tôi vui vẻ." },
-    { word: "aunt", phonetic: "/ænt/", meaning: "Cô, dì", example: "My aunt is here.", exampleVi: "Cô tôi ở đây." },
-    { word: "cousin", phonetic: "/ˈkʌzn/", meaning: "Anh chị em họ", example: "My cousin is my age.", exampleVi: "Anh họ tôi cùng tuổi." },
-    { word: "married", phonetic: "/ˈmærid/", meaning: "Đã kết hôn", example: "Are you married?", exampleVi: "Bạn đã kết hôn chưa?" },
-    { word: "single", phonetic: "/ˈsɪŋɡl/", meaning: "Độc thân", example: "I'm single.", exampleVi: "Tôi độc thân." },
-    { word: "divorced", phonetic: "/dɪˈvɔːrst/", meaning: "Ly dị", example: "They are divorced.", exampleVi: "Họ đã ly dị." },
-    { word: "widowed", phonetic: "/ˈwɪdoʊd/", meaning: "Góa phụ", example: "She is widowed.", exampleVi: "Bà ấy góa phụ." },
-    { word: "family", phonetic: "/ˈfæməli/", meaning: "Gia đình", example: "Family is important.", exampleVi: "Gia đình quan trọng." },
-    { word: "relatives", phonetic: "/ˈrelətɪvz/", meaning: "Họ hàng", example: "Visit relatives.", exampleVi: "Thăm họ hàng." },
-  ]
+    {
+      word: "mother",
+      phonetic: "/ˈmʌðər/",
+      meaning: "Mẹ",
+      example: "My mother is kind.",
+      exampleVi: "Mẹ tôi dịu dàng.",
+    },
+    {
+      word: "father",
+      phonetic: "/ˈfɑːðər/",
+      meaning: "Cha",
+      example: "My father works hard.",
+      exampleVi: "Cha tôi làm việc chăm chỉ.",
+    },
+    {
+      word: "brother",
+      phonetic: "/ˈbrʌðər/",
+      meaning: "Anh em trai",
+      example: "My brother is tall.",
+      exampleVi: "Anh tôi cao.",
+    },
+    {
+      word: "sister",
+      phonetic: "/ˈsɪstər/",
+      meaning: "Chị em gái",
+      example: "My sister is smart.",
+      exampleVi: "Chị tôi thông minh.",
+    },
+    {
+      word: "parents",
+      phonetic: "/ˈperənts/",
+      meaning: "Bố mẹ",
+      example: "My parents are home.",
+      exampleVi: "Bố mẹ tôi ở nhà.",
+    },
+    {
+      word: "children",
+      phonetic: "/ˈtʃɪldrən/",
+      meaning: "Con cái",
+      example: "We have three children.",
+      exampleVi: "Chúng tôi có ba con.",
+    },
+    {
+      word: "son",
+      phonetic: "/sʌn/",
+      meaning: "Con trai",
+      example: "My son is cute.",
+      exampleVi: "Con trai tôi dễ thương.",
+    },
+    {
+      word: "daughter",
+      phonetic: "/ˈdɔːtər/",
+      meaning: "Con gái",
+      example: "My daughter is smart.",
+      exampleVi: "Con gái tôi thông minh.",
+    },
+    {
+      word: "grandparents",
+      phonetic: "/ˈɡrænperənts/",
+      meaning: "Ông bà",
+      example: "I visit my grandparents.",
+      exampleVi: "Tôi thăm ông bà.",
+    },
+    {
+      word: "uncle",
+      phonetic: "/ˈʌŋkl/",
+      meaning: "Chú, bác",
+      example: "My uncle is funny.",
+      exampleVi: "Chú tôi vui vẻ.",
+    },
+    {
+      word: "aunt",
+      phonetic: "/ænt/",
+      meaning: "Cô, dì",
+      example: "My aunt is here.",
+      exampleVi: "Cô tôi ở đây.",
+    },
+    {
+      word: "cousin",
+      phonetic: "/ˈkʌzn/",
+      meaning: "Anh chị em họ",
+      example: "My cousin is my age.",
+      exampleVi: "Anh họ tôi cùng tuổi.",
+    },
+    {
+      word: "married",
+      phonetic: "/ˈmærid/",
+      meaning: "Đã kết hôn",
+      example: "Are you married?",
+      exampleVi: "Bạn đã kết hôn chưa?",
+    },
+    {
+      word: "single",
+      phonetic: "/ˈsɪŋɡl/",
+      meaning: "Độc thân",
+      example: "I'm single.",
+      exampleVi: "Tôi độc thân.",
+    },
+    {
+      word: "divorced",
+      phonetic: "/dɪˈvɔːrst/",
+      meaning: "Ly dị",
+      example: "They are divorced.",
+      exampleVi: "Họ đã ly dị.",
+    },
+    {
+      word: "widowed",
+      phonetic: "/ˈwɪdoʊd/",
+      meaning: "Góa phụ",
+      example: "She is widowed.",
+      exampleVi: "Bà ấy góa phụ.",
+    },
+    {
+      word: "family",
+      phonetic: "/ˈfæməli/",
+      meaning: "Gia đình",
+      example: "Family is important.",
+      exampleVi: "Gia đình quan trọng.",
+    },
+    {
+      word: "relatives",
+      phonetic: "/ˈrelətɪvz/",
+      meaning: "Họ hàng",
+      example: "Visit relatives.",
+      exampleVi: "Thăm họ hàng.",
+    },
+  ],
 };
 
 // Grammar data for business English
@@ -6922,39 +11215,40 @@ const GRAMMAR_DATA = {
     {
       title: "Present Perfect",
       formula: "S + have/has + V3",
-      usage: "Dùng để diễn tả hành động bắt đầu trong quá khứ và vẫn còn liên quan đến hiện tại",
+      usage:
+        "Dùng để diễn tả hành động bắt đầu trong quá khứ và vẫn còn liên quan đến hiện tại",
       example: "We have completed the project.",
       exampleVi: "Chúng tôi đã hoàn thành dự án.",
-      note: "Thường dùng với: already, yet, just, recently, for, since"
+      note: "Thường dùng với: already, yet, just, recently, for, since",
     },
     {
       title: "Present Perfect Continuous",
       formula: "S + have/has + been + V-ing",
       usage: "Nhấn mạnh sự tiếp tục của hành động từ quá khứ đến hiện tại",
       example: "I have been working on this report all morning.",
-      exampleVi: "Tôi đã làm báo cáo này suốt buổi sáng."
+      exampleVi: "Tôi đã làm báo cáo này suốt buổi sáng.",
     },
     {
       title: "Future Perfect",
       formula: "S + will + have + V3",
       usage: "Hành động sẽ hoàn thành trước một thời điểm trong tương lai",
       example: "By next month, we will have launched the product.",
-      exampleVi: "Đến tháng sau, chúng tôi sẽ đã ra mắt sản phẩm."
+      exampleVi: "Đến tháng sau, chúng tôi sẽ đã ra mắt sản phẩm.",
     },
     {
       title: "Past Perfect",
       formula: "S + had + V3",
       usage: "Hành động đã hoàn thành trước một thời điểm trong quá khứ",
       example: "By the time I arrived, the meeting had started.",
-      exampleVi: "Khi tôi đến, cuộc họp đã bắt đầu."
+      exampleVi: "Khi tôi đến, cuộc họp đã bắt đầu.",
     },
     {
       title: "Present Simple",
       formula: "S + V(s/es)",
       usage: "Thói quen, sự thật, lịch trình",
       example: "The company opens at 9 AM every day.",
-      exampleVi: "Công ty mở cửa lúc 9 giờ sáng hàng ngày."
-    }
+      exampleVi: "Công ty mở cửa lúc 9 giờ sáng hàng ngày.",
+    },
   ],
   conditionals: [
     {
@@ -6962,36 +11256,38 @@ const GRAMMAR_DATA = {
       formula: "If + Present Simple, Present Simple",
       usage: "Sự thật luôn đúng, quy luật tự nhiên",
       example: "If you heat water to 100°C, it boils.",
-      exampleVi: "Nếu bạn đun nước đến 100°C, nó sôi."
+      exampleVi: "Nếu bạn đun nước đến 100°C, nó sôi.",
     },
     {
       title: "First Conditional",
       formula: "If + Present Simple, Will + V",
       usage: "Khả năng cao xảy ra trong tương lai",
       example: "If we get approval, we'll start immediately.",
-      exampleVi: "Nếu chúng tôi được chấp thuận, chúng tôi sẽ bắt đầu ngay."
+      exampleVi: "Nếu chúng tôi được chấp thuận, chúng tôi sẽ bắt đầu ngay.",
     },
     {
       title: "Second Conditional",
       formula: "If + Past Simple, Would + V",
       usage: "Tình huống giả định, ít có khả năng xảy ra",
       example: "If I had more budget, I would hire more staff.",
-      exampleVi: "Nếu tôi có thêm ngân sách, tôi sẽ tuyển thêm nhân viên."
+      exampleVi: "Nếu tôi có thêm ngân sách, tôi sẽ tuyển thêm nhân viên.",
     },
     {
       title: "Third Conditional",
       formula: "If + Past Perfect, Would have + V3",
       usage: "Nói về điều không thể thay đổi trong quá khứ",
       example: "If we had planned better, we would have succeeded.",
-      exampleVi: "Nếu chúng tôi đã lập kế hoạch tốt hơn, chúng tôi đã thành công."
+      exampleVi:
+        "Nếu chúng tôi đã lập kế hoạch tốt hơn, chúng tôi đã thành công.",
     },
     {
       title: "Mixed Conditional",
       formula: "If + Past Perfect, would + V (nguyên mẫu)",
       usage: "Kết hợp điều kiện từ quá khứ với kết quả hiện tại",
       example: "If I had studied harder, I would have a better job now.",
-      exampleVi: "Nếu tôi đã học chăm chỉ hơn, bây giờ tôi sẽ có công việc tốt hơn."
-    }
+      exampleVi:
+        "Nếu tôi đã học chăm chỉ hơn, bây giờ tôi sẽ có công việc tốt hơn.",
+    },
   ],
   passive: [
     {
@@ -6999,36 +11295,37 @@ const GRAMMAR_DATA = {
       formula: "S + am/is/are + V3 (by...)",
       usage: "Khi người thực hiện không quan trọng hoặc không xác định",
       example: "The report is reviewed by the manager.",
-      exampleVi: "Báo cáo được quản lý xem xét."
+      exampleVi: "Báo cáo được quản lý xem xét.",
     },
     {
       title: "Passive Voice - Past Simple",
       formula: "S + was/were + V3 (by...)",
-      usage: "Sự việc đã xảy ra trong quá khứ, người thực hiện không cần nhấn mạnh",
+      usage:
+        "Sự việc đã xảy ra trong quá khứ, người thực hiện không cần nhấn mạnh",
       example: "The contract was signed yesterday.",
-      exampleVi: "Hợp đồng đã được ký hôm qua."
+      exampleVi: "Hợp đồng đã được ký hôm qua.",
     },
     {
       title: "Passive Voice - Future",
       formula: "S + will be + V3 (by...)",
       usage: "Hành động sẽ được thực hiện trong tương lai",
       example: "The decision will be announced next week.",
-      exampleVi: "Quyết định sẽ được công bố vào tuần sau."
+      exampleVi: "Quyết định sẽ được công bố vào tuần sau.",
     },
     {
       title: "Passive Voice - Present Continuous",
       formula: "S + am/is/are + being + V3",
       usage: "Hành động đang được thực hiện tại thời điểm nói",
       example: "The report is being reviewed by the manager.",
-      exampleVi: "Báo cáo đang được quản lý xem xét."
+      exampleVi: "Báo cáo đang được quản lý xem xét.",
     },
     {
       title: "Passive Voice - Present Perfect",
       formula: "S + have/has + been + V3",
       usage: "Hành động đã hoàn thành và có kết quả liên quan đến hiện tại",
       example: "The project has been completed successfully.",
-      exampleVi: "Dự án đã được hoàn thành thành công."
-    }
+      exampleVi: "Dự án đã được hoàn thành thành công.",
+    },
   ],
   modal: [
     {
@@ -7036,66 +11333,76 @@ const GRAMMAR_DATA = {
       formula: "S + must/have to + V",
       usage: "Phải làm gì (bắt buộc)",
       example: "We must submit the report by Friday.",
-      exampleVi: "Chúng tôi phải nộp báo cáo trước thứ Sáu."
+      exampleVi: "Chúng tôi phải nộp báo cáo trước thứ Sáu.",
     },
     {
       title: "Should / Shouldn't",
       formula: "S + should/shouldn't + V",
       usage: "Nên / Không nên",
       example: "You should discuss this with your team.",
-      exampleVi: "Bạn nên thảo luận điều này với nhóm của bạn."
+      exampleVi: "Bạn nên thảo luận điều này với nhóm của bạn.",
     },
     {
       title: "Could / Might",
       formula: "S + could/might + V",
       usage: "Có thể (khả năng)",
       example: "We might need more time to complete.",
-      exampleVi: "Chúng tôi có thể cần thêm thời gian để hoàn thành."
+      exampleVi: "Chúng tôi có thể cần thêm thời gian để hoàn thành.",
     },
     {
       title: "May",
       formula: "S + may + V",
       usage: "Xin phép hoặc khả năng",
       example: "May I schedule a meeting for tomorrow?",
-      exampleVi: "Tôi có thể lên lịch họp cho ngày mai không?"
+      exampleVi: "Tôi có thể lên lịch họp cho ngày mai không?",
     },
     {
       title: "Mustn't vs Don't have to",
       formula: "Mustn't = không được / Don't have to = không cần",
       usage: "Phân biệt giữa cấm và không bắt buộc",
-      example: "You mustn't share this information. / You don't have to attend the meeting.",
-      exampleVi: "Bạn không được chia sẻ thông tin này. / Bạn không cần dự cuộc họp."
+      example:
+        "You mustn't share this information. / You don't have to attend the meeting.",
+      exampleVi:
+        "Bạn không được chia sẻ thông tin này. / Bạn không cần dự cuộc họp.",
     },
     {
       title: "Will vs Would (yêu cầu lịch sự)",
       formula: "Will you + V? / Would you + V?",
       usage: "Would lịch sự hơn Will trong yêu cầu",
-      example: "Will you send me the report? / Would you mind sending the report?",
-      exampleVi: "Bạn sẽ gửi cho tôi báo cáo chứ? / Bạn có phiền gửi báo cáo không?"
-    }
+      example:
+        "Will you send me the report? / Would you mind sending the report?",
+      exampleVi:
+        "Bạn sẽ gửi cho tôi báo cáo chứ? / Bạn có phiền gửi báo cáo không?",
+    },
   ],
   reported: [
     {
       title: "Reported Speech - Present Simple",
       formula: "said that + S + V (past)",
       usage: "Chuyển câu trực tiếp sang gián tiếp",
-      example: "He said, 'The project is complete.' → He said that the project was complete.",
-      exampleVi: "Anh ấy nói, 'Dự án đã hoàn thành.' → Anh ấy nói rằng dự án đã hoàn thành."
+      example:
+        "He said, 'The project is complete.' → He said that the project was complete.",
+      exampleVi:
+        "Anh ấy nói, 'Dự án đã hoàn thành.' → Anh ấy nói rằng dự án đã hoàn thành.",
     },
     {
       title: "Reported Speech - Commands",
       formula: "told + O + to + V",
       usage: "Chuyển mệnh lệnh sang gián tiếp",
-      example: "She said, 'Please submit the report.' → She told me to submit the report.",
-      exampleVi: "Cô ấy nói, 'Vui lòng nộp báo cáo.' → Cô ấy bảo tôi nộp báo cáo."
+      example:
+        "She said, 'Please submit the report.' → She told me to submit the report.",
+      exampleVi:
+        "Cô ấy nói, 'Vui lòng nộp báo cáo.' → Cô ấy bảo tôi nộp báo cáo.",
     },
     {
       title: "Reported Speech - Questions",
       formula: "asked + if/whether + S + V",
       usage: "Chuyển câu hỏi sang gián tiếp",
-      example: "'Did you finish the report?' → He asked if I had finished the report.",
-      exampleVi: "'Bạn đã hoàn thành báo cáo chưa?' → Anh ấy hỏi liệu tôi đã hoàn thành báo cáo chưa."
-    }
+      example:
+        "'Did you finish the report?' → He asked if I had finished the report.",
+      exampleVi:
+        "'Bạn đã hoàn thành báo cáo chưa?' → Anh ấy hỏi liệu tôi đã hoàn thành báo cáo chưa.",
+    },
   ],
   relative: [
     {
@@ -7103,37 +11410,37 @@ const GRAMMAR_DATA = {
       formula: "who/which/that + clause",
       usage: "Mệnh đề quan trọng, không thể bỏ",
       example: "The employee who works the hardest gets the promotion.",
-      exampleVi: "Nhân viên làm việc chăm chỉ nhất được thăng chức."
+      exampleVi: "Nhân viên làm việc chăm chỉ nhất được thăng chức.",
     },
     {
       title: "Non-Defining Relative Clause",
       formula: "who/which/that (có dấu phẩy)",
       usage: "Mệnh đề bổ sung, có thể bỏ",
       example: "Mr. Smith, who is the CEO, will attend the meeting.",
-      exampleVi: "Ông Smith, người là CEO, sẽ tham dự cuộc họp."
+      exampleVi: "Ông Smith, người là CEO, sẽ tham dự cuộc họp.",
     },
     {
       title: "Relative Pronouns - People",
       formula: "who / whom / that",
       usage: "Dùng cho người",
       example: "The manager who approved the budget is on leave.",
-      exampleVi: "Quản lý người đã phê duyệt ngân sách đang nghỉ."
+      exampleVi: "Quản lý người đã phê duyệt ngân sách đang nghỉ.",
     },
     {
       title: "Relative Pronouns - Things",
       formula: "which / that",
       usage: "Dùng cho vật/sự vật",
       example: "The report which I mentioned is on your desk.",
-      exampleVi: "Báo cáo mà tôi đề cập nằm trên bàn của bạn."
+      exampleVi: "Báo cáo mà tôi đề cập nằm trên bàn của bạn.",
     },
     {
       title: "Whose",
       formula: "whose + noun",
       usage: "Chỉ sở hữu cho cả người và vật",
       example: "The company whose profits increased hired new staff.",
-      exampleVi: "Công ty có lợi nhuận tăng đã tuyển nhân viên mới."
-    }
-  ]
+      exampleVi: "Công ty có lợi nhuận tăng đã tuyển nhân viên mới.",
+    },
+  ],
 };
 
 // Phrases data for business communication
@@ -7142,91 +11449,339 @@ const PHRASES_DATA = {
     // Short phrases
     { phrase: "Hi there!", situation: "Chào hỏi", meaning: "Này!" },
     { phrase: "Hey!", situation: "Chào", meaning: "Này!" },
-    { phrase: "Good morning!", situation: "Chào buổi sáng", meaning: "Chào buổi sáng!" },
-    { phrase: "Good afternoon!", situation: "Chào buổi chiều", meaning: "Chào buổi chiều!" },
-    { phrase: "Good evening!", situation: "Chào buổi tối", meaning: "Chào buổi tối!" },
-    { phrase: "How's it going?", situation: "Dạo này sao?", meaning: "Dạo này thế nào?" },
-    { phrase: "How are you?", situation: "Bạn khỏe không?", meaning: "Bạn khỏe không?" },
-    { phrase: "What's up?", situation: "Có gì mới?", meaning: "Có gì mới không?" },
-    { phrase: "Nice to see you!", situation: "Rất vui gặp bạn!", meaning: "Rất vui gặp bạn!" },
-    { phrase: "Long time no see!", situation: "Lâu rồi không gặp", meaning: "Lâu rồi không gặp!" },
-    { phrase: "Hope you're doing well.", situation: "Hy vọng bạn ổn", meaning: "Hy vọng bạn vẫn ổn." },
-    { phrase: "Hope this finds you well.", situation: "Email mở đầu", meaning: "Hy vọng bạn khỏe mạnh." },
-    { phrase: "Thank you for your time.", situation: "Cảm ơn đã dành thời gian", meaning: "Cảm ơn bạn đã dành thời gian." },
-    { phrase: "Thanks for meeting.", situation: "Cảm ơn đã gặp", meaning: "Cảm ơn đã gặp mặt." },
-    { phrase: "Hope you had a great weekend!", situation: "Chúc cuối tuần vui", meaning: "Chúc bạn cuối tuần vui vẻ!" },
-    { phrase: "Welcome back!", situation: "Chào mừng quay lại", meaning: "Chào mừng quay lại!" },
+    {
+      phrase: "Good morning!",
+      situation: "Chào buổi sáng",
+      meaning: "Chào buổi sáng!",
+    },
+    {
+      phrase: "Good afternoon!",
+      situation: "Chào buổi chiều",
+      meaning: "Chào buổi chiều!",
+    },
+    {
+      phrase: "Good evening!",
+      situation: "Chào buổi tối",
+      meaning: "Chào buổi tối!",
+    },
+    {
+      phrase: "How's it going?",
+      situation: "Dạo này sao?",
+      meaning: "Dạo này thế nào?",
+    },
+    {
+      phrase: "How are you?",
+      situation: "Bạn khỏe không?",
+      meaning: "Bạn khỏe không?",
+    },
+    {
+      phrase: "What's up?",
+      situation: "Có gì mới?",
+      meaning: "Có gì mới không?",
+    },
+    {
+      phrase: "Nice to see you!",
+      situation: "Rất vui gặp bạn!",
+      meaning: "Rất vui gặp bạn!",
+    },
+    {
+      phrase: "Long time no see!",
+      situation: "Lâu rồi không gặp",
+      meaning: "Lâu rồi không gặp!",
+    },
+    {
+      phrase: "Hope you're doing well.",
+      situation: "Hy vọng bạn ổn",
+      meaning: "Hy vọng bạn vẫn ổn.",
+    },
+    {
+      phrase: "Hope this finds you well.",
+      situation: "Email mở đầu",
+      meaning: "Hy vọng bạn khỏe mạnh.",
+    },
+    {
+      phrase: "Thank you for your time.",
+      situation: "Cảm ơn đã dành thời gian",
+      meaning: "Cảm ơn bạn đã dành thời gian.",
+    },
+    {
+      phrase: "Thanks for meeting.",
+      situation: "Cảm ơn đã gặp",
+      meaning: "Cảm ơn đã gặp mặt.",
+    },
+    {
+      phrase: "Hope you had a great weekend!",
+      situation: "Chúc cuối tuần vui",
+      meaning: "Chúc bạn cuối tuần vui vẻ!",
+    },
+    {
+      phrase: "Welcome back!",
+      situation: "Chào mừng quay lại",
+      meaning: "Chào mừng quay lại!",
+    },
   ],
   goodbye: [
     { phrase: "See you!", situation: "Tạm biệt", meaning: "Hẹn gặp lại!" },
-    { phrase: "See you later!", situation: "Hẹn gặp sau", meaning: "Hẹn gặp sau nhé!" },
-    { phrase: "Talk to you soon.", situation: "Sớm nói chuyện", meaning: "Sớm nói chuyện với bạn." },
-    { phrase: "Have a good one!", situation: "Chúc tốt lành", meaning: "Chúc tốt lành!" },
-    { phrase: "Take care!", situation: "Giữ gìn sức khỏe", meaning: "Giữ gìn sức khỏe nhé!" },
+    {
+      phrase: "See you later!",
+      situation: "Hẹn gặp sau",
+      meaning: "Hẹn gặp sau nhé!",
+    },
+    {
+      phrase: "Talk to you soon.",
+      situation: "Sớm nói chuyện",
+      meaning: "Sớm nói chuyện với bạn.",
+    },
+    {
+      phrase: "Have a good one!",
+      situation: "Chúc tốt lành",
+      meaning: "Chúc tốt lành!",
+    },
+    {
+      phrase: "Take care!",
+      situation: "Giữ gìn sức khỏe",
+      meaning: "Giữ gìn sức khỏe nhé!",
+    },
     { phrase: "Bye for now!", situation: "Tạm biệt", meaning: "Tạm biệt nhé!" },
-    { phrase: "Keep in touch!", situation: "Giữ liên lạc", meaning: "Giữ liên lạc nhé!" },
-    { phrase: "It was great talking to you.", situation: "Rất vui được nói chuyện", meaning: "Rất vui được nói chuyện với bạn." },
-    { phrase: "Looking forward to hearing from you.", situation: "Mong phản hồi", meaning: "Mong sớm nhận được phản hồi." },
-    { phrase: "Best regards.", situation: "Trân trọng", meaning: "Trân trọng." },
-    { phrase: "Kind regards.", situation: "Kính trọng", meaning: "Kính trọng." },
-    { phrase: "Warm regards.", situation: "Chào thân mật", meaning: "Chào thân mật." },
-    { phrase: "All the best!", situation: "Mọi điều tốt đẹp", meaning: "Mọi điều tốt đẹp!" },
+    {
+      phrase: "Keep in touch!",
+      situation: "Giữ liên lạc",
+      meaning: "Giữ liên lạc nhé!",
+    },
+    {
+      phrase: "It was great talking to you.",
+      situation: "Rất vui được nói chuyện",
+      meaning: "Rất vui được nói chuyện với bạn.",
+    },
+    {
+      phrase: "Looking forward to hearing from you.",
+      situation: "Mong phản hồi",
+      meaning: "Mong sớm nhận được phản hồi.",
+    },
+    {
+      phrase: "Best regards.",
+      situation: "Trân trọng",
+      meaning: "Trân trọng.",
+    },
+    {
+      phrase: "Kind regards.",
+      situation: "Kính trọng",
+      meaning: "Kính trọng.",
+    },
+    {
+      phrase: "Warm regards.",
+      situation: "Chào thân mật",
+      meaning: "Chào thân mật.",
+    },
+    {
+      phrase: "All the best!",
+      situation: "Mọi điều tốt đẹp",
+      meaning: "Mọi điều tốt đẹp!",
+    },
   ],
   thanks: [
     { phrase: "Thanks!", situation: "Cảm ơn", meaning: "Cảm ơn!" },
     { phrase: "Thank you!", situation: "Cảm ơn bạn", meaning: "Cảm ơn bạn!" },
-    { phrase: "Thanks a lot!", situation: "Cảm ơn nhiều", meaning: "Cảm ơn nhiều!" },
-    { phrase: "Thank you so much!", situation: "Cảm ơn rất nhiều", meaning: "Cảm ơn bạn rất nhiều!" },
-    { phrase: "I appreciate it.", situation: "Tôi trân trọng", meaning: "Tôi rất trân trọng điều này." },
-    { phrase: "Much appreciated!", situation: "Rất biết ơn", meaning: "Rất biết ơn!" },
-    { phrase: "Thanks for your help.", situation: "Cảm ơn đã giúp", meaning: "Cảm ơn đã giúp đỡ." },
-    { phrase: "Thanks for getting back to me.", situation: "Cảm ơn đã phản hồi", meaning: "Cảm ơn đã phản hồi." },
-    { phrase: "I really appreciate your help.", situation: "Rất biết ơn sự giúp đỡ", meaning: "Tôi rất biết ơn sự giúp đỡ của bạn." },
-    { phrase: "Thanks for the update.", situation: "Cảm ơn đã cập nhật", meaning: "Cảm ơn đã cập nhật." },
-    { phrase: "Thank you for your patience.", situation: "Cảm ơn đã kiên nhẫn", meaning: "Cảm ơn đã kiên nhẫn." },
-    { phrase: "Thanks for understanding.", situation: "Cảm ơn đã thấu hiểu", meaning: "Cảm ơn đã thấu hiểu." },
+    {
+      phrase: "Thanks a lot!",
+      situation: "Cảm ơn nhiều",
+      meaning: "Cảm ơn nhiều!",
+    },
+    {
+      phrase: "Thank you so much!",
+      situation: "Cảm ơn rất nhiều",
+      meaning: "Cảm ơn bạn rất nhiều!",
+    },
+    {
+      phrase: "I appreciate it.",
+      situation: "Tôi trân trọng",
+      meaning: "Tôi rất trân trọng điều này.",
+    },
+    {
+      phrase: "Much appreciated!",
+      situation: "Rất biết ơn",
+      meaning: "Rất biết ơn!",
+    },
+    {
+      phrase: "Thanks for your help.",
+      situation: "Cảm ơn đã giúp",
+      meaning: "Cảm ơn đã giúp đỡ.",
+    },
+    {
+      phrase: "Thanks for getting back to me.",
+      situation: "Cảm ơn đã phản hồi",
+      meaning: "Cảm ơn đã phản hồi.",
+    },
+    {
+      phrase: "I really appreciate your help.",
+      situation: "Rất biết ơn sự giúp đỡ",
+      meaning: "Tôi rất biết ơn sự giúp đỡ của bạn.",
+    },
+    {
+      phrase: "Thanks for the update.",
+      situation: "Cảm ơn đã cập nhật",
+      meaning: "Cảm ơn đã cập nhật.",
+    },
+    {
+      phrase: "Thank you for your patience.",
+      situation: "Cảm ơn đã kiên nhẫn",
+      meaning: "Cảm ơn đã kiên nhẫn.",
+    },
+    {
+      phrase: "Thanks for understanding.",
+      situation: "Cảm ơn đã thấu hiểu",
+      meaning: "Cảm ơn đã thấu hiểu.",
+    },
   ],
   request: [
-    { phrase: "Can you help me?", situation: "Bạn giúp được không?", meaning: "Bạn có thể giúp tôi không?" },
-    { phrase: "Could you...?", situation: "Bạn có thể...?", meaning: "Bạn có thể...?" },
-    { phrase: "Would you mind...?", situation: "Bạn có phiền...?", meaning: "Bạn có phiền...?" },
-    { phrase: "Can I ask a favor?", situation: "Nhờ giúp một việc", meaning: "Tôi có thể nhờ giúp một việc không?" },
-    { phrase: "I need your help.", situation: "Tôi cần giúp đỡ", meaning: "Tôi cần bạn giúp đỡ." },
-    { phrase: "Please send me...", situation: "Gửi cho tôi...", meaning: "Vui lòng gửi cho tôi..." },
-    { phrase: "Could you check this?", situation: "Kiểm tra giúp", meaning: "Bạn có thể kiểm tra điều này không?" },
-    { phrase: "Can we schedule a call?", situation: "Sắp xếp cuộc gọi", meaning: "Chúng ta có thể sắp xếp một cuộc gọi không?" },
-    { phrase: "I was wondering if...", situation: "Tôi đang tự hỏi liệu...", meaning: "Tôi đang tự hỏi liệu..." },
-    { phrase: "Is it possible to...?", situation: "Có thể...?", meaning: "Có thể...?" },
-    { phrase: "Would it be okay if...?", situation: "Có ổn không nếu...?", meaning: "Có ổn không nếu...?" },
-    { phrase: "I'd like to request...", situation: "Tôi muốn yêu cầu...", meaning: "Tôi muốn yêu cầu..." },
+    {
+      phrase: "Can you help me?",
+      situation: "Bạn giúp được không?",
+      meaning: "Bạn có thể giúp tôi không?",
+    },
+    {
+      phrase: "Could you...?",
+      situation: "Bạn có thể...?",
+      meaning: "Bạn có thể...?",
+    },
+    {
+      phrase: "Would you mind...?",
+      situation: "Bạn có phiền...?",
+      meaning: "Bạn có phiền...?",
+    },
+    {
+      phrase: "Can I ask a favor?",
+      situation: "Nhờ giúp một việc",
+      meaning: "Tôi có thể nhờ giúp một việc không?",
+    },
+    {
+      phrase: "I need your help.",
+      situation: "Tôi cần giúp đỡ",
+      meaning: "Tôi cần bạn giúp đỡ.",
+    },
+    {
+      phrase: "Please send me...",
+      situation: "Gửi cho tôi...",
+      meaning: "Vui lòng gửi cho tôi...",
+    },
+    {
+      phrase: "Could you check this?",
+      situation: "Kiểm tra giúp",
+      meaning: "Bạn có thể kiểm tra điều này không?",
+    },
+    {
+      phrase: "Can we schedule a call?",
+      situation: "Sắp xếp cuộc gọi",
+      meaning: "Chúng ta có thể sắp xếp một cuộc gọi không?",
+    },
+    {
+      phrase: "I was wondering if...",
+      situation: "Tôi đang tự hỏi liệu...",
+      meaning: "Tôi đang tự hỏi liệu...",
+    },
+    {
+      phrase: "Is it possible to...?",
+      situation: "Có thể...?",
+      meaning: "Có thể...?",
+    },
+    {
+      phrase: "Would it be okay if...?",
+      situation: "Có ổn không nếu...?",
+      meaning: "Có ổn không nếu...?",
+    },
+    {
+      phrase: "I'd like to request...",
+      situation: "Tôi muốn yêu cầu...",
+      meaning: "Tôi muốn yêu cầu...",
+    },
   ],
   agreement: [
     { phrase: "Sure!", situation: "Được chứ!", meaning: "Được chứ!" },
     { phrase: "No problem!", situation: "Không sao!", meaning: "Không sao!" },
-    { phrase: "Sounds good!", situation: "Nghe hay đấy!", meaning: "Nghe hay đấy!" },
+    {
+      phrase: "Sounds good!",
+      situation: "Nghe hay đấy!",
+      meaning: "Nghe hay đấy!",
+    },
     { phrase: "I agree.", situation: "Tôi đồng ý", meaning: "Tôi đồng ý." },
     { phrase: "That's fine.", situation: "Được đấy", meaning: "Được đấy." },
     { phrase: "Perfect!", situation: "Hoàn hảo!", meaning: "Hoàn hảo!" },
-    { phrase: "Absolutely!", situation: "Hoàn toàn đồng ý!", meaning: "Hoàn toàn đồng ý!" },
-    { phrase: "Count me in!", situation: "Tính tôi vào!", meaning: "Tính tôi vào!" },
+    {
+      phrase: "Absolutely!",
+      situation: "Hoàn toàn đồng ý!",
+      meaning: "Hoàn toàn đồng ý!",
+    },
+    {
+      phrase: "Count me in!",
+      situation: "Tính tôi vào!",
+      meaning: "Tính tôi vào!",
+    },
     { phrase: "Let's do it!", situation: "Làm thôi!", meaning: "Làm thôi!" },
     { phrase: "Deal!", situation: "Deal!", meaning: "Thỏa thuận!" },
     { phrase: "You got it!", situation: "Được rồi!", meaning: "Được rồi!" },
     { phrase: "I'm in!", situation: "Tôi tham gia!", meaning: "Tôi tham gia!" },
-    { phrase: "We are on the same page.", situation: "Cùng chung quan điểm", meaning: "Chúng ta cùng chung quan điểm." },
-    { phrase: "That's a great idea!", situation: "Ý hay đấy!", meaning: "Đó là một ý hay!" },
+    {
+      phrase: "We are on the same page.",
+      situation: "Cùng chung quan điểm",
+      meaning: "Chúng ta cùng chung quan điểm.",
+    },
+    {
+      phrase: "That's a great idea!",
+      situation: "Ý hay đấy!",
+      meaning: "Đó là một ý hay!",
+    },
   ],
   disagreement: [
-    { phrase: "I'm not sure.", situation: "Tôi không chắc", meaning: "Tôi không chắc." },
-    { phrase: "I see it differently.", situation: "Tôi nghĩ khác", meaning: "Tôi nhìn nhận khác." },
-    { phrase: "I have concerns.", situation: "Tôi có lo ngại", meaning: "Tôi có một số lo ngại." },
-    { phrase: "That's not ideal.", situation: "Không lý tưởng", meaning: "Đó không phải là lý tưởng." },
-    { phrase: "I don't think that will work.", situation: "Không khả thi", meaning: "Tôi không nghĩ điều đó sẽ hiệu quả." },
-    { phrase: "We might need to reconsider.", situation: "Cần xem xét lại", meaning: "Chúng ta có thể cần xem xét lại." },
-    { phrase: "I see your point, but...", situation: "Hiểu ý bạn, nhưng...", meaning: "Tôi hiểu ý bạn, nhưng..." },
-    { phrase: "Let's find a middle ground.", situation: "Tìm giải pháp trung gian", meaning: "Hãy tìm giải pháp trung gian." },
-    { phrase: "I respectfully disagree.", situation: "Không đồng ý", meaning: "Tôi kính trọng không đồng ý." },
-    { phrase: "That might not work.", situation: "Có thể không ổn", meaning: "Điều đó có thể không ổn." },
+    {
+      phrase: "I'm not sure.",
+      situation: "Tôi không chắc",
+      meaning: "Tôi không chắc.",
+    },
+    {
+      phrase: "I see it differently.",
+      situation: "Tôi nghĩ khác",
+      meaning: "Tôi nhìn nhận khác.",
+    },
+    {
+      phrase: "I have concerns.",
+      situation: "Tôi có lo ngại",
+      meaning: "Tôi có một số lo ngại.",
+    },
+    {
+      phrase: "That's not ideal.",
+      situation: "Không lý tưởng",
+      meaning: "Đó không phải là lý tưởng.",
+    },
+    {
+      phrase: "I don't think that will work.",
+      situation: "Không khả thi",
+      meaning: "Tôi không nghĩ điều đó sẽ hiệu quả.",
+    },
+    {
+      phrase: "We might need to reconsider.",
+      situation: "Cần xem xét lại",
+      meaning: "Chúng ta có thể cần xem xét lại.",
+    },
+    {
+      phrase: "I see your point, but...",
+      situation: "Hiểu ý bạn, nhưng...",
+      meaning: "Tôi hiểu ý bạn, nhưng...",
+    },
+    {
+      phrase: "Let's find a middle ground.",
+      situation: "Tìm giải pháp trung gian",
+      meaning: "Hãy tìm giải pháp trung gian.",
+    },
+    {
+      phrase: "I respectfully disagree.",
+      situation: "Không đồng ý",
+      meaning: "Tôi kính trọng không đồng ý.",
+    },
+    {
+      phrase: "That might not work.",
+      situation: "Có thể không ổn",
+      meaning: "Điều đó có thể không ổn.",
+    },
   ],
   apology: [
     { phrase: "Sorry!", situation: "Xin lỗi!", meaning: "Xin lỗi!" },
@@ -7234,13 +11789,37 @@ const PHRASES_DATA = {
     { phrase: "I'm sorry.", situation: "Tôi xin lỗi", meaning: "Tôi xin lỗi." },
     { phrase: "Oops!", situation: "Ồ!", meaning: "Ồ!" },
     { phrase: "My mistake!", situation: "Sai rồi!", meaning: "Sai rồi!" },
-    { phrase: "I apologize.", situation: "Tôi xin lỗi", meaning: "Tôi xin lỗi." },
-    { phrase: "Sorry about that.", situation: "Xin lỗi về điều đó", meaning: "Xin lỗi về điều đó." },
+    {
+      phrase: "I apologize.",
+      situation: "Tôi xin lỗi",
+      meaning: "Tôi xin lỗi.",
+    },
+    {
+      phrase: "Sorry about that.",
+      situation: "Xin lỗi về điều đó",
+      meaning: "Xin lỗi về điều đó.",
+    },
     { phrase: "My apologies.", situation: "Xin lỗi", meaning: "Xin lỗi." },
-    { phrase: "I didn't mean to...", situation: "Tôi không có ý...", meaning: "Tôi không có ý..." },
-    { phrase: "Please forgive me.", situation: "Xin hãy tha thứ", meaning: "Xin hãy tha thứ cho tôi." },
-    { phrase: "I'll make it right.", situation: "Tôi sẽ sửa chữa", meaning: "Tôi sẽ sửa chữa." },
-    { phrase: "Sorry for the inconvenience.", situation: "Xin lỗi bất tiện", meaning: "Xin lỗi về sự bất tiện." },
+    {
+      phrase: "I didn't mean to...",
+      situation: "Tôi không có ý...",
+      meaning: "Tôi không có ý...",
+    },
+    {
+      phrase: "Please forgive me.",
+      situation: "Xin hãy tha thứ",
+      meaning: "Xin hãy tha thứ cho tôi.",
+    },
+    {
+      phrase: "I'll make it right.",
+      situation: "Tôi sẽ sửa chữa",
+      meaning: "Tôi sẽ sửa chữa.",
+    },
+    {
+      phrase: "Sorry for the inconvenience.",
+      situation: "Xin lỗi bất tiện",
+      meaning: "Xin lỗi về sự bất tiện.",
+    },
   ],
   confirmation: [
     { phrase: "Got it!", situation: "Hiểu rồi!", meaning: "Hiểu rồi!" },
@@ -7251,149 +11830,533 @@ const PHRASES_DATA = {
     { phrase: "Noted!", situation: "Đã ghi nhận!", meaning: "Đã ghi nhận!" },
     { phrase: "Makes sense.", situation: "Hợp lý", meaning: "Hợp lý." },
     { phrase: "I see.", situation: "Tôi hiểu", meaning: "Tôi hiểu." },
-    { phrase: "Okay, got it.", situation: "Được rồi, hiểu", meaning: "Được rồi, tôi hiểu." },
-    { phrase: "I'll get right on it.", situation: "Sẽ làm ngay", meaning: "Tôi sẽ làm ngay." },
-    { phrase: "Leave it with me.", situation: "Để tôi lo", meaning: "Để tôi lo." },
-    { phrase: "Consider it done.", situation: "Coi như xong", meaning: "Coig như xong rồi." },
+    {
+      phrase: "Okay, got it.",
+      situation: "Được rồi, hiểu",
+      meaning: "Được rồi, tôi hiểu.",
+    },
+    {
+      phrase: "I'll get right on it.",
+      situation: "Sẽ làm ngay",
+      meaning: "Tôi sẽ làm ngay.",
+    },
+    {
+      phrase: "Leave it with me.",
+      situation: "Để tôi lo",
+      meaning: "Để tôi lo.",
+    },
+    {
+      phrase: "Consider it done.",
+      situation: "Coi như xong",
+      meaning: "Coig như xong rồi.",
+    },
   ],
   question: [
-    { phrase: "Can I ask...?", situation: "Tôi hỏi được không...?", meaning: "Tôi hỏi được không...?" },
-    { phrase: "Do you have a minute?", situation: "Bạn có thời gian không?", meaning: "Bạn có một chút thời gian không?" },
-    { phrase: "Quick question:", situation: "Câu hỏi nhanh:", meaning: "Câu hỏi nhanh:" },
-    { phrase: "Just curious,", situation: "Tò mò thôi,", meaning: "Tò mò thôi," },
-    { phrase: "Out of curiosity,", situation: "Để tìm hiểu,", meaning: "Để tìm hiểu," },
-    { phrase: "I was wondering...", situation: "Tôi đang tự hỏi...", meaning: "Tôi đang tự hỏi..." },
-    { phrase: "Could you clarify?", situation: "Làm rõ giúp", meaning: "Bạn có thể làm rõ không?" },
-    { phrase: "What do you think?", situation: "Bạn nghĩ sao?", meaning: "Bạn nghĩ sao?" },
-    { phrase: "Does that make sense?", situation: "Hợp lý không?", meaning: "Điều đó có hợp lý không?" },
-    { phrase: "Any questions?", situation: "Có câu hỏi không?", meaning: "Có câu hỏi gì không?" },
-    { phrase: "Is everything clear?", situation: "Rõ ràng chứ?", meaning: "Mọi thứ rõ ràng chứ?" },
+    {
+      phrase: "Can I ask...?",
+      situation: "Tôi hỏi được không...?",
+      meaning: "Tôi hỏi được không...?",
+    },
+    {
+      phrase: "Do you have a minute?",
+      situation: "Bạn có thời gian không?",
+      meaning: "Bạn có một chút thời gian không?",
+    },
+    {
+      phrase: "Quick question:",
+      situation: "Câu hỏi nhanh:",
+      meaning: "Câu hỏi nhanh:",
+    },
+    {
+      phrase: "Just curious,",
+      situation: "Tò mò thôi,",
+      meaning: "Tò mò thôi,",
+    },
+    {
+      phrase: "Out of curiosity,",
+      situation: "Để tìm hiểu,",
+      meaning: "Để tìm hiểu,",
+    },
+    {
+      phrase: "I was wondering...",
+      situation: "Tôi đang tự hỏi...",
+      meaning: "Tôi đang tự hỏi...",
+    },
+    {
+      phrase: "Could you clarify?",
+      situation: "Làm rõ giúp",
+      meaning: "Bạn có thể làm rõ không?",
+    },
+    {
+      phrase: "What do you think?",
+      situation: "Bạn nghĩ sao?",
+      meaning: "Bạn nghĩ sao?",
+    },
+    {
+      phrase: "Does that make sense?",
+      situation: "Hợp lý không?",
+      meaning: "Điều đó có hợp lý không?",
+    },
+    {
+      phrase: "Any questions?",
+      situation: "Có câu hỏi không?",
+      meaning: "Có câu hỏi gì không?",
+    },
+    {
+      phrase: "Is everything clear?",
+      situation: "Rõ ràng chứ?",
+      meaning: "Mọi thứ rõ ràng chứ?",
+    },
   ],
   meeting: [
-    { phrase: "Let's start.", situation: "Bắt đầu thôi", meaning: "Hãy bắt đầu." },
-    { phrase: "Where were we?", situation: "Ở đâu rồi?", meaning: "Chúng ta đang ở đâu rồi?" },
-    { phrase: "Back to the topic.", situation: "Quay lại chủ đề", meaning: "Quay lại chủ đề chính." },
-    { phrase: "Let's move on.", situation: "Chuyển tiếp", meaning: "Hãy chuyển tiếp." },
-    { phrase: "Any updates?", situation: "Có cập nhật gì?", meaning: "Có cập nhật gì không?" },
-    { phrase: "Let's wrap up.", situation: "Kết thúc thôi", meaning: "Hãy kết thúc thôi." },
+    {
+      phrase: "Let's start.",
+      situation: "Bắt đầu thôi",
+      meaning: "Hãy bắt đầu.",
+    },
+    {
+      phrase: "Where were we?",
+      situation: "Ở đâu rồi?",
+      meaning: "Chúng ta đang ở đâu rồi?",
+    },
+    {
+      phrase: "Back to the topic.",
+      situation: "Quay lại chủ đề",
+      meaning: "Quay lại chủ đề chính.",
+    },
+    {
+      phrase: "Let's move on.",
+      situation: "Chuyển tiếp",
+      meaning: "Hãy chuyển tiếp.",
+    },
+    {
+      phrase: "Any updates?",
+      situation: "Có cập nhật gì?",
+      meaning: "Có cập nhật gì không?",
+    },
+    {
+      phrase: "Let's wrap up.",
+      situation: "Kết thúc thôi",
+      meaning: "Hãy kết thúc thôi.",
+    },
     { phrase: "Who's next?", situation: "Ai tiếp?", meaning: "Ai tiếp theo?" },
-    { phrase: "Let's take notes.", situation: "Ghi chép thôi", meaning: "Hãy ghi chép." },
-    { phrase: "Action items?", meaning: "Việc cần làm?", meaning: "Có việc gì cần làm không?" },
-    { phrase: "Next steps?", situation: "Bước tiếp theo?", meaning: "Bước tiếp theo là gì?" },
-    { phrase: "Let's revisit this later.", situation: " Quay lại sau", meaning: "Hãy quay lại vấn đề này sau." },
-    { phrase: "Are we aligned?", situation: "Cùng quan điểm chứ?", meaning: "Chúng ta cùng quan điểm chứ?" },
-    { phrase: "Can we agree on...?", situation: "Thống nhất được không...?", meaning: "Chúng ta thống nhất được không...?" },
-    { phrase: "Let's vote.", situation: "Bỏ phiếu thôi", meaning: "Hãy bỏ phiếu." },
+    {
+      phrase: "Let's take notes.",
+      situation: "Ghi chép thôi",
+      meaning: "Hãy ghi chép.",
+    },
+    {
+      phrase: "Action items?",
+      meaning: "Việc cần làm?",
+      meaning: "Có việc gì cần làm không?",
+    },
+    {
+      phrase: "Next steps?",
+      situation: "Bước tiếp theo?",
+      meaning: "Bước tiếp theo là gì?",
+    },
+    {
+      phrase: "Let's revisit this later.",
+      situation: " Quay lại sau",
+      meaning: "Hãy quay lại vấn đề này sau.",
+    },
+    {
+      phrase: "Are we aligned?",
+      situation: "Cùng quan điểm chứ?",
+      meaning: "Chúng ta cùng quan điểm chứ?",
+    },
+    {
+      phrase: "Can we agree on...?",
+      situation: "Thống nhất được không...?",
+      meaning: "Chúng ta thống nhất được không...?",
+    },
+    {
+      phrase: "Let's vote.",
+      situation: "Bỏ phiếu thôi",
+      meaning: "Hãy bỏ phiếu.",
+    },
   ],
   email: [
-    { phrase: "As discussed,", situation: "Như đã thảo luận,", meaning: "Như đã thảo luận," },
-    { phrase: "Per our conversation,", situation: "Theo cuộc trò chuyện,", meaning: "Theo cuộc trò chuyện của chúng ta," },
-    { phrase: "Please find attached.", situation: "File đính kèm", meaning: "Vui lòng xem file đính kèm." },
-    { phrase: "Following up on...", meaning: "Theo dõi...", meaning: "Theo dõi về..." },
-    { phrase: "Just a reminder...", meaning: "Nhắc nhở...", meaning: "Chỉ là nhắc nhở..." },
-    { phrase: "Quick heads-up...", meaning: "Thông báo nhanh...", meaning: "Thông báo nhanh..." },
-    { phrase: "For your reference.", meaning: "Để bạn tham khảo", meaning: "Để bạn tham khảo." },
-    { phrase: "Please let me know.", meaning: "Cho tôi biết", meaning: "Vui lòng cho tôi biết." },
-    { phrase: "Feel free to reach out.", meaning: "Liên hệ thoải mái", meaning: "Liên hệ thoải mái nhé." },
+    {
+      phrase: "As discussed,",
+      situation: "Như đã thảo luận,",
+      meaning: "Như đã thảo luận,",
+    },
+    {
+      phrase: "Per our conversation,",
+      situation: "Theo cuộc trò chuyện,",
+      meaning: "Theo cuộc trò chuyện của chúng ta,",
+    },
+    {
+      phrase: "Please find attached.",
+      situation: "File đính kèm",
+      meaning: "Vui lòng xem file đính kèm.",
+    },
+    {
+      phrase: "Following up on...",
+      meaning: "Theo dõi...",
+      meaning: "Theo dõi về...",
+    },
+    {
+      phrase: "Just a reminder...",
+      meaning: "Nhắc nhở...",
+      meaning: "Chỉ là nhắc nhở...",
+    },
+    {
+      phrase: "Quick heads-up...",
+      meaning: "Thông báo nhanh...",
+      meaning: "Thông báo nhanh...",
+    },
+    {
+      phrase: "For your reference.",
+      meaning: "Để bạn tham khảo",
+      meaning: "Để bạn tham khảo.",
+    },
+    {
+      phrase: "Please let me know.",
+      meaning: "Cho tôi biết",
+      meaning: "Vui lòng cho tôi biết.",
+    },
+    {
+      phrase: "Feel free to reach out.",
+      meaning: "Liên hệ thoải mái",
+      meaning: "Liên hệ thoải mái nhé.",
+    },
     { phrase: "Best regards,", meaning: "Trân trọng,", meaning: "Trân trọng," },
-    { phrase: "Thanks in advance.", meaning: "Cảm ơn trước", meaning: "Cảm ơn trước." },
-    { phrase: "Looking forward to your reply.", meaning: "Mong phản hồi", meaning: "Mong nhận được phản hồi." },
+    {
+      phrase: "Thanks in advance.",
+      meaning: "Cảm ơn trước",
+      meaning: "Cảm ơn trước.",
+    },
+    {
+      phrase: "Looking forward to your reply.",
+      meaning: "Mong phản hồi",
+      meaning: "Mong nhận được phản hồi.",
+    },
   ],
   telephone: [
-    { phrase: "Thank you for calling.", situation: "Cảm ơn đã gọi", meaning: "Cảm ơn bạn đã gọi." },
-    { phrase: "How can I help?", situation: "Tôi giúp gì được?", meaning: "Tôi có thể giúp gì cho bạn?" },
-    { phrase: "Who's calling, please?", situation: "Ai gọi vậy?", meaning: "Cho tôi xin tên người gọi?" },
-    { phrase: "Please hold.", situation: "Đợi một chút", meaning: "Vui lòng đợi một chút." },
-    { phrase: "One moment, please.", situation: "Một chút thôi", meaning: "Một chút thôi nhé." },
-    { phrase: "Let me transfer you.", situation: "Chuyển cuộc gọi", meaning: "Để tôi chuyển cuộc gọi." },
-    { phrase: "He's not available.", situation: "Không có mặt", meaning: "Anh ấy hiện không có mặt." },
-    { phrase: "Can I take a message?", situation: "Nhắn tin được không?", meaning: "Tôi có thể nhận tin nhắn không?" },
-    { phrase: "Please call back later.", situation: "Gọi lại sau", meaning: "Vui lòng gọi lại sau." },
-    { phrase: "The line is busy.", situation: "Đường dây bận", meaning: "Đường dây đang bận." },
-    { phrase: "Can you hear me?", situation: "Nghe rõ không?", meaning: "Bạn nghe rõ tôi không?" },
-    { phrase: "You're on speaker.", situation: "Đang mở loa", meaning: "Tôi đang mở loa đấy." },
+    {
+      phrase: "Thank you for calling.",
+      situation: "Cảm ơn đã gọi",
+      meaning: "Cảm ơn bạn đã gọi.",
+    },
+    {
+      phrase: "How can I help?",
+      situation: "Tôi giúp gì được?",
+      meaning: "Tôi có thể giúp gì cho bạn?",
+    },
+    {
+      phrase: "Who's calling, please?",
+      situation: "Ai gọi vậy?",
+      meaning: "Cho tôi xin tên người gọi?",
+    },
+    {
+      phrase: "Please hold.",
+      situation: "Đợi một chút",
+      meaning: "Vui lòng đợi một chút.",
+    },
+    {
+      phrase: "One moment, please.",
+      situation: "Một chút thôi",
+      meaning: "Một chút thôi nhé.",
+    },
+    {
+      phrase: "Let me transfer you.",
+      situation: "Chuyển cuộc gọi",
+      meaning: "Để tôi chuyển cuộc gọi.",
+    },
+    {
+      phrase: "He's not available.",
+      situation: "Không có mặt",
+      meaning: "Anh ấy hiện không có mặt.",
+    },
+    {
+      phrase: "Can I take a message?",
+      situation: "Nhắn tin được không?",
+      meaning: "Tôi có thể nhận tin nhắn không?",
+    },
+    {
+      phrase: "Please call back later.",
+      situation: "Gọi lại sau",
+      meaning: "Vui lòng gọi lại sau.",
+    },
+    {
+      phrase: "The line is busy.",
+      situation: "Đường dây bận",
+      meaning: "Đường dây đang bận.",
+    },
+    {
+      phrase: "Can you hear me?",
+      situation: "Nghe rõ không?",
+      meaning: "Bạn nghe rõ tôi không?",
+    },
+    {
+      phrase: "You're on speaker.",
+      situation: "Đang mở loa",
+      meaning: "Tôi đang mở loa đấy.",
+    },
   ],
   problem: [
-    { phrase: "We have an issue.", situation: "Có vấn đề", meaning: "Chúng ta có một vấn đề." },
-    { phrase: "There's a problem.", situation: "Có lỗi", meaning: "Có một lỗi." },
-    { phrase: "It's not working.", situation: "Không hoạt động", meaning: "Nó không hoạt động." },
-    { phrase: "Something went wrong.", situation: "Có gì sai", meaning: "Có gì đó đã sai." },
-    { phrase: "We hit a snag.", situation: "Gặp trở ngại", meaning: "Chúng ta gặp trở ngại." },
-    { phrase: "This is urgent.", situation: "Khẩn cấp", meaning: "Đây là khẩn cấp." },
-    { phrase: "We need to fix this.", situation: "Cần sửa", meaning: "Chúng ta cần sửa điều này." },
-    { phrase: "Can you look into this?", situation: "Kiểm tra giúp", meaning: "Bạn có thể kiểm tra điều này không?" },
-    { phrase: "This is critical.", situation: "Rất quan trọng", meaning: "Điều này rất quan trọng." },
-    { phrase: "We need a solution.", situation: "Cần giải pháp", meaning: "Chúng ta cần một giải pháp." },
-    { phrase: "How do we solve this?", situation: "Giải quyết sao?", meaning: "Chúng ta giải quyết điều này như thế nào?" },
-    { phrase: "Let me check.", situation: "Để tôi kiểm tra", meaning: "Để tôi kiểm tra." },
+    {
+      phrase: "We have an issue.",
+      situation: "Có vấn đề",
+      meaning: "Chúng ta có một vấn đề.",
+    },
+    {
+      phrase: "There's a problem.",
+      situation: "Có lỗi",
+      meaning: "Có một lỗi.",
+    },
+    {
+      phrase: "It's not working.",
+      situation: "Không hoạt động",
+      meaning: "Nó không hoạt động.",
+    },
+    {
+      phrase: "Something went wrong.",
+      situation: "Có gì sai",
+      meaning: "Có gì đó đã sai.",
+    },
+    {
+      phrase: "We hit a snag.",
+      situation: "Gặp trở ngại",
+      meaning: "Chúng ta gặp trở ngại.",
+    },
+    {
+      phrase: "This is urgent.",
+      situation: "Khẩn cấp",
+      meaning: "Đây là khẩn cấp.",
+    },
+    {
+      phrase: "We need to fix this.",
+      situation: "Cần sửa",
+      meaning: "Chúng ta cần sửa điều này.",
+    },
+    {
+      phrase: "Can you look into this?",
+      situation: "Kiểm tra giúp",
+      meaning: "Bạn có thể kiểm tra điều này không?",
+    },
+    {
+      phrase: "This is critical.",
+      situation: "Rất quan trọng",
+      meaning: "Điều này rất quan trọng.",
+    },
+    {
+      phrase: "We need a solution.",
+      situation: "Cần giải pháp",
+      meaning: "Chúng ta cần một giải pháp.",
+    },
+    {
+      phrase: "How do we solve this?",
+      situation: "Giải quyết sao?",
+      meaning: "Chúng ta giải quyết điều này như thế nào?",
+    },
+    {
+      phrase: "Let me check.",
+      situation: "Để tôi kiểm tra",
+      meaning: "Để tôi kiểm tra.",
+    },
   ],
   celebration: [
-    { phrase: "Great job!", situation: "Làm tốt lắm!", meaning: "Làm tốt lắm!" },
+    {
+      phrase: "Great job!",
+      situation: "Làm tốt lắm!",
+      meaning: "Làm tốt lắm!",
+    },
     { phrase: "Well done!", situation: "Xuất sắc!", meaning: "Xuất sắc!" },
     { phrase: "Congrats!", situation: "Chúc mừng!", meaning: "Chúc mừng!" },
-    { phrase: "Congratulations!", situation: "Chúc mừng!", meaning: "Chúc mừng!" },
-    { phrase: "Nice work!", situation: "Làm hay đấy!", meaning: "Làm hay đấy!" },
+    {
+      phrase: "Congratulations!",
+      situation: "Chúc mừng!",
+      meaning: "Chúc mừng!",
+    },
+    {
+      phrase: "Nice work!",
+      situation: "Làm hay đấy!",
+      meaning: "Làm hay đấy!",
+    },
     { phrase: "Brilliant!", situation: "Tuyệt vời!", meaning: "Tuyệt vời!" },
     { phrase: "Awesome!", situation: "Tuyệt vời!", meaning: "Tuyệt vời!" },
-    { phrase: "Happy birthday!", situation: "Chúc mừng sinh nhật!", meaning: "Chúc mừng sinh nhật!" },
-    { phrase: "Happy holidays!", situation: "Chúc lễ vui!", meaning: "Chúc các ngày lễ vui vẻ!" },
-    { phrase: "Good luck!", situation: "Chúc may mắn!", meaning: "Chúc may mắn!" },
-    { phrase: "Break a leg!", situation: "May mắn!", meaning: "Chúc may mắn! (trước khi thi)" },
-    { phrase: "Get well soon!", situation: "Chóng khỏe nhé!", meaning: "Chóng khỏe mạnh nhé!" },
+    {
+      phrase: "Happy birthday!",
+      situation: "Chúc mừng sinh nhật!",
+      meaning: "Chúc mừng sinh nhật!",
+    },
+    {
+      phrase: "Happy holidays!",
+      situation: "Chúc lễ vui!",
+      meaning: "Chúc các ngày lễ vui vẻ!",
+    },
+    {
+      phrase: "Good luck!",
+      situation: "Chúc may mắn!",
+      meaning: "Chúc may mắn!",
+    },
+    {
+      phrase: "Break a leg!",
+      situation: "May mắn!",
+      meaning: "Chúc may mắn! (trước khi thi)",
+    },
+    {
+      phrase: "Get well soon!",
+      situation: "Chóng khỏe nhé!",
+      meaning: "Chóng khỏe mạnh nhé!",
+    },
   ],
   explanation: [
-    { phrase: "Here's the thing:", situation: "Vấn đề là:", meaning: "Vấn đề là:" },
-    { phrase: "The thing is...", situation: "Vấn đề là...", meaning: "Vấn đề là..." },
-    { phrase: "Long story short,", situation: "Nói ngắn gọn,", meaning: "Nói ngắn gọn," },
-    { phrase: "To make a long story short...", situation: "Nói tóm lại...", meaning: "Nói tóm lại..." },
-    { phrase: "In other words,", situation: "Nói cách khác,", meaning: "Nói cách khác," },
-    { phrase: "Let me explain:", situation: "Để tôi giải thích:", meaning: "Để tôi giải thích:" },
-    { phrase: "To put it simply,", situation: "Nói đơn giản,", meaning: "Nói đơn giản," },
-    { phrase: "The bottom line is...", situation: "Kết quả là...", meaning: "Kết quả cuối cùng là..." },
-    { phrase: "What I mean is...", meaning: "Ý tôi là...", meaning: "Ý tôi là..." },
+    {
+      phrase: "Here's the thing:",
+      situation: "Vấn đề là:",
+      meaning: "Vấn đề là:",
+    },
+    {
+      phrase: "The thing is...",
+      situation: "Vấn đề là...",
+      meaning: "Vấn đề là...",
+    },
+    {
+      phrase: "Long story short,",
+      situation: "Nói ngắn gọn,",
+      meaning: "Nói ngắn gọn,",
+    },
+    {
+      phrase: "To make a long story short...",
+      situation: "Nói tóm lại...",
+      meaning: "Nói tóm lại...",
+    },
+    {
+      phrase: "In other words,",
+      situation: "Nói cách khác,",
+      meaning: "Nói cách khác,",
+    },
+    {
+      phrase: "Let me explain:",
+      situation: "Để tôi giải thích:",
+      meaning: "Để tôi giải thích:",
+    },
+    {
+      phrase: "To put it simply,",
+      situation: "Nói đơn giản,",
+      meaning: "Nói đơn giản,",
+    },
+    {
+      phrase: "The bottom line is...",
+      situation: "Kết quả là...",
+      meaning: "Kết quả cuối cùng là...",
+    },
+    {
+      phrase: "What I mean is...",
+      meaning: "Ý tôi là...",
+      meaning: "Ý tôi là...",
+    },
     { phrase: "In short,", meaning: "Tóm lại,", meaning: "Tóm lại," },
     { phrase: "Basically,", meaning: "Về cơ bản,", meaning: "Về cơ bản," },
-    { phrase: "Essentially,", meaning: "Về bản chất,", meaning: "Về bản chất," },
+    {
+      phrase: "Essentially,",
+      meaning: "Về bản chất,",
+      meaning: "Về bản chất,",
+    },
   ],
   time: [
-    { phrase: "As soon as possible", situation: "Sớm nhất có thể", meaning: "Sớm nhất có thể (ASAP)" },
-    { phrase: "At your earliest convenience", situation: "Khi thuận tiện", meaning: "Khi bạn sớm thuận tiện nhất" },
-    { phrase: "Right away", situation: "Ngay lập tức", meaning: "Ngay lập tức" },
+    {
+      phrase: "As soon as possible",
+      situation: "Sớm nhất có thể",
+      meaning: "Sớm nhất có thể (ASAP)",
+    },
+    {
+      phrase: "At your earliest convenience",
+      situation: "Khi thuận tiện",
+      meaning: "Khi bạn sớm thuận tiện nhất",
+    },
+    {
+      phrase: "Right away",
+      situation: "Ngay lập tức",
+      meaning: "Ngay lập tức",
+    },
     { phrase: "No rush", situation: "Không vội", meaning: "Không vội" },
-    { phrase: "Whenever works for you", situation: "Bất cứ khi nào bạn thuận tiện", meaning: "Bất cứ khi nào bạn thuận tiện" },
-    { phrase: "By end of day", situation: "Trước cuối ngày", meaning: "Trước cuối ngày làm việc" },
-    { phrase: "By tomorrow", situation: "Trước ngày mai", meaning: "Trước ngày mai" },
+    {
+      phrase: "Whenever works for you",
+      situation: "Bất cứ khi nào bạn thuận tiện",
+      meaning: "Bất cứ khi nào bạn thuận tiện",
+    },
+    {
+      phrase: "By end of day",
+      situation: "Trước cuối ngày",
+      meaning: "Trước cuối ngày làm việc",
+    },
+    {
+      phrase: "By tomorrow",
+      situation: "Trước ngày mai",
+      meaning: "Trước ngày mai",
+    },
     { phrase: "Next week", situation: "Tuần sau", meaning: "Tuần sau" },
     { phrase: "This week", situation: "Tuần này", meaning: "Tuần này" },
-    { phrase: "Anytime", situation: "Bất cứ lúc nào", meaning: "Bất cứ lúc nào" },
+    {
+      phrase: "Anytime",
+      situation: "Bất cứ lúc nào",
+      meaning: "Bất cứ lúc nào",
+    },
     { phrase: "Later", situation: "Sau", meaning: "Sau" },
     { phrase: "Soon", situation: "Sớm", meaning: "Sớm" },
   ],
   followup: [
-    { phrase: "Just checking in.", situation: "Kiểm tra tình hình", meaning: "Chỉ kiểm tra tình hình thôi." },
-    { phrase: "Any update?", situation: "Có gì mới không?", meaning: "Có cập nhật gì không?" },
-    { phrase: "Following up.", situation: "Theo dõi", meaning: "Theo dõi thôi." },
-    { phrase: "Just wanted to follow up.", situation: "Muốn theo dõi", meaning: "Tôi chỉ muốn theo dõi." },
-    { phrase: "How's it going?", situation: "Tiến triển sao?", meaning: "Mọi thứ tiến triển sao?" },
-    { phrase: "Any progress?", situation: "Có tiến triển gì không?", meaning: "Có tiến triển gì không?" },
-    { phrase: "Just a quick follow-up.", situation: "Theo dõi nhanh", meaning: "Chỉ là theo dõi nhanh thôi." },
-    { phrase: "Wanted to check on this.", situation: "Kiểm tra việc này", meaning: "Muốn kiểm tra việc này." },
-  ]
+    {
+      phrase: "Just checking in.",
+      situation: "Kiểm tra tình hình",
+      meaning: "Chỉ kiểm tra tình hình thôi.",
+    },
+    {
+      phrase: "Any update?",
+      situation: "Có gì mới không?",
+      meaning: "Có cập nhật gì không?",
+    },
+    {
+      phrase: "Following up.",
+      situation: "Theo dõi",
+      meaning: "Theo dõi thôi.",
+    },
+    {
+      phrase: "Just wanted to follow up.",
+      situation: "Muốn theo dõi",
+      meaning: "Tôi chỉ muốn theo dõi.",
+    },
+    {
+      phrase: "How's it going?",
+      situation: "Tiến triển sao?",
+      meaning: "Mọi thứ tiến triển sao?",
+    },
+    {
+      phrase: "Any progress?",
+      situation: "Có tiến triển gì không?",
+      meaning: "Có tiến triển gì không?",
+    },
+    {
+      phrase: "Just a quick follow-up.",
+      situation: "Theo dõi nhanh",
+      meaning: "Chỉ là theo dõi nhanh thôi.",
+    },
+    {
+      phrase: "Wanted to check on this.",
+      situation: "Kiểm tra việc này",
+      meaning: "Muốn kiểm tra việc này.",
+    },
+  ],
 };
 
 // Learning state variables
-let currentVocabCategory = 'all';
+let currentVocabCategory = "all";
 let currentVocabIndex = 0;
 let currentVocabList = [];
-let currentGrammarCategory = 'all';
+let currentGrammarCategory = "all";
 let currentGrammarIndex = 0;
 let currentGrammarList = [];
-let currentPhraseCategory = 'all';
+let currentPhraseCategory = "all";
 let currentPhraseIndex = 0;
 let currentPhraseList = [];
 
 // Quiz state variables
-let currentQuizType = '';
+let currentQuizType = "";
 let currentQuizQuestions = [];
 let currentQuizIndex = 0;
 let currentQuizScore = 0;
@@ -7415,53 +12378,60 @@ function getAllPhrases() {
 }
 
 // ==================== VOCABULARY SEARCH RESULTS TOGGLE ====================
-const VOCAB_SEARCH_COLLAPSED_KEY = 'vocabSearchResultsCollapsed';
+const VOCAB_SEARCH_COLLAPSED_KEY = "vocabSearchResultsCollapsed";
 
 function toggleVocabSearchResults() {
-  const resultsContainer = document.getElementById('vocabSearchResults');
-  const arrowEl = document.getElementById('vocabSearchResultsArrow');
-  
+  const resultsContainer = document.getElementById("vocabSearchResults");
+  const arrowEl = document.getElementById("vocabSearchResultsArrow");
+
   if (!resultsContainer || !arrowEl) return;
-  
-  const isCollapsed = resultsContainer.classList.toggle('collapsed');
-  arrowEl.classList.toggle('collapsed', isCollapsed);
-  localStorage.setItem(VOCAB_SEARCH_COLLAPSED_KEY, isCollapsed ? 'true' : 'false');
+
+  const isCollapsed = resultsContainer.classList.toggle("collapsed");
+  arrowEl.classList.toggle("collapsed", isCollapsed);
+  localStorage.setItem(
+    VOCAB_SEARCH_COLLAPSED_KEY,
+    isCollapsed ? "true" : "false",
+  );
 }
 
 function initVocabSearchResultsCollapsed() {
-  const resultsContainer = document.getElementById('vocabSearchResults');
-  const arrowEl = document.getElementById('vocabSearchResultsArrow');
-  
+  const resultsContainer = document.getElementById("vocabSearchResults");
+  const arrowEl = document.getElementById("vocabSearchResultsArrow");
+
   if (!resultsContainer || !arrowEl) return;
-  
+
   const saved = localStorage.getItem(VOCAB_SEARCH_COLLAPSED_KEY);
-  const isCollapsed = saved === 'true';
-  
-  resultsContainer.classList.toggle('collapsed', isCollapsed);
-  arrowEl.classList.toggle('collapsed', isCollapsed);
+  const isCollapsed = saved === "true";
+
+  resultsContainer.classList.toggle("collapsed", isCollapsed);
+  arrowEl.classList.toggle("collapsed", isCollapsed);
 }
 
 // ==================== VOCABULARY API SEARCH ====================
 async function searchVocabFromAPI() {
-  const input = document.getElementById('vocabSearchInput');
+  const input = document.getElementById("vocabSearchInput");
   const query = input.value.trim().toLowerCase();
   if (!query) return;
 
-  const resultsContainer = document.getElementById('vocabSearchResults');
-  const arrowEl = document.getElementById('vocabSearchResultsArrow');
-  const wrapper = document.getElementById('vocabSearchResultsWrapper');
-  
+  const resultsContainer = document.getElementById("vocabSearchResults");
+  const arrowEl = document.getElementById("vocabSearchResultsArrow");
+  const wrapper = document.getElementById("vocabSearchResultsWrapper");
+
   // Ensure results are visible when searching
-  resultsContainer.classList.remove('collapsed');
-  if (arrowEl) arrowEl.classList.remove('collapsed');
-  wrapper.classList.add('has-results');
-  
-  resultsContainer.innerHTML = '<div style="text-align:center;padding:20px;"><div class="loading-spinner" style="margin:0 auto;"></div></div>';
+  resultsContainer.classList.remove("collapsed");
+  if (arrowEl) arrowEl.classList.remove("collapsed");
+  wrapper.classList.add("has-results");
+
+  resultsContainer.innerHTML =
+    '<div style="text-align:center;padding:20px;"><div class="loading-spinner" style="margin:0 auto;"></div></div>';
 
   try {
     // Check if input is Vietnamese (contains Vietnamese characters)
-    const isVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(query);
-    
+    const isVietnamese =
+      /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(
+        query,
+      );
+
     let searchQuery = query;
     let translatedQuery = null;
 
@@ -7477,30 +12447,39 @@ async function searchVocabFromAPI() {
     const localResults = searchLocalVocabulary(query, translatedQuery);
 
     // Then search API with English query
-    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(searchQuery)}`);
-    
+    const response = await fetch(
+      `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(searchQuery)}`,
+    );
+
     if (response.ok) {
       const data = await response.json();
       // Fetch translations for API results
-      displayAPIVocabularyResultsWithTranslation(data, localResults, query, translatedQuery);
+      displayAPIVocabularyResultsWithTranslation(
+        data,
+        localResults,
+        query,
+        translatedQuery,
+      );
     } else {
       // No API results, show local only
-      const wrapper = document.getElementById('vocabSearchResultsWrapper');
+      const wrapper = document.getElementById("vocabSearchResultsWrapper");
       if (localResults.length > 0) {
         displayLocalVocabularyResults(localResults, translatedQuery);
       } else {
         resultsContainer.innerHTML = getNoResultsHTML();
-        wrapper.classList.remove('has-results');
+        wrapper.classList.remove("has-results");
       }
     }
   } catch (error) {
     // Fallback to local results only
-    const wrapper = document.getElementById('vocabSearchResultsWrapper');
+    const wrapper = document.getElementById("vocabSearchResultsWrapper");
     if (localResults && localResults.length > 0) {
       displayLocalVocabularyResults(localResults);
     } else {
-      resultsContainer.innerHTML = getNoResultsHTML('Không thể kết nối API. Vui lòng thử lại.');
-      wrapper.classList.remove('has-results');
+      resultsContainer.innerHTML = getNoResultsHTML(
+        "Không thể kết nối API. Vui lòng thử lại.",
+      );
+      wrapper.classList.remove("has-results");
     }
   }
 }
@@ -7509,7 +12488,7 @@ async function searchVocabFromAPI() {
 async function translateViToEn(text) {
   try {
     const response = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=vi|en`
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=vi|en`,
     );
     if (response.ok) {
       const data = await response.json();
@@ -7524,7 +12503,7 @@ async function translateViToEn(text) {
 }
 
 // No results HTML template with illustration
-function getNoResultsHTML(message = 'Không tìm thấy kết quả nào.') {
+function getNoResultsHTML(message = "Không tìm thấy kết quả nào.") {
   return `
     <div class="vocab-no-results">
       <svg class="vocab-no-results-icon" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -7547,7 +12526,7 @@ function getNoResultsHTML(message = 'Không tìm thấy kết quả nào.') {
 async function fetchTranslation(text) {
   try {
     const response = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|vi`
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|vi`,
     );
     if (response.ok) {
       const data = await response.json();
@@ -7565,56 +12544,68 @@ function searchLocalVocabulary(query, translatedQuery = null) {
   const allVocab = getAllVocabulary();
   const searchTerms = [query];
   if (translatedQuery) searchTerms.push(translatedQuery.toLowerCase());
-  
-  return allVocab.filter(item => 
-    searchTerms.some(term => 
-      item.word.toLowerCase().includes(term) || 
-      item.meaning.toLowerCase().includes(term)
-    )
+
+  return allVocab.filter((item) =>
+    searchTerms.some(
+      (term) =>
+        item.word.toLowerCase().includes(term) ||
+        item.meaning.toLowerCase().includes(term),
+    ),
   );
 }
 
 async function displayLocalVocabularyResults(results, translatedQuery = null) {
-  const resultsContainer = document.getElementById('vocabSearchResults');
-  const wrapper = document.getElementById('vocabSearchResultsWrapper');
-  
+  const resultsContainer = document.getElementById("vocabSearchResults");
+  const wrapper = document.getElementById("vocabSearchResultsWrapper");
+
   if (results.length === 0) {
-    wrapper.classList.remove('has-results');
-    resultsContainer.innerHTML = '';
+    wrapper.classList.remove("has-results");
+    resultsContainer.innerHTML = "";
     return;
   }
-  
-  wrapper.classList.add('has-results');
-  
+
+  wrapper.classList.add("has-results");
+
   // If there was a Vietnamese input, show header
-  let headerHtml = '';
+  let headerHtml = "";
   if (translatedQuery) {
     headerHtml = `<div style="padding:12px 16px;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:white;border-radius:8px;margin:12px 16px 8px;">
       <div style="font-size:12px;opacity:0.9;">Từ tiếng Việt:</div>
-      <div style="font-size:18px;font-weight:600;margin-top:4px;">${results[0]?.meaning || ''}</div>
+      <div style="font-size:18px;font-weight:600;margin-top:4px;">${results[0]?.meaning || ""}</div>
     </div>`;
   }
-  
-  resultsContainer.innerHTML = headerHtml + results.map(item => `
+
+  resultsContainer.innerHTML =
+    headerHtml +
+    results
+      .map(
+        (item) => `
     <div class="learn-search-result-item">
       <div class="learn-search-result-word">${item.word}</div>
-      <div class="learn-search-result-phonetic">${item.phonetic || ''}</div>
+      <div class="learn-search-result-phonetic">${item.phonetic || ""}</div>
       <div class="learn-search-result-meaning">${item.meaning}</div>
       <div class="learn-search-result-example">${item.example}</div>
       <div class="learn-search-result-example">${item.exampleVi}</div>
     </div>
-  `).join('');
+  `,
+      )
+      .join("");
 }
 
 // Display API results with Vietnamese translations
-async function displayAPIVocabularyResultsWithTranslation(apiData, localResults, query, translatedQuery = null) {
-  const resultsContainer = document.getElementById('vocabSearchResults');
-  const wrapper = document.getElementById('vocabSearchResultsWrapper');
-  let html = '';
+async function displayAPIVocabularyResultsWithTranslation(
+  apiData,
+  localResults,
+  query,
+  translatedQuery = null,
+) {
+  const resultsContainer = document.getElementById("vocabSearchResults");
+  const wrapper = document.getElementById("vocabSearchResultsWrapper");
+  let html = "";
 
   // Get main Vietnamese translation for the word
   const mainTranslation = await fetchTranslation(translatedQuery || query);
-  
+
   // Show Vietnamese translation header (for Vietnamese input or English input)
   if (translatedQuery) {
     // User typed Vietnamese - show what we found
@@ -7632,80 +12623,84 @@ async function displayAPIVocabularyResultsWithTranslation(apiData, localResults,
   }
 
   // Mark local matches to avoid duplicates
-  const localWords = new Set(localResults.map(r => r.word.toLowerCase()));
+  const localWords = new Set(localResults.map((r) => r.word.toLowerCase()));
 
   // Prepare API results with translations
   const apiResultsHtml = [];
-  
+
   for (const entry of apiData) {
     const word = entry.word;
     if (localWords.has(word.toLowerCase())) continue;
 
-    const phonetic = entry.phonetic || '';
+    const phonetic = entry.phonetic || "";
     const meanings = entry.meanings || [];
-    
+
     let itemHtml = `<div class="learn-search-result-item">`;
     itemHtml += `<div class="learn-search-result-word">${word}</div>`;
     itemHtml += `<div class="learn-search-result-phonetic">${phonetic}</div>`;
-    
+
     for (const meaning of meanings) {
-      const partOfSpeech = meaning.partOfSpeech || '';
+      const partOfSpeech = meaning.partOfSpeech || "";
       const definitions = meaning.definitions || [];
       const partOfSpeechVi = translatePartOfSpeech(partOfSpeech);
-      
+
       // Translate definitions
       for (let defIdx = 0; defIdx < Math.min(definitions.length, 3); defIdx++) {
         const def = definitions[defIdx];
-        const definition = def.definition || '';
-        const example = def.example || '';
-        
+        const definition = def.definition || "";
+        const example = def.example || "";
+
         // Translate this definition
-        let meaningVi = '';
+        let meaningVi = "";
         if (definition) {
           meaningVi = await fetchTranslation(definition);
         }
-        
-        itemHtml += `<div style="margin-top:${defIdx === 0 ? '10px' : '8px'};padding-left:8px;border-left:2px solid var(--line);">`;
+
+        itemHtml += `<div style="margin-top:${defIdx === 0 ? "10px" : "8px"};padding-left:8px;border-left:2px solid var(--line);">`;
         itemHtml += `<span style="display:inline-block;padding:2px 8px;background:var(--accent);border-radius:10px;color:white;font-size:10px;margin-right:8px;">${partOfSpeechVi}</span>`;
         itemHtml += `<span style="font-size:13px;color:var(--text);">${defIdx + 1}. ${definition}</span>`;
-        
+
         if (meaningVi) {
           itemHtml += `<div style="font-size:13px;color:var(--accent);margin-top:4px;padding-left:4px;">→ ${meaningVi}</div>`;
         }
-        
+
         if (example) {
           itemHtml += `<div class="learn-search-result-example">"${example}"</div>`;
         }
         itemHtml += `</div>`;
       }
     }
-    
+
     itemHtml += `</div>`;
     apiResultsHtml.push(itemHtml);
   }
 
   // Add API results
-  html += apiResultsHtml.join('');
+  html += apiResultsHtml.join("");
 
   // Add local results if any
   if (localResults.length > 0) {
     html += `<div style="padding:12px 16px;font-weight:600;color:var(--muted);font-size:12px;border-top:1px solid var(--line);margin-top:8px;">📚 Kết quả từ dữ liệu cục bộ (có ví dụ):</div>`;
-    html += localResults.map(item => `
+    html += localResults
+      .map(
+        (item) => `
       <div class="learn-search-result-item">
         <div class="learn-search-result-word">${item.word}</div>
-        <div class="learn-search-result-phonetic">${item.phonetic || ''}</div>
+        <div class="learn-search-result-phonetic">${item.phonetic || ""}</div>
         <div class="learn-search-result-meaning">${item.meaning}</div>
         <div class="learn-search-result-example">📝 ${item.example}</div>
         <div style="font-size:13px;color:var(--accent);margin-top:4px;">💡 ${item.exampleVi}</div>
       </div>
-    `).join('');
+    `,
+      )
+      .join("");
   }
 
   if (!html) {
     html = getNoResultsHTML();
-    wrapper.classList.remove('has-results');
+    wrapper.classList.remove("has-results");
   } else {
-    wrapper.classList.add('has-results');
+    wrapper.classList.add("has-results");
   }
 
   resultsContainer.innerHTML = html;
@@ -7714,86 +12709,100 @@ async function displayAPIVocabularyResultsWithTranslation(apiData, localResults,
 // Translate English part of speech to Vietnamese
 function translatePartOfSpeech(pos) {
   const translations = {
-    'noun': 'Danh từ',
-    'verb': 'Động từ',
-    'adjective': 'Tính từ',
-    'adverb': 'Trạng từ',
-    'pronoun': 'Đại từ',
-    'preposition': 'Giới từ',
-    'conjunction': 'Liên từ',
-    'interjection': 'Thán từ',
-    'phrase': 'Cụm từ',
-    'idiom': 'Thành ngữ',
-    'exclamation': 'Cảm thán',
-    'determiner': 'Chỉ từ',
-    'classifier': 'Đếm từ',
-    'article': 'Mạo từ'
+    noun: "Danh từ",
+    verb: "Động từ",
+    adjective: "Tính từ",
+    adverb: "Trạng từ",
+    pronoun: "Đại từ",
+    preposition: "Giới từ",
+    conjunction: "Liên từ",
+    interjection: "Thán từ",
+    phrase: "Cụm từ",
+    idiom: "Thành ngữ",
+    exclamation: "Cảm thán",
+    determiner: "Chỉ từ",
+    classifier: "Đếm từ",
+    article: "Mạo từ",
   };
   return translations[pos.toLowerCase()] || pos;
 }
 
 function handleVocabSearch(event) {
-  const input = document.getElementById('vocabSearchInput');
-  const clearBtn = document.getElementById('vocabSearchClearBtn');
-  const wrapper = document.getElementById('vocabSearchResultsWrapper');
-  
+  const input = document.getElementById("vocabSearchInput");
+  const clearBtn = document.getElementById("vocabSearchClearBtn");
+  const wrapper = document.getElementById("vocabSearchResultsWrapper");
+
   // Toggle clear button visibility
   if (clearBtn) {
-    clearBtn.style.display = input.value.trim() ? 'flex' : 'none';
+    clearBtn.style.display = input.value.trim() ? "flex" : "none";
   }
-  
-  if (event.key === 'Enter') {
+
+  if (event.key === "Enter") {
     searchVocabFromAPI();
   }
 }
 
 function clearVocabSearch() {
-  const input = document.getElementById('vocabSearchInput');
-  const clearBtn = document.getElementById('vocabSearchClearBtn');
-  const wrapper = document.getElementById('vocabSearchResultsWrapper');
-  
-  input.value = '';
-  if (clearBtn) clearBtn.style.display = 'none';
-  if (wrapper) wrapper.classList.remove('has-results');
-  
+  const input = document.getElementById("vocabSearchInput");
+  const clearBtn = document.getElementById("vocabSearchClearBtn");
+  const wrapper = document.getElementById("vocabSearchResultsWrapper");
+
+  input.value = "";
+  if (clearBtn) clearBtn.style.display = "none";
+  if (wrapper) wrapper.classList.remove("has-results");
+
   input.focus();
 }
 
 function closeVocabSearchResults() {
-  const wrapper = document.getElementById('vocabSearchResultsWrapper');
-  if (wrapper) wrapper.classList.remove('has-results');
+  const wrapper = document.getElementById("vocabSearchResultsWrapper");
+  if (wrapper) wrapper.classList.remove("has-results");
 }
 
 // Open Learn Modal
 function openLearnModal() {
-  const modal = document.getElementById('learnModal');
-  modal.style.display = 'flex';
-  document.body.style.overflow = 'hidden';
+  const modal = document.getElementById("learnModal");
+  modal.style.display = "flex";
+  document.body.style.overflow = "hidden";
   // Reset to first tab content
-  document.querySelectorAll('.learn-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.learn-tab-content').forEach(c => c.classList.remove('active'));
-  document.querySelector('.learn-tab[data-tab="vocabulary"]').classList.add('active');
-  document.getElementById('learnVocabularyTab').classList.add('active');
+  document
+    .querySelectorAll(".learn-tab")
+    .forEach((t) => t.classList.remove("active"));
+  document
+    .querySelectorAll(".learn-tab-content")
+    .forEach((c) => c.classList.remove("active"));
+  document
+    .querySelector('.learn-tab[data-tab="vocabulary"]')
+    .classList.add("active");
+  document.getElementById("learnVocabularyTab").classList.add("active");
   initVocabSearchResultsCollapsed();
-  selectVocabCategory('all');
+  selectVocabCategory("all");
 }
 
 // Close Learn Modal
 function closeLearnModal() {
-  document.getElementById('learnModal').style.display = 'none';
-  document.body.style.overflow = '';
+  document.getElementById("learnModal").style.display = "none";
+  document.body.style.overflow = "";
 }
 
 // Switch Learn Tab
 function switchLearnTab(tab) {
-  document.querySelectorAll('.learn-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.learn-tab-content').forEach(c => c.classList.remove('active'));
-  document.querySelector(`.learn-tab[data-tab="${tab}"]`).classList.add('active');
-  document.getElementById(`learn${tab.charAt(0).toUpperCase() + tab.slice(1)}Tab`).classList.add('active');
+  document
+    .querySelectorAll(".learn-tab")
+    .forEach((t) => t.classList.remove("active"));
+  document
+    .querySelectorAll(".learn-tab-content")
+    .forEach((c) => c.classList.remove("active"));
+  document
+    .querySelector(`.learn-tab[data-tab="${tab}"]`)
+    .classList.add("active");
+  document
+    .getElementById(`learn${tab.charAt(0).toUpperCase() + tab.slice(1)}Tab`)
+    .classList.add("active");
 
-  if (tab === 'vocabulary') selectVocabCategory('all');
-  else if (tab === 'grammar') selectGrammarCategory('all');
-  else if (tab === 'phrases') selectPhraseCategory('all');
+  if (tab === "vocabulary") selectVocabCategory("all");
+  else if (tab === "grammar") selectGrammarCategory("all");
+  else if (tab === "phrases") selectPhraseCategory("all");
 }
 
 // Vocabulary Category Selection
@@ -7801,11 +12810,13 @@ function selectVocabCategory(category) {
   currentVocabCategory = category;
   currentVocabIndex = 0;
 
-  document.querySelectorAll('#learnVocabularyTab .learn-category-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.cat === category);
-  });
+  document
+    .querySelectorAll("#learnVocabularyTab .learn-category-btn")
+    .forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.cat === category);
+    });
 
-  if (category === 'all') {
+  if (category === "all") {
     currentVocabList = getAllVocabulary();
   } else {
     currentVocabList = VOCABULARY_DATA[category] || [];
@@ -7819,11 +12830,13 @@ function selectGrammarCategory(category) {
   currentGrammarCategory = category;
   currentGrammarIndex = 0;
 
-  document.querySelectorAll('#learnGrammarTab .learn-category-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.cat === category);
-  });
+  document
+    .querySelectorAll("#learnGrammarTab .learn-category-btn")
+    .forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.cat === category);
+    });
 
-  if (category === 'all') {
+  if (category === "all") {
     currentGrammarList = getAllGrammar();
   } else {
     currentGrammarList = GRAMMAR_DATA[category] || [];
@@ -7837,11 +12850,13 @@ function selectPhraseCategory(category) {
   currentPhraseCategory = category;
   currentPhraseIndex = 0;
 
-  document.querySelectorAll('#learnPhrasesTab .learn-category-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.cat === category);
-  });
+  document
+    .querySelectorAll("#learnPhrasesTab .learn-category-btn")
+    .forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.cat === category);
+    });
 
-  if (category === 'all') {
+  if (category === "all") {
     currentPhraseList = getAllPhrases();
   } else {
     currentPhraseList = PHRASES_DATA[category] || [];
@@ -7852,12 +12867,13 @@ function selectPhraseCategory(category) {
 
 // Render Vocabulary Card
 function renderVocabCard() {
-  const container = document.getElementById('vocabCardContainer');
-  const counter = document.getElementById('vocabCardCounter');
+  const container = document.getElementById("vocabCardContainer");
+  const counter = document.getElementById("vocabCardCounter");
 
   if (!currentVocabList.length) {
-    container.innerHTML = '<div class="learn-card"><p style="text-align: center; color: var(--muted);">Không có từ vựng nào trong danh mục này.</p></div>';
-    counter.textContent = '0 / 0';
+    container.innerHTML =
+      '<div class="learn-card"><p style="text-align: center; color: var(--muted);">Không có từ vựng nào trong danh mục này.</p></div>';
+    counter.textContent = "0 / 0";
     return;
   }
 
@@ -7881,12 +12897,13 @@ function renderVocabCard() {
 
 // Render Grammar Card
 function renderGrammarCard() {
-  const container = document.getElementById('grammarCardContainer');
-  const counter = document.getElementById('grammarCardCounter');
+  const container = document.getElementById("grammarCardContainer");
+  const counter = document.getElementById("grammarCardCounter");
 
   if (!currentGrammarList.length) {
-    container.innerHTML = '<div class="learn-card"><p style="text-align: center; color: var(--muted);">Không có ngữ pháp nào trong danh mục này.</p></div>';
-    counter.textContent = '0 / 0';
+    container.innerHTML =
+      '<div class="learn-card"><p style="text-align: center; color: var(--muted);">Không có ngữ pháp nào trong danh mục này.</p></div>';
+    counter.textContent = "0 / 0";
     return;
   }
 
@@ -7904,19 +12921,20 @@ function renderGrammarCard() {
         <div class="learn-card-example-en">${item.example}</div>
         <div class="learn-card-example-vi">${item.exampleVi}</div>
       </div>
-      ${item.note ? `<div class="learn-card-usage" style="margin-top: 10px; font-style: italic;">${item.note}</div>` : ''}
+      ${item.note ? `<div class="learn-card-usage" style="margin-top: 10px; font-style: italic;">${item.note}</div>` : ""}
     </div>
   `;
 }
 
 // Render Phrase Card
 function renderPhraseCard() {
-  const container = document.getElementById('phraseCardContainer');
-  const counter = document.getElementById('phraseCardCounter');
+  const container = document.getElementById("phraseCardContainer");
+  const counter = document.getElementById("phraseCardCounter");
 
   if (!currentPhraseList.length) {
-    container.innerHTML = '<div class="learn-card"><p style="text-align: center; color: var(--muted);">Không có câu giao tiếp nào trong danh mục này.</p></div>';
-    counter.textContent = '0 / 0';
+    container.innerHTML =
+      '<div class="learn-card"><p style="text-align: center; color: var(--muted);">Không có câu giao tiếp nào trong danh mục này.</p></div>';
+    counter.textContent = "0 / 0";
     return;
   }
 
@@ -7978,52 +12996,52 @@ function nextPhraseCard() {
 // Helper functions for category names
 function getCategoryName(cat) {
   const names = {
-    all: 'Tất cả',
-    email: 'Email',
-    meeting: 'Họp hành',
-    presentation: 'Thuyết trình',
-    negotiation: 'Đàm phán',
-    report: 'Báo cáo'
+    all: "Tất cả",
+    email: "Email",
+    meeting: "Họp hành",
+    presentation: "Thuyết trình",
+    negotiation: "Đàm phán",
+    report: "Báo cáo",
   };
   return names[cat] || cat;
 }
 
 function getGrammarCategoryName(cat) {
   const names = {
-    all: 'Tất cả',
-    tenses: 'Thì',
-    conditionals: 'Điều kiện',
-    passive: 'Bị động',
-    modal: 'Trợ động từ'
+    all: "Tất cả",
+    tenses: "Thì",
+    conditionals: "Điều kiện",
+    passive: "Bị động",
+    modal: "Trợ động từ",
   };
   return names[cat] || cat;
 }
 
 // Quiz Functions
 function startVocabQuiz() {
-  currentQuizType = 'vocabulary';
+  currentQuizType = "vocabulary";
   currentQuizQuestions = shuffleArray([...getAllVocabulary()]).slice(0, 10);
   currentQuizIndex = 0;
   currentQuizScore = 0;
-  document.getElementById('quizTitle').textContent = 'Kiểm Tra Từ Vựng';
+  document.getElementById("quizTitle").textContent = "Kiểm Tra Từ Vựng";
   openQuizModal();
 }
 
 function startGrammarQuiz() {
-  currentQuizType = 'grammar';
+  currentQuizType = "grammar";
   currentQuizQuestions = shuffleArray([...getAllGrammar()]).slice(0, 8);
   currentQuizIndex = 0;
   currentQuizScore = 0;
-  document.getElementById('quizTitle').textContent = 'Kiểm Tra Ngữ Pháp';
+  document.getElementById("quizTitle").textContent = "Kiểm Tra Ngữ Pháp";
   openQuizModal();
 }
 
 function startPhraseQuiz() {
-  currentQuizType = 'phrases';
+  currentQuizType = "phrases";
   currentQuizQuestions = shuffleArray([...getAllPhrases()]).slice(0, 10);
   currentQuizIndex = 0;
   currentQuizScore = 0;
-  document.getElementById('quizTitle').textContent = 'Kiểm Tra Câu Giao Tiếp';
+  document.getElementById("quizTitle").textContent = "Kiểm Tra Câu Giao Tiếp";
   openQuizModal();
 }
 
@@ -8036,42 +13054,43 @@ function shuffleArray(array) {
 }
 
 function openQuizModal() {
-  document.getElementById('quizModal').style.display = 'flex';
-  document.body.style.overflow = 'hidden';
+  document.getElementById("quizModal").style.display = "flex";
+  document.body.style.overflow = "hidden";
   renderQuizQuestion();
 }
 
 function closeQuizModal() {
-  document.getElementById('quizModal').style.display = 'none';
-  document.body.style.overflow = '';
+  document.getElementById("quizModal").style.display = "none";
+  document.body.style.overflow = "";
 }
 
 function renderQuizQuestion() {
-  const questionArea = document.getElementById('quizQuestionArea');
-  const resultArea = document.getElementById('quizResultArea');
-  const question = document.getElementById('quizQuestion');
-  const options = document.getElementById('quizOptions');
-  const progress = document.getElementById('quizProgress');
-  const progressFill = document.getElementById('quizProgressFill');
+  const questionArea = document.getElementById("quizQuestionArea");
+  const resultArea = document.getElementById("quizResultArea");
+  const question = document.getElementById("quizQuestion");
+  const options = document.getElementById("quizOptions");
+  const progress = document.getElementById("quizProgress");
+  const progressFill = document.getElementById("quizProgressFill");
 
   if (currentQuizIndex >= currentQuizQuestions.length) {
-    questionArea.style.display = 'none';
-    resultArea.style.display = 'flex';
-    document.getElementById('quizScoreNum').textContent = currentQuizScore;
-    document.getElementById('quizScoreTotal').textContent = currentQuizQuestions.length;
+    questionArea.style.display = "none";
+    resultArea.style.display = "flex";
+    document.getElementById("quizScoreNum").textContent = currentQuizScore;
+    document.getElementById("quizScoreTotal").textContent =
+      currentQuizQuestions.length;
 
     const percentage = (currentQuizScore / currentQuizQuestions.length) * 100;
-    let feedback = '';
-    if (percentage >= 90) feedback = 'Xuất sắc! Bạn nắm vững kiến thức rồi! 🎉';
-    else if (percentage >= 70) feedback = 'Tốt lắm! Cần ôn tập thêm một chút.';
-    else if (percentage >= 50) feedback = 'Khá ổn! Hãy tiếp tục luyện tập nhé.';
-    else feedback = 'Cần cố gắng hơn. Hãy học lại và thử lại nhé! 💪';
-    document.getElementById('quizFeedback').textContent = feedback;
+    let feedback = "";
+    if (percentage >= 90) feedback = "Xuất sắc! Bạn nắm vững kiến thức rồi! 🎉";
+    else if (percentage >= 70) feedback = "Tốt lắm! Cần ôn tập thêm một chút.";
+    else if (percentage >= 50) feedback = "Khá ổn! Hãy tiếp tục luyện tập nhé.";
+    else feedback = "Cần cố gắng hơn. Hãy học lại và thử lại nhé! 💪";
+    document.getElementById("quizFeedback").textContent = feedback;
     return;
   }
 
-  questionArea.style.display = 'block';
-  resultArea.style.display = 'none';
+  questionArea.style.display = "block";
+  resultArea.style.display = "none";
 
   const item = currentQuizQuestions[currentQuizIndex];
   progress.textContent = `Câu ${currentQuizIndex + 1}/${currentQuizQuestions.length}`;
@@ -8079,42 +13098,54 @@ function renderQuizQuestion() {
 
   currentQuizAnswered = false;
 
-  if (currentQuizType === 'vocabulary') {
+  if (currentQuizType === "vocabulary") {
     question.textContent = `"${item.word}" có nghĩa là gì?`;
     const wrongAnswers = getAllVocabulary()
-      .filter(v => v.word !== item.word)
+      .filter((v) => v.word !== item.word)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3)
-      .map(v => v.meaning);
+      .map((v) => v.meaning);
 
     const allOptions = shuffleArray([item.meaning, ...wrongAnswers]);
-    options.innerHTML = allOptions.map(opt => `
+    options.innerHTML = allOptions
+      .map(
+        (opt) => `
       <button class="quiz-option" onclick="selectQuizAnswer(this, '${escapeHtml(item.meaning)}')">${opt}</button>
-    `).join('');
-  } else if (currentQuizType === 'grammar') {
+    `,
+      )
+      .join("");
+  } else if (currentQuizType === "grammar") {
     question.textContent = `${item.title}: ${item.example}`;
     const wrongAnswers = getAllGrammar()
-      .filter(g => g.title !== item.title)
+      .filter((g) => g.title !== item.title)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3)
-      .map(g => g.formula);
+      .map((g) => g.formula);
 
     const allOptions = shuffleArray([item.formula, ...wrongAnswers]);
-    options.innerHTML = allOptions.map(opt => `
+    options.innerHTML = allOptions
+      .map(
+        (opt) => `
       <button class="quiz-option" onclick="selectQuizAnswer(this, '${escapeHtml(item.formula)}')">${opt}</button>
-    `).join('');
-  } else if (currentQuizType === 'phrases') {
+    `,
+      )
+      .join("");
+  } else if (currentQuizType === "phrases") {
     question.textContent = `"${item.phrase}" có nghĩa là gì?`;
     const wrongAnswers = getAllPhrases()
-      .filter(p => p.phrase !== item.phrase)
+      .filter((p) => p.phrase !== item.phrase)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3)
-      .map(p => p.meaning);
+      .map((p) => p.meaning);
 
     const allOptions = shuffleArray([item.meaning, ...wrongAnswers]);
-    options.innerHTML = allOptions.map(opt => `
+    options.innerHTML = allOptions
+      .map(
+        (opt) => `
       <button class="quiz-option" onclick="selectQuizAnswer(this, '${escapeHtml(item.meaning)}')">${opt}</button>
-    `).join('');
+    `,
+      )
+      .join("");
   }
 }
 
@@ -8122,16 +13153,16 @@ function selectQuizAnswer(button, correctAnswer) {
   if (currentQuizAnswered) return;
   currentQuizAnswered = true;
 
-  const allOptions = document.querySelectorAll('.quiz-option');
+  const allOptions = document.querySelectorAll(".quiz-option");
   const userAnswer = button.textContent;
   const isCorrect = userAnswer === correctAnswer;
 
-  allOptions.forEach(opt => {
+  allOptions.forEach((opt) => {
     opt.disabled = true;
     if (opt.textContent === correctAnswer) {
-      opt.classList.add('correct');
+      opt.classList.add("correct");
     } else if (opt === button && !isCorrect) {
-      opt.classList.add('incorrect');
+      opt.classList.add("incorrect");
     }
   });
 
@@ -8144,13 +13175,13 @@ function selectQuizAnswer(button, correctAnswer) {
 }
 
 function retryQuiz() {
-  if (currentQuizType === 'vocabulary') startVocabQuiz();
-  else if (currentQuizType === 'grammar') startGrammarQuiz();
-  else if (currentQuizType === 'phrases') startPhraseQuiz();
+  if (currentQuizType === "vocabulary") startVocabQuiz();
+  else if (currentQuizType === "grammar") startGrammarQuiz();
+  else if (currentQuizType === "phrases") startPhraseQuiz();
 }
 
 function escapeHtml(text) {
-  const div = document.createElement('div');
+  const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
 }
@@ -8181,7 +13212,10 @@ async function initCountdown() {
     `${COUNTDOWN_PATH_PREFIX}/${userProfileKey}`,
   );
 
-  console.log("[Countdown] Đã khởi tạo Firebase ref:", `countdown/${userProfileKey}`);
+  console.log(
+    "[Countdown] Đã khởi tạo Firebase ref:",
+    `countdown/${userProfileKey}`,
+  );
 
   firebaseCountdownRef.on("value", (snapshot) => {
     countdownData = snapshot.val() || null;
@@ -8195,7 +13229,10 @@ async function initCountdown() {
 
   // Nếu có pending data, sync ngay
   if (pendingCountdownData) {
-    console.log("[Countdown] Sync pending data lên Firebase:", pendingCountdownData);
+    console.log(
+      "[Countdown] Sync pending data lên Firebase:",
+      pendingCountdownData,
+    );
     firebaseCountdownRef.set(pendingCountdownData).catch(console.error);
     pendingCountdownData = null;
   }
@@ -8231,6 +13268,55 @@ function renderCountdown() {
     title.textContent = "Đếm ngược";
   }
 
+  // Helper: check if a date is a holiday (solar, lunar, or custom)
+  function isDateHoliday(date) {
+    const d = date.getDate();
+    const m = date.getMonth() + 1;
+    const y = date.getFullYear();
+    const key = `${y}-${m}-${d}`;
+    
+    // Check solar holidays
+    if (SOLAR_HOLIDAYS[`${d}-${m}`]) return true;
+    
+    // Check lunar holidays
+    const lunar = convertSolarToLunar(d, m, y);
+    if (LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`]) return true;
+    
+    // Check custom holidays (user-marked)
+    const dateData = getDateData(key);
+    if (dateData && dateData.isHoliday) return true;
+    
+    return false;
+  }
+
+  // Calculate work days (exclude weekends & holidays)
+  const workDaysDisplay = document.getElementById("workDaysDisplay");
+  if (diff > 0) {
+    let workDays = 0;
+    const tempDate = new Date(now);
+    tempDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(target);
+    endDate.setHours(0, 0, 0, 0);
+
+    while (tempDate < endDate) {
+      const dayOfWeek = tempDate.getDay();
+      // Only count if not weekend AND not a holiday
+      if (dayOfWeek !== 0 && dayOfWeek !== 6 && !isDateHoliday(tempDate)) {
+        workDays++;
+      }
+      tempDate.setDate(tempDate.getDate() + 1);
+    }
+
+    workDaysDisplay.innerHTML = `
+      <span class="work-days-label">Số ngày làm việc:</span>
+      <span class="work-days-number">${workDays}</span>
+      <span class="work-days-unit">ngày</span>
+      <span class="work-days-note">(trừ Thứ 7, CN, ngày lễ)</span>
+    `;
+  } else {
+    workDaysDisplay.innerHTML = "";
+  }
+
   if (diff <= 0) {
     const expiredDays = Math.abs(totalDays);
     let expiredMsg = "Đã đến ngày!";
@@ -8242,13 +13328,21 @@ function renderCountdown() {
     const secs = Math.floor((diff % (1000 * 60)) / 1000);
 
     const html = [];
-    html.push(`<div class="countdown-unit"><span class="countdown-number">${totalDays}</span><span class="countdown-unit-label">Ngày</span></div>`);
+    html.push(
+      `<div class="countdown-unit"><span class="countdown-number">${totalDays}</span><span class="countdown-unit-label">Ngày</span></div>`,
+    );
     html.push(`<span class="countdown-sep">:</span>`);
-    html.push(`<div class="countdown-unit"><span class="countdown-number">${String(hours).padStart(2,'0')}</span><span class="countdown-unit-label">Giờ</span></div>`);
+    html.push(
+      `<div class="countdown-unit"><span class="countdown-number">${String(hours).padStart(2, "0")}</span><span class="countdown-unit-label">Giờ</span></div>`,
+    );
     html.push(`<span class="countdown-sep">:</span>`);
-    html.push(`<div class="countdown-unit"><span class="countdown-number">${String(mins).padStart(2,'0')}</span><span class="countdown-unit-label">Phút</span></div>`);
+    html.push(
+      `<div class="countdown-unit"><span class="countdown-number">${String(mins).padStart(2, "0")}</span><span class="countdown-unit-label">Phút</span></div>`,
+    );
     html.push(`<span class="countdown-sep">:</span>`);
-    html.push(`<div class="countdown-unit"><span class="countdown-number">${String(secs).padStart(2,'0')}</span><span class="countdown-unit-label">Giây</span></div>`);
+    html.push(
+      `<div class="countdown-unit"><span class="countdown-number">${String(secs).padStart(2, "0")}</span><span class="countdown-unit-label">Giây</span></div>`,
+    );
 
     display.innerHTML = html.join("");
   }
@@ -8321,7 +13415,11 @@ async function saveCountdown() {
     } catch (err) {
       console.error("[Countdown] Lỗi lưu Firebase:", err);
       pendingCountdownData = data;
-      alert("Lỗi khi lưu lên Firebase: " + err.message + "\nĐã lưu local. Sẽ thử lại sau.");
+      alert(
+        "Lỗi khi lưu lên Firebase: " +
+          err.message +
+          "\nĐã lưu local. Sẽ thử lại sau.",
+      );
     }
   } else {
     console.warn("[Countdown] firebaseCountdownRef = null, lưu pending:", data);

@@ -13244,13 +13244,9 @@ function renderCountdown() {
   const title = document.getElementById("countdownTitle");
   const clearBtn = document.getElementById("countdownClearBtn");
 
-  // Always show the section
-  section.style.display = "block";
-
+  // Ẩn section nếu chưa setup countdown
   if (!countdownData || !countdownData.targetDate) {
-    title.textContent = "Đếm ngược";
-    display.innerHTML = `<span class="countdown-msg">Chưa có đếm ngược — click ✏️ để thêm</span>`;
-    if (clearBtn) clearBtn.style.display = "none";
+    section.style.display = "none";
     return;
   }
 

@@ -13270,18 +13270,18 @@ function renderCountdown() {
     const m = date.getMonth() + 1;
     const y = date.getFullYear();
     const key = `${y}-${m}-${d}`;
-    
+
     // Check solar holidays
     if (SOLAR_HOLIDAYS[`${d}-${m}`]) return true;
-    
+
     // Check lunar holidays
     const lunar = convertSolarToLunar(d, m, y);
     if (LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`]) return true;
-    
+
     // Check custom holidays (user-marked)
     const dateData = getDateData(key);
     if (dateData && dateData.isHoliday) return true;
-    
+
     return false;
   }
 
@@ -13307,10 +13307,60 @@ function renderCountdown() {
       <span class="work-days-label">Số ngày làm việc:</span>
       <span class="work-days-number">${workDays}</span>
       <span class="work-days-unit">ngày</span>
-      <span class="work-days-note">(trừ Thứ 7, CN, ngày lễ)</span>
     `;
   } else {
     workDaysDisplay.innerHTML = "";
+  }
+
+  // Progress Bar - chỉ hiện khi có startDate
+  const progressSection = document.getElementById("countdownProgress");
+  const progressBar = document.getElementById("progressBar");
+  const progressMarker = document.getElementById("progressMarker");
+  const progressPercent = document.getElementById("progressPercent");
+  const progressStartLabel = document.getElementById("progressStartLabel");
+  const progressEndLabel = document.getElementById("progressEndLabel");
+  const progressStartDate = document.getElementById("progressStartDate");
+  const progressEndDate = document.getElementById("progressEndDate");
+
+  const startDate = countdownData.startDate ? new Date(countdownData.startDate + "T00:00:00") : null;
+
+  if (startDate && diff > 0) {
+    // Show progress bar
+    progressSection.style.display = "block";
+
+    const totalDuration = target - startDate;
+    const elapsed = now - startDate;
+    const progress = Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
+
+    progressBar.style.width = `${progress}%`;
+    progressMarker.style.left = `${progress}%`;
+    progressPercent.textContent = `${Math.round(progress)}%`;
+
+    // Format dates
+    const formatDate = (d) => {
+      const day = d.getDate().toString().padStart(2, "0");
+      const month = (d.getMonth() + 1).toString().padStart(2, "0");
+      return `${day}/${month}`;
+    };
+
+    progressStartLabel.textContent = "Bắt đầu";
+    progressEndLabel.textContent = "Kết thúc";
+    progressStartDate.textContent = formatDate(startDate);
+    progressEndDate.textContent = formatDate(target);
+
+    // Thay đổi màu progress khi gần hoàn thành
+    if (progress >= 90) {
+      progressBar.style.background = "linear-gradient(90deg, #f472b6 0%, #fb7185 100%)";
+      progressBar.style.boxShadow = "0 0 12px rgba(244, 114, 182, 0.6), 0 0 24px rgba(251, 113, 133, 0.3)";
+    } else if (progress >= 70) {
+      progressBar.style.background = "linear-gradient(90deg, #818cf8 0%, #a78bfa 100%)";
+      progressBar.style.boxShadow = "0 0 12px rgba(129, 140, 248, 0.6), 0 0 24px rgba(167, 139, 250, 0.3)";
+    } else {
+      progressBar.style.background = "linear-gradient(90deg, #6366f1 0%, #818cf8 50%, #a78bfa 100%)";
+      progressBar.style.boxShadow = "0 0 12px rgba(167, 139, 250, 0.6), 0 0 24px rgba(99, 102, 241, 0.3)";
+    }
+  } else {
+    progressSection.style.display = "none";
   }
 
   if (diff <= 0) {
@@ -13364,15 +13414,18 @@ function openCountdownModal() {
   const modal = document.getElementById("countdownModal");
   const labelInput = document.getElementById("countdownLabelInput");
   const dateInput = document.getElementById("countdownDateInput");
+  const startDateInput = document.getElementById("countdownStartDateInput");
   const clearBtn = document.getElementById("countdownClearBtn");
 
   if (countdownData) {
     labelInput.value = countdownData.label || "";
     dateInput.value = countdownData.targetDate || "";
+    startDateInput.value = countdownData.startDate || "";
     if (clearBtn) clearBtn.style.display = "flex";
   } else {
     labelInput.value = "";
     dateInput.value = "";
+    startDateInput.value = "";
     if (clearBtn) clearBtn.style.display = "none";
   }
 
@@ -13387,13 +13440,14 @@ function closeCountdownModal() {
 async function saveCountdown() {
   const label = document.getElementById("countdownLabelInput").value.trim();
   const targetDate = document.getElementById("countdownDateInput").value;
+  const startDate = document.getElementById("countdownStartDateInput").value;
 
   if (!targetDate) {
     alert("Vui lòng chọn ngày đích.");
     return;
   }
 
-  const data = { label, targetDate };
+  const data = { label, targetDate, startDate };
   console.log("[Countdown] Đang lưu:", data);
 
   // Always save to localStorage first

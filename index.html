@@ -135,6 +135,25 @@
             >
           </div>
           <div id="workDaysDisplay" class="work-days-display"></div>
+          <!-- Progress Bar -->
+          <div id="countdownProgress" class="countdown-progress" style="display: none;">
+            <div class="progress-info">
+              <span id="progressStartLabel" class="progress-label"></span>
+              <span id="progressPercent" class="progress-percent">0%</span>
+              <span id="progressEndLabel" class="progress-label"></span>
+            </div>
+            <div class="progress-track">
+              <div id="progressBar" class="progress-bar">
+                <div id="progressGlow" class="progress-glow"></div>
+                <div id="progressShine" class="progress-shine"></div>
+              </div>
+              <div id="progressMarker" class="progress-marker"></div>
+            </div>
+            <div class="progress-dates">
+              <span id="progressStartDate" class="progress-date"></span>
+              <span id="progressEndDate" class="progress-date"></span>
+            </div>
+          </div>
         </div>
         <div
           id="todayEvents"
@@ -2583,9 +2602,15 @@
               maxlength="60"
             />
           </div>
-          <div class="form-group" style="margin-top: 12px">
-            <label for="countdownDateInput">Ngày đích</label>
-            <input type="date" id="countdownDateInput" />
+          <div style="display: flex; gap: 12px; margin-top: 12px">
+            <div class="form-group" style="flex: 1">
+              <label for="countdownStartDateInput">Ngày bắt đầu</label>
+              <input type="date" id="countdownStartDateInput" />
+            </div>
+            <div class="form-group" style="flex: 1">
+              <label for="countdownDateInput">Ngày đích</label>
+              <input type="date" id="countdownDateInput" />
+            </div>
           </div>
           <div style="display: flex; gap: 10px; margin-top: 18px">
             <button

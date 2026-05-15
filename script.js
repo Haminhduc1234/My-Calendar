@@ -13322,7 +13322,9 @@ function renderCountdown() {
   const progressStartDate = document.getElementById("progressStartDate");
   const progressEndDate = document.getElementById("progressEndDate");
 
-  const startDate = countdownData.startDate ? new Date(countdownData.startDate + "T00:00:00") : null;
+  const startDate = countdownData.startDate
+    ? new Date(countdownData.startDate + "T00:00:00")
+    : null;
 
   if (startDate && diff > 0) {
     // Show progress bar
@@ -13330,7 +13332,10 @@ function renderCountdown() {
 
     const totalDuration = target - startDate;
     const elapsed = now - startDate;
-    const progress = Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
+    const progress = Math.max(
+      0,
+      Math.min(100, (elapsed / totalDuration) * 100),
+    );
 
     progressBar.style.width = `${progress}%`;
     progressMarker.style.left = `${progress}%`;
@@ -13350,14 +13355,20 @@ function renderCountdown() {
 
     // Thay đổi màu progress khi gần hoàn thành
     if (progress >= 90) {
-      progressBar.style.background = "linear-gradient(90deg, #f472b6 0%, #fb7185 100%)";
-      progressBar.style.boxShadow = "0 0 12px rgba(244, 114, 182, 0.6), 0 0 24px rgba(251, 113, 133, 0.3)";
+      progressBar.style.background =
+        "linear-gradient(90deg, #f472b6 0%, #fb7185 100%)";
+      progressBar.style.boxShadow =
+        "0 0 12px rgba(244, 114, 182, 0.6), 0 0 24px rgba(251, 113, 133, 0.3)";
     } else if (progress >= 70) {
-      progressBar.style.background = "linear-gradient(90deg, #818cf8 0%, #a78bfa 100%)";
-      progressBar.style.boxShadow = "0 0 12px rgba(129, 140, 248, 0.6), 0 0 24px rgba(167, 139, 250, 0.3)";
+      progressBar.style.background =
+        "linear-gradient(90deg, #818cf8 0%, #a78bfa 100%)";
+      progressBar.style.boxShadow =
+        "0 0 12px rgba(129, 140, 248, 0.6), 0 0 24px rgba(167, 139, 250, 0.3)";
     } else {
-      progressBar.style.background = "linear-gradient(90deg, #6366f1 0%, #818cf8 50%, #a78bfa 100%)";
-      progressBar.style.boxShadow = "0 0 12px rgba(167, 139, 250, 0.6), 0 0 24px rgba(99, 102, 241, 0.3)";
+      progressBar.style.background =
+        "linear-gradient(90deg, #6366f1 0%, #818cf8 50%, #a78bfa 100%)";
+      progressBar.style.boxShadow =
+        "0 0 12px rgba(167, 139, 250, 0.6), 0 0 24px rgba(99, 102, 241, 0.3)";
     }
   } else {
     progressSection.style.display = "none";

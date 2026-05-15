@@ -7794,8 +7794,13 @@ input[type="datetime-local"] {
 }
 
 @keyframes progressPulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.8; }
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
+  }
 }
 
 .progress-shine {
@@ -7830,7 +7835,8 @@ input[type="datetime-local"] {
 }
 
 @keyframes markerPulse {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow:
       0 0 10px rgba(167, 139, 250, 0.8),
       0 2px 6px rgba(0, 0, 0, 0.3);

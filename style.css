@@ -910,7 +910,7 @@ body::before {
 }
 
 .day.other-month {
-  opacity: 0.42;
+  opacity: 0.28;
 }
 
 .solar {
@@ -3571,7 +3571,7 @@ input[type="datetime-local"] {
   background: linear-gradient(140deg, #884400, #663300);
   color: #ffdd99;
   font-weight: 700;
-  padding: 0 12px;
+  padding: 10px 12px;
   cursor: pointer;
 }
 
@@ -7783,15 +7783,15 @@ input[type="datetime-local"] {
   position: absolute;
   top: 0;
   left: -100%;
-  width: 60%;
+  width: 80%;
   height: 100%;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.6) 50%,
     transparent 100%
   );
-  animation: lightSweep 2s ease-in-out infinite;
+  animation: lightSweep 1s ease-in-out infinite;
   border-radius: 10px;
 }
 

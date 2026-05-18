@@ -13339,7 +13339,7 @@ function renderCountdown() {
 
     progressBar.style.width = `${progress}%`;
     progressMarker.style.left = `${progress}%`;
-    progressPercent.textContent = `${Math.round(progress)}%`;
+    progressPercent.textContent = `${progress.toFixed(5)}%`;
 
     // Format dates
     const formatDate = (d) => {
@@ -13411,7 +13411,7 @@ function renderCountdown() {
 
 function startCountdownTimer() {
   stopCountdownTimer();
-  countdownTimer = setInterval(renderCountdown, 1000);
+  countdownTimer = setInterval(renderCountdown, 100);
 }
 
 function stopCountdownTimer() {

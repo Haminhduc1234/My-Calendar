@@ -7771,10 +7771,37 @@ input[type="datetime-local"] {
   border-radius: 10px;
   background: linear-gradient(90deg, #6366f1 0%, #818cf8 50%, #a78bfa 100%);
   min-width: 6px;
-  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.1s linear;
   box-shadow:
     0 0 12px rgba(167, 139, 250, 0.6),
     0 0 24px rgba(99, 102, 241, 0.3);
+  overflow: hidden;
+}
+
+.progress-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
+  animation: lightSweep 2s ease-in-out infinite;
+  border-radius: 10px;
+}
+
+@keyframes lightSweep {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 200%;
+  }
 }
 
 .progress-glow {
@@ -7829,7 +7856,7 @@ input[type="datetime-local"] {
   box-shadow:
     0 0 10px rgba(167, 139, 250, 0.8),
     0 2px 6px rgba(0, 0, 0, 0.3);
-  transition: left 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left 0.1s linear;
   z-index: 2;
   animation: markerPulse 1.5s ease-in-out infinite;
 }

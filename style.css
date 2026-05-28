@@ -8648,7 +8648,7 @@ input[type="datetime-local"] {
 /* Today Panel Profile - Left side with name and bio */
 .today-profile {
   display: flex;
-  align-items: center;
+  align-items: start;
   gap: 12px;
   z-index: 10;
   cursor: pointer;

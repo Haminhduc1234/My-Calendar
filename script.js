@@ -658,17 +658,117 @@ function triggerCoverUpload() {
 
 window.triggerAvatarUpload = triggerAvatarUpload;
 window.triggerCoverUpload = triggerCoverUpload;
+window.openCropModal = openCropModal;
+window.closeCropModal = closeCropModal;
+window.applyCrop = applyCrop;
 
 function handleAvatarSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
-  processImageFile(file, "avatar");
+  openCropModal(file, "avatar");
 }
 
 function handleCoverSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
-  processImageFile(file, "cover");
+  openCropModal(file, "cover");
+}
+
+// Crop modal state
+let cropper = null;
+let cropModalType = null;
+let cropModalFile = null;
+
+function openCropModal(file, type) {
+  // Validate file type
+  if (!file.type.startsWith("image/")) {
+    showToast("Vui lòng chọn file hình ảnh.", "error");
+    return;
+  }
+
+  // Validate file size (max 5MB for Firebase - data URL has ~33% overhead)
+  if (file.size > 5 * 1024 * 1024) {
+    showToast("Kích thước ảnh không được vượt quá 5MB.", "error");
+    return;
+  }
+
+  cropModalType = type;
+  cropModalFile = file;
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const dataUrl = e.target.result;
+    const cropImage = document.getElementById("cropImage");
+    cropImage.src = dataUrl;
+
+    // Destroy previous cropper if exists
+    if (cropper) {
+      cropper.destroy();
+      cropper = null;
+    }
+
+    // Show modal first, then initialize cropper
+    const modal = document.getElementById("cropModal");
+    modal.style.display = "flex";
+
+    // Initialize Cropper.js
+    cropper = new Cropper(cropImage, {
+      aspectRatio: type === "avatar" ? 1 : 16 / 9,
+      viewMode: 1,
+      dragMode: "move",
+      autoCropArea: 0.9,
+      restore: false,
+      guides: true,
+      center: true,
+      highlight: false,
+      cropBoxMovable: true,
+      cropBoxResizable: true,
+      toggleDragModeOnDblclick: false,
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function closeCropModal() {
+  const modal = document.getElementById("cropModal");
+  modal.style.display = "none";
+
+  if (cropper) {
+    cropper.destroy();
+    cropper = null;
+  }
+  cropModalType = null;
+  cropModalFile = null;
+}
+
+function applyCrop() {
+  if (!cropper || !cropModalType) {
+    closeCropModal();
+    return;
+  }
+
+  const croppedCanvas = cropper.getCroppedCanvas({
+    maxWidth: cropModalType === "avatar" ? 512 : 1920,
+    maxHeight: cropModalType === "avatar" ? 512 : 1080,
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: "high",
+  });
+
+  const dataUrl = croppedCanvas.toDataURL("image/jpeg", 0.9);
+  const previewId = cropModalType === "avatar" ? "profileAvatarPreview" : "profileCoverPreview";
+  const placeholderId = cropModalType === "avatar" ? "profileAvatarPlaceholder" : "profileCoverPlaceholder";
+  const deleteBtnId = cropModalType === "avatar" ? "profileAvatarDeleteBtn" : "profileCoverDeleteBtn";
+
+  const preview = document.getElementById(previewId);
+  const placeholder = document.getElementById(placeholderId);
+  const deleteBtn = document.getElementById(deleteBtnId);
+
+  preview.src = dataUrl;
+  preview.classList.add("has-image");
+  if (placeholder) placeholder.style.display = "none";
+  if (deleteBtn) deleteBtn.style.display = "flex";
+
+  closeCropModal();
 }
 
 function processImageFile(file, type) {
@@ -787,23 +887,29 @@ function applyProfileToUI(settings) {
   const todayPanel = document.querySelector(".today-panel");
   if (!todayPanel) return;
 
-  // Apply avatar to today panel
-  let avatarEl = todayPanel.querySelector(".today-panel-avatar");
-  let avatarPlaceholder = todayPanel.querySelector(".today-panel-avatar-placeholder");
+  // Use existing profile elements from HTML
+  const profileWrapper = document.getElementById("todayProfile");
+  const avatarEl = document.getElementById("todayProfileAvatar");
+  const avatarPlaceholder = document.getElementById("todayProfilePlaceholder");
+  const nameEl = document.getElementById("todayProfileName");
+  const bioEl = document.getElementById("todayProfileBio");
 
+  // Update name and bio
+  if (nameEl) {
+    nameEl.textContent = settings.displayName || "Người dùng";
+  }
+  if (bioEl) {
+    bioEl.textContent = settings.bio || "";
+  }
+
+  // Update avatar
   if (settings.avatar) {
-    if (!avatarEl) {
-      avatarEl = document.createElement("img");
-      avatarEl.className = "today-panel-avatar";
-      avatarEl.onclick = openProfileSettingsModal;
-      todayPanel.insertBefore(avatarEl, todayPanel.firstChild);
-    }
     avatarEl.src = settings.avatar;
     avatarEl.style.display = "block";
-    if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
+    avatarPlaceholder.style.display = "none";
   } else {
-    if (avatarEl) avatarEl.style.display = "none";
-    if (avatarPlaceholder) avatarPlaceholder.style.display = "flex";
+    avatarEl.style.display = "none";
+    avatarPlaceholder.style.display = "flex";
   }
 
   // Apply cover to today panel

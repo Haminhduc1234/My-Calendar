@@ -29,6 +29,9 @@
       href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
     />
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <!-- Cropper.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
   </head>
 
   <body>
@@ -100,21 +103,19 @@
     </div>
 
     <div class="app-wrapper">
-      <div class="today-panel">
-        <button
-          id="profileSettingsBtn"
-          class="today-panel-settings"
-          type="button"
-          onclick="openProfileSettingsModal()"
-          aria-label="Cài đặt hồ sơ"
-          title="Cài đặt hồ sơ"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path
-              d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-            />
-          </svg>
-        </button>
+      <div class="today-panel" id="todayPanel">
+        <div class="today-profile" id="todayProfile" onclick="openProfileSettingsModal()">
+          <div class="today-profile-info">
+            <div class="today-profile-name" id="todayProfileName"></div>
+            <div class="today-profile-bio" id="todayProfileBio"></div>
+          </div>
+          <img class="today-profile-avatar" id="todayProfileAvatar" src="" alt="Profile" />
+          <div class="today-profile-placeholder" id="todayProfilePlaceholder">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/>
+            </svg>
+          </div>
+        </div>
         <div class="today-date">
           <div class="weekday" id="todayWeekday"></div>
           <div class="date-number" id="todayDate"></div>
@@ -2724,6 +2725,22 @@
               Lưu
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+    <!-- Crop Modal -->
+    <div id="cropModal" class="modal" style="display: none; z-index: 9999;">
+      <div class="modal-content crop-modal-content">
+        <div class="crop-modal-header">
+          <h3>Cắt ảnh</h3>
+          <button class="modal-close" onclick="closeCropModal()">×</button>
+        </div>
+        <div class="crop-modal-body">
+          <img id="cropImage" style="max-width: 100%; display: block;" />
+        </div>
+        <div class="crop-modal-footer">
+          <button class="crop-modal-cancel" onclick="closeCropModal()">Hủy</button>
+          <button class="crop-modal-apply" onclick="applyCrop()">Áp dụng</button>
         </div>
       </div>
     </div>

@@ -8676,8 +8676,8 @@ input[type="datetime-local"] {
 }
 
 .today-profile-avatar {
-  width: 42px;
-  height: 42px;
+  width: 62px;
+  height: 62px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid rgba(168, 196, 242, 0.4);

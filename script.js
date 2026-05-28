@@ -678,9 +678,9 @@ function processImageFile(file, type) {
     return;
   }
 
-  // Validate file size (max 2MB for Firebase - data URL has ~33% overhead)
-  if (file.size > 2 * 1024 * 1024) {
-    showToast("Kích thước ảnh không được vượt quá 2MB.", "error");
+  // Validate file size (max 5MB for Firebase - data URL has ~33% overhead)
+  if (file.size > 5 * 1024 * 1024) {
+    showToast("Kích thước ảnh không được vượt quá 5MB.", "error");
     return;
   }
 

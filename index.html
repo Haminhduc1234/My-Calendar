@@ -102,16 +102,16 @@
     <div class="app-wrapper">
       <div class="today-panel">
         <button
-          id="profileLogoutBtn"
-          class="today-panel-logout"
+          id="profileSettingsBtn"
+          class="today-panel-settings"
           type="button"
-          onclick="logoutProfileSession()"
-          aria-label="Đăng xuất mã PIN"
-          title="Đăng xuất mã PIN"
+          onclick="openProfileSettingsModal()"
+          aria-label="Cài đặt hồ sơ"
+          title="Cài đặt hồ sơ"
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path
-              d="M9 4h6a2 2 0 0 1 2 2v2h-1.8V6a.2.2 0 0 0-.2-.2H9a.2.2 0 0 0-.2.2v12c0 .11.09.2.2.2h6a.2.2 0 0 0 .2-.2v-2H17v2a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm6.55 4.65 3.35 3.35H11v2h7.9l-3.35 3.35 1.27 1.27 5.5-5.5-5.5-5.5z"
+              d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
             />
           </svg>
         </button>
@@ -281,6 +281,18 @@
                 />
               </svg>
               <span class="fab-label">Thu Chi</span>
+            </button>
+            <button
+              class="logout-fab tool-btn"
+              onclick="logoutProfileSession()"
+              aria-label="Đăng xuất mã PIN"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path
+                  d="M9 4h6a2 2 0 0 1 2 2v2h-1.8V6a.2.2 0 0 0-.2-.2H9a.2.2 0 0 0-.2.2v12c0 .11.09.2.2.2h6a.2.2 0 0 0 .2-.2v-2H17v2a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm6.55 4.65 3.35 3.35H11v2h7.9l-3.35 3.35 1.27 1.27 5.5-5.5-5.5-5.5z"
+                />
+              </svg>
+              <span class="fab-label">Đăng Xuất</span>
             </button>
           </div>
         </div>
@@ -547,6 +559,85 @@
           </div>
           <div id="passwordError" class="password-error">
             Vui lòng nhập đủ 6 chữ số.
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Settings Modal -->
+      <div id="profileSettingsModal" class="modal">
+        <div class="modal-content profile-settings-modal-content">
+          <div class="profile-settings-header">
+            <h3>Cài đặt Hồ sơ</h3>
+            <button class="modal-close" onclick="closeProfileSettingsModal()">×</button>
+          </div>
+          <div class="profile-settings-body">
+            <!-- Avatar Section -->
+            <div class="profile-avatar-section">
+              <div class="profile-avatar-wrapper">
+                <img id="profileAvatarPreview" class="profile-avatar-preview" src="" alt="Avatar" />
+                <div class="profile-avatar-placeholder" id="profileAvatarPlaceholder">
+                  <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                </div>
+                <div class="profile-avatar-overlay" id="profileAvatarOverlay">
+                  <button class="profile-avatar-change-btn" onclick="triggerAvatarUpload()" title="Đổi avatar">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                  </button>
+                </div>
+                <button class="profile-avatar-delete-btn" id="profileAvatarDeleteBtn" onclick="removeProfileAvatar()" title="Xóa avatar" style="display: none">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                </button>
+              </div>
+              <input type="file" id="profileAvatarInput" accept="image/*" style="display: none" />
+            </div>
+
+            <!-- Cover Image Section -->
+            <div class="profile-cover-section">
+              <div class="profile-cover-wrapper">
+                <img id="profileCoverPreview" class="profile-cover-preview" src="" alt="Ảnh bìa" />
+                <div class="profile-cover-placeholder" id="profileCoverPlaceholder">
+                  <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor">
+                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                  </svg>
+                  <span>Thêm ảnh bìa</span>
+                </div>
+                <div class="profile-cover-overlay" id="profileCoverOverlay">
+                  <button class="profile-cover-change-btn" onclick="triggerCoverUpload()" title="Đổi ảnh bìa">
+                    <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                    </svg>
+                  </button>
+                </div>
+                <button class="profile-cover-delete-btn" id="profileCoverDeleteBtn" onclick="removeProfileCover()" title="Xóa ảnh bìa" style="display: none">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                </button>
+              </div>
+              <input type="file" id="profileCoverInput" accept="image/*" style="display: none" />
+            </div>
+
+            <!-- Display Name Section -->
+            <div class="profile-name-section">
+              <label class="profile-label" for="profileDisplayName">Tên hiển thị</label>
+              <input type="text" id="profileDisplayName" class="profile-input" placeholder="Nhập tên của bạn..." maxlength="30" />
+            </div>
+
+            <!-- Bio Section -->
+            <div class="profile-bio-section">
+              <label class="profile-label" for="profileBio">Giới thiệu ngắn</label>
+              <textarea id="profileBio" class="profile-textarea" placeholder="Viết vài dòng về bản thân..." maxlength="150" rows="3"></textarea>
+              <div class="profile-char-count"><span id="profileBioCount">0</span>/150</div>
+            </div>
+          </div>
+          <div class="profile-settings-footer">
+            <button class="profile-settings-cancel" onclick="closeProfileSettingsModal()">Hủy</button>
+            <button class="profile-settings-save" onclick="saveProfileSettings()">Lưu</button>
           </div>
         </div>
       </div>

@@ -584,43 +584,6 @@ body::before {
   animation: panelIn 0.62s ease both;
 }
 
-.today-panel-logout {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 34px;
-  height: 34px;
-  border: 1px solid rgba(168, 196, 242, 0.28);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #dbe8ff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition:
-    transform 0.2s ease,
-    background 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.today-panel-logout svg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
-}
-
-.today-panel-logout:hover {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(168, 196, 242, 0.4);
-  transform: translateY(-1px);
-}
-
-.today-panel-logout:focus-visible {
-  outline: 2px solid #7eb8f7;
-  outline-offset: 2px;
-}
-
 .calendar-container {
   padding: 18px;
   margin-bottom: 12px;
@@ -1989,6 +1952,37 @@ body::before {
 .income-fab:hover {
   transform: translateY(-2px) scale(1.02);
   filter: brightness(1.08);
+}
+
+.logout-fab.tool-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 100, 100, 0.5);
+  background: linear-gradient(145deg, #663333, #442222);
+  position: relative;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-fab.tool-btn svg {
+  width: 24px;
+  height: 24px;
+  fill: #ffaaaa;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.logout-fab.tool-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.1);
+  border-color: rgba(255, 100, 100, 0.7);
+  box-shadow: 0 0 20px rgba(255, 100, 100, 0.35);
+}
+
+.logout-fab.tool-btn:hover svg {
+  fill: #ffffff;
 }
 
 .nav-item.income-fab {
@@ -5744,7 +5738,7 @@ input[type="datetime-local"] {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 16px !important;
   flex-shrink: 0;
 }
 
@@ -5760,6 +5754,7 @@ input[type="datetime-local"] {
   display: flex;
   gap: 10px;
   margin-bottom: 14px;
+  margin-top: 10px;
   flex-shrink: 0;
 }
 
@@ -8159,4 +8154,869 @@ input[type="datetime-local"] {
 
 #countdownModal .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.14);
+}
+
+/* ==================== PROFILE SETTINGS MODAL ==================== */
+
+.profile-settings-modal-content {
+  width: 90%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(145deg, rgba(30, 50, 90, 0.98), rgba(15, 25, 50, 0.99));
+  border: 1px solid rgba(168, 196, 242, 0.2);
+  border-radius: 16px;
+  padding: 0;
+  animation: modalSlideIn 0.3s ease;
+}
+
+.profile-settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profile-settings-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--blue-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.profile-settings-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ==================== PROFILE SETTINGS MODAL ==================== */
+
+/* Profile Avatar in Modal - Larger */
+.profile-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-avatar-wrapper {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.profile-avatar-preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(168, 196, 242, 0.4);
+  display: none;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.profile-avatar-preview.has-image {
+  display: block;
+}
+
+.profile-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 4px solid rgba(168, 196, 242, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-avatar-placeholder:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(168, 196, 242, 0.4);
+}
+
+.profile-avatar-placeholder.has-image {
+  display: none;
+}
+
+/* Avatar overlay (shows on hover when image exists) */
+.profile-avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.profile-avatar-wrapper:hover .profile-avatar-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.profile-avatar-change-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(91, 156, 246, 0.9);
+  border: 2px solid #fff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.profile-avatar-change-btn:hover {
+  background: rgba(91, 156, 246, 1);
+  transform: scale(1.1);
+}
+
+/* Avatar delete button - top right corner */
+.profile-avatar-delete-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 100, 100, 0.9);
+  border: 2px solid #fff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+}
+
+.profile-avatar-delete-btn:hover {
+  background: rgba(255, 80, 80, 1);
+  transform: scale(1.1);
+}
+
+/* Profile Cover in Modal - Full width */
+.profile-cover-section {
+  width: 100%;
+}
+
+.profile-cover-wrapper {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-cover-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.profile-cover-preview.has-image {
+  display: block;
+}
+
+.profile-cover-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.profile-cover-placeholder:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.profile-cover-placeholder svg {
+  opacity: 0.5;
+}
+
+/* Cover overlay (shows on hover when image exists) */
+.profile-cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.profile-cover-wrapper:hover .profile-cover-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.profile-cover-change-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(91, 156, 246, 0.9);
+  border: 3px solid #fff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
+}
+
+.profile-cover-change-btn:hover {
+  background: rgba(91, 156, 246, 1);
+  transform: scale(1.1);
+}
+
+/* Cover delete button - top right corner */
+.profile-cover-delete-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 100, 100, 0.9);
+  border: 2px solid #fff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+}
+
+.profile-cover-delete-btn:hover {
+  background: rgba(255, 80, 80, 1);
+  transform: scale(1.1);
+}
+
+/* Name and Bio Sections */
+.profile-name-section,
+.profile-bio-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile-input,
+.profile-textarea {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.profile-input:focus,
+.profile-textarea:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.profile-input::placeholder,
+.profile-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.profile-textarea {
+  resize: vertical;
+  min-height: 80px;
+  max-height: 150px;
+}
+
+.profile-char-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: right;
+  margin-top: -4px;
+}
+
+/* Footer */
+.profile-settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profile-settings-cancel,
+.profile-settings-save {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-settings-cancel {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text);
+}
+
+.profile-settings-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.profile-settings-save {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(91, 156, 246, 0.3);
+}
+
+.profile-settings-save:hover {
+  background: var(--accent-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(91, 156, 246, 0.4);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .profile-settings-modal-content {
+    width: 95%;
+    margin: 10px;
+  }
+
+  .profile-settings-body {
+    padding: 16px;
+  }
+
+  .profile-cover-wrapper {
+    height: 140px;
+  }
+
+  .profile-avatar-wrapper {
+    width: 110px;
+    height: 110px;
+  }
+
+  .profile-avatar-change-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .profile-cover-change-btn {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+.today-panel-settings {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(168, 196, 242, 0.28);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #dbe8ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+  z-index: 10;
+}
+
+.today-panel-settings svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+.today-panel-settings:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(168, 196, 242, 0.4);
+  transform: translateY(-1px);
+}
+
+.today-panel-settings:focus-visible {
+  outline: 2px solid #7eb8f7;
+  outline-offset: 2px;
+}
+
+/* Today Panel Avatar in Header */
+.today-panel-avatar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(168, 196, 242, 0.4);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.today-panel-avatar:hover {
+  transform: scale(1.08);
+  border-color: rgba(168, 196, 242, 0.6);
+}
+
+.today-panel-avatar-placeholder {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(168, 196, 242, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.today-panel-avatar-placeholder:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(168, 196, 242, 0.5);
+}
+
+.today-panel-avatar-placeholder svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+/* Cover image in today panel - Full background */
+.today-panel.has-cover .today-panel-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.25;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.today-panel.has-cover .today-date,
+.today-panel.has-cover .countdown-section,
+.today-panel.has-cover .today-events-panel,
+.today-panel.has-cover .today-extra {
+  position: relative;
+  z-index: 1;
+}
+
+/* ==================== PROFILE SETTINGS MODAL ==================== */
+
+/* Profile Avatar in Modal - Larger */
+.profile-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-avatar-wrapper {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.profile-avatar-preview {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid rgba(168, 196, 242, 0.4);
+  display: none;
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.profile-avatar-preview.has-image {
+  display: block;
+}
+
+.profile-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 4px solid rgba(168, 196, 242, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-avatar-placeholder:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(168, 196, 242, 0.4);
+}
+
+.profile-avatar-placeholder.has-image {
+  display: none;
+}
+
+/* Avatar overlay (shows on hover when image exists) */
+.profile-avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.profile-avatar-wrapper:hover .profile-avatar-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.profile-avatar-change-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(91, 156, 246, 0.9);
+  border: 2px solid #fff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.profile-avatar-change-btn:hover {
+  background: rgba(91, 156, 246, 1);
+  transform: scale(1.1);
+}
+
+/* Avatar delete button - top right corner */
+.profile-avatar-delete-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 100, 100, 0.9);
+  border: 2px solid #fff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+}
+
+.profile-avatar-delete-btn:hover {
+  background: rgba(255, 80, 80, 1);
+  transform: scale(1.1);
+}
+
+/* Profile Cover in Modal - Full width */
+.profile-cover-section {
+  width: 100%;
+}
+
+.profile-cover-wrapper {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-cover-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.profile-cover-preview.has-image {
+  display: block;
+}
+
+.profile-cover-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.profile-cover-placeholder:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.profile-cover-placeholder svg {
+  opacity: 0.5;
+}
+
+/* Cover overlay (shows on hover when image exists) */
+.profile-cover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.profile-cover-wrapper:hover .profile-cover-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.profile-cover-change-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(91, 156, 246, 0.9);
+  border: 3px solid #fff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
+}
+
+.profile-cover-change-btn:hover {
+  background: rgba(91, 156, 246, 1);
+  transform: scale(1.1);
+}
+
+/* Cover delete button - top right corner */
+.profile-cover-delete-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 100, 100, 0.9);
+  border: 2px solid #fff;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  z-index: 5;
+}
+
+.profile-cover-delete-btn:hover {
+  background: rgba(255, 80, 80, 1);
+  transform: scale(1.1);
+}
+
+/* Name and Bio Sections */
+.profile-name-section,
+.profile-bio-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile-input,
+.profile-textarea {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.profile-input:focus,
+.profile-textarea:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.profile-input::placeholder,
+.profile-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.profile-textarea {
+  resize: vertical;
+  min-height: 80px;
+  max-height: 150px;
+}
+
+.profile-char-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: right;
+  margin-top: -4px;
+}
+
+/* Footer */
+.profile-settings-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profile-settings-cancel,
+.profile-settings-save {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-settings-cancel {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text);
+}
+
+.profile-settings-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.profile-settings-save {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(91, 156, 246, 0.3);
+}
+
+.profile-settings-save:hover {
+  background: var(--accent-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(91, 156, 246, 0.4);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .profile-settings-modal-content {
+    width: 95%;
+    margin: 10px;
+  }
+
+  .profile-settings-body {
+    padding: 16px;
+  }
+
+  .profile-cover-wrapper {
+    height: 140px;
+  }
+
+  .profile-avatar-wrapper {
+    width: 110px;
+    height: 110px;
+  }
+
+  .profile-avatar-change-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .profile-cover-change-btn {
+    width: 50px;
+    height: 50px;
+  }
 }

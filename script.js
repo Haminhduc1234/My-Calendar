@@ -22,6 +22,7 @@ let firebaseDatesRef = null;
 let firebaseQuickNotesRef = null;
 let firebaseTranslateHistoryRef = null;
 let firebaseAISettingsRef = null;
+let firebaseProfileSettingsRef = null;
 let firebaseReady = false;
 let firebaseAuth = null;
 let firebaseProjectsRef = null;
@@ -30,6 +31,7 @@ let dateDataCache = {};
 let quickNotesCache = [];
 let translateHistoryCache = [];
 let syncWriteErrorShown = false;
+let profileSettingsCache = {};
 
 // Projects state
 let projectsDataCache = {};
@@ -434,6 +436,8 @@ function ensureProfileKey() {
       userProfileKey = storedProfileKey;
       const modal = document.getElementById("passwordModal");
       if (modal) modal.style.display = "none";
+      // Initialize profile UI after profile key is set
+      setTimeout(() => initProfileOnLoad(), 0);
       resolve(true);
       return;
     }
@@ -496,6 +500,8 @@ function ensureProfileKey() {
       localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, userProfileKey);
       modal.style.display = "none";
       cleanup();
+      // Initialize profile UI after profile key is set
+      setTimeout(() => initProfileOnLoad(), 0);
       resolve(true);
     }
 
@@ -560,6 +566,328 @@ function logoutProfileSession() {
 }
 
 window.logoutProfileSession = logoutProfileSession;
+
+/* ==================== PROFILE SETTINGS ==================== */
+
+const PROFILE_SETTINGS_PREFIX = "profileSettingsV1";
+const FIREBASE_PROFILE_SETTINGS_PATH = "profileSettings";
+
+function getProfileSettingsKey() {
+  return `${PROFILE_SETTINGS_PREFIX}:${userProfileKey}`;
+}
+
+function loadProfileSettings() {
+  if (!userProfileKey) return {};
+  const raw = localStorage.getItem(getProfileSettingsKey());
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+function saveProfileSettingsData(settings) {
+  if (!userProfileKey) return;
+  localStorage.setItem(getProfileSettingsKey(), JSON.stringify(settings));
+}
+
+function openProfileSettingsModal() {
+  const modal = document.getElementById("profileSettingsModal");
+  // Use cache if available, otherwise load from localStorage
+  const settings = Object.keys(profileSettingsCache).length > 0 ? profileSettingsCache : loadProfileSettings();
+
+  // Load avatar
+  const avatarPreview = document.getElementById("profileAvatarPreview");
+  const avatarPlaceholder = document.getElementById("profileAvatarPlaceholder");
+  const avatarDeleteBtn = document.getElementById("profileAvatarDeleteBtn");
+
+  if (settings.avatar) {
+    avatarPreview.src = settings.avatar;
+    avatarPreview.classList.add("has-image");
+    avatarPlaceholder.style.display = "none";
+    avatarDeleteBtn.style.display = "flex";
+  } else {
+    avatarPreview.src = "";
+    avatarPreview.classList.remove("has-image");
+    avatarPlaceholder.style.display = "flex";
+    avatarDeleteBtn.style.display = "none";
+  }
+
+  // Load cover
+  const coverPreview = document.getElementById("profileCoverPreview");
+  const coverPlaceholder = document.getElementById("profileCoverPlaceholder");
+  const coverDeleteBtn = document.getElementById("profileCoverDeleteBtn");
+
+  if (settings.cover) {
+    coverPreview.src = settings.cover;
+    coverPreview.classList.add("has-image");
+    coverPlaceholder.style.display = "none";
+    coverDeleteBtn.style.display = "flex";
+  } else {
+    coverPreview.src = "";
+    coverPreview.classList.remove("has-image");
+    coverPlaceholder.style.display = "flex";
+    coverDeleteBtn.style.display = "none";
+  }
+
+  // Load name and bio
+  document.getElementById("profileDisplayName").value = settings.displayName || "";
+  document.getElementById("profileBio").value = settings.bio || "";
+  document.getElementById("profileBioCount").textContent = (settings.bio || "").length;
+
+  modal.style.display = "flex";
+}
+
+window.openProfileSettingsModal = openProfileSettingsModal;
+
+function closeProfileSettingsModal() {
+  const modal = document.getElementById("profileSettingsModal");
+  modal.style.display = "none";
+}
+
+window.closeProfileSettingsModal = closeProfileSettingsModal;
+
+function triggerAvatarUpload() {
+  document.getElementById("profileAvatarInput").click();
+}
+
+function triggerCoverUpload() {
+  document.getElementById("profileCoverInput").click();
+}
+
+window.triggerAvatarUpload = triggerAvatarUpload;
+window.triggerCoverUpload = triggerCoverUpload;
+
+function handleAvatarSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  processImageFile(file, "avatar");
+}
+
+function handleCoverSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  processImageFile(file, "cover");
+}
+
+function processImageFile(file, type) {
+  // Validate file type
+  if (!file.type.startsWith("image/")) {
+    showToast("Vui lòng chọn file hình ảnh.", "error");
+    return;
+  }
+
+  // Validate file size (max 2MB for Firebase - data URL has ~33% overhead)
+  if (file.size > 2 * 1024 * 1024) {
+    showToast("Kích thước ảnh không được vượt quá 2MB.", "error");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const dataUrl = e.target.result;
+    const previewId = type === "avatar" ? "profileAvatarPreview" : "profileCoverPreview";
+    const placeholderId = type === "avatar" ? "profileAvatarPlaceholder" : "profileCoverPlaceholder";
+    const deleteBtnId = type === "avatar" ? "profileAvatarDeleteBtn" : "profileCoverDeleteBtn";
+
+    const preview = document.getElementById(previewId);
+    const placeholder = document.getElementById(placeholderId);
+    const deleteBtn = document.getElementById(deleteBtnId);
+
+    preview.src = dataUrl;
+    preview.classList.add("has-image");
+    if (placeholder) placeholder.style.display = "none";
+    if (deleteBtn) deleteBtn.style.display = "flex";
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeProfileAvatar() {
+  const preview = document.getElementById("profileAvatarPreview");
+  const placeholder = document.getElementById("profileAvatarPlaceholder");
+  const deleteBtn = document.getElementById("profileAvatarDeleteBtn");
+
+  preview.src = "";
+  preview.classList.remove("has-image");
+  placeholder.style.display = "flex";
+  if (deleteBtn) deleteBtn.style.display = "none";
+
+  // Clear the input
+  document.getElementById("profileAvatarInput").value = "";
+}
+
+function removeProfileCover() {
+  const preview = document.getElementById("profileCoverPreview");
+  const placeholder = document.getElementById("profileCoverPlaceholder");
+  const deleteBtn = document.getElementById("profileCoverDeleteBtn");
+
+  preview.src = "";
+  preview.classList.remove("has-image");
+  placeholder.style.display = "flex";
+  if (deleteBtn) deleteBtn.style.display = "none";
+
+  // Clear the input
+  document.getElementById("profileCoverInput").value = "";
+}
+
+window.removeProfileAvatar = removeProfileAvatar;
+window.removeProfileCover = removeProfileCover;
+
+function saveProfileSettings() {
+  const avatarPreview = document.getElementById("profileAvatarPreview");
+  const coverPreview = document.getElementById("profileCoverPreview");
+  const displayName = document.getElementById("profileDisplayName").value.trim();
+  const bio = document.getElementById("profileBio").value.trim();
+
+  const settings = {
+    avatar: avatarPreview.classList.contains("has-image") ? avatarPreview.src : null,
+    cover: coverPreview.classList.contains("has-image") ? coverPreview.src : null,
+    displayName: displayName,
+    bio: bio,
+    updatedAt: Date.now(),
+  };
+
+  // Save to localStorage immediately
+  saveProfileSettingsData(settings);
+  profileSettingsCache = settings;
+
+  // Save to Firebase
+  saveProfileSettingsToFirebase(settings);
+
+  closeProfileSettingsModal();
+  applyProfileToUI(settings);
+  showToast("Đã lưu cài đặt hồ sơ!", "success");
+}
+
+window.saveProfileSettings = saveProfileSettings;
+
+function saveProfileSettingsToFirebase(settings) {
+  if (!firebaseProfileSettingsRef) {
+    console.log("[Profile] Firebase chưa sẵn sàng, chỉ lưu local");
+    return;
+  }
+
+  firebaseProfileSettingsRef
+    .set(settings)
+    .then(() => {
+      console.log("[Profile] Đã lưu lên Firebase");
+    })
+    .catch((err) => {
+      console.error("[Profile] Lỗi lưu Firebase:", err);
+      showToast("Lưu lên cloud thất bại, đã lưu local", "error");
+    });
+}
+
+function applyProfileToUI(settings) {
+  if (!settings) return;
+
+  const todayPanel = document.querySelector(".today-panel");
+  if (!todayPanel) return;
+
+  // Apply avatar to today panel
+  let avatarEl = todayPanel.querySelector(".today-panel-avatar");
+  let avatarPlaceholder = todayPanel.querySelector(".today-panel-avatar-placeholder");
+
+  if (settings.avatar) {
+    if (!avatarEl) {
+      avatarEl = document.createElement("img");
+      avatarEl.className = "today-panel-avatar";
+      avatarEl.onclick = openProfileSettingsModal;
+      todayPanel.insertBefore(avatarEl, todayPanel.firstChild);
+    }
+    avatarEl.src = settings.avatar;
+    avatarEl.style.display = "block";
+    if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
+  } else {
+    if (avatarEl) avatarEl.style.display = "none";
+    if (avatarPlaceholder) avatarPlaceholder.style.display = "flex";
+  }
+
+  // Apply cover to today panel
+  if (settings.cover) {
+    todayPanel.classList.add("has-cover");
+    let bgEl = todayPanel.querySelector(".today-panel-bg");
+    if (!bgEl) {
+      bgEl = document.createElement("div");
+      bgEl.className = "today-panel-bg";
+      todayPanel.insertBefore(bgEl, todayPanel.firstChild);
+    }
+    bgEl.style.backgroundImage = `url(${settings.cover})`;
+  } else {
+    todayPanel.classList.remove("has-cover");
+    const bgEl = todayPanel.querySelector(".today-panel-bg");
+    if (bgEl) bgEl.remove();
+  }
+}
+
+function initProfileOnLoad() {
+  const settings = loadProfileSettings();
+  if (Object.keys(settings).length > 0) {
+    profileSettingsCache = settings;
+    applyProfileToUI(settings);
+  }
+
+  // Setup file input listeners
+  document
+    .getElementById("profileAvatarInput")
+    .addEventListener("change", handleAvatarSelect);
+  document
+    .getElementById("profileCoverInput")
+    .addEventListener("change", handleCoverSelect);
+
+  // Setup bio character counter
+  document
+    .getElementById("profileBio")
+    .addEventListener("input", function () {
+      document.getElementById("profileBioCount").textContent = this.value.length;
+    });
+}
+
+function setupProfileFirebaseListener() {
+  if (!firebaseProfileSettingsRef) return;
+
+  firebaseProfileSettingsRef.on("value", (snapshot) => {
+    const remoteData = snapshot.val();
+    if (remoteData) {
+      console.log("[Profile] Nhận dữ liệu từ Firebase");
+      profileSettingsCache = remoteData;
+      saveProfileSettingsData(remoteData);
+      applyProfileToUI(remoteData);
+
+      // If modal is open, refresh it
+      const modal = document.getElementById("profileSettingsModal");
+      if (modal && modal.style.display === "flex") {
+        openProfileSettingsModal();
+      }
+    }
+  });
+}
+
+function loadProfileSettingsFromFirebase() {
+  if (!firebaseProfileSettingsRef) {
+    console.log("[Profile] Firebase chưa sẵn sàng, dùng localStorage");
+    return;
+  }
+
+  firebaseProfileSettingsRef
+    .once("value")
+    .then((snapshot) => {
+      const remoteData = snapshot.val();
+      if (remoteData) {
+        console.log("[Profile] Đã tải từ Firebase");
+        profileSettingsCache = remoteData;
+        saveProfileSettingsData(remoteData);
+        applyProfileToUI(remoteData);
+      }
+    })
+    .catch((err) => {
+      console.error("[Profile] Lỗi tải từ Firebase:", err);
+    });
+
+  // Setup real-time listener
+  setupProfileFirebaseListener();
+}
 
 function collectLegacyLocalDateData() {
   const localData = {};
@@ -1131,6 +1459,9 @@ async function initFirebaseRealtime() {
   // AI Settings reference (API Key + Model)
   firebaseAISettingsRef = firebaseDb.ref(`aiSettings/${userProfileKey}`);
 
+  // Profile Settings reference (Avatar, Cover, DisplayName, Bio)
+  firebaseProfileSettingsRef = firebaseDb.ref(`${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`);
+
   console.log("[Firebase] Đã khởi tạo thành công, firebaseDb:", !!firebaseDb);
 
   // Lắng nghe sự thay đổi của Translate History
@@ -1320,6 +1651,12 @@ async function initFirebaseRealtime() {
 
   // Initialize countdown
   initCountdown();
+
+  // Initialize profile UI
+  initProfileOnLoad();
+
+  // Load Profile Settings from Firebase
+  loadProfileSettingsFromFirebase();
 
   // Load AI Settings from Firebase
   loadAISettingsFromFirebase();

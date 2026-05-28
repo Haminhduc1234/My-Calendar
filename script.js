@@ -763,6 +763,8 @@ function saveProfileSettings() {
 window.saveProfileSettings = saveProfileSettings;
 
 function saveProfileSettingsToFirebase(settings) {
+  console.log("[Profile] saveProfileSettingsToFirebase called, firebaseProfileSettingsRef:", !!firebaseProfileSettingsRef, "userProfileKey:", userProfileKey);
+
   if (!firebaseProfileSettingsRef) {
     console.log("[Profile] Firebase chưa sẵn sàng, chỉ lưu local");
     return;
@@ -865,6 +867,8 @@ function setupProfileFirebaseListener() {
 }
 
 function loadProfileSettingsFromFirebase() {
+  console.log("[Profile] loadProfileSettingsFromFirebase called, firebaseProfileSettingsRef:", !!firebaseProfileSettingsRef);
+
   if (!firebaseProfileSettingsRef) {
     console.log("[Profile] Firebase chưa sẵn sàng, dùng localStorage");
     return;
@@ -1461,6 +1465,14 @@ async function initFirebaseRealtime() {
 
   // Profile Settings reference (Avatar, Cover, DisplayName, Bio)
   firebaseProfileSettingsRef = firebaseDb.ref(`${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`);
+  console.log("[Firebase] Profile settings ref path:", `${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`);
+  console.log("[Firebase] firebaseProfileSettingsRef created:", !!firebaseProfileSettingsRef);
+
+  // Setup real-time listener for profile settings
+  setupProfileFirebaseListener();
+
+  // Load Profile Settings from Firebase
+  loadProfileSettingsFromFirebase();
 
   console.log("[Firebase] Đã khởi tạo thành công, firebaseDb:", !!firebaseDb);
 
@@ -1654,9 +1666,6 @@ async function initFirebaseRealtime() {
 
   // Initialize profile UI
   initProfileOnLoad();
-
-  // Load Profile Settings from Firebase
-  loadProfileSettingsFromFirebase();
 
   // Load AI Settings from Firebase
   loadAISettingsFromFirebase();

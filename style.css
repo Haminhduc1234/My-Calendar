@@ -8341,6 +8341,11 @@ input[type="datetime-local"] {
   display: none;
 }
 
+.profile-cover-preview[src=""],
+.profile-cover-preview:not([src]) {
+  visibility: hidden;
+}
+
 .profile-cover-preview.has-image {
   display: block;
 }
@@ -8884,6 +8889,11 @@ input[type="datetime-local"] {
   height: 100%;
   object-fit: cover;
   display: none;
+}
+
+.profile-cover-preview[src=""],
+.profile-cover-preview:not([src]) {
+  visibility: hidden;
 }
 
 .profile-cover-preview.has-image {

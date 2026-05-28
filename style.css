@@ -8223,6 +8223,11 @@ input[type="datetime-local"] {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
+.profile-avatar-preview[src=""],
+.profile-avatar-preview:not([src]) {
+  visibility: hidden;
+}
+
 .profile-avatar-preview.has-image {
   display: block;
 }
@@ -8685,6 +8690,11 @@ input[type="datetime-local"] {
   flex-shrink: 0;
 }
 
+.today-profile-avatar:not([src]),
+.today-profile-avatar[src=""] {
+  visibility: hidden;
+}
+
 .today-profile-placeholder {
   width: 42px;
   height: 42px;
@@ -8756,6 +8766,11 @@ input[type="datetime-local"] {
   display: none;
   background: rgba(255, 255, 255, 0.05);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.profile-avatar-preview[src=""],
+.profile-avatar-preview:not([src]) {
+  visibility: hidden;
 }
 
 .profile-avatar-preview.has-image {

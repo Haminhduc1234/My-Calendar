@@ -896,7 +896,7 @@ function applyProfileToUI(settings) {
 
   // Update name and bio
   if (nameEl) {
-    nameEl.textContent = settings.displayName || "Người dùng";
+    nameEl.textContent = settings.displayName || "";
   }
   if (bioEl) {
     bioEl.textContent = settings.bio || "";

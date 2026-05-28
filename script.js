@@ -713,7 +713,7 @@ function openCropModal(file, type) {
 
     // Initialize Cropper.js
     cropper = new Cropper(cropImage, {
-      aspectRatio: type === "avatar" ? 1 : 16 / 9,
+      aspectRatio: type === "avatar" ? 1 : NaN,
       viewMode: 1,
       dragMode: "move",
       autoCropArea: 0.9,

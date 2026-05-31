@@ -30,38 +30,31 @@
     />
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
     <!-- Cropper.js -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
   </head>
 
   <body>
-    <!-- Water Drop Effect Background -->
-    <div class="water-drops">
-      <div class="water-drop"></div>
-      <div class="water-drop"></div>
-      <div class="water-drop"></div>
-      <div class="water-drop"></div>
-      <div class="water-drop"></div>
-      <div class="water-drop"></div>
-      <div class="water-drop"></div>
-      <div class="water-drop"></div>
-      <div class="water-drop"></div>
-      <div class="water-drop"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
-      <div class="water-bubble"></div>
+    <!-- Star Fall Effect Background -->
+    <div class="stars-container">
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
+      <div class="falling-star"></div>
     </div>
 
     <div
@@ -104,15 +97,27 @@
 
     <div class="app-wrapper">
       <div class="today-panel" id="todayPanel">
-        <div class="today-profile" id="todayProfile" onclick="openProfileSettingsModal()">
+        <div
+          class="today-profile"
+          id="todayProfile"
+          onclick="openProfileSettingsModal()"
+        >
           <div class="today-profile-info">
             <div class="today-profile-name" id="todayProfileName"></div>
             <div class="today-profile-bio" id="todayProfileBio"></div>
           </div>
-          <img class="today-profile-avatar" id="todayProfileAvatar" src="" alt="Profile" />
+          <img
+            class="today-profile-avatar"
+            id="todayProfileAvatar"
+            src=""
+            alt="Profile"
+          />
           <div class="today-profile-placeholder" id="todayProfilePlaceholder">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" fill="currentColor"/>
+              <path
+                d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                fill="currentColor"
+              />
             </svg>
           </div>
         </div>
@@ -569,76 +574,194 @@
         <div class="modal-content profile-settings-modal-content">
           <div class="profile-settings-header">
             <h3>Cài đặt Hồ sơ</h3>
-            <button class="modal-close" onclick="closeProfileSettingsModal()">×</button>
+            <button class="modal-close" onclick="closeProfileSettingsModal()">
+              ×
+            </button>
           </div>
           <div class="profile-settings-body">
             <!-- Avatar Section -->
             <div class="profile-avatar-section">
               <div class="profile-avatar-wrapper">
-                <img id="profileAvatarPreview" class="profile-avatar-preview" src="" alt="Avatar" />
-                <div class="profile-avatar-placeholder" id="profileAvatarPlaceholder">
-                  <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                <img
+                  id="profileAvatarPreview"
+                  class="profile-avatar-preview"
+                  src=""
+                  alt="Avatar"
+                />
+                <div
+                  class="profile-avatar-placeholder"
+                  id="profileAvatarPlaceholder"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="48"
+                    height="48"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
+                    />
                   </svg>
                 </div>
                 <div class="profile-avatar-overlay" id="profileAvatarOverlay">
-                  <button class="profile-avatar-change-btn" onclick="triggerAvatarUpload()" title="Đổi avatar">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                  <button
+                    class="profile-avatar-change-btn"
+                    onclick="triggerAvatarUpload()"
+                    title="Đổi avatar"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="24"
+                      height="24"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                      />
                     </svg>
                   </button>
                 </div>
-                <button class="profile-avatar-delete-btn" id="profileAvatarDeleteBtn" onclick="removeProfileAvatar()" title="Xóa avatar" style="display: none">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                <button
+                  class="profile-avatar-delete-btn"
+                  id="profileAvatarDeleteBtn"
+                  onclick="removeProfileAvatar()"
+                  title="Xóa avatar"
+                  style="display: none"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="18"
+                    height="18"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                    />
                   </svg>
                 </button>
               </div>
-              <input type="file" id="profileAvatarInput" accept="image/*" style="display: none" />
+              <input
+                type="file"
+                id="profileAvatarInput"
+                accept="image/*"
+                style="display: none"
+              />
             </div>
 
             <!-- Cover Image Section -->
             <div class="profile-cover-section">
               <div class="profile-cover-wrapper">
-                <img id="profileCoverPreview" class="profile-cover-preview" src="" alt="Ảnh bìa" />
-                <div class="profile-cover-placeholder" id="profileCoverPlaceholder">
-                  <svg viewBox="0 0 24 24" width="40" height="40" fill="currentColor">
-                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                <img
+                  id="profileCoverPreview"
+                  class="profile-cover-preview"
+                  src=""
+                  alt="Ảnh bìa"
+                />
+                <div
+                  class="profile-cover-placeholder"
+                  id="profileCoverPlaceholder"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="40"
+                    height="40"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"
+                    />
                   </svg>
                   <span>Thêm ảnh bìa</span>
                 </div>
                 <div class="profile-cover-overlay" id="profileCoverOverlay">
-                  <button class="profile-cover-change-btn" onclick="triggerCoverUpload()" title="Đổi ảnh bìa">
-                    <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
-                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                  <button
+                    class="profile-cover-change-btn"
+                    onclick="triggerCoverUpload()"
+                    title="Đổi ảnh bìa"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="28"
+                      height="28"
+                      fill="currentColor"
+                    >
+                      <path
+                        d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"
+                      />
                     </svg>
                   </button>
                 </div>
-                <button class="profile-cover-delete-btn" id="profileCoverDeleteBtn" onclick="removeProfileCover()" title="Xóa ảnh bìa" style="display: none">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                <button
+                  class="profile-cover-delete-btn"
+                  id="profileCoverDeleteBtn"
+                  onclick="removeProfileCover()"
+                  title="Xóa ảnh bìa"
+                  style="display: none"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="20"
+                    height="20"
+                    fill="currentColor"
+                  >
+                    <path
+                      d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"
+                    />
                   </svg>
                 </button>
               </div>
-              <input type="file" id="profileCoverInput" accept="image/*" style="display: none" />
+              <input
+                type="file"
+                id="profileCoverInput"
+                accept="image/*"
+                style="display: none"
+              />
             </div>
 
             <!-- Display Name Section -->
             <div class="profile-name-section">
-              <label class="profile-label" for="profileDisplayName">Tên hiển thị</label>
-              <input type="text" id="profileDisplayName" class="profile-input" placeholder="Nhập tên của bạn..." maxlength="30" />
+              <label class="profile-label" for="profileDisplayName"
+                >Tên hiển thị</label
+              >
+              <input
+                type="text"
+                id="profileDisplayName"
+                class="profile-input"
+                placeholder="Nhập tên của bạn..."
+                maxlength="30"
+              />
             </div>
 
             <!-- Bio Section -->
             <div class="profile-bio-section">
-              <label class="profile-label" for="profileBio">Giới thiệu ngắn</label>
-              <textarea id="profileBio" class="profile-textarea" placeholder="Viết vài dòng về bản thân..." maxlength="150" rows="3"></textarea>
-              <div class="profile-char-count"><span id="profileBioCount">0</span>/150</div>
+              <label class="profile-label" for="profileBio"
+                >Giới thiệu ngắn</label
+              >
+              <textarea
+                id="profileBio"
+                class="profile-textarea"
+                placeholder="Viết vài dòng về bản thân..."
+                maxlength="150"
+                rows="3"
+              ></textarea>
+              <div class="profile-char-count">
+                <span id="profileBioCount">0</span>/150
+              </div>
             </div>
           </div>
           <div class="profile-settings-footer">
-            <button class="profile-settings-cancel" onclick="closeProfileSettingsModal()">Hủy</button>
-            <button class="profile-settings-save" onclick="saveProfileSettings()">Lưu</button>
+            <button
+              class="profile-settings-cancel"
+              onclick="closeProfileSettingsModal()"
+            >
+              Hủy
+            </button>
+            <button
+              class="profile-settings-save"
+              onclick="saveProfileSettings()"
+            >
+              Lưu
+            </button>
           </div>
         </div>
       </div>
@@ -2729,18 +2852,22 @@
       </div>
     </div>
     <!-- Crop Modal -->
-    <div id="cropModal" class="modal" style="display: none; z-index: 9999;">
+    <div id="cropModal" class="modal" style="display: none; z-index: 9999">
       <div class="modal-content crop-modal-content">
         <div class="crop-modal-header">
           <h3>Cắt ảnh</h3>
           <button class="modal-close" onclick="closeCropModal()">×</button>
         </div>
         <div class="crop-modal-body">
-          <img id="cropImage" style="max-width: 100%; display: block;" />
+          <img id="cropImage" style="max-width: 100%; display: block" />
         </div>
         <div class="crop-modal-footer">
-          <button class="crop-modal-cancel" onclick="closeCropModal()">Hủy</button>
-          <button class="crop-modal-apply" onclick="applyCrop()">Áp dụng</button>
+          <button class="crop-modal-cancel" onclick="closeCropModal()">
+            Hủy
+          </button>
+          <button class="crop-modal-apply" onclick="applyCrop()">
+            Áp dụng
+          </button>
         </div>
       </div>
     </div>

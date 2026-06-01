@@ -4614,7 +4614,7 @@ input[type="datetime-local"] {
 .task-item-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: start;
   gap: 8px;
 }
 
@@ -4625,6 +4625,9 @@ input[type="datetime-local"] {
   color: #f4f8ff;
   margin: 0;
   flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
 
 .project-item-text,
@@ -4714,7 +4717,6 @@ input[type="datetime-local"] {
 
 .task-checkbox {
   font-size: 18px;
-  margin-right: 8px;
   cursor: pointer;
   transition: transform 0.2s;
 }
@@ -4729,9 +4731,8 @@ input[type="datetime-local"] {
 
 .task-name {
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .task-name.done {

@@ -5332,56 +5332,65 @@ function renderCategoryList() {
       data-id="${cat.id}" 
       data-index="${index}"
       data-type="${type}"
-      ondragstart="onDragStart(event)"
-      ondragover="onDragOver(event)"
-      ondrop="onDrop(event)"
-      ondragend="onDragEnd(event)"
-      style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; cursor: grab; background: white; transition: background 0.15s;"
+      style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; cursor: grab; background: white; transition: background 0.15s; user-select: none;"
+      class="category-item"
     >
-      <span style="color: #9ca3af; margin-right: 8px; font-size: 16px;">☰</span>
-      <span style="flex: 1;">${cat.name}</span>
+      <span style="color: #9ca3af; margin-right: 8px; font-size: 14px;">☰</span>
+      <span style="flex: 1; color: #374151;">${cat.name}</span>
       <div style="display: flex; gap: 4px;">
-        <button onclick="editCategory('${cat.id}')" title="Sửa" style="background: none; border: none; cursor: pointer; padding: 6px; border-radius: 4px; color: #6b7280;">✏️</button>
-        <button onclick="deleteCategory('${cat.id}')" title="Xóa" style="background: none; border: none; cursor: pointer; padding: 6px; border-radius: 4px; color: #ef4444;">🗑️</button>
+        <button onclick="editCategory('${cat.id}')" title="Sửa" style="background: #f3f4f6; border: none; cursor: pointer; padding: 6px 10px; border-radius: 6px; color: #374151; font-size: 13px;">✏️ Sửa</button>
+        <button onclick="deleteCategory('${cat.id}')" title="Xóa" style="background: #fef2f2; border: none; cursor: pointer; padding: 6px 10px; border-radius: 6px; color: #dc2626; font-size: 13px;">🗑️ Xóa</button>
       </div>
     </div>
   `).join("");
-}
-
-function onDragStart(e) {
-  draggedItem = e.target;
-  e.target.style.opacity = "0.5";
-  e.target.style.background = "#f0f9ff";
-}
-
-function onDragOver(e) {
-  e.preventDefault();
-  e.target.closest("[draggable]") && (e.target.closest("[draggable]").style.background = "#e0f2fe");
-}
-
-function onDrop(e) {
-  e.preventDefault();
-  const target = e.target.closest("[draggable]");
-  if (!target || !draggedItem || target === draggedItem) return;
   
-  const type = target.dataset.type;
-  const fromIndex = parseInt(draggedItem.dataset.index);
-  const toIndex = parseInt(target.dataset.index);
-  
-  const items = cashflowCategories[type];
-  const [moved] = items.splice(fromIndex, 1);
-  items.splice(toIndex, 0, moved);
-  
-  saveCashflowCategoriesToStorage();
-  renderCategoryList();
+  initDragDrop();
 }
 
-function onDragEnd(e) {
-  document.querySelectorAll("[draggable]").forEach(el => {
-    el.style.opacity = "";
-    el.style.background = "white";
+function initDragDrop() {
+  const list = document.getElementById("cashflowCategoryList");
+  let draggedIndex = null;
+  
+  list.querySelectorAll(".category-item").forEach(item => {
+    item.addEventListener("dragstart", function(e) {
+      draggedIndex = parseInt(this.dataset.index);
+      this.style.opacity = "0.5";
+      this.style.background = "#e0f2fe";
+      e.dataTransfer.effectAllowed = "move";
+    });
+    
+    item.addEventListener("dragover", function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      this.style.background = "#bae6fd";
+    });
+    
+    item.addEventListener("dragleave", function() {
+      this.style.background = "white";
+    });
+    
+    item.addEventListener("drop", function(e) {
+      e.preventDefault();
+      const toIndex = parseInt(this.dataset.index);
+      if (draggedIndex === null || draggedIndex === toIndex) return;
+      
+      const type = this.dataset.type;
+      const items = cashflowCategories[type];
+      const [moved] = items.splice(draggedIndex, 1);
+      items.splice(toIndex, 0, moved);
+      
+      saveCashflowCategoriesToStorage();
+      renderCategoryList();
+    });
+    
+    item.addEventListener("dragend", function() {
+      list.querySelectorAll(".category-item").forEach(el => {
+        el.style.opacity = "";
+        el.style.background = "white";
+      });
+      draggedIndex = null;
+    });
   });
-  draggedItem = null;
 }
 
 function openAddCategoryForm() {

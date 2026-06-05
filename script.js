@@ -5294,6 +5294,19 @@ function closeCashflowCategoryModal() {
 }
 
 let draggedItem = null;
+let categoryTouchDragState = {
+  active: false,
+  dragging: false,
+  list: null,
+  item: null,
+  itemId: "",
+  type: "",
+  startY: 0,
+  currentY: 0,
+  offsetY: 0,
+  placeholder: null,
+  startedFromHandle: false,
+};
 
 function renderCategoryList() {
   const type = document.getElementById("cashflowCategoryType").value;
@@ -5312,12 +5325,17 @@ function renderCategoryList() {
       data-id="${cat.id}" 
       data-index="${index}"
       data-type="${type}"
-      style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; cursor: grab; background: white; transition: background 0.15s; user-select: none;"
+      style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; cursor: grab; background: white; transition: background 0.15s; user-select: none; -webkit-user-select: none; touch-action: pan-y;"
       class="category-item"
     >
-      <span style="color: #9ca3af; margin-right: 8px; font-size: 14px;">☰</span>
-      <span style="flex: 1; color: #374151;">${cat.name}</span>
-      <div style="display: flex; gap: 4px;">
+      <button
+        type="button"
+        data-drag-handle="true"
+        aria-label="Kéo để sắp xếp"
+        style="border: none; background: transparent; color: #9ca3af; margin-right: 2px; font-size: 18px; line-height: 1; padding: 6px 4px; cursor: grab; touch-action: none;"
+      >☰</button>
+      <span style="flex: 1; color: #374151; min-width: 0;">${cat.name}</span>
+      <div style="display: flex; gap: 4px; flex-shrink: 0;">
         <button onclick="editCategory('${cat.id}')" title="Sửa" style="background: #f3f4f6; border: none; cursor: pointer; padding: 6px 10px; border-radius: 6px; color: #374151; font-size: 13px;">✏️ Sửa</button>
         <button onclick="deleteCategory('${cat.id}')" title="Xóa" style="background: #fef2f2; border: none; cursor: pointer; padding: 6px 10px; border-radius: 6px; color: #dc2626; font-size: 13px;">🗑️ Xóa</button>
       </div>
@@ -5370,7 +5388,182 @@ function initDragDrop() {
       });
       draggedIndex = null;
     });
+
+    item.addEventListener("touchstart", handleCategoryTouchStart, {
+      passive: true,
+    });
+    item.addEventListener("touchmove", handleCategoryTouchMove, {
+      passive: false,
+    });
+    item.addEventListener("touchend", handleCategoryTouchEnd);
+    item.addEventListener("touchcancel", resetCategoryTouchDrag);
   });
+}
+
+function handleCategoryTouchStart(e) {
+  const handle = e.target.closest('[data-drag-handle="true"]');
+  if (!handle) return;
+
+  const item = e.currentTarget;
+  const list = document.getElementById("cashflowCategoryList");
+  if (!item || !list) return;
+
+  const touch = e.touches[0];
+  const rect = item.getBoundingClientRect();
+  categoryTouchDragState.active = true;
+  categoryTouchDragState.dragging = false;
+  categoryTouchDragState.list = list;
+  categoryTouchDragState.item = item;
+  categoryTouchDragState.itemId = item.dataset.id || "";
+  categoryTouchDragState.type = item.dataset.type || "income";
+  categoryTouchDragState.startY = touch.clientY;
+  categoryTouchDragState.currentY = touch.clientY;
+  categoryTouchDragState.offsetY = touch.clientY - rect.top;
+  categoryTouchDragState.placeholder = null;
+  categoryTouchDragState.startedFromHandle = true;
+}
+
+function handleCategoryTouchMove(e) {
+  if (!categoryTouchDragState.active || !categoryTouchDragState.item) return;
+
+  const touch = e.touches[0];
+  categoryTouchDragState.currentY = touch.clientY;
+  const deltaY = touch.clientY - categoryTouchDragState.startY;
+
+  if (!categoryTouchDragState.dragging && Math.abs(deltaY) < 8) {
+    return;
+  }
+
+  e.preventDefault();
+
+  if (!categoryTouchDragState.dragging) {
+    startCategoryTouchDragging();
+  }
+
+  const { item, list, offsetY } = categoryTouchDragState;
+  const listRect = list.getBoundingClientRect();
+  const top = touch.clientY - listRect.top - offsetY + list.scrollTop;
+
+  item.style.transform = "none";
+  item.style.position = "absolute";
+  item.style.left = "0";
+  item.style.right = "0";
+  item.style.top = `${top}px`;
+  item.style.zIndex = "1000";
+  item.style.pointerEvents = "none";
+
+  const siblings = Array.from(
+    list.querySelectorAll(".category-item:not(.category-item-touch-dragging)")
+  );
+  const currentYInList = touch.clientY - listRect.top + list.scrollTop;
+  let inserted = false;
+
+  siblings.forEach(sibling => {
+    const siblingTop = sibling.offsetTop;
+    const siblingMiddle = siblingTop + sibling.offsetHeight / 2;
+    if (!inserted && currentYInList < siblingMiddle) {
+      list.insertBefore(categoryTouchDragState.placeholder, sibling);
+      inserted = true;
+    }
+  });
+
+  if (!inserted) {
+    list.appendChild(categoryTouchDragState.placeholder);
+  }
+}
+
+function startCategoryTouchDragging() {
+  const { item, list } = categoryTouchDragState;
+  if (!item || !list) return;
+
+  categoryTouchDragState.dragging = true;
+
+  const placeholder = item.cloneNode(false);
+  placeholder.className = "category-item category-item-placeholder";
+  placeholder.removeAttribute("draggable");
+  placeholder.innerHTML = "";
+  placeholder.style.visibility = "hidden";
+  placeholder.style.height = `${item.offsetHeight}px`;
+  placeholder.style.margin = "0";
+  placeholder.style.borderBottom = "1px solid #f0f0f0";
+
+  categoryTouchDragState.placeholder = placeholder;
+
+  list.insertBefore(placeholder, item.nextSibling);
+  list.style.position = "relative";
+
+  item.classList.add("category-item-touch-dragging");
+  item.style.width = `${item.offsetWidth}px`;
+  item.style.opacity = "0.92";
+  item.style.background = "#e0f2fe";
+  item.style.boxShadow = "0 10px 24px rgba(15, 23, 42, 0.16)";
+}
+
+function handleCategoryTouchEnd() {
+  if (!categoryTouchDragState.active) return;
+
+  const { dragging, item, placeholder, type, itemId } = categoryTouchDragState;
+  if (!dragging || !item || !placeholder || !type || !itemId) {
+    resetCategoryTouchDrag();
+    return;
+  }
+
+  placeholder.replaceWith(item);
+
+  const items = cashflowCategories[type] || [];
+  const fromIndex = items.findIndex(cat => cat.id === itemId);
+  const domItems = Array.from(
+    document.querySelectorAll("#cashflowCategoryList .category-item")
+  );
+  const toIndex = domItems.findIndex(el => el.dataset.id === itemId);
+
+  if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+    const [moved] = items.splice(fromIndex, 1);
+    items.splice(toIndex, 0, moved);
+    saveCashflowCategoriesToStorage();
+    renderCategoryList();
+  } else {
+    resetCategoryTouchDrag();
+  }
+}
+
+function resetCategoryTouchDrag() {
+  const { item, placeholder, list } = categoryTouchDragState;
+
+  if (item) {
+    item.classList.remove("category-item-touch-dragging");
+    item.style.opacity = "";
+    item.style.background = "white";
+    item.style.boxShadow = "";
+    item.style.width = "";
+    item.style.position = "";
+    item.style.left = "";
+    item.style.right = "";
+    item.style.top = "";
+    item.style.zIndex = "";
+    item.style.pointerEvents = "";
+    item.style.transform = "";
+  }
+
+  if (placeholder && placeholder.parentNode) {
+    placeholder.parentNode.removeChild(placeholder);
+  }
+
+  if (list) {
+    list.style.position = "";
+  }
+
+  categoryTouchDragState.active = false;
+  categoryTouchDragState.dragging = false;
+  categoryTouchDragState.list = null;
+  categoryTouchDragState.item = null;
+  categoryTouchDragState.itemId = "";
+  categoryTouchDragState.type = "";
+  categoryTouchDragState.startY = 0;
+  categoryTouchDragState.currentY = 0;
+  categoryTouchDragState.offsetY = 0;
+  categoryTouchDragState.placeholder = null;
+  categoryTouchDragState.startedFromHandle = false;
 }
 
 function openAddCategoryForm() {

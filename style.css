@@ -3450,6 +3450,11 @@ body::before {
   margin-bottom: 14px;
 }
 
+.cashflow-note-block > span {
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
 .cashflow-summary-label,
 .cashflow-history-title,
 .cashflow-chart-subtitle,

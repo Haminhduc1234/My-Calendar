@@ -277,7 +277,7 @@
               <span class="fab-label">Tin Tức</span>
             </button>
             <button
-              class="income-fab tool-btn"
+              class="income-fab tool-btn protected-toolbox"
               onclick="openCashflowModal()"
               aria-label="Mở quản lý thu chi"
             >
@@ -287,6 +287,14 @@
                 />
               </svg>
               <span class="fab-label">Thu Chi</span>
+            </button>
+            <button
+              class="funds-fab tool-btn glow protected-toolbox"
+              onclick="openFundsModal()"
+              aria-label="Mở quản lý quỹ"
+            >
+              💰
+              <span class="fab-label">Quỹ</span>
             </button>
             <button
               class="logout-fab tool-btn"
@@ -1096,6 +1104,166 @@
               </div>
               <div class="cashflow-chart-wrap">
                 <canvas id="cashflowChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Funds Modal -->
+      <div id="fundsModal" class="modal">
+        <div class="modal-content event-modal-wrapper">
+          <div class="event-modal-header">
+            <div>
+              <h3>Quản lý Quỹ</h3>
+            </div>
+            <button
+              class="modal-close event-modal-close"
+              onclick="closeFundsModal()"
+            >
+              ×
+            </button>
+          </div>
+
+          <div class="funds-container">
+            <!-- Tổng dư khả dụng -->
+            <div class="funds-balance-section">
+              <div class="funds-balance-card">
+                <div class="funds-balance-label">Tổng dư thu nhập</div>
+                <div class="funds-balance-value" id="fundsTotalIncome">0 đ</div>
+              </div>
+              <div class="funds-balance-card">
+                <div class="funds-balance-label">Đã phân bổ</div>
+                <div class="funds-balance-value is-allocated" id="fundsTotalAllocated">0 đ</div>
+              </div>
+              <div class="funds-balance-card">
+                <div class="funds-balance-label">Còn khả dụng</div>
+                <div class="funds-balance-value is-available" id="fundsAvailable">0 đ</div>
+              </div>
+            </div>
+
+            <!-- Chia Quỹ -->
+            <div class="funds-allocate-section">
+              <div class="funds-section-header">
+                <h4>Chia Quỹ từ thu nhập</h4>
+                <button class="funds-btn-secondary" onclick="openAllocateModal()">
+                  + Phân bổ
+                </button>
+              </div>
+              <div class="funds-allocate-info" id="fundsAllocateInfo">
+                Nhấn "Phân bổ" để chia thu nhập vào các quỹ
+              </div>
+            </div>
+
+            <!-- Danh sách Quỹ -->
+            <div class="funds-list-section">
+              <div class="funds-section-header">
+                <h4>Danh sách Quỹ</h4>
+                <button class="funds-btn-add" onclick="openAddFundModal()">
+                  + Thêm Quỹ
+                </button>
+              </div>
+              <div id="fundsList" class="funds-list">
+                <!-- Fund items rendered here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add/Edit Fund Modal -->
+      <div id="fundModal" class="modal">
+        <div class="modal-content confirm-modal-content">
+          <div class="confirm-modal-header">
+            <h3 id="fundModalTitle">Thêm Quỹ mới</h3>
+          </div>
+          <div class="fund-form">
+            <label class="fund-input-item">
+              <span>Tên Quỹ</span>
+              <input
+                type="text"
+                id="fundName"
+                placeholder="VD: Quỹ du lịch, Quỹ tiết kiệm..."
+                maxlength="50"
+              />
+            </label>
+            <label class="fund-input-item">
+              <span>Màu sắc</span>
+              <div class="fund-color-picker" id="fundColorPicker">
+                <button class="fund-color-btn active" data-color="#a855f7" style="background:#a855f7"></button>
+                <button class="fund-color-btn" data-color="#3b82f6" style="background:#3b82f6"></button>
+                <button class="fund-color-btn" data-color="#10b981" style="background:#10b981"></button>
+                <button class="fund-color-btn" data-color="#f59e0b" style="background:#f59e0b"></button>
+                <button class="fund-color-btn" data-color="#ef4444" style="background:#ef4444"></button>
+                <button class="fund-color-btn" data-color="#ec4899" style="background:#ec4899"></button>
+                <button class="fund-color-btn" data-color="#06b6d4" style="background:#06b6d4"></button>
+                <button class="fund-color-btn" data-color="#84cc16" style="background:#84cc16"></button>
+              </div>
+            </label>
+          </div>
+          <div class="confirm-modal-actions">
+            <button class="confirm-cancel-btn" onclick="closeFundModal()">
+              Hủy
+            </button>
+            <button class="funds-btn-add" id="fundSaveBtn" onclick="saveFund()">
+              Lưu
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Allocate Funds Modal -->
+      <div id="allocateModal" class="modal">
+        <div class="modal-content event-modal-wrapper">
+          <div class="event-modal-header">
+            <div>
+              <h3>Phân bổ vào Quỹ</h3>
+            </div>
+            <button
+              class="modal-close event-modal-close"
+              onclick="closeAllocateModal()"
+            >
+              ×
+            </button>
+          </div>
+
+          <div class="allocate-container">
+            <div class="allocate-balance-info">
+              <span>Số dư khả dụng:</span>
+              <strong id="allocateAvailableAmount">0 đ</strong>
+            </div>
+
+            <div class="allocate-form">
+              <label class="allocate-input-item">
+                <span>Chọn Quỹ</span>
+                <select id="allocateFundSelect">
+                  <option value="">-- Chọn quỹ --</option>
+                </select>
+              </label>
+              <label class="allocate-input-item">
+                <span>Số tiền phân bổ</span>
+                <input
+                  type="text"
+                  id="allocateAmount"
+                  placeholder="VD: 500.000"
+                  inputmode="numeric"
+                />
+              </label>
+            </div>
+
+            <div class="allocate-actions">
+              <button class="confirm-cancel-btn" onclick="closeAllocateModal()">
+                Hủy
+              </button>
+              <button class="funds-btn-add" onclick="confirmAllocate()">
+                Phân bổ
+              </button>
+            </div>
+
+            <div class="allocate-history-section">
+              <div class="allocate-history-header">Lịch sử phân bổ gần đây</div>
+              <div id="allocateHistoryList" class="allocate-history-list">
+                <!-- History items rendered here -->
               </div>
             </div>
           </div>

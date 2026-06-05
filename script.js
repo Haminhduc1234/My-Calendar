@@ -1566,6 +1566,9 @@ async function initFirebaseRealtime() {
     `${FIREBASE_TRANSLATE_HISTORY_PATH}/${userProfileKey}`,
   );
 
+  // Funds reference
+  initFundsFirebase();
+
   // AI Settings reference (API Key + Model)
   firebaseAISettingsRef = firebaseDb.ref(`aiSettings/${userProfileKey}`);
 
@@ -1864,6 +1867,9 @@ function closeAllModals() {
     "cashflowModal",
     "cashflowDeleteConfirmModal",
     "currencyModal",
+    "fundsModal",
+    "fundModal",
+    "allocateModal",
   ];
   modals.forEach((id) => {
     const el = document.getElementById(id);
@@ -4371,23 +4377,36 @@ function calcOvertimeSalary(viewYear, viewMonth, hourlyRate) {
 }
 
 function formatCurrencyInput(input) {
-  // Lấy vị trí con trỏ
+  const oldValue = input.value;
   const cursorPos = input.selectionStart;
 
-  // Chỉ giữ số
-  let raw = input.value.replace(/\D/g, "");
+  let raw = oldValue.replace(/\D/g, "");
   if (!raw) {
     input.value = "";
     return;
   }
 
-  // Format tiền VN
   const formatted = Number(raw).toLocaleString("vi-VN");
-
-  // Tính lại vị trí con trỏ
-  const diff = formatted.length - input.value.length;
   input.value = formatted;
-  input.setSelectionRange(cursorPos + diff, cursorPos + diff);
+
+  // Đếm số chữ số trong chuỗi cũ trước con trỏ
+  let digitsBefore = 0;
+  for (let i = 0; i < cursorPos && i < oldValue.length; i++) {
+    if (/\d/.test(oldValue[i])) digitsBefore++;
+  }
+
+  // Tìm vị trí con trỏ mới trong chuỗi đã format
+  let newPos = 0;
+  let count = 0;
+  for (let i = 0; i < formatted.length; i++) {
+    if (/\d/.test(formatted[i])) {
+      count++;
+      if (count > digitsBefore) break;
+    }
+    newPos = i + 1;
+  }
+
+  input.setSelectionRange(newPos, newPos);
 }
 
 function formatVnd(value) {
@@ -5167,6 +5186,406 @@ function formatCashflowDate(dateIso) {
 })();
 
 renderOvertime();
+
+/* ========================== QUẢN LÝ QUỸ ========================== */
+const FIREBASE_FUNDS_PATH = "funds";
+let firebaseFundsRef = null;
+let fundsData = {
+  funds: [],
+  allocations: [],
+  totalIncome: 0,
+};
+let editingFundId = "";
+let selectedFundColor = "#a855f7";
+
+function initFundsFirebase() {
+  if (!firebaseDb || !userProfileKey) return;
+  firebaseFundsRef = firebaseDb.ref(`${FIREBASE_FUNDS_PATH}/${userProfileKey}`);
+  
+  firebaseFundsRef.on("value", (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      fundsData = {
+        funds: data.funds || [],
+        allocations: data.allocations || [],
+        totalIncome: data.totalIncome || 0,
+      };
+    } else {
+      fundsData = { funds: [], allocations: [], totalIncome: 0 };
+    }
+    renderFundsDashboard();
+  }, (error) => {
+    console.error("Funds Firebase error:", error);
+    loadFundsFromLocalStorage();
+    renderFundsDashboard();
+  });
+}
+
+function loadFundsFromLocalStorage() {
+  const stored = localStorage.getItem(`funds_${userProfileKey}`);
+  if (stored) {
+    try {
+      fundsData = JSON.parse(stored);
+    } catch (e) {
+      fundsData = { funds: [], allocations: [], totalIncome: 0 };
+    }
+  }
+}
+
+function saveFundsToFirebase() {
+  if (!firebaseFundsRef) return;
+  firebaseFundsRef.set({
+    funds: fundsData.funds,
+    allocations: fundsData.allocations,
+    totalIncome: fundsData.totalIncome,
+  });
+  localStorage.setItem(`funds_${userProfileKey}`, JSON.stringify(fundsData));
+}
+
+function calculateTotalIncome() {
+  let total = 0;
+  for (const entry of cashflowEntries) {
+    if (entry.type === "income") {
+      total += entry.amount;
+    }
+  }
+  return total;
+}
+
+function calculateTotalAllocated() {
+  let total = 0;
+  for (const alloc of fundsData.allocations) {
+    total += alloc.amount;
+  }
+  return total;
+}
+
+function getFundBalance(fundId) {
+  let balance = 0;
+  for (const alloc of fundsData.allocations) {
+    if (alloc.fundId === fundId) {
+      balance += alloc.amount;
+    }
+  }
+  return balance;
+}
+
+function openFundsModal() {
+  closeAllModals();
+  const modal = document.getElementById("fundsModal");
+  
+  // Calculate total income from cashflow
+  fundsData.totalIncome = calculateTotalIncome();
+  
+  modal.style.display = "flex";
+  renderFundsDashboard();
+}
+
+function closeFundsModal() {
+  document.getElementById("fundsModal").style.display = "none";
+}
+
+function renderFundsDashboard() {
+  const totalIncome = fundsData.totalIncome || calculateTotalIncome();
+  const totalAllocated = calculateTotalAllocated();
+  const available = totalIncome - totalAllocated;
+  
+  document.getElementById("fundsTotalIncome").innerText = `${totalIncome.toLocaleString("vi-VN")} đ`;
+  document.getElementById("fundsTotalAllocated").innerText = `${totalAllocated.toLocaleString("vi-VN")} đ`;
+  document.getElementById("fundsAvailable").innerText = `${Math.max(0, available).toLocaleString("vi-VN")} đ`;
+  
+  // Update allocate info
+  const allocateInfo = document.getElementById("fundsAllocateInfo");
+  if (available > 0) {
+    allocateInfo.innerText = `Còn ${available.toLocaleString("vi-VN")} đ có thể phân bổ vào các quỹ`;
+    allocateInfo.style.color = "#10b981";
+  } else {
+    allocateInfo.innerText = "Đã phân bổ hết thu nhập vào các quỹ";
+    allocateInfo.style.color = "#f59e0b";
+  }
+  
+  renderFundsList();
+}
+
+function renderFundsList() {
+  const listEl = document.getElementById("fundsList");
+  listEl.innerHTML = "";
+  
+  if (fundsData.funds.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "funds-empty";
+    empty.innerText = "Chưa có quỹ nào. Nhấn 'Thêm Quỹ' để tạo quỹ đầu tiên.";
+    listEl.appendChild(empty);
+    return;
+  }
+  
+  for (const fund of fundsData.funds) {
+    const balance = getFundBalance(fund.id);
+    const item = document.createElement("div");
+    item.className = "fund-item";
+    item.innerHTML = `
+      <div class="fund-item-color" style="background: ${fund.color}"></div>
+      <div class="fund-item-info">
+        <div class="fund-item-name">${fund.name}</div>
+        <div class="fund-item-balance">Số dư: <span>${balance.toLocaleString("vi-VN")} đ</span></div>
+      </div>
+      <div class="fund-item-actions">
+        <button class="fund-item-btn edit" onclick="editFund('${fund.id}')" title="Sửa">✎</button>
+        <button class="fund-item-btn delete" onclick="confirmDeleteFund('${fund.id}')" title="Xóa">×</button>
+      </div>
+    `;
+    listEl.appendChild(item);
+  }
+}
+
+function openAddFundModal() {
+  editingFundId = "";
+  document.getElementById("fundModalTitle").innerText = "Thêm Quỹ mới";
+  document.getElementById("fundName").value = "";
+  selectedFundColor = "#a855f7";
+  
+  // Reset color buttons
+  document.querySelectorAll(".fund-color-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.color === selectedFundColor);
+  });
+  
+  document.getElementById("fundModal").style.display = "flex";
+}
+
+function editFund(fundId) {
+  const fund = fundsData.funds.find(f => f.id === fundId);
+  if (!fund) return;
+  
+  editingFundId = fundId;
+  document.getElementById("fundModalTitle").innerText = "Sửa Quỹ";
+  document.getElementById("fundName").value = fund.name;
+  selectedFundColor = fund.color;
+  
+  // Set active color
+  document.querySelectorAll(".fund-color-btn").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.color === selectedFundColor);
+  });
+  
+  document.getElementById("fundModal").style.display = "flex";
+}
+
+function closeFundModal() {
+  document.getElementById("fundModal").style.display = "none";
+  editingFundId = "";
+}
+
+function saveFund() {
+  const nameInput = document.getElementById("fundName");
+  const name = nameInput.value.trim();
+  
+  if (!name) {
+    alert("Vui lòng nhập tên quỹ");
+    return;
+  }
+  
+  if (editingFundId) {
+    // Edit existing fund
+    const fundIndex = fundsData.funds.findIndex(f => f.id === editingFundId);
+    if (fundIndex >= 0) {
+      fundsData.funds[fundIndex].name = name;
+      fundsData.funds[fundIndex].color = selectedFundColor;
+      fundsData.funds[fundIndex].updatedAt = Date.now();
+    }
+  } else {
+    // Add new fund
+    const newFund = {
+      id: `fund-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name,
+      color: selectedFundColor,
+      createdAt: Date.now(),
+    };
+    fundsData.funds.push(newFund);
+  }
+  
+  saveFundsToFirebase();
+  closeFundModal();
+  renderFundsDashboard();
+}
+
+function confirmDeleteFund(fundId) {
+  const fund = fundsData.funds.find(f => f.id === fundId);
+  if (!fund) return;
+  
+  if (!confirm(`Bạn có chắc muốn xóa quỹ "${fund.name}"? Các khoản đã phân bổ vào quỹ này sẽ không bị mất.`)) {
+    return;
+  }
+  
+  fundsData.funds = fundsData.funds.filter(f => f.id !== fundId);
+  saveFundsToFirebase();
+  renderFundsDashboard();
+}
+
+function openAllocateModal() {
+  const totalIncome = fundsData.totalIncome || calculateTotalIncome();
+  const totalAllocated = calculateTotalAllocated();
+  const available = totalIncome - totalAllocated;
+  
+  if (available <= 0) {
+    alert("Không còn số dư khả dụng để phân bổ.");
+    return;
+  }
+  
+  document.getElementById("allocateAvailableAmount").innerText = `${available.toLocaleString("vi-VN")} đ`;
+  document.getElementById("allocateAmount").value = "";
+  
+  // Populate fund select
+  const select = document.getElementById("allocateFundSelect");
+  select.innerHTML = '<option value="">-- Chọn quỹ --</option>';
+  
+  for (const fund of fundsData.funds) {
+    const option = document.createElement("option");
+    option.value = fund.id;
+    option.textContent = fund.name;
+    select.appendChild(option);
+  }
+  
+  if (fundsData.funds.length === 0) {
+    alert("Bạn cần tạo ít nhất một quỹ trước khi phân bổ.");
+    return;
+  }
+  
+  document.getElementById("allocateModal").style.display = "flex";
+  renderAllocateHistory();
+}
+
+function closeAllocateModal() {
+  document.getElementById("allocateModal").style.display = "none";
+}
+
+function confirmAllocate() {
+  const fundSelect = document.getElementById("allocateFundSelect");
+  const amountInput = document.getElementById("allocateAmount");
+  
+  const fundId = fundSelect.value;
+  const amount = parseInt(amountInput.value.replace(/\D/g, ""), 10) || 0;
+  
+  if (!fundId) {
+    alert("Vui lòng chọn một quỹ");
+    return;
+  }
+  
+  if (amount <= 0) {
+    alert("Vui lòng nhập số tiền lớn hơn 0");
+    return;
+  }
+  
+  const totalIncome = fundsData.totalIncome || calculateTotalIncome();
+  const totalAllocated = calculateTotalAllocated();
+  const available = totalIncome - totalAllocated;
+  
+  if (amount > available) {
+    alert(`Số tiền vượt quá số dư khả dụng (${available.toLocaleString("vi-VN")} đ)`);
+    return;
+  }
+  
+  // Add allocation
+  const allocation = {
+    id: `alloc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    fundId,
+    amount,
+    date: getTodayIsoDate(),
+    createdAt: Date.now(),
+  };
+  
+  fundsData.allocations.push(allocation);
+  saveFundsToFirebase();
+  
+  // Update UI
+  amountInput.value = "";
+  renderAllocateHistory();
+  renderFundsDashboard();
+  
+  alert(`Đã phân bổ ${amount.toLocaleString("vi-VN")} đ vào quỹ thành công!`);
+}
+
+function renderAllocateHistory() {
+  const listEl = document.getElementById("allocateHistoryList");
+  listEl.innerHTML = "";
+  
+  if (fundsData.allocations.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "allocate-empty";
+    empty.innerText = "Chưa có phân bổ nào";
+    listEl.appendChild(empty);
+    return;
+  }
+  
+  // Sort by date descending
+  const sorted = [...fundsData.allocations].sort((a, b) => b.createdAt - a.createdAt);
+  const recent = sorted.slice(0, 10);
+  
+  for (const alloc of recent) {
+    const fund = fundsData.funds.find(f => f.id === alloc.fundId);
+    if (!fund) continue;
+    
+    const item = document.createElement("div");
+    item.className = "allocate-history-item";
+    item.innerHTML = `
+      <div class="allocate-history-item-info">
+        <div class="allocate-history-item-color" style="background: ${fund.color}"></div>
+        <span class="allocate-history-item-name">${fund.name}</span>
+      </div>
+      <span class="allocate-history-item-amount">+${alloc.amount.toLocaleString("vi-VN")} đ</span>
+      <span class="allocate-history-item-date">${formatCashflowDate(alloc.date)}</span>
+    `;
+    listEl.appendChild(item);
+  }
+}
+
+// Initialize fund color picker
+(function initFundColorPicker() {
+  const colorPicker = document.getElementById("fundColorPicker");
+  if (!colorPicker) return;
+  
+  colorPicker.addEventListener("click", (e) => {
+    const btn = e.target.closest(".fund-color-btn");
+    if (!btn) return;
+    
+    selectedFundColor = btn.dataset.color;
+    document.querySelectorAll(".fund-color-btn").forEach(b => {
+      b.classList.toggle("active", b === btn);
+    });
+  });
+})();
+
+// Initialize allocate amount input formatting
+(function initAllocateInput() {
+  const amountInput = document.getElementById("allocateAmount");
+  if (!amountInput) return;
+  
+  amountInput.addEventListener("input", () => {
+    formatCurrencyInput(amountInput);
+  });
+})();
+
+// Modal click-outside handlers
+(function initFundsModals() {
+  const fundsModal = document.getElementById("fundsModal");
+  if (fundsModal) {
+    fundsModal.addEventListener("click", (e) => {
+      if (e.target === fundsModal) closeFundsModal();
+    });
+  }
+  
+  const fundModal = document.getElementById("fundModal");
+  if (fundModal) {
+    fundModal.addEventListener("click", (e) => {
+      if (e.target === fundModal) closeFundModal();
+    });
+  }
+  
+  const allocateModal = document.getElementById("allocateModal");
+  if (allocateModal) {
+    allocateModal.addEventListener("click", (e) => {
+      if (e.target === allocateModal) closeAllocateModal();
+    });
+  }
+})();
 
 // cập nhật mỗi giây
 setInterval(updateClock, 1000);
@@ -8193,6 +8612,31 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       }
     });
+  }
+  
+  // Kiểm tra mật khẩu để hiện/ẩn Thu Chi và Quỹ
+  const TOOLBOX_PASSWORD = "123123";
+  const storedPwd = sessionStorage.getItem("toolboxPassword");
+  
+  const showProtectedButtons = () => {
+    document.querySelectorAll(".protected-toolbox").forEach((el) => {
+      el.classList.remove("protected-toolbox");
+    });
+  };
+  
+  if (storedPwd === TOOLBOX_PASSWORD) {
+    showProtectedButtons();
+  } else {
+    // Ẩn các nút cần bảo vệ trước
+    document.querySelectorAll(".income-fab, .funds-fab").forEach((el) => {
+      el.classList.add("protected-toolbox");
+    });
+    
+    const enteredPwd = prompt("Nhập mật khẩu để mở khóa Thu Chi và Quỹ:");
+    if (enteredPwd === TOOLBOX_PASSWORD) {
+      sessionStorage.setItem("toolboxPassword", enteredPwd);
+      showProtectedButtons();
+    }
   }
 });
 

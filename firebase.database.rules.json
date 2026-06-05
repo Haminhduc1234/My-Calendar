@@ -67,6 +67,12 @@
         ".read": "auth != null",
         ".write": "auth != null"
       }
+    },
+    "funds": {
+      "$profileKey": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
     }
   }
 }

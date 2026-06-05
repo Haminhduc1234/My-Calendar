@@ -4711,6 +4711,22 @@ renderOvertimeSalary();
 let cashflowEntries = [];
 let editingCashflowId = "";
 let pendingDeleteCashflowId = "";
+let cashflowAnalyticsRange = "all";
+
+const CASHFLOW_PIE_COLORS = [
+  "#60a5fa",
+  "#34d399",
+  "#f59e0b",
+  "#f472b6",
+  "#a78bfa",
+  "#f87171",
+  "#22d3ee",
+  "#facc15",
+  "#fb7185",
+  "#4ade80",
+  "#38bdf8",
+  "#c084fc",
+];
 
 function getAllCashflowEntriesFromCache() {
   const rows = [];
@@ -4759,6 +4775,7 @@ function openCashflowModal() {
   modal.style.display = "flex";
   updateCashflowCategoryDropdowns();
   syncCashflowFormMode();
+  syncCashflowRangeFilterUI();
   renderCashflowDashboard();
 }
 
@@ -4953,7 +4970,318 @@ function renderCashflowDashboard() {
   reloadCashflowEntriesFromCache();
   renderCashflowMonthSummary();
   renderCashflowRecentList();
+  renderCashflowPieCharts();
   renderCashflowChart();
+}
+
+function setCashflowAnalyticsRange(range) {
+  const allowedRanges = ["all", "year", "month", "week"];
+  const nextRange = allowedRanges.includes(range) ? range : "all";
+  if (nextRange === cashflowAnalyticsRange) return;
+
+  cashflowAnalyticsRange = nextRange;
+  syncCashflowRangeFilterUI();
+  animateCashflowAnalyticsTransition();
+}
+
+function animateCashflowAnalyticsTransition() {
+  const targets = Array.from(
+    document.querySelectorAll(".cashflow-analytics-fade-target"),
+  );
+
+  if (targets.length === 0) {
+    renderCashflowPieCharts();
+    return;
+  }
+
+  targets.forEach((target) => {
+    target.classList.add("is-animating");
+  });
+
+  window.setTimeout(() => {
+    renderCashflowPieCharts();
+
+    requestAnimationFrame(() => {
+      targets.forEach((target) => {
+        target.classList.remove("is-animating");
+      });
+    });
+  }, 120);
+}
+
+function syncCashflowRangeFilterUI() {
+  const chips = document.querySelectorAll("#cashflowRangeFilter .cashflow-range-chip");
+  chips.forEach((chip) => {
+    const isActive = chip.dataset.range === cashflowAnalyticsRange;
+    chip.classList.toggle("active", isActive);
+    chip.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+}
+
+function getCashflowRangeMeta(range) {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const today = new Date(currentYear, now.getMonth(), now.getDate());
+  const day = today.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() + mondayOffset);
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+  if (range === "year") {
+    return {
+      label: `Phân tích theo năm ${currentYear}.`,
+      test(dateObj) {
+        return dateObj.getFullYear() === currentYear;
+      },
+    };
+  }
+
+  if (range === "month") {
+    return {
+      label: `Phân tích theo tháng ${currentMonth}/${currentYear}.`,
+      test(dateObj) {
+        return (
+          dateObj.getFullYear() === currentYear &&
+          dateObj.getMonth() + 1 === currentMonth
+        );
+      },
+    };
+  }
+
+  if (range === "week") {
+    return {
+      label: `Phân tích theo tuần này (${formatCashflowDateObj(startOfWeek)} - ${formatCashflowDateObj(endOfWeek)}).`,
+      test(dateObj) {
+        return dateObj >= startOfWeek && dateObj <= endOfWeek;
+      },
+    };
+  }
+
+  return {
+    label: "Phân tích theo toàn bộ dữ liệu thu chi đã lưu.",
+    test() {
+      return true;
+    },
+  };
+}
+
+function getCashflowEntriesByRange(range = cashflowAnalyticsRange) {
+  const meta = getCashflowRangeMeta(range);
+  const entries = cashflowEntries.filter((entry) => {
+    const dateObj = parseCashflowDateToLocalDate(entry.date);
+    return dateObj && meta.test(dateObj);
+  });
+
+  return { entries, label: meta.label };
+}
+
+function parseCashflowDateToLocalDate(dateIso) {
+  if (!dateIso) return null;
+  const [year, month, day] = dateIso.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+function formatCashflowDateObj(dateObj) {
+  const day = String(dateObj.getDate()).padStart(2, "0");
+  const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const year = dateObj.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function buildCashflowCategoryBreakdown(entries, type) {
+  const totals = new Map();
+
+  for (const entry of entries) {
+    if (entry.type !== type) continue;
+    const key = (entry.category || "Khác").trim() || "Khác";
+    totals.set(key, (totals.get(key) || 0) + (entry.amount || 0));
+  }
+
+  const items = Array.from(totals.entries())
+    .map(([name, amount], index) => ({
+      name,
+      amount,
+      color: CASHFLOW_PIE_COLORS[index % CASHFLOW_PIE_COLORS.length],
+    }))
+    .sort((a, b) => b.amount - a.amount);
+
+  const total = items.reduce((sum, item) => sum + item.amount, 0);
+
+  return {
+    total,
+    items: items.map((item) => ({
+      ...item,
+      percent: total > 0 ? (item.amount / total) * 100 : 0,
+    })),
+  };
+}
+
+function renderCashflowPieCharts() {
+  const captionEl = document.getElementById("cashflowAnalysisCaption");
+  const { entries, label } = getCashflowEntriesByRange();
+  if (captionEl) {
+    captionEl.innerText = label;
+  }
+
+  const incomeData = buildCashflowCategoryBreakdown(entries, "income");
+  const expenseData = buildCashflowCategoryBreakdown(entries, "expense");
+
+  renderCashflowPieChartCard({
+    canvasId: "cashflowIncomePieChart",
+    legendId: "cashflowIncomePieLegend",
+    emptyMessage: "Chưa có khoản thu trong phạm vi đang chọn.",
+    totalLabel: "Tổng thu",
+    data: incomeData,
+  });
+
+  renderCashflowPieChartCard({
+    canvasId: "cashflowExpensePieChart",
+    legendId: "cashflowExpensePieLegend",
+    emptyMessage: "Chưa có khoản chi trong phạm vi đang chọn.",
+    totalLabel: "Tổng chi",
+    data: expenseData,
+  });
+}
+
+function renderCashflowPieChartCard({ canvasId, legendId, emptyMessage, totalLabel, data }) {
+  const canvas = document.getElementById(canvasId);
+  const legend = document.getElementById(legendId);
+  if (!canvas || !legend) return;
+
+  if (!data.items.length || data.total <= 0) {
+    drawCashflowPieEmptyState(canvas, emptyMessage);
+    legend.innerHTML = `<div class="cashflow-pie-empty">${emptyMessage}</div>`;
+    return;
+  }
+
+  drawCashflowPieChart(canvas, data.items, {
+    total: data.total,
+    totalLabel,
+  });
+
+  legend.innerHTML = data.items
+    .map(
+      (item) => `
+        <div class="cashflow-pie-legend-item">
+          <span class="cashflow-pie-legend-color" style="background:${item.color}"></span>
+          <div class="cashflow-pie-legend-label">
+            <div class="cashflow-pie-legend-name">${escapeHtml(item.name)}</div>
+            <div class="cashflow-pie-legend-meta">${item.percent.toFixed(1)}% tổng</div>
+          </div>
+          <div class="cashflow-pie-legend-value">${formatVnd(item.amount)}</div>
+        </div>
+      `,
+    )
+    .join("");
+}
+
+function drawCashflowPieEmptyState(canvas, message) {
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const width = canvas.parentElement?.clientWidth || 320;
+  const height = canvas.parentElement?.clientHeight || 220;
+  canvas.width = Math.floor(width * dpr);
+  canvas.height = Math.floor(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+
+  ctx.fillStyle = "rgba(5, 12, 24, 0.45)";
+  ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "#9cb4d7";
+  ctx.font = '13px "Be Vietnam Pro", sans-serif';
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  wrapCanvasText(ctx, message, width / 2, height / 2, width - 48, 20);
+}
+
+function drawCashflowPieChart(canvas, items, { total, totalLabel }) {
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+  const width = canvas.parentElement?.clientWidth || 320;
+  const height = canvas.parentElement?.clientHeight || 240;
+  canvas.width = Math.floor(width * dpr);
+  canvas.height = Math.floor(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = Math.min(width, height) * 0.32;
+  const innerRadius = radius * 0.58;
+  let startAngle = -Math.PI / 2;
+
+  items.forEach((item) => {
+    const sliceAngle = (item.amount / total) * Math.PI * 2;
+    const endAngle = startAngle + sliceAngle;
+
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = item.color;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(7, 16, 34, 0.94)";
+    ctx.fill();
+
+    startAngle = endAngle;
+  });
+
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(7, 16, 34, 0.98)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(183, 208, 255, 0.12)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = "#8db4ff";
+  ctx.font = '600 12px "Be Vietnam Pro", sans-serif';
+  ctx.textAlign = "center";
+  ctx.fillText(totalLabel, centerX, centerY - 12);
+
+  ctx.fillStyle = "#eff6ff";
+  ctx.font = '700 14px "Space Grotesk", "Be Vietnam Pro", sans-serif';
+  wrapCanvasText(ctx, formatVnd(total), centerX, centerY + 12, innerRadius * 1.6, 18);
+}
+
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = String(text).split(" ");
+  const lines = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (ctx.measureText(testLine).width > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+
+  if (currentLine) lines.push(currentLine);
+
+  const totalHeight = (lines.length - 1) * lineHeight;
+  lines.forEach((line, index) => {
+    ctx.fillText(line, x, y - totalHeight / 2 + index * lineHeight);
+  });
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function renderCashflowMonthSummary() {
@@ -5192,6 +5520,14 @@ function formatCashflowDate(dateIso) {
   }
 
   syncCashflowFormMode();
+  syncCashflowRangeFilterUI();
+
+  window.addEventListener("resize", () => {
+    if (document.getElementById("cashflowModal").style.display === "flex") {
+      renderCashflowChart();
+      renderCashflowPieCharts();
+    }
+  });
 
   const deleteConfirmModal = document.getElementById(
     "cashflowDeleteConfirmModal",

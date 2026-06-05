@@ -3391,7 +3391,8 @@ input[type="datetime-local"] {
 .cashflow-add-btn {
   border: 1px solid rgba(0, 204, 68, 0.45);
   border-radius: 10px;
-  padding: 8px 12px;
+  padding: 12px 16px;
+  min-height: 48px;
   background: linear-gradient(140deg, #116633, #0a4422);
   color: #bbffdd;
   font-weight: 700;
@@ -3405,7 +3406,8 @@ input[type="datetime-local"] {
 .cashflow-cancel-btn {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 10px;
-  padding: 8px 12px;
+  padding: 12px 16px;
+  min-height: 48px;
   background: rgba(20, 15, 30, 0.85);
   color: #e0d0ff;
   font-weight: 700;
@@ -3555,6 +3557,20 @@ input[type="datetime-local"] {
   cursor: pointer;
 }
 
+.funds-btn-add-bottom {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px dashed rgba(192, 132, 252, 0.55);
+  border-radius: 12px;
+  background: rgba(168, 85, 247, 0.08);
+  color: #e9d5ff;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+
 .funds-btn-add:hover {
   filter: brightness(1.1);
 }
@@ -3568,6 +3584,20 @@ input[type="datetime-local"] {
   font-weight: 600;
   font-size: 12px;
   cursor: pointer;
+}
+
+.funds-btn-secondary-bottom {
+  width: 100%;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px dashed rgba(52, 211, 153, 0.5);
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.08);
+  color: #d1fae5;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 13px;
+  letter-spacing: 0.01em;
 }
 
 .funds-btn-secondary:hover {
@@ -4664,6 +4694,8 @@ input[type="datetime-local"] {
   .cashflow-cancel-btn,
   .cashflow-export-btn {
     width: 100%;
+    min-height: 52px;
+    padding: 14px 16px;
   }
 
   .confirm-modal-actions {

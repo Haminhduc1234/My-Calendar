@@ -1205,12 +1205,9 @@
 
             <!-- Chia Quỹ -->
             <div class="funds-allocate-section">
-              <div class="funds-section-header">
-                <h4>Chia Quỹ từ thu nhập</h4>
-                <button class="funds-btn-secondary" onclick="openAllocateModal()">
-                  + Phân bổ
-                </button>
-              </div>
+              <button class="funds-btn-secondary funds-btn-secondary-bottom" onclick="openAllocateModal()">
+                + Phân bổ quỹ
+              </button>
               <div class="funds-allocate-info" id="fundsAllocateInfo">
                 Nhấn "Phân bổ" để chia thu nhập vào các quỹ
               </div>
@@ -1220,13 +1217,13 @@
             <div class="funds-list-section">
               <div class="funds-section-header">
                 <h4>Danh sách Quỹ</h4>
-                <button class="funds-btn-add" onclick="openAddFundModal()">
-                  + Thêm Quỹ
-                </button>
               </div>
               <div id="fundsList" class="funds-list">
                 <!-- Fund items rendered here -->
               </div>
+              <button class="funds-btn-add funds-btn-add-bottom" onclick="openAddFundModal()">
+                + Tạo quỹ
+              </button>
             </div>
           </div>
         </div>

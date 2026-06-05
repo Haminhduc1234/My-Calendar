@@ -8632,7 +8632,7 @@ document.addEventListener("DOMContentLoaded", function () {
       el.classList.add("protected-toolbox");
     });
     
-    const enteredPwd = prompt("Nhập mật khẩu để mở khóa Thu Chi và Quỹ:");
+    const enteredPwd = prompt("Nhập mật khẩu để mở khóa:");
     if (enteredPwd === TOOLBOX_PASSWORD) {
       sessionStorage.setItem("toolboxPassword", enteredPwd);
       showProtectedButtons();

@@ -5210,8 +5210,8 @@ function drawCashflowPieChart(canvas, items, { total, totalLabel }) {
 
   const centerX = width / 2;
   const centerY = height / 2;
-  const radius = Math.min(width, height) * 0.32;
-  const innerRadius = radius * 0.58;
+  const radius = Math.min(width, height) * 0.36;
+  const innerRadius = radius * 0.54;
   let startAngle = -Math.PI / 2;
 
   items.forEach((item) => {
@@ -5225,12 +5225,6 @@ function drawCashflowPieChart(canvas, items, { total, totalLabel }) {
     ctx.fillStyle = item.color;
     ctx.fill();
 
-    ctx.beginPath();
-    ctx.moveTo(centerX, centerY);
-    ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(7, 16, 34, 0.94)";
-    ctx.fill();
-
     startAngle = endAngle;
   });
 
@@ -5242,14 +5236,68 @@ function drawCashflowPieChart(canvas, items, { total, totalLabel }) {
   ctx.lineWidth = 1;
   ctx.stroke();
 
+  const labelFontSize = Math.max(11, Math.min(13, innerRadius * 0.18));
   ctx.fillStyle = "#8db4ff";
-  ctx.font = '600 12px "Be Vietnam Pro", sans-serif';
+  ctx.font = `600 ${labelFontSize}px "Be Vietnam Pro", sans-serif`;
   ctx.textAlign = "center";
-  ctx.fillText(totalLabel, centerX, centerY - 12);
+  ctx.textBaseline = "middle";
+  ctx.fillText(totalLabel, centerX, centerY - innerRadius * 0.24);
 
   ctx.fillStyle = "#eff6ff";
-  ctx.font = '700 14px "Space Grotesk", "Be Vietnam Pro", sans-serif';
-  wrapCanvasText(ctx, formatVnd(total), centerX, centerY + 12, innerRadius * 1.6, 18);
+  fitAndDrawCanvasText(ctx, formatVnd(total), {
+    x: centerX,
+    y: centerY + innerRadius * 0.12,
+    maxWidth: innerRadius * 1.45,
+    maxFontSize: Math.max(13, Math.min(18, innerRadius * 0.24)),
+    minFontSize: 11,
+    lineHeight: 18,
+    fontWeight: 700,
+    fontFamily: '"Space Grotesk", "Be Vietnam Pro", sans-serif',
+  });
+}
+
+function fitAndDrawCanvasText(
+  ctx,
+  text,
+  { x, y, maxWidth, maxFontSize, minFontSize, lineHeight, fontWeight, fontFamily },
+) {
+  let fontSize = maxFontSize;
+  let lines = [];
+
+  while (fontSize >= minFontSize) {
+    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+    lines = measureCanvasWrappedLines(ctx, text, maxWidth);
+    const widestLine = Math.max(...lines.map((line) => ctx.measureText(line).width), 0);
+    if (widestLine <= maxWidth && lines.length <= 2) {
+      break;
+    }
+    fontSize -= 1;
+  }
+
+  ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+  wrapCanvasText(ctx, text, x, y, maxWidth, Math.max(lineHeight, fontSize + 2));
+}
+
+function measureCanvasWrappedLines(ctx, text, maxWidth) {
+  const words = String(text).split(" ");
+  const lines = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (ctx.measureText(testLine).width > maxWidth && currentLine) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
 }
 
 function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight) {

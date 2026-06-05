@@ -33,6 +33,16 @@ let translateHistoryCache = [];
 let syncWriteErrorShown = false;
 let profileSettingsCache = {};
 
+// Toolbox password constant
+const TOOLBOX_PASSWORD = "123123";
+
+// Unlock protected toolbox buttons (Thu Chi, Quỹ)
+function showProtectedButtons() {
+  document.querySelectorAll(".protected-toolbox").forEach((el) => {
+    el.classList.remove("protected-toolbox");
+  });
+}
+
 // Projects state
 let projectsDataCache = {};
 let currentOpenedProjectId = null;
@@ -502,6 +512,16 @@ function ensureProfileKey() {
       cleanup();
       // Initialize profile UI after profile key is set
       setTimeout(() => initProfileOnLoad(), 0);
+      // Clear toolbox state trước, rồi kiểm tra lại
+      sessionStorage.removeItem("toolboxPassword");
+      document.querySelectorAll(".income-fab, .funds-fab").forEach((el) => {
+        el.classList.add("protected-toolbox");
+      });
+      // Chỉ unlock toolbox khi nhập đúng mã PIN "123123"
+      if (value === TOOLBOX_PASSWORD) {
+        sessionStorage.setItem("toolboxPassword", TOOLBOX_PASSWORD);
+        showProtectedButtons();
+      }
       resolve(true);
     }
 
@@ -5254,14 +5274,16 @@ function calculateTotalIncome() {
 
 function calculateTotalAllocated() {
   let total = 0;
-  for (const alloc of fundsData.allocations) {
-    total += alloc.amount;
+  for (const fund of fundsData.funds) {
+    total += getFundBalance(fund.id);
   }
   return total;
 }
 
 function getFundBalance(fundId) {
-  let balance = 0;
+  const fund = fundsData.funds.find(f => f.id === fundId);
+  const initialAmount = fund ? (fund.initialAmount || 0) : 0;
+  let balance = initialAmount;
   for (const alloc of fundsData.allocations) {
     if (alloc.fundId === fundId) {
       balance += alloc.amount;
@@ -5292,7 +5314,10 @@ function renderFundsDashboard() {
   
   document.getElementById("fundsTotalIncome").innerText = `${totalIncome.toLocaleString("vi-VN")} đ`;
   document.getElementById("fundsTotalAllocated").innerText = `${totalAllocated.toLocaleString("vi-VN")} đ`;
-  document.getElementById("fundsAvailable").innerText = `${Math.max(0, available).toLocaleString("vi-VN")} đ`;
+  
+  const availableEl = document.getElementById("fundsAvailable");
+  availableEl.innerText = `${available.toLocaleString("vi-VN")} đ`;
+  availableEl.style.color = available < 0 ? "#ef4444" : "#10b981";
   
   // Update allocate info
   const allocateInfo = document.getElementById("fundsAllocateInfo");
@@ -5300,8 +5325,10 @@ function renderFundsDashboard() {
     allocateInfo.innerText = `Còn ${available.toLocaleString("vi-VN")} đ có thể phân bổ vào các quỹ`;
     allocateInfo.style.color = "#10b981";
   } else {
-    allocateInfo.innerText = "Đã phân bổ hết thu nhập vào các quỹ";
-    allocateInfo.style.color = "#f59e0b";
+    allocateInfo.innerText = available < 0 
+      ? `Số dư âm ${Math.abs(available).toLocaleString("vi-VN")} đ - Đã phân bổ vượt thu nhập`
+      : "Đã phân bổ hết thu nhập vào các quỹ";
+    allocateInfo.style.color = available < 0 ? "#ef4444" : "#f59e0b";
   }
   
   renderFundsList();
@@ -5344,6 +5371,10 @@ function openAddFundModal() {
   document.getElementById("fundName").value = "";
   selectedFundColor = "#a855f7";
   
+  // Hide initial amount field for new fund
+  document.getElementById("fundInitialAmountLabel").style.display = "none";
+  document.getElementById("fundInitialAmount").value = "";
+  
   // Reset color buttons
   document.querySelectorAll(".fund-color-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.color === selectedFundColor);
@@ -5361,6 +5392,12 @@ function editFund(fundId) {
   document.getElementById("fundName").value = fund.name;
   selectedFundColor = fund.color;
   
+  // Show current balance as initial amount for editing
+  document.getElementById("fundInitialAmountLabel").style.display = "flex";
+  const initialAmountInput = document.getElementById("fundInitialAmount");
+  initialAmountInput.value = getFundBalance(fundId);
+  formatCurrencyInput(initialAmountInput);
+  
   // Set active color
   document.querySelectorAll(".fund-color-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.color === selectedFundColor);
@@ -5377,6 +5414,8 @@ function closeFundModal() {
 function saveFund() {
   const nameInput = document.getElementById("fundName");
   const name = nameInput.value.trim();
+  const initialAmountInput = document.getElementById("fundInitialAmount");
+  const newBalance = parseFloat(initialAmountInput.value.replace(/\D/g, "")) || 0;
   
   if (!name) {
     alert("Vui lòng nhập tên quỹ");
@@ -5387,8 +5426,17 @@ function saveFund() {
     // Edit existing fund
     const fundIndex = fundsData.funds.findIndex(f => f.id === editingFundId);
     if (fundIndex >= 0) {
+      // Calculate current allocations sum
+      const allocationsSum = fundsData.allocations
+        .filter(a => a.fundId === editingFundId)
+        .reduce((sum, a) => sum + a.amount, 0);
+      
+      // New initialAmount = new balance - allocations sum
+      const newInitialAmount = newBalance - allocationsSum;
+      
       fundsData.funds[fundIndex].name = name;
       fundsData.funds[fundIndex].color = selectedFundColor;
+      fundsData.funds[fundIndex].initialAmount = newInitialAmount;
       fundsData.funds[fundIndex].updatedAt = Date.now();
     }
   } else {
@@ -5397,6 +5445,7 @@ function saveFund() {
       id: `fund-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       name,
       color: selectedFundColor,
+      initialAmount: 0,
       createdAt: Date.now(),
     };
     fundsData.funds.push(newFund);
@@ -5425,12 +5474,15 @@ function openAllocateModal() {
   const totalAllocated = calculateTotalAllocated();
   const available = totalIncome - totalAllocated;
   
-  if (available <= 0) {
-    alert("Không còn số dư khả dụng để phân bổ.");
+  if (fundsData.funds.length === 0) {
+    alert("Bạn cần tạo ít nhất một quỹ trước khi phân bổ.");
     return;
   }
   
-  document.getElementById("allocateAvailableAmount").innerText = `${available.toLocaleString("vi-VN")} đ`;
+  const availableEl = document.getElementById("allocateAvailableAmount");
+  availableEl.innerText = `${available.toLocaleString("vi-VN")} đ`;
+  availableEl.style.color = available < 0 ? "#ef4444" : "#10b981";
+  
   document.getElementById("allocateAmount").value = "";
   
   // Populate fund select
@@ -5442,11 +5494,6 @@ function openAllocateModal() {
     option.value = fund.id;
     option.textContent = fund.name;
     select.appendChild(option);
-  }
-  
-  if (fundsData.funds.length === 0) {
-    alert("Bạn cần tạo ít nhất một quỹ trước khi phân bổ.");
-    return;
   }
   
   document.getElementById("allocateModal").style.display = "flex";
@@ -5477,11 +5524,6 @@ function confirmAllocate() {
   const totalIncome = fundsData.totalIncome || calculateTotalIncome();
   const totalAllocated = calculateTotalAllocated();
   const available = totalIncome - totalAllocated;
-  
-  if (amount > available) {
-    alert(`Số tiền vượt quá số dư khả dụng (${available.toLocaleString("vi-VN")} đ)`);
-    return;
-  }
   
   // Add allocation
   const allocation = {
@@ -5556,6 +5598,16 @@ function renderAllocateHistory() {
 // Initialize allocate amount input formatting
 (function initAllocateInput() {
   const amountInput = document.getElementById("allocateAmount");
+  if (!amountInput) return;
+  
+  amountInput.addEventListener("input", () => {
+    formatCurrencyInput(amountInput);
+  });
+})();
+
+// Initialize fund initial amount input formatting
+(function initFundInitialAmountInput() {
+  const amountInput = document.getElementById("fundInitialAmount");
   if (!amountInput) return;
   
   amountInput.addEventListener("input", () => {
@@ -8615,14 +8667,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
   
   // Kiểm tra mật khẩu để hiện/ẩn Thu Chi và Quỹ
-  const TOOLBOX_PASSWORD = "123123";
   const storedPwd = sessionStorage.getItem("toolboxPassword");
-  
-  const showProtectedButtons = () => {
-    document.querySelectorAll(".protected-toolbox").forEach((el) => {
-      el.classList.remove("protected-toolbox");
-    });
-  };
   
   if (storedPwd === TOOLBOX_PASSWORD) {
     showProtectedButtons();
@@ -8631,12 +8676,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".income-fab, .funds-fab").forEach((el) => {
       el.classList.add("protected-toolbox");
     });
-    
-    const enteredPwd = prompt("Nhập mật khẩu để mở khóa:");
-    if (enteredPwd === TOOLBOX_PASSWORD) {
-      sessionStorage.setItem("toolboxPassword", enteredPwd);
-      showProtectedButtons();
-    }
+    // Sau khi user đăng nhập bằng mã PIN thành công, sẽ tự unlock toolbox
   }
 });
 

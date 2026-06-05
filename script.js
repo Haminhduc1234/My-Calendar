@@ -33,16 +33,6 @@ let translateHistoryCache = [];
 let syncWriteErrorShown = false;
 let profileSettingsCache = {};
 
-// Toolbox password constant
-const TOOLBOX_PASSWORD = "123123";
-
-// Unlock protected toolbox buttons (Thu Chi, Quỹ)
-function showProtectedButtons() {
-  document.querySelectorAll(".protected-toolbox").forEach((el) => {
-    el.classList.remove("protected-toolbox");
-  });
-}
-
 // Projects state
 let projectsDataCache = {};
 let currentOpenedProjectId = null;
@@ -512,16 +502,6 @@ function ensureProfileKey() {
       cleanup();
       // Initialize profile UI after profile key is set
       setTimeout(() => initProfileOnLoad(), 0);
-      // Clear toolbox state trước, rồi kiểm tra lại
-      sessionStorage.removeItem("toolboxPassword");
-      document.querySelectorAll(".income-fab, .funds-fab").forEach((el) => {
-        el.classList.add("protected-toolbox");
-      });
-      // Chỉ unlock toolbox khi nhập đúng mã PIN "123123"
-      if (value === TOOLBOX_PASSWORD) {
-        sessionStorage.setItem("toolboxPassword", TOOLBOX_PASSWORD);
-        showProtectedButtons();
-      }
       resolve(true);
     }
 
@@ -8934,19 +8914,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       }
     });
-  }
-  
-  // Kiểm tra mật khẩu để hiện/ẩn Thu Chi và Quỹ
-  const storedPwd = sessionStorage.getItem("toolboxPassword");
-  
-  if (storedPwd === TOOLBOX_PASSWORD) {
-    showProtectedButtons();
-  } else {
-    // Ẩn các nút cần bảo vệ trước
-    document.querySelectorAll(".income-fab, .funds-fab").forEach((el) => {
-      el.classList.add("protected-toolbox");
-    });
-    // Sau khi user đăng nhập bằng mã PIN thành công, sẽ tự unlock toolbox
   }
 });
 

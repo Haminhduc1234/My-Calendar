@@ -1642,9 +1642,6 @@ body::before {
 }
 
 /* ========================== TOOLBOX BUTTONS ========================== */
-.protected-toolbox {
-  display: none !important;
-}
 .toolbox-actions .event-fab.tool-btn {
   width: 56px;
   height: 56px;
@@ -1922,6 +1919,104 @@ body::before {
   height: 24px;
   fill: currentColor;
   margin-bottom: 4px;
+}
+
+.nav-item.funds-fab {
+  background: none;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+  flex: 1;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  position: relative;
+}
+
+.nav-item.funds-fab .icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-item.funds-fab svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+  margin-bottom: 4px;
+  display: block !important;
+  position: relative;
+  z-index: 1;
+}
+
+.nav-item.funds-fab .sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #a855f7;
+  border-radius: 50%;
+  box-shadow: 0 0 4px 1px rgba(168, 85, 247, 0.8);
+  animation: sparkle-fade 1.8s ease-in-out infinite;
+}
+
+.nav-item.funds-fab .sparkle:nth-child(1) {
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 0s;
+}
+
+.nav-item.funds-fab .sparkle:nth-child(2) {
+  top: 50%;
+  right: -6px;
+  transform: translateY(-50%);
+  animation-delay: 0.4s;
+}
+
+.nav-item.funds-fab .sparkle:nth-child(3) {
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 0.8s;
+}
+
+.nav-item.funds-fab .sparkle:nth-child(4) {
+  top: 50%;
+  left: -6px;
+  transform: translateY(-50%);
+  animation-delay: 1.2s;
+}
+
+.nav-item.funds-fab .sparkle:nth-child(5) {
+  top: -4px;
+  right: -4px;
+  width: 3px;
+  height: 3px;
+  animation-delay: 0.6s;
+}
+
+.nav-item.funds-fab .sparkle:nth-child(6) {
+  bottom: -4px;
+  left: -4px;
+  width: 3px;
+  height: 3px;
+  animation-delay: 1.4s;
+}
+
+@keyframes sparkle-fade {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .nav-item.learn-fab {
@@ -3176,6 +3271,11 @@ body::before {
     height: 52px;
   }
 
+  .nav-item.funds-fab {
+    width: 52px;
+    height: 52px;
+  }
+
   .nav-item.learn-fab {
     width: 52px;
     height: 52px;
@@ -3785,32 +3885,6 @@ input[type="datetime-local"] {
   display: grid;
   place-items: center;
   overflow: hidden;
-}
-
-.funds-fab::before {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    45deg,
-    transparent 40%,
-    rgba(255, 255, 255, 0.2) 50%,
-    transparent 60%
-  );
-  animation: shimmerEffect 2.5s infinite;
-  pointer-events: none;
-}
-
-@keyframes shimmerEffect {
-  0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-  }
-  100% {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
-  }
 }
 
 .funds-fab svg {
@@ -4771,6 +4845,15 @@ input[type="datetime-local"] {
 
 .nav-item.income-fab:hover {
   color: #88ddff;
+}
+
+.nav-item.funds-fab svg {
+  fill: #a855f7;
+  display: block !important;
+}
+
+.nav-item.funds-fab:hover {
+  color: #a855f7;
 }
 
 .nav-item.learn-fab svg {

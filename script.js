@@ -12,6 +12,7 @@ const FIREBASE_CLIENT_ID_KEY = "firebaseClientId";
 const FIREBASE_PROFILE_KEY_STORAGE = "calendarProfileKey";
 const LEGACY_MIGRATION_FLAG_PREFIX = "calendarLegacyMigrated:";
 const LEGACY_CASHFLOW_MIGRATION_FLAG_PREFIX = "calendarLegacyCashflowMigrated:";
+const CASHFLOW_CATEGORY_ID_MIGRATION_FLAG_PREFIX = "cashflowCategoryIdMigrated:";
 const LEGACY_CASHFLOW_STORAGE_KEY = "cashflowEntriesV1";
 const FIREBASE_CONFIG = self.FIREBASE_WEB_CONFIG || {};
 const FIREBASE_TRANSLATE_HISTORY_PATH =
@@ -373,6 +374,7 @@ function normalizeDateData(raw) {
         id: String(entry?.id || "").trim(),
         date: normalizedDate,
         type,
+        category: String(entry?.category || "").trim(),
         amount,
         note: String(entry?.note || "").trim(),
         createdAt: Number(entry?.createdAt || Date.now()),
@@ -595,7 +597,10 @@ function saveProfileSettingsData(settings) {
 function openProfileSettingsModal() {
   const modal = document.getElementById("profileSettingsModal");
   // Use cache if available, otherwise load from localStorage
-  const settings = Object.keys(profileSettingsCache).length > 0 ? profileSettingsCache : loadProfileSettings();
+  const settings =
+    Object.keys(profileSettingsCache).length > 0
+      ? profileSettingsCache
+      : loadProfileSettings();
 
   // Load avatar
   const avatarPreview = document.getElementById("profileAvatarPreview");
@@ -632,9 +637,12 @@ function openProfileSettingsModal() {
   }
 
   // Load name and bio
-  document.getElementById("profileDisplayName").value = settings.displayName || "";
+  document.getElementById("profileDisplayName").value =
+    settings.displayName || "";
   document.getElementById("profileBio").value = settings.bio || "";
-  document.getElementById("profileBioCount").textContent = (settings.bio || "").length;
+  document.getElementById("profileBioCount").textContent = (
+    settings.bio || ""
+  ).length;
 
   modal.style.display = "flex";
 }
@@ -755,9 +763,16 @@ function applyCrop() {
   });
 
   const dataUrl = croppedCanvas.toDataURL("image/jpeg", 0.9);
-  const previewId = cropModalType === "avatar" ? "profileAvatarPreview" : "profileCoverPreview";
-  const placeholderId = cropModalType === "avatar" ? "profileAvatarPlaceholder" : "profileCoverPlaceholder";
-  const deleteBtnId = cropModalType === "avatar" ? "profileAvatarDeleteBtn" : "profileCoverDeleteBtn";
+  const previewId =
+    cropModalType === "avatar" ? "profileAvatarPreview" : "profileCoverPreview";
+  const placeholderId =
+    cropModalType === "avatar"
+      ? "profileAvatarPlaceholder"
+      : "profileCoverPlaceholder";
+  const deleteBtnId =
+    cropModalType === "avatar"
+      ? "profileAvatarDeleteBtn"
+      : "profileCoverDeleteBtn";
 
   const preview = document.getElementById(previewId);
   const placeholder = document.getElementById(placeholderId);
@@ -787,9 +802,14 @@ function processImageFile(file, type) {
   const reader = new FileReader();
   reader.onload = function (e) {
     const dataUrl = e.target.result;
-    const previewId = type === "avatar" ? "profileAvatarPreview" : "profileCoverPreview";
-    const placeholderId = type === "avatar" ? "profileAvatarPlaceholder" : "profileCoverPlaceholder";
-    const deleteBtnId = type === "avatar" ? "profileAvatarDeleteBtn" : "profileCoverDeleteBtn";
+    const previewId =
+      type === "avatar" ? "profileAvatarPreview" : "profileCoverPreview";
+    const placeholderId =
+      type === "avatar"
+        ? "profileAvatarPlaceholder"
+        : "profileCoverPlaceholder";
+    const deleteBtnId =
+      type === "avatar" ? "profileAvatarDeleteBtn" : "profileCoverDeleteBtn";
 
     const preview = document.getElementById(previewId);
     const placeholder = document.getElementById(placeholderId);
@@ -837,12 +857,18 @@ window.removeProfileCover = removeProfileCover;
 function saveProfileSettings() {
   const avatarPreview = document.getElementById("profileAvatarPreview");
   const coverPreview = document.getElementById("profileCoverPreview");
-  const displayName = document.getElementById("profileDisplayName").value.trim();
+  const displayName = document
+    .getElementById("profileDisplayName")
+    .value.trim();
   const bio = document.getElementById("profileBio").value.trim();
 
   const settings = {
-    avatar: avatarPreview.classList.contains("has-image") ? avatarPreview.src : null,
-    cover: coverPreview.classList.contains("has-image") ? coverPreview.src : null,
+    avatar: avatarPreview.classList.contains("has-image")
+      ? avatarPreview.src
+      : null,
+    cover: coverPreview.classList.contains("has-image")
+      ? coverPreview.src
+      : null,
     displayName: displayName,
     bio: bio,
     updatedAt: Date.now(),
@@ -863,7 +889,12 @@ function saveProfileSettings() {
 window.saveProfileSettings = saveProfileSettings;
 
 function saveProfileSettingsToFirebase(settings) {
-  console.log("[Profile] saveProfileSettingsToFirebase called, firebaseProfileSettingsRef:", !!firebaseProfileSettingsRef, "userProfileKey:", userProfileKey);
+  console.log(
+    "[Profile] saveProfileSettingsToFirebase called, firebaseProfileSettingsRef:",
+    !!firebaseProfileSettingsRef,
+    "userProfileKey:",
+    userProfileKey,
+  );
 
   if (!firebaseProfileSettingsRef) {
     console.log("[Profile] Firebase chưa sẵn sàng, chỉ lưu local");
@@ -945,11 +976,9 @@ function initProfileOnLoad() {
     .addEventListener("change", handleCoverSelect);
 
   // Setup bio character counter
-  document
-    .getElementById("profileBio")
-    .addEventListener("input", function () {
-      document.getElementById("profileBioCount").textContent = this.value.length;
-    });
+  document.getElementById("profileBio").addEventListener("input", function () {
+    document.getElementById("profileBioCount").textContent = this.value.length;
+  });
 }
 
 function setupProfileFirebaseListener() {
@@ -973,7 +1002,10 @@ function setupProfileFirebaseListener() {
 }
 
 function loadProfileSettingsFromFirebase() {
-  console.log("[Profile] loadProfileSettingsFromFirebase called, firebaseProfileSettingsRef:", !!firebaseProfileSettingsRef);
+  console.log(
+    "[Profile] loadProfileSettingsFromFirebase called, firebaseProfileSettingsRef:",
+    !!firebaseProfileSettingsRef,
+  );
 
   if (!firebaseProfileSettingsRef) {
     console.log("[Profile] Firebase chưa sẵn sàng, dùng localStorage");
@@ -1096,6 +1128,68 @@ async function migrateLegacyCashflowEntriesIfNeeded() {
   }
 
   localStorage.removeItem(LEGACY_CASHFLOW_STORAGE_KEY);
+  localStorage.setItem(migrationFlag, "1");
+}
+
+function resolveCashflowCategoryId(type, rawCategoryValue) {
+  const normalizedValue = String(rawCategoryValue || "").trim();
+  if (!normalizedValue) return "";
+
+  const categories = cashflowCategories[type] || [];
+  const matchedCategory = categories.find(
+    (category) =>
+      String(category?.id || "").trim() === normalizedValue ||
+      String(category?.name || "").trim() === normalizedValue,
+  );
+
+  return matchedCategory ? matchedCategory.id : "";
+}
+
+async function migrateCashflowCategoryIdsIfNeeded() {
+  if (!userProfileKey) return;
+
+  const migrationFlag = `${CASHFLOW_CATEGORY_ID_MIGRATION_FLAG_PREFIX}${userProfileKey}`;
+  const migrated = localStorage.getItem(migrationFlag) === "1";
+  if (migrated) return;
+
+  const dateKeys = Object.keys(dateDataCache).filter(isDateKey);
+  let hasChanges = false;
+
+  for (const dateKey of dateKeys) {
+    const data = getDateData(dateKey);
+    let dateChanged = false;
+
+    const nextEntries = data.cashflowEntries.map((entry) => {
+      const resolvedCategoryId = resolveCashflowCategoryId(
+        entry.type,
+        entry.category,
+      );
+
+      if (!resolvedCategoryId || resolvedCategoryId === entry.category) {
+        return entry;
+      }
+
+      dateChanged = true;
+      return {
+        ...entry,
+        category: resolvedCategoryId,
+        updatedAt: Date.now(),
+      };
+    });
+
+    if (!dateChanged) continue;
+
+    hasChanges = true;
+    saveDateData(dateKey, {
+      ...data,
+      cashflowEntries: nextEntries,
+    });
+  }
+
+  if (hasChanges) {
+    reloadCashflowEntriesFromCache();
+  }
+
   localStorage.setItem(migrationFlag, "1");
 }
 
@@ -1576,9 +1670,17 @@ async function initFirebaseRealtime() {
   firebaseAISettingsRef = firebaseDb.ref(`aiSettings/${userProfileKey}`);
 
   // Profile Settings reference (Avatar, Cover, DisplayName, Bio)
-  firebaseProfileSettingsRef = firebaseDb.ref(`${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`);
-  console.log("[Firebase] Profile settings ref path:", `${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`);
-  console.log("[Firebase] firebaseProfileSettingsRef created:", !!firebaseProfileSettingsRef);
+  firebaseProfileSettingsRef = firebaseDb.ref(
+    `${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`,
+  );
+  console.log(
+    "[Firebase] Profile settings ref path:",
+    `${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`,
+  );
+  console.log(
+    "[Firebase] firebaseProfileSettingsRef created:",
+    !!firebaseProfileSettingsRef,
+  );
 
   // Setup real-time listener for profile settings
   setupProfileFirebaseListener();
@@ -4712,6 +4814,8 @@ let cashflowEntries = [];
 let editingCashflowId = "";
 let pendingDeleteCashflowId = "";
 let cashflowAnalyticsRange = "all";
+let cashflowShowAllRecent = false;
+let selectedCashflowId = "";
 
 const CASHFLOW_PIE_COLORS = [
   "#60a5fa",
@@ -4772,6 +4876,7 @@ function openCashflowModal() {
     dateInput.value = getTodayIsoDate();
   }
 
+  cashflowShowAllRecent = false;
   modal.style.display = "flex";
   updateCashflowCategoryDropdowns();
   syncCashflowFormMode();
@@ -4886,7 +4991,7 @@ function startCashflowEdit(id) {
   document.getElementById("cashflowAmount").value =
     entry.amount.toLocaleString("vi-VN");
   document.getElementById("cashflowNote").value = entry.note || "";
-  
+
   if (entry.category) {
     document.getElementById("cashflowCategory").value = entry.category;
   }
@@ -4906,6 +5011,7 @@ function resetCashflowForm() {
   document.getElementById("cashflowAmount").value = "";
   document.getElementById("cashflowNote").value = "";
   syncCashflowFormMode();
+  renderCashflowQuickView();
 }
 
 function syncCashflowFormMode() {
@@ -4915,7 +5021,7 @@ function syncCashflowFormMode() {
 
   if (editingCashflowId) {
     submitBtn.innerText = "Lưu chỉnh sửa";
-    cancelBtn.style.display = "inline-flex";
+    cancelBtn.style.display = "block";
   } else {
     submitBtn.innerText = "+ Thêm giao dịch";
     cancelBtn.style.display = "none";
@@ -4956,6 +5062,10 @@ function confirmRemoveCashflowEntry() {
   const data = getDateData(located.dateKey);
   data.cashflowEntries.splice(located.index, 1);
   saveDateData(located.dateKey, data);
+
+  if (selectedCashflowId === id) {
+    selectedCashflowId = "";
+  }
 
   reloadCashflowEntriesFromCache();
 
@@ -5010,7 +5120,9 @@ function animateCashflowAnalyticsTransition() {
 }
 
 function syncCashflowRangeFilterUI() {
-  const chips = document.querySelectorAll("#cashflowRangeFilter .cashflow-range-chip");
+  const chips = document.querySelectorAll(
+    "#cashflowRangeFilter .cashflow-range-chip",
+  );
   chips.forEach((chip) => {
     const isActive = chip.dataset.range === cashflowAnalyticsRange;
     chip.classList.toggle("active", isActive);
@@ -5094,10 +5206,16 @@ function formatCashflowDateObj(dateObj) {
 
 function buildCashflowCategoryBreakdown(entries, type) {
   const totals = new Map();
+  const categories = cashflowCategories[type] || [];
 
   for (const entry of entries) {
     if (entry.type !== type) continue;
-    const key = (entry.category || "Khác").trim() || "Khác";
+
+    const storedCategoryValue = String(entry.category || "").trim();
+    const catObj = categories.find(
+      (c) => c.id === storedCategoryValue || c.name === storedCategoryValue,
+    );
+    const key = catObj ? catObj.name : storedCategoryValue || "Khác";
     totals.set(key, (totals.get(key) || 0) + (entry.amount || 0));
   }
 
@@ -5147,7 +5265,13 @@ function renderCashflowPieCharts() {
   });
 }
 
-function renderCashflowPieChartCard({ canvasId, legendId, emptyMessage, totalLabel, data }) {
+function renderCashflowPieChartCard({
+  canvasId,
+  legendId,
+  emptyMessage,
+  totalLabel,
+  data,
+}) {
   const canvas = document.getElementById(canvasId);
   const legend = document.getElementById(legendId);
   if (!canvas || !legend) return;
@@ -5259,7 +5383,16 @@ function drawCashflowPieChart(canvas, items, { total, totalLabel }) {
 function fitAndDrawCanvasText(
   ctx,
   text,
-  { x, y, maxWidth, maxFontSize, minFontSize, lineHeight, fontWeight, fontFamily },
+  {
+    x,
+    y,
+    maxWidth,
+    maxFontSize,
+    minFontSize,
+    lineHeight,
+    fontWeight,
+    fontFamily,
+  },
 ) {
   let fontSize = maxFontSize;
   let lines = [];
@@ -5267,7 +5400,10 @@ function fitAndDrawCanvasText(
   while (fontSize >= minFontSize) {
     ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
     lines = measureCanvasWrappedLines(ctx, text, maxWidth);
-    const widestLine = Math.max(...lines.map((line) => ctx.measureText(line).width), 0);
+    const widestLine = Math.max(
+      ...lines.map((line) => ctx.measureText(line).width),
+      0,
+    );
     if (widestLine <= maxWidth && lines.length <= 2) {
       break;
     }
@@ -5360,33 +5496,91 @@ function renderCashflowMonthSummary() {
 
 function renderCashflowRecentList() {
   const listEl = document.getElementById("cashflowRecentList");
+  const viewAllBtn = document.getElementById("cashflowViewAllBtn");
   listEl.innerHTML = "";
 
   if (cashflowEntries.length === 0) {
+    selectedCashflowId = "";
+    closeCashflowQuickViewModal();
+    if (viewAllBtn) viewAllBtn.style.display = "none";
     const empty = document.createElement("div");
     empty.className = "cashflow-recent-empty";
     empty.innerText = "Chưa có giao dịch nào. Hãy thêm khoản thu/chi đầu tiên.";
     listEl.appendChild(empty);
+    renderCashflowQuickView();
     return;
   }
 
-  const recent = cashflowEntries.slice(0, 8);
-  for (const entry of recent) {
+  const selectedEntry = ensureSelectedCashflowEntry();
+  const hasMoreThanDefault = cashflowEntries.length > 5;
+  const visibleEntries = cashflowShowAllRecent
+    ? cashflowEntries
+    : cashflowEntries.slice(0, 6);
+
+  if (viewAllBtn) {
+    viewAllBtn.style.display = hasMoreThanDefault ? "inline-flex" : "none";
+    viewAllBtn.innerText = cashflowShowAllRecent ? "Thu gọn" : "Xem tất cả";
+  }
+
+  for (const entry of visibleEntries) {
     const row = document.createElement("div");
     row.className = "cashflow-row";
+    row.tabIndex = 0;
+    row.setAttribute("role", "button");
+    row.setAttribute("aria-label", `Xem chi tiết giao dịch ${getCashflowCategoryLabel(entry.type, entry.category)}`);
+    if (selectedEntry && selectedEntry.id === entry.id) {
+      row.classList.add("is-selected");
+    }
+    row.addEventListener("click", () => {
+      selectedCashflowId = entry.id;
+      renderCashflowRecentList();
+      openCashflowQuickViewModal();
+    });
+    row.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        selectedCashflowId = entry.id;
+        renderCashflowRecentList();
+        openCashflowQuickViewModal();
+      }
+    });
 
-    const dateEl = document.createElement("div");
-    dateEl.className = "cashflow-row-date";
-    dateEl.innerText = formatCashflowDate(entry.date);
+    const metaEl = document.createElement("div");
+    metaEl.className = "cashflow-row-meta";
+
+    const topLineEl = document.createElement("div");
+    topLineEl.className = "cashflow-row-topline";
+
+    const typeBadgeEl = document.createElement("span");
+    typeBadgeEl.className = `cashflow-row-type ${entry.type === "income" ? "is-income" : "is-expense"}`;
+    typeBadgeEl.innerText = getCashflowTypeLabel(entry.type);
+
+    const categoryBadgeEl = document.createElement("span");
+    categoryBadgeEl.className = "cashflow-row-category";
+    categoryBadgeEl.innerText = getCashflowCategoryLabel(
+      entry.type,
+      entry.category,
+    );
+
+    topLineEl.appendChild(typeBadgeEl);
+    topLineEl.appendChild(categoryBadgeEl);
 
     const noteEl = document.createElement("div");
     noteEl.className = "cashflow-row-note";
-    noteEl.innerText =
-      entry.note || (entry.type === "income" ? "Khoản thu" : "Khoản chi");
+    noteEl.innerText = entry.note || "Không có ghi chú";
+
+    const sublineEl = document.createElement("div");
+    sublineEl.className = "cashflow-row-subline";
+    sublineEl.innerText = `Ngày giao dịch: ${formatCashflowDate(entry.date)} • Cập nhật: ${formatTimestampForCsv(entry.updatedAt || entry.createdAt) || "Chưa rõ"}`;
+
+    metaEl.appendChild(topLineEl);
 
     const amountEl = document.createElement("div");
     amountEl.className = `cashflow-row-amount ${entry.type === "income" ? "is-income" : "is-expense"}`;
     amountEl.innerText = `${entry.type === "income" ? "+" : "-"}${entry.amount.toLocaleString("vi-VN")} đ`;
+
+    const actionsEl = document.createElement("div");
+    actionsEl.className = "cashflow-row-actions";
 
     const editBtn = document.createElement("button");
     editBtn.className = "cashflow-row-edit";
@@ -5394,22 +5588,39 @@ function renderCashflowRecentList() {
     editBtn.title = "Sửa giao dịch";
     editBtn.setAttribute("aria-label", "Sửa giao dịch");
     editBtn.innerHTML = "&#9998;";
-    editBtn.addEventListener("click", () => startCashflowEdit(entry.id));
+    editBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      startCashflowEdit(entry.id);
+    });
 
     const delBtn = document.createElement("button");
     delBtn.className = "cashflow-row-delete";
     delBtn.type = "button";
     delBtn.title = "Xóa giao dịch";
+    delBtn.setAttribute("aria-label", "Xóa giao dịch");
     delBtn.innerText = "×";
-    delBtn.addEventListener("click", () => removeCashflowEntry(entry.id));
+    delBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      removeCashflowEntry(entry.id);
+    });
 
-    row.appendChild(dateEl);
-    row.appendChild(noteEl);
+    actionsEl.appendChild(editBtn);
+    actionsEl.appendChild(delBtn);
+
+    row.appendChild(topLineEl);
     row.appendChild(amountEl);
-    row.appendChild(editBtn);
-    row.appendChild(delBtn);
+    row.appendChild(actionsEl);
+    row.appendChild(noteEl);
+    row.appendChild(sublineEl);
     listEl.appendChild(row);
   }
+
+  renderCashflowQuickView();
+}
+
+function toggleCashflowRecentList() {
+  cashflowShowAllRecent = !cashflowShowAllRecent;
+  renderCashflowRecentList();
 }
 
 function buildCashflowByMonth() {
@@ -5549,6 +5760,107 @@ function formatCashflowDate(dateIso) {
   return `${d}/${m}/${y}`;
 }
 
+function getCashflowCategoryLabel(type, categoryValue) {
+  const normalizedValue = String(categoryValue || "").trim();
+  if (!normalizedValue) return "Chưa phân loại";
+
+  const categories = cashflowCategories[type] || [];
+  const matchedCategory = categories.find(
+    (category) =>
+      String(category?.id || "").trim() === normalizedValue ||
+      String(category?.name || "").trim() === normalizedValue,
+  );
+
+  return matchedCategory?.name || normalizedValue;
+}
+
+function getCashflowTypeLabel(type) {
+  return type === "income" ? "Khoản thu" : "Khoản chi";
+}
+
+function getSelectedCashflowEntry() {
+  if (!selectedCashflowId) return null;
+  return cashflowEntries.find((entry) => entry.id === selectedCashflowId) || null;
+}
+
+function openCashflowQuickViewModal() {
+  const modal = document.getElementById("cashflowQuickViewModal");
+  if (!modal) return;
+  modal.style.display = "flex";
+}
+
+function closeCashflowQuickViewModal() {
+  const modal = document.getElementById("cashflowQuickViewModal");
+  if (!modal) return;
+  modal.style.display = "none";
+}
+
+function ensureSelectedCashflowEntry() {
+  if (cashflowEntries.length === 0) {
+    selectedCashflowId = "";
+    return null;
+  }
+
+  const selectedEntry = getSelectedCashflowEntry();
+  if (selectedEntry) return selectedEntry;
+
+  selectedCashflowId = cashflowEntries[0].id;
+  return cashflowEntries[0];
+}
+
+function renderCashflowQuickView() {
+  const quickViewEl = document.getElementById("cashflowQuickView");
+  if (!quickViewEl) return;
+
+  const entry = ensureSelectedCashflowEntry();
+  if (!entry) {
+    quickViewEl.innerHTML =
+      '<div class="cashflow-quickview-empty">Chọn một giao dịch để xem nhanh đầy đủ chi tiết.</div>';
+    return;
+  }
+
+  const typeLabel = getCashflowTypeLabel(entry.type);
+  const categoryLabel = getCashflowCategoryLabel(entry.type, entry.category);
+  const updatedLabel =
+    formatTimestampForCsv(entry.updatedAt || entry.createdAt) || "Chưa rõ";
+  const createdLabel = formatTimestampForCsv(entry.createdAt) || "Chưa rõ";
+  const noteLabel = entry.note || "Không có ghi chú";
+  const amountLabel = `${entry.type === "income" ? "+" : "-"}${entry.amount.toLocaleString("vi-VN")} đ`;
+
+  quickViewEl.innerHTML = `
+    <div class="cashflow-quickview-head">
+      <div>
+        <div class="cashflow-quickview-eyebrow">Xem nhanh giao dịch</div>
+        <div class="cashflow-quickview-title">${typeLabel} • ${categoryLabel}</div>
+      </div>
+      <div class="cashflow-quickview-amount ${entry.type === "income" ? "is-income" : "is-expense"}">${amountLabel}</div>
+    </div>
+    <div class="cashflow-quickview-note">${noteLabel}</div>
+    <div class="cashflow-quickview-grid">
+      <div class="cashflow-quickview-item">
+        <span class="cashflow-quickview-label">Ngày giao dịch</span>
+        <strong>${formatCashflowDate(entry.date)}</strong>
+      </div>
+      <div class="cashflow-quickview-item">
+        <span class="cashflow-quickview-label">Danh mục</span>
+        <strong>${categoryLabel}</strong>
+      </div>
+      <div class="cashflow-quickview-item">
+        <span class="cashflow-quickview-label">Tạo lúc</span>
+        <strong>${createdLabel}</strong>
+      </div>
+      <div class="cashflow-quickview-item">
+        <span class="cashflow-quickview-label">Cập nhật</span>
+        <strong>${updatedLabel}</strong>
+      </div>
+      <div class="cashflow-quickview-item cashflow-quickview-item-full">
+        <span class="cashflow-quickview-label">Mã giao dịch</span>
+        <strong>${entry.id}</strong>
+      </div>
+    </div>
+  `;
+}
+
 (function initCashflowModal() {
   reloadCashflowEntriesFromCache();
 
@@ -5556,6 +5868,13 @@ function formatCashflowDate(dateIso) {
   modal.addEventListener("click", function (e) {
     if (e.target === this) closeCashflowModal();
   });
+
+  const quickViewModal = document.getElementById("cashflowQuickViewModal");
+  if (quickViewModal) {
+    quickViewModal.addEventListener("click", function (e) {
+      if (e.target === this) closeCashflowQuickViewModal();
+    });
+  }
 
   const amountInput = document.getElementById("cashflowAmount");
   amountInput.addEventListener("input", () => {
@@ -5577,6 +5896,12 @@ function formatCashflowDate(dateIso) {
     }
   });
 
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeCashflowQuickViewModal();
+    }
+  });
+
   const deleteConfirmModal = document.getElementById(
     "cashflowDeleteConfirmModal",
   );
@@ -5594,7 +5919,7 @@ const FIREBASE_CATEGORIES_PATH = "cashflowCategories";
 let firebaseCategoriesRef = null;
 let cashflowCategories = {
   income: [],
-  expense: []
+  expense: [],
 };
 
 function getDefaultCategories() {
@@ -5604,7 +5929,7 @@ function getDefaultCategories() {
       { id: "income-2", name: "Thưởng" },
       { id: "income-3", name: "Phụ cấp" },
       { id: "income-4", name: "Thu nhập phụ" },
-      { id: "income-5", name: "Khác" }
+      { id: "income-5", name: "Khác" },
     ],
     expense: [
       { id: "expense-1", name: "Ăn uống" },
@@ -5616,33 +5941,49 @@ function getDefaultCategories() {
       { id: "expense-7", name: "Mua sắm" },
       { id: "expense-8", name: "Giải trí" },
       { id: "expense-9", name: "Giáo dục" },
-      { id: "expense-10", name: "Khác" }
-    ]
+      { id: "expense-10", name: "Khác" },
+    ],
   };
 }
 
 function initCategoriesFirebase() {
   if (!firebaseDb || !userProfileKey) {
-    console.log("Firebase not ready: db=", !!firebaseDb, "userKey=", userProfileKey);
+    console.log(
+      "Firebase not ready: db=",
+      !!firebaseDb,
+      "userKey=",
+      userProfileKey,
+    );
     return;
   }
-  console.log("Initializing categories Firebase with path:", FIREBASE_CATEGORIES_PATH, userProfileKey);
-  firebaseCategoriesRef = firebaseDb.ref(`${FIREBASE_CATEGORIES_PATH}/${userProfileKey}`);
-  
-  firebaseCategoriesRef.on("value", (snapshot) => {
-    console.log("Categories snapshot received:", snapshot.val());
-    const data = snapshot.val();
-    if (data && data.income && data.expense) {
-      cashflowCategories = data;
-    } else if (!snapshot.exists()) {
-      console.log("No categories exist, creating defaults");
-      cashflowCategories = getDefaultCategories();
-      saveCashflowCategoriesToFirebase();
-    }
-    updateCashflowCategoryDropdowns();
-  }, (error) => {
-    console.error("Categories Firebase error:", error);
-  });
+  console.log(
+    "Initializing categories Firebase with path:",
+    FIREBASE_CATEGORIES_PATH,
+    userProfileKey,
+  );
+  firebaseCategoriesRef = firebaseDb.ref(
+    `${FIREBASE_CATEGORIES_PATH}/${userProfileKey}`,
+  );
+
+  firebaseCategoriesRef.on(
+    "value",
+    async (snapshot) => {
+      console.log("Categories snapshot received:", snapshot.val());
+      const data = snapshot.val();
+      if (data && data.income && data.expense) {
+        cashflowCategories = data;
+      } else if (!snapshot.exists()) {
+        console.log("No categories exist, creating defaults");
+        cashflowCategories = getDefaultCategories();
+        saveCashflowCategoriesToFirebase();
+      }
+      updateCashflowCategoryDropdowns();
+      await migrateCashflowCategoryIdsIfNeeded();
+    },
+    (error) => {
+      console.error("Categories Firebase error:", error);
+    },
+  );
 }
 
 function loadCashflowCategoriesFromStorage() {
@@ -5655,11 +5996,14 @@ function saveCashflowCategoriesToFirebase() {
     return;
   }
   console.log("Saving categories to Firebase:", cashflowCategories);
-  firebaseCategoriesRef.set(cashflowCategories).then(() => {
-    console.log("Categories saved to Firebase successfully");
-  }).catch(err => {
-    console.error("Error saving categories:", err);
-  });
+  firebaseCategoriesRef
+    .set(cashflowCategories)
+    .then(() => {
+      console.log("Categories saved to Firebase successfully");
+    })
+    .catch((err) => {
+      console.error("Error saving categories:", err);
+    });
 }
 
 function saveCashflowCategoriesToStorage() {
@@ -5697,13 +6041,15 @@ function renderCategoryList() {
   const list = document.getElementById("cashflowCategoryList");
   const categories = cashflowCategories[type] || [];
   const typeLabel = type === "income" ? "Thu" : "Chi";
-  
+
   if (categories.length === 0) {
     list.innerHTML = `<div style="text-align: center; color: #999; padding: 40px 20px;">Chưa có danh mục ${typeLabel} nào</div>`;
     return;
   }
-  
-  list.innerHTML = categories.map((cat, index) => `
+
+  list.innerHTML = categories
+    .map(
+      (cat, index) => `
     <div 
       draggable="true" 
       data-id="${cat.id}" 
@@ -5724,49 +6070,51 @@ function renderCategoryList() {
         <button onclick="deleteCategory('${cat.id}')" title="Xóa" style="background: #fef2f2; border: none; cursor: pointer; padding: 6px 10px; border-radius: 6px; color: #dc2626; font-size: 13px;">🗑️ Xóa</button>
       </div>
     </div>
-  `).join("");
-  
+  `,
+    )
+    .join("");
+
   initDragDrop();
 }
 
 function initDragDrop() {
   const list = document.getElementById("cashflowCategoryList");
   let draggedIndex = null;
-  
-  list.querySelectorAll(".category-item").forEach(item => {
-    item.addEventListener("dragstart", function(e) {
+
+  list.querySelectorAll(".category-item").forEach((item) => {
+    item.addEventListener("dragstart", function (e) {
       draggedIndex = parseInt(this.dataset.index);
       this.style.opacity = "0.5";
       this.style.background = "#e0f2fe";
       e.dataTransfer.effectAllowed = "move";
     });
-    
-    item.addEventListener("dragover", function(e) {
+
+    item.addEventListener("dragover", function (e) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
       this.style.background = "#bae6fd";
     });
-    
-    item.addEventListener("dragleave", function() {
+
+    item.addEventListener("dragleave", function () {
       this.style.background = "white";
     });
-    
-    item.addEventListener("drop", function(e) {
+
+    item.addEventListener("drop", function (e) {
       e.preventDefault();
       const toIndex = parseInt(this.dataset.index);
       if (draggedIndex === null || draggedIndex === toIndex) return;
-      
+
       const type = this.dataset.type;
       const items = cashflowCategories[type];
       const [moved] = items.splice(draggedIndex, 1);
       items.splice(toIndex, 0, moved);
-      
+
       saveCashflowCategoriesToStorage();
       renderCategoryList();
     });
-    
-    item.addEventListener("dragend", function() {
-      list.querySelectorAll(".category-item").forEach(el => {
+
+    item.addEventListener("dragend", function () {
+      list.querySelectorAll(".category-item").forEach((el) => {
         el.style.opacity = "";
         el.style.background = "white";
       });
@@ -5837,12 +6185,12 @@ function handleCategoryTouchMove(e) {
   item.style.pointerEvents = "none";
 
   const siblings = Array.from(
-    list.querySelectorAll(".category-item:not(.category-item-touch-dragging)")
+    list.querySelectorAll(".category-item:not(.category-item-touch-dragging)"),
   );
   const currentYInList = touch.clientY - listRect.top + list.scrollTop;
   let inserted = false;
 
-  siblings.forEach(sibling => {
+  siblings.forEach((sibling) => {
     const siblingTop = sibling.offsetTop;
     const siblingMiddle = siblingTop + sibling.offsetHeight / 2;
     if (!inserted && currentYInList < siblingMiddle) {
@@ -5895,11 +6243,11 @@ function handleCategoryTouchEnd() {
   placeholder.replaceWith(item);
 
   const items = cashflowCategories[type] || [];
-  const fromIndex = items.findIndex(cat => cat.id === itemId);
+  const fromIndex = items.findIndex((cat) => cat.id === itemId);
   const domItems = Array.from(
-    document.querySelectorAll("#cashflowCategoryList .category-item")
+    document.querySelectorAll("#cashflowCategoryList .category-item"),
   );
-  const toIndex = domItems.findIndex(el => el.dataset.id === itemId);
+  const toIndex = domItems.findIndex((el) => el.dataset.id === itemId);
 
   if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
     const [moved] = items.splice(fromIndex, 1);
@@ -5969,20 +6317,20 @@ function saveCategory() {
     alert("Vui lòng nhập tên loại");
     return;
   }
-  
+
   const editingId = document.getElementById("editingCategoryId").value;
   const type = document.getElementById("cashflowCategoryType").value;
-  
+
   if (editingId) {
-    const cat = cashflowCategories[type].find(c => c.id === editingId);
+    const cat = cashflowCategories[type].find((c) => c.id === editingId);
     if (cat) cat.name = name;
   } else {
     cashflowCategories[type].push({
       id: `${type}-${Date.now()}`,
-      name
+      name,
     });
   }
-  
+
   saveCashflowCategoriesToStorage();
   renderCategoryList();
   cancelCategoryForm();
@@ -5991,9 +6339,9 @@ function saveCategory() {
 
 function editCategory(id) {
   const type = document.getElementById("cashflowCategoryType").value;
-  const cat = cashflowCategories[type].find(c => c.id === id);
+  const cat = cashflowCategories[type].find((c) => c.id === id);
   if (!cat) return;
-  
+
   document.getElementById("cashflowCategoryForm").style.display = "block";
   document.getElementById("editingCategoryId").value = id;
   document.getElementById("newCategoryName").value = cat.name;
@@ -6002,9 +6350,11 @@ function editCategory(id) {
 
 function deleteCategory(id) {
   if (!confirm("Bạn có chắc muốn xóa loại này?")) return;
-  
+
   const type = document.getElementById("cashflowCategoryType").value;
-  cashflowCategories[type] = cashflowCategories[type].filter(c => c.id !== id);
+  cashflowCategories[type] = cashflowCategories[type].filter(
+    (c) => c.id !== id,
+  );
   saveCashflowCategoriesToStorage();
   renderCategoryList();
   updateCashflowCategoryDropdowns();
@@ -6014,17 +6364,21 @@ function updateCashflowCategoryDropdowns() {
   const typeSelect = document.getElementById("cashflowType");
   const categorySelect = document.getElementById("cashflowCategory");
   if (!typeSelect || !categorySelect) return;
-  
+
   const currentType = typeSelect.value;
   const categories = cashflowCategories[currentType] || [];
-  const currentVal = categorySelect.value;
-  
-  categorySelect.innerHTML = categories.map(c => 
-    `<option value="${c.id}">${c.name}</option>`
-  ).join("");
-  
-  if (currentVal && categories.find(c => c.id === currentVal)) {
-    categorySelect.value = currentVal;
+  const currentVal = String(categorySelect.value || "").trim();
+
+  categorySelect.innerHTML = categories
+    .map((c) => `<option value="${c.id}">${c.name}</option>`)
+    .join("");
+
+  const matchedCategory = categories.find(
+    (c) => c.id === currentVal || c.name === currentVal,
+  );
+
+  if (matchedCategory) {
+    categorySelect.value = matchedCategory.id;
   } else if (categories.length > 0) {
     categorySelect.value = categories[0].id;
   }
@@ -6048,24 +6402,28 @@ let selectedFundColor = "#a855f7";
 function initFundsFirebase() {
   if (!firebaseDb || !userProfileKey) return;
   firebaseFundsRef = firebaseDb.ref(`${FIREBASE_FUNDS_PATH}/${userProfileKey}`);
-  
-  firebaseFundsRef.on("value", (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      fundsData = {
-        funds: data.funds || [],
-        allocations: data.allocations || [],
-        totalIncome: data.totalIncome || 0,
-      };
-    } else {
-      fundsData = { funds: [], allocations: [], totalIncome: 0 };
-    }
-    renderFundsDashboard();
-  }, (error) => {
-    console.error("Funds Firebase error:", error);
-    loadFundsFromLocalStorage();
-    renderFundsDashboard();
-  });
+
+  firebaseFundsRef.on(
+    "value",
+    (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        fundsData = {
+          funds: data.funds || [],
+          allocations: data.allocations || [],
+          totalIncome: data.totalIncome || 0,
+        };
+      } else {
+        fundsData = { funds: [], allocations: [], totalIncome: 0 };
+      }
+      renderFundsDashboard();
+    },
+    (error) => {
+      console.error("Funds Firebase error:", error);
+      loadFundsFromLocalStorage();
+      renderFundsDashboard();
+    },
+  );
 }
 
 function loadFundsFromLocalStorage() {
@@ -6108,8 +6466,8 @@ function calculateTotalAllocated() {
 }
 
 function getFundBalance(fundId) {
-  const fund = fundsData.funds.find(f => f.id === fundId);
-  const initialAmount = fund ? (fund.initialAmount || 0) : 0;
+  const fund = fundsData.funds.find((f) => f.id === fundId);
+  const initialAmount = fund ? fund.initialAmount || 0 : 0;
   let balance = initialAmount;
   for (const alloc of fundsData.allocations) {
     if (alloc.fundId === fundId) {
@@ -6122,10 +6480,10 @@ function getFundBalance(fundId) {
 function openFundsModal() {
   closeAllModals();
   const modal = document.getElementById("fundsModal");
-  
+
   // Calculate total income from cashflow
   fundsData.totalIncome = calculateTotalIncome();
-  
+
   modal.style.display = "flex";
   renderFundsDashboard();
 }
@@ -6138,33 +6496,36 @@ function renderFundsDashboard() {
   const totalIncome = fundsData.totalIncome || calculateTotalIncome();
   const totalAllocated = calculateTotalAllocated();
   const available = totalIncome - totalAllocated;
-  
-  document.getElementById("fundsTotalIncome").innerText = `${totalIncome.toLocaleString("vi-VN")} đ`;
-  document.getElementById("fundsTotalAllocated").innerText = `${totalAllocated.toLocaleString("vi-VN")} đ`;
-  
+
+  document.getElementById("fundsTotalIncome").innerText =
+    `${totalIncome.toLocaleString("vi-VN")} đ`;
+  document.getElementById("fundsTotalAllocated").innerText =
+    `${totalAllocated.toLocaleString("vi-VN")} đ`;
+
   const availableEl = document.getElementById("fundsAvailable");
   availableEl.innerText = `${available.toLocaleString("vi-VN")} đ`;
   availableEl.style.color = available < 0 ? "#ef4444" : "#10b981";
-  
+
   // Update allocate info
   const allocateInfo = document.getElementById("fundsAllocateInfo");
   if (available > 0) {
     allocateInfo.innerText = `Còn ${available.toLocaleString("vi-VN")} đ có thể phân bổ vào các quỹ`;
     allocateInfo.style.color = "#10b981";
   } else {
-    allocateInfo.innerText = available < 0 
-      ? `Số dư âm ${Math.abs(available).toLocaleString("vi-VN")} đ - Đã phân bổ vượt thu nhập`
-      : "Đã phân bổ hết thu nhập vào các quỹ";
+    allocateInfo.innerText =
+      available < 0
+        ? `Số dư âm ${Math.abs(available).toLocaleString("vi-VN")} đ - Đã phân bổ vượt thu nhập`
+        : "Đã phân bổ hết thu nhập vào các quỹ";
     allocateInfo.style.color = available < 0 ? "#ef4444" : "#f59e0b";
   }
-  
+
   renderFundsList();
 }
 
 function renderFundsList() {
   const listEl = document.getElementById("fundsList");
   listEl.innerHTML = "";
-  
+
   if (fundsData.funds.length === 0) {
     const empty = document.createElement("div");
     empty.className = "funds-empty";
@@ -6172,7 +6533,7 @@ function renderFundsList() {
     listEl.appendChild(empty);
     return;
   }
-  
+
   for (const fund of fundsData.funds) {
     const balance = getFundBalance(fund.id);
     const item = document.createElement("div");
@@ -6197,39 +6558,39 @@ function openAddFundModal() {
   document.getElementById("fundModalTitle").innerText = "Thêm Quỹ mới";
   document.getElementById("fundName").value = "";
   selectedFundColor = "#a855f7";
-  
+
   // Hide initial amount field for new fund
   document.getElementById("fundInitialAmountLabel").style.display = "none";
   document.getElementById("fundInitialAmount").value = "";
-  
+
   // Reset color buttons
-  document.querySelectorAll(".fund-color-btn").forEach(btn => {
+  document.querySelectorAll(".fund-color-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.color === selectedFundColor);
   });
-  
+
   document.getElementById("fundModal").style.display = "flex";
 }
 
 function editFund(fundId) {
-  const fund = fundsData.funds.find(f => f.id === fundId);
+  const fund = fundsData.funds.find((f) => f.id === fundId);
   if (!fund) return;
-  
+
   editingFundId = fundId;
   document.getElementById("fundModalTitle").innerText = "Sửa Quỹ";
   document.getElementById("fundName").value = fund.name;
   selectedFundColor = fund.color;
-  
+
   // Show current balance as initial amount for editing
   document.getElementById("fundInitialAmountLabel").style.display = "flex";
   const initialAmountInput = document.getElementById("fundInitialAmount");
   initialAmountInput.value = getFundBalance(fundId);
   formatCurrencyInput(initialAmountInput);
-  
+
   // Set active color
-  document.querySelectorAll(".fund-color-btn").forEach(btn => {
+  document.querySelectorAll(".fund-color-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.color === selectedFundColor);
   });
-  
+
   document.getElementById("fundModal").style.display = "flex";
 }
 
@@ -6242,25 +6603,26 @@ function saveFund() {
   const nameInput = document.getElementById("fundName");
   const name = nameInput.value.trim();
   const initialAmountInput = document.getElementById("fundInitialAmount");
-  const newBalance = parseFloat(initialAmountInput.value.replace(/\D/g, "")) || 0;
-  
+  const newBalance =
+    parseFloat(initialAmountInput.value.replace(/\D/g, "")) || 0;
+
   if (!name) {
     alert("Vui lòng nhập tên quỹ");
     return;
   }
-  
+
   if (editingFundId) {
     // Edit existing fund
-    const fundIndex = fundsData.funds.findIndex(f => f.id === editingFundId);
+    const fundIndex = fundsData.funds.findIndex((f) => f.id === editingFundId);
     if (fundIndex >= 0) {
       // Calculate current allocations sum
       const allocationsSum = fundsData.allocations
-        .filter(a => a.fundId === editingFundId)
+        .filter((a) => a.fundId === editingFundId)
         .reduce((sum, a) => sum + a.amount, 0);
-      
+
       // New initialAmount = new balance - allocations sum
       const newInitialAmount = newBalance - allocationsSum;
-      
+
       fundsData.funds[fundIndex].name = name;
       fundsData.funds[fundIndex].color = selectedFundColor;
       fundsData.funds[fundIndex].initialAmount = newInitialAmount;
@@ -6277,21 +6639,25 @@ function saveFund() {
     };
     fundsData.funds.push(newFund);
   }
-  
+
   saveFundsToFirebase();
   closeFundModal();
   renderFundsDashboard();
 }
 
 function confirmDeleteFund(fundId) {
-  const fund = fundsData.funds.find(f => f.id === fundId);
+  const fund = fundsData.funds.find((f) => f.id === fundId);
   if (!fund) return;
-  
-  if (!confirm(`Bạn có chắc muốn xóa quỹ "${fund.name}"? Các khoản đã phân bổ vào quỹ này sẽ không bị mất.`)) {
+
+  if (
+    !confirm(
+      `Bạn có chắc muốn xóa quỹ "${fund.name}"? Các khoản đã phân bổ vào quỹ này sẽ không bị mất.`,
+    )
+  ) {
     return;
   }
-  
-  fundsData.funds = fundsData.funds.filter(f => f.id !== fundId);
+
+  fundsData.funds = fundsData.funds.filter((f) => f.id !== fundId);
   saveFundsToFirebase();
   renderFundsDashboard();
 }
@@ -6300,29 +6666,29 @@ function openAllocateModal() {
   const totalIncome = fundsData.totalIncome || calculateTotalIncome();
   const totalAllocated = calculateTotalAllocated();
   const available = totalIncome - totalAllocated;
-  
+
   if (fundsData.funds.length === 0) {
     alert("Bạn cần tạo ít nhất một quỹ trước khi phân bổ.");
     return;
   }
-  
+
   const availableEl = document.getElementById("allocateAvailableAmount");
   availableEl.innerText = `${available.toLocaleString("vi-VN")} đ`;
   availableEl.style.color = available < 0 ? "#ef4444" : "#10b981";
-  
+
   document.getElementById("allocateAmount").value = "";
-  
+
   // Populate fund select
   const select = document.getElementById("allocateFundSelect");
   select.innerHTML = '<option value="">-- Chọn quỹ --</option>';
-  
+
   for (const fund of fundsData.funds) {
     const option = document.createElement("option");
     option.value = fund.id;
     option.textContent = fund.name;
     select.appendChild(option);
   }
-  
+
   document.getElementById("allocateModal").style.display = "flex";
   renderAllocateHistory();
 }
@@ -6334,24 +6700,24 @@ function closeAllocateModal() {
 function confirmAllocate() {
   const fundSelect = document.getElementById("allocateFundSelect");
   const amountInput = document.getElementById("allocateAmount");
-  
+
   const fundId = fundSelect.value;
   const amount = parseInt(amountInput.value.replace(/\D/g, ""), 10) || 0;
-  
+
   if (!fundId) {
     alert("Vui lòng chọn một quỹ");
     return;
   }
-  
+
   if (amount <= 0) {
     alert("Vui lòng nhập số tiền lớn hơn 0");
     return;
   }
-  
+
   const totalIncome = fundsData.totalIncome || calculateTotalIncome();
   const totalAllocated = calculateTotalAllocated();
   const available = totalIncome - totalAllocated;
-  
+
   // Add allocation
   const allocation = {
     id: `alloc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -6360,22 +6726,22 @@ function confirmAllocate() {
     date: getTodayIsoDate(),
     createdAt: Date.now(),
   };
-  
+
   fundsData.allocations.push(allocation);
   saveFundsToFirebase();
-  
+
   // Update UI
   amountInput.value = "";
   renderAllocateHistory();
   renderFundsDashboard();
-  
+
   alert(`Đã phân bổ ${amount.toLocaleString("vi-VN")} đ vào quỹ thành công!`);
 }
 
 function renderAllocateHistory() {
   const listEl = document.getElementById("allocateHistoryList");
   listEl.innerHTML = "";
-  
+
   if (fundsData.allocations.length === 0) {
     const empty = document.createElement("div");
     empty.className = "allocate-empty";
@@ -6383,15 +6749,17 @@ function renderAllocateHistory() {
     listEl.appendChild(empty);
     return;
   }
-  
+
   // Sort by date descending
-  const sorted = [...fundsData.allocations].sort((a, b) => b.createdAt - a.createdAt);
+  const sorted = [...fundsData.allocations].sort(
+    (a, b) => b.createdAt - a.createdAt,
+  );
   const recent = sorted.slice(0, 10);
-  
+
   for (const alloc of recent) {
-    const fund = fundsData.funds.find(f => f.id === alloc.fundId);
+    const fund = fundsData.funds.find((f) => f.id === alloc.fundId);
     if (!fund) continue;
-    
+
     const item = document.createElement("div");
     item.className = "allocate-history-item";
     item.innerHTML = `
@@ -6410,13 +6778,13 @@ function renderAllocateHistory() {
 (function initFundColorPicker() {
   const colorPicker = document.getElementById("fundColorPicker");
   if (!colorPicker) return;
-  
+
   colorPicker.addEventListener("click", (e) => {
     const btn = e.target.closest(".fund-color-btn");
     if (!btn) return;
-    
+
     selectedFundColor = btn.dataset.color;
-    document.querySelectorAll(".fund-color-btn").forEach(b => {
+    document.querySelectorAll(".fund-color-btn").forEach((b) => {
       b.classList.toggle("active", b === btn);
     });
   });
@@ -6426,7 +6794,7 @@ function renderAllocateHistory() {
 (function initAllocateInput() {
   const amountInput = document.getElementById("allocateAmount");
   if (!amountInput) return;
-  
+
   amountInput.addEventListener("input", () => {
     formatCurrencyInput(amountInput);
   });
@@ -6436,7 +6804,7 @@ function renderAllocateHistory() {
 (function initFundInitialAmountInput() {
   const amountInput = document.getElementById("fundInitialAmount");
   if (!amountInput) return;
-  
+
   amountInput.addEventListener("input", () => {
     formatCurrencyInput(amountInput);
   });
@@ -6450,14 +6818,14 @@ function renderAllocateHistory() {
       if (e.target === fundsModal) closeFundsModal();
     });
   }
-  
+
   const fundModal = document.getElementById("fundModal");
   if (fundModal) {
     fundModal.addEventListener("click", (e) => {
       if (e.target === fundModal) closeFundModal();
     });
   }
-  
+
   const allocateModal = document.getElementById("allocateModal");
   if (allocateModal) {
     allocateModal.addEventListener("click", (e) => {

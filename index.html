@@ -1001,7 +1001,10 @@
           <div class="event-modal-header cashflow-modal-header">
             <div>
               <h3>Quản lý thu chi</h3>
-              <p class="cashflow-modal-subtitle">Theo dõi giao dịch, xem cơ cấu thu chi và phân tích nhanh theo thời gian.</p>
+              <p class="cashflow-modal-subtitle">
+                Theo dõi giao dịch, xem cơ cấu thu chi và phân tích nhanh theo
+                thời gian.
+              </p>
             </div>
             <button
               class="modal-close event-modal-close"
@@ -1016,7 +1019,9 @@
               <div class="cashflow-section-head">
                 <div>
                   <div class="cashflow-section-eyebrow">Nhập giao dịch</div>
-                  <div class="cashflow-section-title">Thêm hoặc chỉnh sửa khoản thu chi</div>
+                  <div class="cashflow-section-title">
+                    Thêm hoặc chỉnh sửa khoản thu chi
+                  </div>
                 </div>
               </div>
 
@@ -1037,8 +1042,26 @@
                 <label class="cashflow-input-item">
                   <span class="cashflow-label-with-action">
                     <span>Danh mục</span>
-                    <button type="button" class="cashflow-category-manage-btn" onclick="openCashflowCategoryModal()" title="Quản lý danh mục thu/chi" aria-label="Quản lý danh mục thu chi">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                    <button
+                      type="button"
+                      class="cashflow-category-manage-btn"
+                      onclick="openCashflowCategoryModal()"
+                      title="Quản lý danh mục thu/chi"
+                      aria-label="Quản lý danh mục thu chi"
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                          d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+                        />
+                      </svg>
                     </button>
                   </span>
                   <select id="cashflowCategory"></select>
@@ -1055,14 +1078,16 @@
                 </label>
               </div>
 
-              <label class="cashflow-input-item cashflow-note-item cashflow-note-block">
+              <label
+                class="cashflow-input-item cashflow-note-item cashflow-note-block"
+              >
                 <span>Ghi chú</span>
                 <input
                   type="text"
                   id="cashflowNote"
                   placeholder="Ví dụ: Lương, ăn uống, điện nước..."
                   maxlength="120"
-                  style="width: 100%;"
+                  style="width: 100%"
                 />
               </label>
 
@@ -1089,7 +1114,9 @@
               <div class="cashflow-section-head">
                 <div>
                   <div class="cashflow-section-eyebrow">Tổng quan</div>
-                  <div class="cashflow-section-title">Tình hình thu chi tháng hiện tại</div>
+                  <div class="cashflow-section-title">
+                    Tình hình thu chi tháng hiện tại
+                  </div>
                 </div>
               </div>
 
@@ -1121,64 +1148,130 @@
               </div>
             </section>
 
+            <section class="cashflow-section cashflow-history-section">
+              <div class="cashflow-section-head">
+                <div>
+                  <div class="cashflow-section-eyebrow">Giao dịch gần đây</div>
+                  <div class="cashflow-section-title">
+                    Các khoản thu chi mới nhất
+                  </div>
+                </div>
+              </div>
+
+              <div class="cashflow-history-box">
+                <div class="cashflow-history-head">
+                  <div class="cashflow-history-title">
+                    Danh sách 6 giao dịch gần nhất
+                  </div>
+                  <button
+                    type="button"
+                    class="cashflow-history-toggle"
+                    id="cashflowViewAllBtn"
+                    onclick="toggleCashflowRecentList()"
+                    style="display: none"
+                  >
+                    Xem tất cả
+                  </button>
+                </div>
+                <div class="cashflow-recent-list" id="cashflowRecentList"></div>
+              </div>
+            </section>
+
             <section class="cashflow-section cashflow-analysis-section">
               <div class="cashflow-section-head cashflow-section-head-stacked">
                 <div>
                   <div class="cashflow-section-eyebrow">Phân tích danh mục</div>
-                  <div class="cashflow-section-title">Cơ cấu thu và chi theo khoảng thời gian</div>
+                  <div class="cashflow-section-title">
+                    Cơ cấu thu và chi theo khoảng thời gian
+                  </div>
                 </div>
-                <div class="cashflow-range-filter" id="cashflowRangeFilter" role="tablist" aria-label="Bộ lọc thời gian phân tích thu chi">
-                  <button type="button" class="cashflow-range-chip active" data-range="all" onclick="setCashflowAnalyticsRange('all')">Tất cả</button>
-                  <button type="button" class="cashflow-range-chip" data-range="year" onclick="setCashflowAnalyticsRange('year')">Năm</button>
-                  <button type="button" class="cashflow-range-chip" data-range="month" onclick="setCashflowAnalyticsRange('month')">Tháng</button>
-                  <button type="button" class="cashflow-range-chip" data-range="week" onclick="setCashflowAnalyticsRange('week')">Tuần</button>
+                <div
+                  class="cashflow-range-filter"
+                  id="cashflowRangeFilter"
+                  role="tablist"
+                  aria-label="Bộ lọc thời gian phân tích thu chi"
+                >
+                  <button
+                    type="button"
+                    class="cashflow-range-chip active"
+                    data-range="all"
+                    onclick="setCashflowAnalyticsRange('all')"
+                  >
+                    Tất cả
+                  </button>
+                  <button
+                    type="button"
+                    class="cashflow-range-chip"
+                    data-range="year"
+                    onclick="setCashflowAnalyticsRange('year')"
+                  >
+                    Năm
+                  </button>
+                  <button
+                    type="button"
+                    class="cashflow-range-chip"
+                    data-range="month"
+                    onclick="setCashflowAnalyticsRange('month')"
+                  >
+                    Tháng
+                  </button>
+                  <button
+                    type="button"
+                    class="cashflow-range-chip"
+                    data-range="week"
+                    onclick="setCashflowAnalyticsRange('week')"
+                  >
+                    Tuần
+                  </button>
                 </div>
               </div>
 
-              <div class="cashflow-analysis-caption cashflow-analytics-fade-target" id="cashflowAnalysisCaption">
+              <div
+                class="cashflow-analysis-caption cashflow-analytics-fade-target"
+                id="cashflowAnalysisCaption"
+              >
                 Phân tích theo toàn bộ dữ liệu thu chi đã lưu.
               </div>
 
-              <div class="cashflow-pie-grid cashflow-analytics-fade-target" id="cashflowPieGrid">
+              <div
+                class="cashflow-pie-grid cashflow-analytics-fade-target"
+                id="cashflowPieGrid"
+              >
                 <article class="cashflow-pie-card">
                   <div class="cashflow-pie-card-header">
                     <div>
                       <div class="cashflow-pie-title">Cơ cấu các loại thu</div>
-                      <div class="cashflow-pie-subtitle">Tỷ trọng từng danh mục trong tổng thu</div>
+                      <div class="cashflow-pie-subtitle">
+                        Tỷ trọng từng danh mục trong tổng thu
+                      </div>
                     </div>
                   </div>
                   <div class="cashflow-pie-canvas-wrap">
                     <canvas id="cashflowIncomePieChart"></canvas>
                   </div>
-                  <div class="cashflow-pie-legend" id="cashflowIncomePieLegend"></div>
+                  <div
+                    class="cashflow-pie-legend"
+                    id="cashflowIncomePieLegend"
+                  ></div>
                 </article>
 
-                <article class="cashflow-pie-card" style="margin-top: 10px;">
+                <article class="cashflow-pie-card" style="margin-top: 10px">
                   <div class="cashflow-pie-card-header">
                     <div>
                       <div class="cashflow-pie-title">Cơ cấu các loại chi</div>
-                      <div class="cashflow-pie-subtitle">Tỷ trọng từng danh mục trong tổng chi</div>
+                      <div class="cashflow-pie-subtitle">
+                        Tỷ trọng từng danh mục trong tổng chi
+                      </div>
                     </div>
                   </div>
                   <div class="cashflow-pie-canvas-wrap">
                     <canvas id="cashflowExpensePieChart"></canvas>
                   </div>
-                  <div class="cashflow-pie-legend" id="cashflowExpensePieLegend"></div>
+                  <div
+                    class="cashflow-pie-legend"
+                    id="cashflowExpensePieLegend"
+                  ></div>
                 </article>
-              </div>
-            </section>
-
-            <section class="cashflow-section cashflow-history-section">
-              <div class="cashflow-section-head">
-                <div>
-                  <div class="cashflow-section-eyebrow">Giao dịch gần đây</div>
-                  <div class="cashflow-section-title">Các khoản thu chi mới nhất</div>
-                </div>
-              </div>
-
-              <div class="cashflow-history-box">
-                <div class="cashflow-history-title">Danh sách 8 giao dịch gần nhất</div>
-                <div class="cashflow-recent-list" id="cashflowRecentList"></div>
               </div>
             </section>
 
@@ -1186,7 +1279,9 @@
               <div class="cashflow-section-head">
                 <div>
                   <div class="cashflow-section-eyebrow">Biểu đồ xu hướng</div>
-                  <div class="cashflow-section-title">Thu chi 12 tháng gần nhất</div>
+                  <div class="cashflow-section-title">
+                    Thu chi 12 tháng gần nhất
+                  </div>
                 </div>
                 <button
                   id="cashflowExportBtn"
@@ -1204,7 +1299,8 @@
 
               <div class="cashflow-chart-header">
                 <span class="cashflow-chart-subtitle"
-                  >Biểu đồ cột giúp so sánh nhanh thu và chi theo từng tháng</span
+                  >Biểu đồ cột giúp so sánh nhanh thu và chi theo từng
+                  tháng</span
                 >
               </div>
               <div class="cashflow-chart-wrap">
@@ -1215,9 +1311,31 @@
         </div>
       </div>
 
+      <div
+        id="cashflowQuickViewModal"
+        class="cashflow-quickview-modal"
+        style="display: none"
+      >
+        <div class="cashflow-quickview-dialog">
+          <button
+            type="button"
+            class="cashflow-quickview-close"
+            onclick="closeCashflowQuickViewModal()"
+            aria-label="Đóng xem nhanh giao dịch"
+          >
+            ×
+          </button>
+          <div class="cashflow-quickview" id="cashflowQuickView">
+            <div class="cashflow-quickview-empty">
+              Chọn một giao dịch để xem nhanh đầy đủ chi tiết.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Cashflow Category Modal -->
       <div id="cashflowCategoryModal" class="modal">
-        <div class="modal-content event-modal-wrapper" style="max-width: 420px;">
+        <div class="modal-content event-modal-wrapper" style="max-width: 420px">
           <div class="event-modal-header">
             <div>
               <h3>Quản lý danh mục</h3>
@@ -1229,24 +1347,123 @@
               ×
             </button>
           </div>
-          <div style="padding: 20px;">
-            <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: center;">
-              <select id="cashflowCategoryType" style="flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #e5e7eb; background: white; font-size: 14px; cursor: pointer;" onchange="renderCategoryList()">
+          <div style="padding: 20px">
+            <div
+              style="
+                display: flex;
+                gap: 12px;
+                margin-bottom: 16px;
+                align-items: center;
+              "
+            >
+              <select
+                id="cashflowCategoryType"
+                style="
+                  flex: 1;
+                  padding: 12px;
+                  border-radius: 10px;
+                  border: 1px solid #e5e7eb;
+                  background: white;
+                  font-size: 14px;
+                  cursor: pointer;
+                "
+                onchange="renderCategoryList()"
+              >
                 <option value="income">📈 Loại thu</option>
                 <option value="expense">📉 Loại chi</option>
               </select>
-              <button onclick="openAddCategoryForm()" style="padding: 12px 20px; background: #10b981; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap;">+ Thêm mới</button>
+              <button
+                onclick="openAddCategoryForm()"
+                style="
+                  padding: 12px 20px;
+                  background: #10b981;
+                  color: white;
+                  border: none;
+                  border-radius: 10px;
+                  cursor: pointer;
+                  font-weight: 600;
+                  font-size: 14px;
+                  white-space: nowrap;
+                "
+              >
+                + Thêm mới
+              </button>
             </div>
-            <div id="cashflowCategoryList" style="max-height: 360px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 12px; background: #fafafa;"></div>
-            <div id="cashflowCategoryForm" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 2px dashed #e5e7eb;">
+            <div
+              id="cashflowCategoryList"
+              style="
+                max-height: 360px;
+                overflow-y: auto;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                background: #fafafa;
+              "
+            ></div>
+            <div
+              id="cashflowCategoryForm"
+              style="
+                display: none;
+                margin-top: 16px;
+                padding-top: 16px;
+                border-top: 2px dashed #e5e7eb;
+              "
+            >
               <input type="hidden" id="editingCategoryId" />
-              <input type="text" id="newCategoryName" placeholder="Nhập tên danh mục mới" style="width: 100%; padding: 12px 14px; margin-bottom: 12px; box-sizing: border-box; border-radius: 10px; border: 1px solid #e5e7eb; font-size: 14px;" />
-              <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button onclick="cancelCategoryForm()" style="padding: 10px 18px; border-radius: 8px; border: 1px solid #d1d5db; background: white; cursor: pointer; font-size: 14px;">Hủy</button>
-                <button onclick="saveCategory()" style="padding: 10px 18px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Lưu</button>
+              <input
+                type="text"
+                id="newCategoryName"
+                placeholder="Nhập tên danh mục mới"
+                style="
+                  width: 100%;
+                  padding: 12px 14px;
+                  margin-bottom: 12px;
+                  box-sizing: border-box;
+                  border-radius: 10px;
+                  border: 1px solid #e5e7eb;
+                  font-size: 14px;
+                "
+              />
+              <div style="display: flex; gap: 10px; justify-content: flex-end">
+                <button
+                  onclick="cancelCategoryForm()"
+                  style="
+                    padding: 10px 18px;
+                    border-radius: 8px;
+                    border: 1px solid #d1d5db;
+                    background: white;
+                    cursor: pointer;
+                    font-size: 14px;
+                  "
+                >
+                  Hủy
+                </button>
+                <button
+                  onclick="saveCategory()"
+                  style="
+                    padding: 10px 18px;
+                    background: #10b981;
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    font-size: 14px;
+                  "
+                >
+                  Lưu
+                </button>
               </div>
             </div>
-            <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 12px;">Kéo thả để sắp xếp thứ tự</p>
+            <p
+              style="
+                text-align: center;
+                color: #9ca3af;
+                font-size: 12px;
+                margin-top: 12px;
+              "
+            >
+              Kéo thả để sắp xếp thứ tự
+            </p>
           </div>
         </div>
       </div>
@@ -1270,22 +1487,35 @@
             <!-- Tổng dư khả dụng -->
             <div class="funds-balance-section">
               <div class="funds-balance-card">
-                <div class="funds-balance-label">Tổng dư thu nhập</div>
+                <div class="funds-balance-label">Tổng dư</div>
                 <div class="funds-balance-value" id="fundsTotalIncome">0 đ</div>
               </div>
               <div class="funds-balance-card">
                 <div class="funds-balance-label">Đã phân bổ</div>
-                <div class="funds-balance-value is-allocated" id="fundsTotalAllocated">0 đ</div>
+                <div
+                  class="funds-balance-value is-allocated"
+                  id="fundsTotalAllocated"
+                >
+                  0 đ
+                </div>
               </div>
               <div class="funds-balance-card">
-                <div class="funds-balance-label">Còn khả dụng</div>
-                <div class="funds-balance-value is-available" id="fundsAvailable">0 đ</div>
+                <div class="funds-balance-label">Khả dụng</div>
+                <div
+                  class="funds-balance-value is-available"
+                  id="fundsAvailable"
+                >
+                  0 đ
+                </div>
               </div>
             </div>
 
             <!-- Chia Quỹ -->
             <div class="funds-allocate-section">
-              <button class="funds-btn-secondary funds-btn-secondary-bottom" onclick="openAllocateModal()">
+              <button
+                class="funds-btn-secondary funds-btn-secondary-bottom"
+                onclick="openAllocateModal()"
+              >
                 + Phân bổ quỹ
               </button>
               <div class="funds-allocate-info" id="fundsAllocateInfo">
@@ -1301,7 +1531,10 @@
               <div id="fundsList" class="funds-list">
                 <!-- Fund items rendered here -->
               </div>
-              <button class="funds-btn-add funds-btn-add-bottom" onclick="openAddFundModal()">
+              <button
+                class="funds-btn-add funds-btn-add-bottom"
+                onclick="openAddFundModal()"
+              >
                 + Tạo quỹ
               </button>
             </div>
@@ -1325,7 +1558,11 @@
                 maxlength="50"
               />
             </label>
-            <label class="fund-input-item" id="fundInitialAmountLabel" style="display:none;">
+            <label
+              class="fund-input-item"
+              id="fundInitialAmountLabel"
+              style="display: none"
+            >
               <span>Số dư quỹ</span>
               <input
                 type="text"
@@ -1337,14 +1574,46 @@
             <label class="fund-input-item">
               <span>Màu sắc</span>
               <div class="fund-color-picker" id="fundColorPicker">
-                <button class="fund-color-btn active" data-color="#a855f7" style="background:#a855f7"></button>
-                <button class="fund-color-btn" data-color="#3b82f6" style="background:#3b82f6"></button>
-                <button class="fund-color-btn" data-color="#10b981" style="background:#10b981"></button>
-                <button class="fund-color-btn" data-color="#f59e0b" style="background:#f59e0b"></button>
-                <button class="fund-color-btn" data-color="#ef4444" style="background:#ef4444"></button>
-                <button class="fund-color-btn" data-color="#ec4899" style="background:#ec4899"></button>
-                <button class="fund-color-btn" data-color="#06b6d4" style="background:#06b6d4"></button>
-                <button class="fund-color-btn" data-color="#84cc16" style="background:#84cc16"></button>
+                <button
+                  class="fund-color-btn active"
+                  data-color="#a855f7"
+                  style="background: #a855f7"
+                ></button>
+                <button
+                  class="fund-color-btn"
+                  data-color="#3b82f6"
+                  style="background: #3b82f6"
+                ></button>
+                <button
+                  class="fund-color-btn"
+                  data-color="#10b981"
+                  style="background: #10b981"
+                ></button>
+                <button
+                  class="fund-color-btn"
+                  data-color="#f59e0b"
+                  style="background: #f59e0b"
+                ></button>
+                <button
+                  class="fund-color-btn"
+                  data-color="#ef4444"
+                  style="background: #ef4444"
+                ></button>
+                <button
+                  class="fund-color-btn"
+                  data-color="#ec4899"
+                  style="background: #ec4899"
+                ></button>
+                <button
+                  class="fund-color-btn"
+                  data-color="#06b6d4"
+                  style="background: #06b6d4"
+                ></button>
+                <button
+                  class="fund-color-btn"
+                  data-color="#84cc16"
+                  style="background: #84cc16"
+                ></button>
               </div>
             </label>
           </div>

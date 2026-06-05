@@ -1006,29 +1006,42 @@
 
               <label class="cashflow-input-item">
                 <span>Loại</span>
-                <select id="cashflowType">
+                <select id="cashflowType" onchange="onCashflowTypeChange()">
                   <option value="income">Thu</option>
                   <option value="expense">Chi</option>
                 </select>
               </label>
 
+              <label class="cashflow-input-item">
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  Danh mục
+                  <button onclick="openCashflowCategoryModal()" title="Quản lý danh mục thu/chi" style="background: #f3f4f6; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; padding: 4px 8px; line-height: 1;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                  </button>
+                </span>
+                <select id="cashflowCategory"></select>
+              </label>
+
               <label class="cashflow-input-item cashflow-amount-item">
                 <span>Số tiền</span>
                 <input
-                  type="text"F
+                  type="text"
                   id="cashflowAmount"
                   placeholder="VD: 1.200.000"
                   inputmode="numeric"
                 />
               </label>
+            </div>
 
-              <label class="cashflow-input-item cashflow-note-item">
+            <div style="margin-bottom: 16px;">
+              <label class="cashflow-input-item cashflow-note-item" style="display: block;">
                 <span>Ghi chú</span>
                 <input
                   type="text"
                   id="cashflowNote"
                   placeholder="Ví dụ: Lương, ăn uống, điện nước..."
                   maxlength="120"
+                  style="width: 100%;"
                 />
               </label>
             </div>
@@ -1106,6 +1119,42 @@
                 <canvas id="cashflowChart"></canvas>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cashflow Category Modal -->
+      <div id="cashflowCategoryModal" class="modal">
+        <div class="modal-content event-modal-wrapper" style="max-width: 420px;">
+          <div class="event-modal-header">
+            <div>
+              <h3>Quản lý danh mục</h3>
+            </div>
+            <button
+              class="modal-close event-modal-close"
+              onclick="closeCashflowCategoryModal()"
+            >
+              ×
+            </button>
+          </div>
+          <div style="padding: 20px;">
+            <div style="display: flex; gap: 12px; margin-bottom: 16px; align-items: center;">
+              <select id="cashflowCategoryType" style="flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #e5e7eb; background: white; font-size: 14px; cursor: pointer;" onchange="renderCategoryList()">
+                <option value="income">📈 Loại thu</option>
+                <option value="expense">📉 Loại chi</option>
+              </select>
+              <button onclick="openAddCategoryForm()" style="padding: 12px 20px; background: #10b981; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; white-space: nowrap;">+ Thêm mới</button>
+            </div>
+            <div id="cashflowCategoryList" style="max-height: 360px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 12px; background: #fafafa;"></div>
+            <div id="cashflowCategoryForm" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 2px dashed #e5e7eb;">
+              <input type="hidden" id="editingCategoryId" />
+              <input type="text" id="newCategoryName" placeholder="Nhập tên danh mục mới" style="width: 100%; padding: 12px 14px; margin-bottom: 12px; box-sizing: border-box; border-radius: 10px; border: 1px solid #e5e7eb; font-size: 14px;" />
+              <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="cancelCategoryForm()" style="padding: 10px 18px; border-radius: 8px; border: 1px solid #d1d5db; background: white; cursor: pointer; font-size: 14px;">Hủy</button>
+                <button onclick="saveCategory()" style="padding: 10px 18px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px;">Lưu</button>
+              </div>
+            </div>
+            <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 12px;">Kéo thả để sắp xếp thứ tự</p>
           </div>
         </div>
       </div>

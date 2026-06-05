@@ -18,7 +18,7 @@
             },
             "cashflowEntries": {
               "$idx": {
-                ".validate": "newData.hasChildren(['id','date','type','amount','note','createdAt']) && newData.child('id').isString() && newData.child('id').val().length >= 3 && newData.child('id').val().length <= 64 && newData.child('date').isString() && newData.child('date').val().matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.child('type').isString() && (newData.child('type').val() === 'income' || newData.child('type').val() === 'expense') && newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('amount').val() <= 10000000000 && newData.child('note').isString() && newData.child('note').val().length <= 120 && newData.child('createdAt').isNumber() && (!newData.child('updatedAt').exists() || newData.child('updatedAt').isNumber())"
+                ".validate": "newData.hasChildren(['id','date','type','amount','note','createdAt']) && newData.child('id').isString() && newData.child('id').val().length >= 3 && newData.child('id').val().length <= 64 && newData.child('date').isString() && newData.child('date').val().matches(/^\\d{4}-\\d{2}-\\d{2}$/) && newData.child('type').isString() && (newData.child('type').val() === 'income' || newData.child('type').val() === 'expense') && newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('amount').val() <= 10000000000 && newData.child('note').isString() && newData.child('note').val().length <= 120 && newData.child('createdAt').isNumber() && (!newData.child('updatedAt').exists() || newData.child('updatedAt').isNumber()) && (!newData.child('category').exists() || newData.child('category').isString())"
               }
             }
           }
@@ -69,6 +69,12 @@
       }
     },
     "funds": {
+      "$profileKey": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "cashflowCategories": {
       "$profileKey": {
         ".read": "auth != null",
         ".write": "auth != null"

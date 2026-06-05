@@ -1005,7 +1005,12 @@
               </label>
 
               <label class="cashflow-input-item">
-                <span>Loại</span>
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  Loại
+                  <button onclick="openCashflowCategoryModal()" title="Quản lý danh mục thu/chi" style="background: #f3f4f6; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; padding: 4px 8px; line-height: 1;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                  </button>
+                </span>
                 <select id="cashflowType" onchange="onCashflowTypeChange()">
                   <option value="income">Thu</option>
                   <option value="expense">Chi</option>

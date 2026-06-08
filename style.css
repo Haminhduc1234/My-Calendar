@@ -3546,11 +3546,13 @@ input[type="datetime-local"] {
 
 .cashflow-range-filter {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
+  flex-wrap: nowrap;
+  width: 100%;
 }
 
 .cashflow-range-chip {
+  flex: 1;
   border: 1px solid rgba(168, 192, 255, 0.22);
   border-radius: 999px;
   background: rgba(12, 22, 42, 0.7);
@@ -3570,6 +3572,11 @@ input[type="datetime-local"] {
 
 .cashflow-range-chip:hover {
   transform: translateY(-1px);
+}
+
+.cashflow-range-chip:active {
+  transform: translateY(1px) scale(0.97);
+  transition: transform 0.1s ease;
 }
 
 .cashflow-range-chip.active {
@@ -3720,6 +3727,17 @@ input[type="datetime-local"] {
   border-radius: 14px;
   background: rgba(8, 20, 42, 0.62);
   padding: 12px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cashflow-summary-card.is-animating {
+  animation: summaryPulse 0.4s ease;
+}
+
+@keyframes summaryPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); box-shadow: 0 4px 20px rgba(37, 99, 235, 0.3); }
+  100% { transform: scale(1); }
 }
 
 .cashflow-summary-label {
@@ -4196,13 +4214,15 @@ input[type="datetime-local"] {
   }
 
   .cashflow-range-filter {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    width: 100%;
+    display: flex;
+    gap: 6px;
   }
 
   .cashflow-range-chip {
+    flex: 1;
     justify-content: center;
+    padding: 8px 10px;
+    font-size: 12px;
   }
 
   .cashflow-pie-canvas-wrap {

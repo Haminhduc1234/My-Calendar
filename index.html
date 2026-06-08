@@ -1015,7 +1015,7 @@
           </div>
 
           <div class="cashflow-modal-body">
-            <section class="cashflow-section cashflow-entry-section">
+            <section class="cashflow-section cashflow-entry-section" id="cashflowEntrySection">
               <div class="cashflow-section-head">
                 <div>
                   <div class="cashflow-section-eyebrow">Nhập giao dịch</div>
@@ -1111,12 +1111,51 @@
             </section>
 
             <section class="cashflow-section cashflow-summary-section">
-              <div class="cashflow-section-head">
+              <div class="cashflow-section-head cashflow-section-head-stacked">
                 <div>
                   <div class="cashflow-section-eyebrow">Tổng quan</div>
                   <div class="cashflow-section-title">
-                    Tình hình thu chi tháng hiện tại
+                    Tình hình thu chi
                   </div>
+                </div>
+                <div
+                  class="cashflow-range-filter"
+                  id="cashflowSummaryRangeFilter"
+                  role="tablist"
+                  aria-label="Bộ lọc thời gian tổng quan thu chi"
+                >
+                  <button
+                    type="button"
+                    class="cashflow-range-chip active"
+                    data-range="all"
+                    onclick="setCashflowSummaryRange('all')"
+                  >
+                    Tất cả
+                  </button>
+                  <button
+                    type="button"
+                    class="cashflow-range-chip"
+                    data-range="year"
+                    onclick="setCashflowSummaryRange('year')"
+                  >
+                    Năm nay
+                  </button>
+                  <button
+                    type="button"
+                    class="cashflow-range-chip"
+                    data-range="month"
+                    onclick="setCashflowSummaryRange('month')"
+                  >
+                    Tháng này
+                  </button>
+                  <button
+                    type="button"
+                    class="cashflow-range-chip"
+                    data-range="week"
+                    onclick="setCashflowSummaryRange('week')"
+                  >
+                    Tuần này
+                  </button>
                 </div>
               </div>
 
@@ -1205,7 +1244,7 @@
                     data-range="year"
                     onclick="setCashflowAnalyticsRange('year')"
                   >
-                    Năm
+                    Năm nay
                   </button>
                   <button
                     type="button"
@@ -1213,7 +1252,7 @@
                     data-range="month"
                     onclick="setCashflowAnalyticsRange('month')"
                   >
-                    Tháng
+                    Tháng này
                   </button>
                   <button
                     type="button"
@@ -1221,7 +1260,7 @@
                     data-range="week"
                     onclick="setCashflowAnalyticsRange('week')"
                   >
-                    Tuần
+                    Tuần này
                   </button>
                 </div>
               </div>

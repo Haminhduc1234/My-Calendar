@@ -4814,6 +4814,7 @@ let cashflowEntries = [];
 let editingCashflowId = "";
 let pendingDeleteCashflowId = "";
 let cashflowAnalyticsRange = "all";
+let cashflowSummaryRange = "all";
 let cashflowShowAllRecent = false;
 let selectedCashflowId = "";
 
@@ -4997,6 +4998,11 @@ function startCashflowEdit(id) {
   }
 
   syncCashflowFormMode();
+
+  const section = document.getElementById("cashflowEntrySection");
+  if (section) {
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 function cancelCashflowEdit() {
@@ -5094,6 +5100,16 @@ function setCashflowAnalyticsRange(range) {
   animateCashflowAnalyticsTransition();
 }
 
+function setCashflowSummaryRange(range) {
+  const allowedRanges = ["all", "year", "month", "week"];
+  const nextRange = allowedRanges.includes(range) ? range : "all";
+  if (nextRange === cashflowSummaryRange) return;
+
+  cashflowSummaryRange = nextRange;
+  syncCashflowRangeFilterUI();
+  renderCashflowMonthSummary();
+}
+
 function animateCashflowAnalyticsTransition() {
   const targets = Array.from(
     document.querySelectorAll(".cashflow-analytics-fade-target"),
@@ -5125,6 +5141,15 @@ function syncCashflowRangeFilterUI() {
   );
   chips.forEach((chip) => {
     const isActive = chip.dataset.range === cashflowAnalyticsRange;
+    chip.classList.toggle("active", isActive);
+    chip.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+
+  const summaryChips = document.querySelectorAll(
+    "#cashflowSummaryRangeFilter .cashflow-range-chip",
+  );
+  summaryChips.forEach((chip) => {
+    const isActive = chip.dataset.range === cashflowSummaryRange;
     chip.classList.toggle("active", isActive);
     chip.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
@@ -5470,17 +5495,47 @@ function escapeHtml(value) {
 
 function renderCashflowMonthSummary() {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  const today = new Date(currentYear, now.getMonth(), now.getDate());
+  const day = today.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+  const startOfWeek = new Date(today);
+  startOfWeek.setDate(today.getDate() + mondayOffset);
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+  const weekStartStr = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, "0")}-${String(startOfWeek.getDate()).padStart(2, "0")}`;
+  const weekEndStr = `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, "0")}-${String(endOfWeek.getDate()).padStart(2, "0")}`;
 
   let income = 0;
   let expense = 0;
 
   for (const entry of cashflowEntries) {
-    const [y, m] = entry.date.split("-").map(Number);
-    if (y !== year || m !== month) continue;
-    if (entry.type === "income") income += entry.amount;
-    else expense += entry.amount;
+    const entryDate = entry.date;
+
+    if (cashflowSummaryRange === "all") {
+      if (entry.type === "income") income += entry.amount;
+      else expense += entry.amount;
+    } else if (cashflowSummaryRange === "year") {
+      const [y] = entryDate.split("-").map(Number);
+      if (y === currentYear) {
+        if (entry.type === "income") income += entry.amount;
+        else expense += entry.amount;
+      }
+    } else if (cashflowSummaryRange === "month") {
+      const [y, m] = entryDate.split("-").map(Number);
+      if (y === currentYear && m === currentMonth) {
+        if (entry.type === "income") income += entry.amount;
+        else expense += entry.amount;
+      }
+    } else if (cashflowSummaryRange === "week") {
+      if (entryDate >= weekStartStr && entryDate <= weekEndStr) {
+        if (entry.type === "income") income += entry.amount;
+        else expense += entry.amount;
+      }
+    }
   }
 
   const net = income - expense;
@@ -5492,6 +5547,14 @@ function renderCashflowMonthSummary() {
   const netEl = document.getElementById("cashflowNetMonth");
   netEl.innerText = `${net.toLocaleString("vi-VN")} đ`;
   netEl.style.color = net >= 0 ? "#8fe5b7" : "#ffb3b3";
+
+  const cards = document.querySelectorAll(".cashflow-summary-card");
+  cards.forEach((card) => {
+    card.classList.remove("is-animating");
+    void card.offsetWidth;
+    card.classList.add("is-animating");
+    setTimeout(() => card.classList.remove("is-animating"), 400);
+  });
 }
 
 function renderCashflowRecentList() {

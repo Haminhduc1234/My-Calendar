@@ -3127,6 +3127,381 @@ body::before {
   width: 60%;
 }
 
+/* Calendar Skeleton */
+.calendar-skeleton {
+  display: none;
+  padding: 8px;
+}
+
+.calendar-skeleton.is-loading {
+  display: block;
+}
+
+.calendar-skeleton .skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.skeleton-day {
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-day::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite;
+}
+
+/* Weather Skeleton */
+.weather-skeleton {
+  display: none;
+  padding: 20px;
+}
+
+.weather-skeleton.is-loading {
+  display: flex;
+}
+
+.weather-skeleton .skeleton-row {
+  height: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.weather-skeleton .skeleton-row::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite;
+}
+
+.weather-skeleton .skeleton-row.wide {
+  width: 70%;
+}
+
+.weather-skeleton .skeleton-row.medium {
+  width: 50%;
+}
+
+.weather-skeleton .skeleton-row.short {
+  width: 35%;
+}
+
+.weather-skeleton .skeleton-icon {
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.weather-skeleton .skeleton-icon::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite;
+}
+
+/* Gold Skeleton */
+.gold-skeleton {
+  display: none;
+}
+
+.gold-skeleton.is-loading {
+  display: block;
+}
+
+.gold-skeleton .skeleton-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.gold-skeleton .skeleton-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite;
+}
+
+.gold-skeleton .skeleton-text {
+  height: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.gold-skeleton .skeleton-text.wide {
+  width: 60%;
+}
+
+.gold-skeleton .skeleton-text.price {
+  height: 24px;
+  width: 80%;
+  margin-top: 10px;
+}
+
+/* Cashflow Skeleton */
+.cashflow-skeleton {
+  display: none;
+}
+
+.cashflow-skeleton.is-loading {
+  display: block;
+}
+
+.cashflow-skeleton .skeleton-stat {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cashflow-skeleton .skeleton-label {
+  height: 14px;
+  width: 100px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cashflow-skeleton .skeleton-label::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite;
+}
+
+.cashflow-skeleton .skeleton-value {
+  height: 18px;
+  width: 120px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.cashflow-skeleton .skeleton-value::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite;
+}
+
+/* Quick Notes Skeleton */
+.quicknotes-skeleton {
+  display: none;
+}
+
+.quicknotes-skeleton.is-loading {
+  display: block;
+}
+
+.quicknotes-skeleton .skeleton-note {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.quicknotes-skeleton .skeleton-note::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite;
+}
+
+.quicknotes-skeleton .skeleton-note-text {
+  height: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.quicknotes-skeleton .skeleton-note-text:last-child {
+  width: 60%;
+  margin-bottom: 0;
+}
+
+/* Projects Skeleton */
+.projects-skeleton {
+  display: none;
+}
+
+.projects-skeleton.is-loading {
+  display: block;
+}
+
+.projects-skeleton .skeleton-project {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.projects-skeleton .skeleton-project::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite;
+}
+
+.projects-skeleton .skeleton-project-title {
+  height: 18px;
+  width: 60%;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.projects-skeleton .skeleton-project-desc {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+/* Funds Skeleton */
+.funds-skeleton {
+  display: none;
+}
+
+.funds-skeleton.is-loading {
+  display: block;
+}
+
+.funds-skeleton .skeleton-fund-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.funds-skeleton .skeleton-fund-card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite;
+}
+
+.funds-skeleton .skeleton-fund-name {
+  height: 16px;
+  width: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.funds-skeleton .skeleton-fund-balance {
+  height: 24px;
+  width: 40%;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+}
+
 @keyframes appInitSpinReverse {
   from {
     transform: rotate(360deg);
@@ -9626,6 +10001,162 @@ input[type="datetime-local"] {
     font-size: 20px;
     width: 16px;
   }
+}
+
+/* ==================== COUNTDOWN SKELETON ==================== */
+.countdown-skeleton {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 8px;
+}
+
+.countdown-skeleton.is-loading {
+  display: flex;
+}
+
+.countdown-skeleton-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.countdown-skeleton-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 64px;
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.countdown-skeleton-number {
+  width: 36px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.countdown-skeleton-number::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite;
+}
+
+.countdown-skeleton-label {
+  width: 24px;
+  height: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+  margin-top: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.countdown-skeleton-label::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite 0.2s;
+}
+
+.countdown-skeleton-sep {
+  width: 12px;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.countdown-skeleton-sep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.06),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite 0.1s;
+}
+
+.countdown-skeleton-label-text {
+  width: 120px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+  margin-top: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.countdown-skeleton-label-text::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  animation: skeletonLoading 1.5s infinite 0.3s;
+}
+
+/* ==================== QUICK TOOLBOX ==================== */
+.quick-toolbox {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease;
+  padding: 0 12px;
+}
+
+.quick-toolbox.is-collapsed {
+  max-height: 500px;
+  opacity: 1;
+  padding: 12px;
+}
+
+.quick-toolbox .toolbox-panel {
+  overflow: hidden;
 }
 
 /* Fallback khi backdrop-filter không hỗ trợ */

@@ -57,11 +57,13 @@
       <div class="falling-star"></div>
     </div>
 
+    <!-- Minimal loading indicator (replaced by on-demand loading) -->
     <div
       id="appInitLoading"
       class="app-init-loading"
+      style="display: none;"
       aria-live="polite"
-      aria-busy="true"
+      aria-busy="false"
     >
       <div class="app-init-loading-hero" aria-hidden="true">
         <span class="app-init-hero-ring ring-a"></span>
@@ -129,17 +131,14 @@
           <div id="clock"></div>
         </div>
         <!-- Countdown to target date -->
-        <div id="countdownSection" class="countdown-section">
+        <div id="countdownSection" class="countdown-section" style="display: none">
           <div class="left-border"></div>
           <div class="right-border"></div>
           <div class="countdown-header">
             <span class="countdown-title" id="countdownTitle">Đếm ngược</span>
           </div>
-          <div id="countdownDisplay" class="countdown-display">
-            <span class="countdown-msg"
-              >Chưa có đếm ngược — bấm "Đếm Ngược" bên dưới</span
-            >
-          </div>
+          
+          <div id="countdownDisplay" class="countdown-display"></div>
           <div id="workDaysDisplay" class="work-days-display"></div>
           <!-- Progress Bar -->
           <div
@@ -174,12 +173,17 @@
         <div class="today-extra">
           <div id="quoteText" class="quote"></div>
           <div class="weather" id="todayWeather">
+            <div class="weather-skeleton" id="weatherSkeleton">
+              <div class="skeleton-icon"></div>
+              <div class="skeleton-row wide"></div>
+              <div class="skeleton-row medium"></div>
+              <div class="skeleton-row short"></div>
+            </div>
             <div class="weather-loading">
               <span class="loading-spinner"></span>
               <span>Đang tải thời tiết...</span>
             </div>
           </div>
-          <!-- <div id="hourlyForecastContainer" style="display: none"></div> -->
           <div class="weather-forecast" id="weatherForecast"></div>
         </div>
       </div>
@@ -201,6 +205,24 @@
         </div>
 
         <div class="days" id="calendar"></div>
+        <div id="calendarSkeleton" class="calendar-skeleton">
+          <div class="skeleton-grid">
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+            <div class="skeleton-day"></div><div class="skeleton-day"></div><div class="skeleton-day"></div>
+          </div>
+        </div>
       </div>
 
       <div id="quickToolbox" class="quick-toolbox">
@@ -768,6 +790,17 @@
                 <span id="profileBioCount">0</span>/150
               </div>
             </div>
+
+            <div class="profile-skeleton" id="profileSkeleton">
+              <div class="skeleton-project">
+                <div class="skeleton-project-title"></div>
+                <div class="skeleton-project-desc"></div>
+              </div>
+              <div class="skeleton-project">
+                <div class="skeleton-project-title"></div>
+                <div class="skeleton-project-desc"></div>
+              </div>
+            </div>
           </div>
           <div class="profile-settings-footer">
             <button
@@ -971,6 +1004,17 @@
           <button class="modal-close" onclick="closeGoldModal()">×</button>
           <h3>Giá vàng toàn quốc</h3>
           <div id="goldUpdatedAt" class="gold-updated">Đang tải dữ liệu...</div>
+
+          <div class="gold-skeleton" id="goldSkeleton">
+            <div class="skeleton-card">
+              <div class="skeleton-text wide"></div>
+              <div class="skeleton-text price"></div>
+            </div>
+            <div class="skeleton-card">
+              <div class="skeleton-text wide"></div>
+              <div class="skeleton-text price"></div>
+            </div>
+          </div>
 
           <div class="gold-summary-grid">
             <div class="gold-card">
@@ -1211,6 +1255,21 @@
                 <div class="cashflow-recent-list" id="cashflowRecentList"></div>
               </div>
             </section>
+
+            <div class="cashflow-skeleton" id="cashflowSkeleton">
+              <div class="skeleton-stat">
+                <div class="skeleton-label"></div>
+                <div class="skeleton-value"></div>
+              </div>
+              <div class="skeleton-stat">
+                <div class="skeleton-label"></div>
+                <div class="skeleton-value"></div>
+              </div>
+              <div class="skeleton-stat">
+                <div class="skeleton-label"></div>
+                <div class="skeleton-value"></div>
+              </div>
+            </div>
 
             <section class="cashflow-section cashflow-analysis-section">
               <div class="cashflow-section-head cashflow-section-head-stacked">
@@ -1563,6 +1622,20 @@
               <div class="funds-section-header">
                 <h4>Danh sách Quỹ</h4>
               </div>
+              <div class="funds-skeleton" id="fundsSkeleton">
+                <div class="skeleton-fund-card">
+                  <div class="skeleton-fund-name"></div>
+                  <div class="skeleton-fund-balance"></div>
+                </div>
+                <div class="skeleton-fund-card">
+                  <div class="skeleton-fund-name"></div>
+                  <div class="skeleton-fund-balance"></div>
+                </div>
+                <div class="skeleton-fund-card">
+                  <div class="skeleton-fund-name"></div>
+                  <div class="skeleton-fund-balance"></div>
+                </div>
+              </div>
               <div id="fundsList" class="funds-list">
                 <!-- Fund items rendered here -->
               </div>
@@ -1742,6 +1815,22 @@
               <button class="project-btn-add" onclick="createNewProject()">
                 + Thêm dự án mới
               </button>
+            </div>
+            <div class="projects-skeleton" id="projectsSkeleton">
+              <div class="skeleton-project">
+                <div class="skeleton-project-title"></div>
+                <div class="skeleton-project-desc"></div>
+                <div class="skeleton-project-desc"></div>
+              </div>
+              <div class="skeleton-project">
+                <div class="skeleton-project-title"></div>
+                <div class="skeleton-project-desc"></div>
+              </div>
+              <div class="skeleton-project">
+                <div class="skeleton-project-title"></div>
+                <div class="skeleton-project-desc"></div>
+                <div class="skeleton-project-desc"></div>
+              </div>
             </div>
             <div id="projectsList" class="projects-list">
               <!-- Project items rendered here -->
@@ -1944,6 +2033,20 @@
             >
               + Thêm
             </button>
+          </div>
+        </div>
+
+        <div class="quicknotes-skeleton" id="quicknotesSkeleton">
+          <div class="skeleton-note">
+            <div class="skeleton-note-text"></div>
+            <div class="skeleton-note-text"></div>
+          </div>
+          <div class="skeleton-note">
+            <div class="skeleton-note-text"></div>
+          </div>
+          <div class="skeleton-note">
+            <div class="skeleton-note-text"></div>
+            <div class="skeleton-note-text"></div>
           </div>
         </div>
 

@@ -321,6 +321,9 @@ function renderCalendar() {
 
 /* ========================== THÁNG ========================== */
 function changeMonth(step) {
+  // Load calendar on first interaction
+  loadCalendarOnDemand();
+  
   currentDate.setMonth(currentDate.getMonth() + step);
   renderCalendar();
   renderOvertime();
@@ -595,8 +598,9 @@ function saveProfileSettingsData(settings) {
 }
 
 function openProfileSettingsModal() {
+  loadProfileOnDemand();
+  
   const modal = document.getElementById("profileSettingsModal");
-  // Use cache if available, otherwise load from localStorage
   const settings =
     Object.keys(profileSettingsCache).length > 0
       ? profileSettingsCache
@@ -1858,10 +1862,13 @@ async function initFirebaseRealtime() {
     });
 
     dateDataCache = nextCache;
+    loadCalendarOnDemand();
     renderCalendar();
     renderOvertime();
     renderOvertimeSalary();
-    renderCashflowDashboard();
+    if (LAZY_LOAD.cashflow) {
+      renderCashflowDashboard();
+    }
   });
 
   firebaseQuickNotesRef.on("value", (snapshot) => {
@@ -1869,7 +1876,10 @@ async function initFirebaseRealtime() {
     if (Array.isArray(incoming)) {
       quickNotesCache = incoming;
       localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(incoming));
-      renderQuickNotes();
+      // Only render if already loaded or if quickNotes is visible
+      if (LAZY_LOAD.quickNotes) {
+        renderQuickNotes();
+      }
     }
   });
 
@@ -2037,6 +2047,7 @@ function toggleDayHoliday() {
 
   data.isHoliday = checkbox.checked;
   saveDateData(selectedKey, data);
+  loadCalendarOnDemand();
   renderCalendar();
 }
 
@@ -2106,6 +2117,7 @@ function saveDayOvertime() {
 
 function deleteEventFromDateUI(eventIndex) {
   deleteEventFromDate(selectedKey, eventIndex);
+  loadCalendarOnDemand();
   renderCalendar();
   const [y, m, d] = selectedKey.split("-").map(Number);
   openDayDetailsModal(selectedKey, d, m, y);
@@ -2157,6 +2169,7 @@ function saveNewEvent() {
     addEventToDate(selectedKey, eventPayload);
   }
 
+  loadCalendarOnDemand();
   renderCalendar();
   renderOvertime();
   renderOvertimeSalary();
@@ -2190,7 +2203,7 @@ function closeOvertimeModal() {
 function openProjectsModal() {
   closeAllModals();
   document.getElementById("projectsModal").style.display = "flex";
-  renderProjectsList();
+  loadProjectsOnDemand();
 }
 
 function closeProjectsModal() {
@@ -3034,7 +3047,7 @@ function handleTaskDragEnd(e) {
 function openGoldModal() {
   closeAllModals();
   document.getElementById("goldModal").style.display = "flex";
-  loadGoldMarketData();
+  loadGoldOnDemand();
 }
 
 function closeGoldModal() {
@@ -3232,15 +3245,13 @@ function cancelEditQuickNote() {
 
 function openQuickNoteModal() {
   closeAllModals();
-  renderQuickNotes();
+  loadQuickNotesOnDemand();
   document.getElementById("quickNoteModal").style.display = "flex";
 
   const input = document.getElementById("quickNoteInput");
   if (input) {
     input.focus({ preventScroll: true });
-    // Remove old listener if exists
     input.removeEventListener("keydown", handleQuickNoteKeydown);
-    // Add Enter key listener (Shift+Enter for new line, Enter to submit)
     input.addEventListener("keydown", handleQuickNoteKeydown);
   }
 }
@@ -3619,9 +3630,7 @@ function openMyMusicModal() {
   const modal = document.getElementById("myMusicModal");
   if (!modal) return;
 
-  if (!myMusicState.initialized) {
-    initMyMusicPlayer();
-  }
+  loadMyMusicOnDemand();
 
   modal.style.display = "flex";
   syncMyMusicProgress();
@@ -3747,7 +3756,8 @@ function applyStoredToolboxState() {
   if (!toolbox || !toggleBtn) return;
 
   const savedState = localStorage.getItem(TOOLBOX_STATE_KEY);
-  const isCollapsed = savedState === "collapsed";
+  // Default to collapsed if no saved state
+  const isCollapsed = savedState !== "expanded";
 
   toolbox.classList.toggle("is-collapsed", isCollapsed);
   toggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
@@ -3769,12 +3779,18 @@ function collapseQuickToolbox() {
   toggleBtn.setAttribute("aria-label", "Mở thanh công cụ");
 }
 
+let toolboxUserInteracted = false;
+
 function initToolboxAutoCollapse() {
   const toolbox = document.getElementById("quickToolbox");
   if (!toolbox) return;
 
+  // Only auto-collapse if user hasn't interacted yet
   toolbox.querySelectorAll(".tool-btn").forEach((btn) => {
-    btn.addEventListener("click", collapseQuickToolbox);
+    btn.addEventListener("click", () => {
+      toolboxUserInteracted = true;
+      collapseQuickToolbox();
+    });
   });
 }
 
@@ -3819,6 +3835,7 @@ function saveEvent() {
   renderOvertime();
   renderOvertimeSalary();
   closeAddEventModal();
+  loadCalendarOnDemand();
   renderCalendar();
 }
 
@@ -4882,7 +4899,7 @@ function openCashflowModal() {
   updateCashflowCategoryDropdowns();
   syncCashflowFormMode();
   syncCashflowRangeFilterUI();
-  renderCashflowDashboard();
+  loadCashflowOnDemand();
 }
 
 function closeCashflowModal() {
@@ -6544,11 +6561,10 @@ function openFundsModal() {
   closeAllModals();
   const modal = document.getElementById("fundsModal");
 
-  // Calculate total income from cashflow
   fundsData.totalIncome = calculateTotalIncome();
 
   modal.style.display = "flex";
-  renderFundsDashboard();
+  loadFundsOnDemand();
 }
 
 function closeFundsModal() {
@@ -7129,37 +7145,176 @@ function swapCurrency() {
   convertCurrency();
 }
 
-/* ========================== INIT ========================= */
-// Show password modal IMMEDIATELY (before heavy rendering)
-(async () => {
-  setAppInitLoading(true);
+/* ========================== LAZY LOADING STATE ========================= */
+const LAZY_LOAD = {
+  calendar: false,
+  weather: false,
+  quote: false,
+  countdown: false,
+  quickNotes: false,
+  myMusic: false,
+  cashflow: false,
+  funds: false,
+  gold: false,
+  news: false,
+  translate: false,
+  projects: false,
+  profile: false,
+  todayLunar: false
+};
 
-  // Fallback: ensure loading screen always hides after 8s max
-  const loadingTimeout = setTimeout(() => {
-    setAppInitLoading(false);
-  }, 8000);
+// Skeleton helpers
+function showSkeleton(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('is-loading');
+}
 
-  try {
-    // Priority 1: Show password modal first (non-blocking)
-    await initFirebaseServices();
+function hideSkeleton(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('is-loading');
+}
 
-    // Priority 2: Heavy rendering tasks (after modal is ready)
-    applyStoredToolboxState();
-    initToolboxAutoCollapse();
-    initQuickNoteModal();
-    initMyMusicPlayer();
-    renderCalendar();
-    renderToday();
-    loadQuote();
-    fetchWeatherByLocation();
-    renderTodayLunar();
-    loadCountdownFromLocal();
-  } catch (err) {
-    console.error("[Init] Lỗi khi khởi tạo app:", err);
-  } finally {
-    clearTimeout(loadingTimeout);
-    setAppInitLoading(false);
+// Lazy load trigger functions
+function loadCalendarOnDemand() {
+  if (LAZY_LOAD.calendar) return;
+  showSkeleton('calendarSkeleton');
+  LAZY_LOAD.calendar = true;
+  renderCalendar();
+  hideSkeleton('calendarSkeleton');
+}
+
+function loadWeatherOnDemand() {
+  if (LAZY_LOAD.weather) return;
+  showSkeleton('weatherSkeleton');
+  LAZY_LOAD.weather = true;
+  fetchWeatherByLocation();
+}
+
+function loadQuoteOnDemand() {
+  if (LAZY_LOAD.quote) return;
+  LAZY_LOAD.quote = true;
+  loadQuote();
+}
+
+function loadCountdownOnDemand() {
+  if (LAZY_LOAD.countdown) return;
+  LAZY_LOAD.countdown = true;
+  loadCountdownFromLocal();
+}
+
+function loadQuickNotesOnDemand() {
+  if (LAZY_LOAD.quickNotes) return;
+  showSkeleton('quicknotesSkeleton');
+  LAZY_LOAD.quickNotes = true;
+  renderQuickNotes();
+  hideSkeleton('quicknotesSkeleton');
+}
+
+function loadMyMusicOnDemand() {
+  if (LAZY_LOAD.myMusic) return;
+  LAZY_LOAD.myMusic = true;
+  initMyMusicPlayer();
+}
+
+function loadCashflowOnDemand() {
+  if (LAZY_LOAD.cashflow) return;
+  showSkeleton('cashflowSkeleton');
+  LAZY_LOAD.cashflow = true;
+  renderCashflowDashboard();
+  hideSkeleton('cashflowSkeleton');
+}
+
+function loadFundsOnDemand() {
+  if (LAZY_LOAD.funds) return;
+  showSkeleton('fundsSkeleton');
+  LAZY_LOAD.funds = true;
+  renderFundsDashboard();
+  hideSkeleton('fundsSkeleton');
+}
+
+function loadGoldOnDemand() {
+  if (LAZY_LOAD.gold) return;
+  showSkeleton('goldSkeleton');
+  LAZY_LOAD.gold = true;
+  loadGoldMarketData();
+  hideSkeleton('goldSkeleton');
+}
+
+function loadNewsOnDemand() {
+  if (LAZY_LOAD.news) {
+    if (newsCache[currentNewsTab]) {
+      renderNewsItems(newsCache[currentNewsTab]);
+    }
+    return;
   }
+  LAZY_LOAD.news = true;
+  if (newsCache[currentNewsTab]) {
+    renderNewsItems(newsCache[currentNewsTab]);
+  } else {
+    fetchNews(currentNewsTab);
+  }
+}
+
+function loadTranslateOnDemand() {
+  if (LAZY_LOAD.translate) return;
+  LAZY_LOAD.translate = true;
+}
+
+function loadProjectsOnDemand() {
+  if (LAZY_LOAD.projects) return;
+  showSkeleton('projectsSkeleton');
+  LAZY_LOAD.projects = true;
+  renderProjectsList();
+  hideSkeleton('projectsSkeleton');
+}
+
+function loadProfileOnDemand() {
+  if (LAZY_LOAD.profile) return;
+  showSkeleton('profileSkeleton');
+  LAZY_LOAD.profile = true;
+  initProfileOnLoad();
+  hideSkeleton('profileSkeleton');
+}
+
+function loadTodayLunarOnDemand() {
+  if (LAZY_LOAD.todayLunar) return;
+  LAZY_LOAD.todayLunar = true;
+  renderTodayLunar();
+}
+
+/* ========================== INIT ========================= */
+// Fast init - no blocking loading screen
+(function initApp() {
+  // Step 1: Render UI immediately (no waiting)
+  applyStoredToolboxState();
+  initToolboxAutoCollapse();
+  initQuickNoteModal();
+  renderToday();
+  
+  // Step 2: Initialize Firebase in background (non-blocking)
+  initFirebaseServices().catch(err => {
+    console.error("[Init] Firebase error:", err);
+  });
+  
+  // Step 3: Load essential items on demand (when user interacts)
+  // These will be triggered by user actions, not upfront
+  
+  // Step 4: Load weather data in background (low priority)
+  setTimeout(() => loadWeatherOnDemand(), 1000);
+  
+  // Step 5: Load quote in background
+  setTimeout(() => loadQuoteOnDemand(), 500);
+  
+  // Step 6: Load countdown in background
+  setTimeout(() => loadCountdownOnDemand(), 800);
+  
+  // Step 7: Load lunar calendar in background
+  setTimeout(() => loadTodayLunarOnDemand(), 600);
+  
+  // Step 8: Calendar loads on first interaction
+  // User must click calendar tab to trigger renderCalendar()
+  
+  console.log("[Init] App started - content loads on demand");
 })();
 
 /* ========================== TIN TỨC ========================== */
@@ -7180,13 +7335,7 @@ let newsCache = {
 function openNewsModal() {
   closeAllModals();
   document.getElementById("newsModal").style.display = "flex";
-
-  // Load news if not cached or cache is old
-  if (!newsCache[currentNewsTab]) {
-    fetchNews(currentNewsTab);
-  } else {
-    renderNewsItems(newsCache[currentNewsTab]);
-  }
+  loadNewsOnDemand();
 }
 
 async function refreshNews() {
@@ -7486,6 +7635,7 @@ document.addEventListener("click", function (e) {
 function openTranslateModal() {
   const modal = document.getElementById("translateModal");
   modal.style.display = "flex";
+  loadTranslateOnDemand();
   loadSavedLanguages();
   loadApiSelection();
   loadSavedPronunciation();
@@ -15425,14 +15575,16 @@ function renderCountdown() {
   const title = document.getElementById("countdownTitle");
   const clearBtn = document.getElementById("countdownClearBtn");
 
-  // Ẩn section nếu chưa setup countdown
+  // Ẩn skeleton và countdown display nếu chưa setup countdown
   if (!countdownData || !countdownData.targetDate) {
     section.style.display = "none";
     return;
   }
 
+  // Hiện section và countdown display khi có data
   section.style.display = "block";
-
+  display.style.display = "flex";
+  
   const target = new Date(countdownData.targetDate + "T00:00:00");
   const now = new Date();
   const diff = target - now;
@@ -15603,6 +15755,8 @@ function stopCountdownTimer() {
 }
 
 function openCountdownModal() {
+  loadCountdownOnDemand();
+  
   const modal = document.getElementById("countdownModal");
   const labelInput = document.getElementById("countdownLabelInput");
   const dateInput = document.getElementById("countdownDateInput");

@@ -3737,8 +3737,10 @@ function initMyMusicPlayer() {
 function toggleToolbox() {
   const toolbox = document.getElementById("quickToolbox");
   const toggleBtn = document.getElementById("toolboxToggle");
+  if (!toolbox || !toggleBtn) return;
 
   const isCollapsed = toolbox.classList.toggle("is-collapsed");
+  toggleBtn.classList.toggle("is-collapsed", isCollapsed);
   localStorage.setItem(
     TOOLBOX_STATE_KEY,
     isCollapsed ? "collapsed" : "expanded",
@@ -3756,28 +3758,46 @@ function applyStoredToolboxState() {
   if (!toolbox || !toggleBtn) return;
 
   const savedState = localStorage.getItem(TOOLBOX_STATE_KEY);
-  // Default to collapsed if no saved state
-  const isCollapsed = savedState !== "expanded";
+  const shouldBeCollapsed = savedState !== "expanded";
 
-  toolbox.classList.toggle("is-collapsed", isCollapsed);
-  toggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
+  if (shouldBeCollapsed) {
+    toolbox.classList.add("is-collapsed");
+    toggleBtn.classList.add("is-collapsed");
+  } else {
+    toolbox.classList.remove("is-collapsed");
+    toggleBtn.classList.remove("is-collapsed");
+  }
+  toggleBtn.setAttribute("aria-expanded", String(!shouldBeCollapsed));
   toggleBtn.setAttribute(
     "aria-label",
-    isCollapsed ? "Mở thanh công cụ" : "Thu gọn thanh công cụ",
+    shouldBeCollapsed ? "Mở thanh công cụ" : "Thu gọn thanh công cụ",
   );
 }
 
-function collapseQuickToolbox() {
-  const toolbox = document.getElementById("quickToolbox");
-  const toggleBtn = document.getElementById("toolboxToggle");
-  if (!toolbox || !toggleBtn) return;
-  if (toolbox.classList.contains("is-collapsed")) return;
+// ========================== MORE MENU ==========================
+function toggleMoreMenu() {
+  const dropdown = document.getElementById("moreMenuDropdown");
+  const btn = document.querySelector(".nav-item.more-fab");
+  if (!dropdown || !btn) return;
 
-  toolbox.classList.add("is-collapsed");
-  localStorage.setItem(TOOLBOX_STATE_KEY, "collapsed");
-  toggleBtn.setAttribute("aria-expanded", "false");
-  toggleBtn.setAttribute("aria-label", "Mở thanh công cụ");
+  const isOpen = dropdown.classList.toggle("is-open");
+  btn.setAttribute("aria-expanded", String(isOpen));
 }
+
+function closeMoreMenu() {
+  const dropdown = document.getElementById("moreMenuDropdown");
+  const btn = document.querySelector(".nav-item.more-fab");
+  if (dropdown) dropdown.classList.remove("is-open");
+  if (btn) btn.setAttribute("aria-expanded", "false");
+}
+
+// Close more menu when clicking outside
+document.addEventListener("click", (e) => {
+  const wrapper = document.querySelector(".nav-more-wrapper");
+  if (wrapper && !wrapper.contains(e.target)) {
+    closeMoreMenu();
+  }
+});
 
 let toolboxUserInteracted = false;
 
@@ -7286,8 +7306,6 @@ function loadTodayLunarOnDemand() {
 // Fast init - no blocking loading screen
 (function initApp() {
   // Step 1: Render UI immediately (no waiting)
-  applyStoredToolboxState();
-  initToolboxAutoCollapse();
   initQuickNoteModal();
   renderToday();
   

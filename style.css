@@ -1575,6 +1575,7 @@ body::before {
 }
 
 .toolbox-panel {
+  width: 280px;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 16px;
@@ -1586,10 +1587,11 @@ body::before {
     0 0 20px rgba(120, 0, 255, 0.08);
   opacity: 1;
   transition:
-    max-width 0.28s ease,
+    width 0.28s ease,
     opacity 0.2s ease,
     padding 0.25s ease,
     border-color 0.25s ease;
+  overflow: hidden;
 }
 
 .toolbox-actions {
@@ -1599,17 +1601,19 @@ body::before {
 }
 
 .quick-toolbox.is-collapsed .toolbox-panel {
-  max-width: 0;
+  width: 0;
   opacity: 0;
   padding: 0;
   border-color: transparent;
   overflow: hidden;
-  pointer-events: none;
 }
 
 .toolbox-toggle {
-  width: 20px;
-  height: 80px;
+  position: fixed;
+  right: 0;
+  bottom: 125px;
+  width: 28px;
+  height: 56px;
   border-radius: 12px 0 0 12px;
   border: 1px solid rgba(255, 150, 200, 0.4);
   border-right: none;
@@ -1618,27 +1622,32 @@ body::before {
   cursor: pointer;
   display: grid;
   place-items: center;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
   transition:
     transform 0.2s ease,
-    filter 0.2s ease;
+    filter 0.2s ease,
+    right 0.28s ease;
+  z-index: 651;
 }
 
 .toolbox-toggle svg {
-  width: 16px;
+  width: 18px;
   height: 18px;
-  fill: #f5f9ff;
-  transition: transform 0.2s ease;
-  transform: translateX(-4px);
+  fill: #5a3e00;
+  transition: transform 0.28s ease;
 }
 
-.quick-toolbox.is-collapsed .toolbox-toggle svg {
-  transform: rotate(180deg) translateX(4px);
+.toolbox-toggle.is-collapsed svg {
+  transform: rotate(180deg);
 }
 
 .toolbox-toggle:hover {
-  transform: translateY(-1px);
+  transform: scale(1.05);
   filter: brightness(1.1);
+}
+
+.quick-toolbox .toolbox-toggle {
+  display: none;
 }
 
 /* ========================== TOOLBOX BUTTONS ========================== */
@@ -6481,6 +6490,96 @@ input[type="datetime-local"] {
 
 .nav-item.project-fab:hover {
   color: #c9b8ff;
+}
+
+/* ========================== MORE DROPDOWN MENU ========================== */
+.nav-more-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.nav-item.more-fab svg {
+  fill: #a0aec0;
+}
+
+.nav-item.more-fab:hover {
+  color: #e2e8f0;
+}
+
+.nav-item.more-fab:hover svg {
+  transform: translateY(-2px);
+}
+
+.more-dropdown {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  right: 0;
+  min-width: 200px;
+  background: rgba(15, 15, 25, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.95);
+  transform-origin: bottom right;
+  transition: all 0.2s ease;
+  z-index: 1001;
+}
+
+.more-dropdown.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: #cbd5e0;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.dropdown-item svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.dropdown-item.danger {
+  color: #fc8181;
+}
+
+.dropdown-item.danger:hover {
+  background: rgba(252, 129, 129, 0.15);
+  color: #feb2b2;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 6px 0;
 }
 
 .nav-item:active {

@@ -6557,6 +6557,16 @@ function calculateTotalIncome() {
   return total;
 }
 
+function calculateTotalExpense() {
+  let total = 0;
+  for (const entry of cashflowEntries) {
+    if (entry.type === "expense") {
+      total += entry.amount;
+    }
+  }
+  return total;
+}
+
 function calculateTotalAllocated() {
   let total = 0;
   for (const fund of fundsData.funds) {
@@ -6584,7 +6594,16 @@ function openFundsModal() {
   fundsData.totalIncome = calculateTotalIncome();
 
   modal.style.display = "flex";
-  loadFundsOnDemand();
+  
+  // Always render dashboard to update data
+  renderFundsDashboard();
+  
+  // Load on demand only if not loaded yet
+  if (!LAZY_LOAD.funds) {
+    showSkeleton('fundsSkeleton');
+    LAZY_LOAD.funds = true;
+    hideSkeleton('fundsSkeleton');
+  }
 }
 
 function closeFundsModal() {
@@ -6592,12 +6611,15 @@ function closeFundsModal() {
 }
 
 function renderFundsDashboard() {
-  const totalIncome = fundsData.totalIncome || calculateTotalIncome();
+  const totalIncome = calculateTotalIncome();
+  const totalExpense = calculateTotalExpense();
+  const difference = totalIncome - totalExpense;
   const totalAllocated = calculateTotalAllocated();
-  const available = totalIncome - totalAllocated;
+  const available = difference - totalAllocated;
 
   document.getElementById("fundsTotalIncome").innerText =
-    `${totalIncome.toLocaleString("vi-VN")} đ`;
+    `${difference.toLocaleString("vi-VN")} đ`;
+  document.getElementById("fundsTotalIncome").style.color = difference >= 0 ? "#10b981" : "#ef4444";
   document.getElementById("fundsTotalAllocated").innerText =
     `${totalAllocated.toLocaleString("vi-VN")} đ`;
 
@@ -6613,8 +6635,8 @@ function renderFundsDashboard() {
   } else {
     allocateInfo.innerText =
       available < 0
-        ? `Số dư âm ${Math.abs(available).toLocaleString("vi-VN")} đ - Đã phân bổ vượt thu nhập`
-        : "Đã phân bổ hết thu nhập vào các quỹ";
+        ? `Số dư âm ${Math.abs(available).toLocaleString("vi-VN")} đ - Đã phân bổ vượt chênh lệch`
+        : "Đã phân bổ hết chênh lệch thu - chi";
     allocateInfo.style.color = available < 0 ? "#ef4444" : "#f59e0b";
   }
 
@@ -6633,12 +6655,31 @@ function renderFundsList() {
     return;
   }
 
+  // Calculate total balance
+  const totalBalance = fundsData.funds.reduce((sum, fund) => sum + getFundBalance(fund.id), 0);
+
   for (const fund of fundsData.funds) {
     const balance = getFundBalance(fund.id);
+    const percentage = totalBalance > 0 ? (balance / totalBalance) * 100 : 0;
+    const color = fund.color;
+    const colorRgb = hexToRgb(color);
+    
     const item = document.createElement("div");
     item.className = "fund-item";
+    item.style.setProperty("--fund-color", color);
+    item.style.setProperty("--fund-color-light", `rgba(${colorRgb}, 0.4)`);
     item.innerHTML = `
-      <div class="fund-item-color" style="background: ${fund.color}"></div>
+      <div class="fund-jar">
+        <div class="fund-jar-lid"></div>
+        <div class="fund-jar-neck"></div>
+        <div class="fund-jar-body">
+          <div class="fund-jar-fill" style="height: ${Math.max(percentage, 5)}%;">
+            <div class="fund-jar-shine"></div>
+          </div>
+          <div class="fund-percentage">${percentage.toFixed(1)}%</div>
+        </div>
+        <div class="fund-jar-glow"></div>
+      </div>
       <div class="fund-item-info">
         <div class="fund-item-name">${fund.name}</div>
         <div class="fund-item-balance">Số dư: <span>${balance.toLocaleString("vi-VN")} đ</span></div>
@@ -6648,8 +6689,25 @@ function renderFundsList() {
         <button class="fund-item-btn delete" onclick="confirmDeleteFund('${fund.id}')" title="Xóa">×</button>
       </div>
     `;
+    item.style.opacity = "0";
+    item.style.transform = "translateY(20px)";
     listEl.appendChild(item);
+    
+    // Animate in
+    requestAnimationFrame(() => {
+      item.style.transition = "opacity 0.4s ease, transform 0.4s ease";
+      item.style.opacity = "1";
+      item.style.transform = "translateY(0)";
+    });
   }
+}
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  if (result) {
+    return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
+  }
+  return "255, 255, 255";
 }
 
 function openAddFundModal() {
@@ -7305,31 +7363,40 @@ function loadTodayLunarOnDemand() {
 /* ========================== INIT ========================= */
 // Fast init - no blocking loading screen
 (function initApp() {
-  // Step 1: Render UI immediately (no waiting)
+  // Step 1: Show all skeletons initially for loading state
+  showSkeleton('weatherSkeleton');
+  showSkeleton('calendarSkeleton');
+  showSkeleton('quicknotesSkeleton');
+  showSkeleton('cashflowSkeleton');
+  showSkeleton('fundsSkeleton');
+  showSkeleton('goldSkeleton');
+  showSkeleton('projectsSkeleton');
+  
+  // Step 2: Render UI immediately (no waiting)
   initQuickNoteModal();
   renderToday();
   
-  // Step 2: Initialize Firebase in background (non-blocking)
+  // Step 3: Initialize Firebase in background (non-blocking)
   initFirebaseServices().catch(err => {
     console.error("[Init] Firebase error:", err);
   });
   
-  // Step 3: Load essential items on demand (when user interacts)
+  // Step 4: Load essential items on demand (when user interacts)
   // These will be triggered by user actions, not upfront
   
-  // Step 4: Load weather data in background (low priority)
+  // Step 5: Load weather data in background (low priority)
   setTimeout(() => loadWeatherOnDemand(), 1000);
   
-  // Step 5: Load quote in background
+  // Step 6: Load quote in background
   setTimeout(() => loadQuoteOnDemand(), 500);
   
-  // Step 6: Load countdown in background
+  // Step 7: Load countdown in background
   setTimeout(() => loadCountdownOnDemand(), 800);
   
-  // Step 7: Load lunar calendar in background
+  // Step 8: Load lunar calendar in background
   setTimeout(() => loadTodayLunarOnDemand(), 600);
   
-  // Step 8: Calendar loads on first interaction
+  // Step 9: Calendar loads on first interaction
   // User must click calendar tab to trigger renderCalendar()
   
   console.log("[Init] App started - content loads on demand");

@@ -6591,6 +6591,10 @@ function openFundsModal() {
   closeAllModals();
   const modal = document.getElementById("fundsModal");
 
+  // Load cashflow data first if not loaded
+  if (cashflowEntries.length === 0) {
+    reloadCashflowEntriesFromCache();
+  }
   fundsData.totalIncome = calculateTotalIncome();
 
   modal.style.display = "flex";

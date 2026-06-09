@@ -5981,7 +5981,6 @@ input[type="datetime-local"] {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  margin-bottom: 12px;
 }
 
 .cashflow-summary-card {
@@ -6017,7 +6016,6 @@ input[type="datetime-local"] {
   border-radius: 12px;
   background: rgba(7, 17, 37, 0.6);
   padding: 10px;
-  margin-bottom: 10px;
 }
 
 .cashflow-history-head {

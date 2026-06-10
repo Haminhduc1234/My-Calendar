@@ -6612,18 +6612,42 @@ function getFundBalance(fundId) {
 function openFundsModal() {
   closeAllModals();
   const modal = document.getElementById("fundsModal");
-
-  // Load cashflow data first if not loaded
-  if (cashflowEntries.length === 0) {
-    reloadCashflowEntriesFromCache();
-  }
-  fundsData.totalIncome = calculateTotalIncome();
-
   modal.style.display = "flex";
-  
-  // Always render dashboard to update data
-  renderFundsDashboard();
-  
+
+  // Show loading state for balance section
+  const balanceSection = document.querySelector(".funds-balance-section");
+  if (balanceSection) {
+    balanceSection.classList.add("is-loading");
+  }
+
+  // Initial load from cache
+  reloadCashflowEntriesFromCache();
+
+  // If cashflowEntries is still empty, wait for Firebase sync
+  if (cashflowEntries.length === 0) {
+    let attempts = 0;
+    const maxAttempts = 10;
+    const checkInterval = setInterval(() => {
+      reloadCashflowEntriesFromCache();
+      attempts++;
+      if (cashflowEntries.length > 0 || attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+        if (balanceSection) {
+          balanceSection.classList.remove("is-loading");
+        }
+        renderFundsDashboard();
+      }
+    }, 200);
+  } else {
+    // Small delay to show loading animation, then render
+    setTimeout(() => {
+      if (balanceSection) {
+        balanceSection.classList.remove("is-loading");
+      }
+      renderFundsDashboard();
+    }, 300);
+  }
+
   // Load on demand only if not loaded yet
   if (!LAZY_LOAD.funds) {
     showSkeleton('fundsSkeleton');
@@ -7371,7 +7395,8 @@ const LAZY_LOAD = {
   translate: false,
   projects: false,
   profile: false,
-  todayLunar: false
+  todayLunar: false,
+  fundsBalanceLoading: false
 };
 
 // Skeleton helpers

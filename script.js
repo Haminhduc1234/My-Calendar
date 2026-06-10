@@ -6659,15 +6659,29 @@ function renderFundsList() {
     return;
   }
 
-  // Calculate total balance
-  const totalBalance = fundsData.funds.reduce((sum, fund) => sum + getFundBalance(fund.id), 0);
-
   for (const fund of fundsData.funds) {
     const balance = getFundBalance(fund.id);
-    const percentage = totalBalance > 0 ? (balance / totalBalance) * 100 : 0;
+    const target = fund.target || 0;
+    // Percentage based on target (not total balance)
+    const percentage = target > 0 ? Math.min((balance / target) * 100, 100) : 100;
     const color = fund.color;
     const colorRgb = hexToRgb(color);
-    
+
+    // Determine progress status
+    let progressClass = "";
+    let progressText = "";
+    if (target > 0) {
+      if (balance >= target) {
+        progressClass = "is-complete";
+        progressText = "✓ Đạt mục tiêu";
+      } else {
+        const remaining = target - balance;
+        progressText = `Còn ${remaining.toLocaleString("vi-VN")} đ`;
+      }
+    } else {
+      progressText = "Không giới hạn";
+    }
+
     const item = document.createElement("div");
     item.className = "fund-item";
     item.style.setProperty("--fund-color", color);
@@ -6686,7 +6700,10 @@ function renderFundsList() {
       </div>
       <div class="fund-item-info">
         <div class="fund-item-name">${fund.name}</div>
-        <div class="fund-item-balance">Số dư: <span>${balance.toLocaleString("vi-VN")} đ</span></div>
+        <div class="fund-item-balance">
+          <span>${balance.toLocaleString("vi-VN")}</span>
+          ${target > 0 ? ` / <span class="target-value">${target.toLocaleString("vi-VN")} đ</span>` : ` <span class="target-value">đ</span>`}
+        </div>
       </div>
       <div class="fund-item-actions">
         <button class="fund-item-btn edit" onclick="editFund('${fund.id}')" title="Sửa">✎</button>
@@ -6696,7 +6713,7 @@ function renderFundsList() {
     item.style.opacity = "0";
     item.style.transform = "translateY(20px)";
     listEl.appendChild(item);
-    
+
     // Animate in
     requestAnimationFrame(() => {
       item.style.transition = "opacity 0.4s ease, transform 0.4s ease";
@@ -6724,6 +6741,9 @@ function openAddFundModal() {
   document.getElementById("fundInitialAmountLabel").style.display = "none";
   document.getElementById("fundInitialAmount").value = "";
 
+  // Reset target field
+  document.getElementById("fundTarget").value = "";
+
   // Reset color buttons
   document.querySelectorAll(".fund-color-btn").forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.color === selectedFundColor);
@@ -6746,6 +6766,11 @@ function editFund(fundId) {
   const initialAmountInput = document.getElementById("fundInitialAmount");
   initialAmountInput.value = getFundBalance(fundId);
   formatCurrencyInput(initialAmountInput);
+
+  // Show target value
+  const targetInput = document.getElementById("fundTarget");
+  targetInput.value = fund.target ? fund.target.toLocaleString("vi-VN") : "";
+  formatCurrencyInput(targetInput);
 
   // Set active color
   document.querySelectorAll(".fund-color-btn").forEach((btn) => {
@@ -6784,18 +6809,26 @@ function saveFund() {
       // New initialAmount = new balance - allocations sum
       const newInitialAmount = newBalance - allocationsSum;
 
+      // Get target value
+      const targetInput = document.getElementById("fundTarget");
+      const newTarget = parseFloat(targetInput.value.replace(/\D/g, "")) || 0;
+
       fundsData.funds[fundIndex].name = name;
       fundsData.funds[fundIndex].color = selectedFundColor;
       fundsData.funds[fundIndex].initialAmount = newInitialAmount;
+      fundsData.funds[fundIndex].target = newTarget;
       fundsData.funds[fundIndex].updatedAt = Date.now();
     }
   } else {
     // Add new fund
+    const targetInput = document.getElementById("fundTarget");
+    const target = parseFloat(targetInput.value.replace(/\D/g, "")) || 0;
     const newFund = {
       id: `fund-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       name,
       color: selectedFundColor,
       initialAmount: 0,
+      target: target,
       createdAt: Date.now(),
     };
     fundsData.funds.push(newFund);
@@ -6968,6 +7001,16 @@ function renderAllocateHistory() {
 
   amountInput.addEventListener("input", () => {
     formatCurrencyInput(amountInput);
+  });
+})();
+
+// Initialize fund target input formatting
+(function initFundTargetInput() {
+  const targetInput = document.getElementById("fundTarget");
+  if (!targetInput) return;
+
+  targetInput.addEventListener("input", () => {
+    formatCurrencyInput(targetInput);
   });
 })();
 

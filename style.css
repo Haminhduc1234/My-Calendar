@@ -4804,7 +4804,7 @@ input[type="datetime-local"] {
 /* ========================== FUNDS MODAL ========================== */
 
 .funds-container {
-  max-height: calc(100vh - 160px);
+  max-height: calc(100vh - 85px);
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -5139,12 +5139,17 @@ input[type="datetime-local"] {
   color: var(--muted);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
-.fund-item-balance span {
+.fund-item-balance span:first-child {
   color: #10b981;
   font-weight: 600;
+}
+
+.fund-item-balance .target-value {
+  color: #a855f7;
+  font-weight: 500;
 }
 
 .fund-item {

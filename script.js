@@ -5682,30 +5682,52 @@ function renderCashflowRecentList() {
     const actionsEl = document.createElement("div");
     actionsEl.className = "cashflow-row-actions";
 
-    const editBtn = document.createElement("button");
-    editBtn.className = "cashflow-row-edit";
-    editBtn.type = "button";
-    editBtn.title = "Sửa giao dịch";
-    editBtn.setAttribute("aria-label", "Sửa giao dịch");
-    editBtn.innerHTML = "&#9998;";
-    editBtn.addEventListener("click", (event) => {
+    const actionBtn = document.createElement("button");
+    actionBtn.className = "cashflow-action-btn";
+    actionBtn.type = "button";
+    actionBtn.title = "Tùy chọn";
+    actionBtn.setAttribute("aria-label", "Tùy chọn");
+    actionBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+      <circle cx="8" cy="3" r="1.5"/>
+      <circle cx="8" cy="8" r="1.5"/>
+      <circle cx="8" cy="13" r="1.5"/>
+    </svg>`;
+    actionBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleCashflowAction(actionBtn);
+    });
+
+    const dropdownEl = document.createElement("div");
+    dropdownEl.className = "cashflow-action-dropdown";
+
+    const editItem = document.createElement("button");
+    editItem.className = "cashflow-action-item";
+    editItem.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg> Sửa giao dịch`;
+    editItem.addEventListener("click", (event) => {
       event.stopPropagation();
       startCashflowEdit(entry.id);
+      closeCashflowActionDropdown();
     });
 
-    const delBtn = document.createElement("button");
-    delBtn.className = "cashflow-row-delete";
-    delBtn.type = "button";
-    delBtn.title = "Xóa giao dịch";
-    delBtn.setAttribute("aria-label", "Xóa giao dịch");
-    delBtn.innerText = "×";
-    delBtn.addEventListener("click", (event) => {
+    const deleteItem = document.createElement("button");
+    deleteItem.className = "cashflow-action-item danger";
+    deleteItem.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+    </svg> Xóa giao dịch`;
+    deleteItem.addEventListener("click", (event) => {
       event.stopPropagation();
       removeCashflowEntry(entry.id);
+      closeCashflowActionDropdown();
     });
 
-    actionsEl.appendChild(editBtn);
-    actionsEl.appendChild(delBtn);
+    dropdownEl.appendChild(editItem);
+    dropdownEl.appendChild(deleteItem);
+    actionsEl.appendChild(actionBtn);
+    actionsEl.appendChild(dropdownEl);
 
     row.appendChild(topLineEl);
     row.appendChild(amountEl);
@@ -6706,8 +6728,29 @@ function renderFundsList() {
         </div>
       </div>
       <div class="fund-item-actions">
-        <button class="fund-item-btn edit" onclick="editFund('${fund.id}')" title="Sửa">✎</button>
-        <button class="fund-item-btn delete" onclick="confirmDeleteFund('${fund.id}')" title="Xóa">×</button>
+        <button class="fund-action-btn" onclick="toggleFundAction(this, event)" title="Tùy chọn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <circle cx="8" cy="3" r="1.5"/>
+            <circle cx="8" cy="8" r="1.5"/>
+            <circle cx="8" cy="13" r="1.5"/>
+          </svg>
+        </button>
+        <div class="fund-action-dropdown">
+          <button class="fund-action-item" onclick="editFund('${fund.id}'); closeFundActionDropdown(this);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Sửa quỹ
+          </button>
+          <button class="fund-action-item danger" onclick="confirmDeleteFund('${fund.id}'); closeFundActionDropdown(this);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Xóa quỹ
+          </button>
+        </div>
       </div>
     `;
     item.style.opacity = "0";
@@ -6729,6 +6772,49 @@ function hexToRgb(hex) {
     return `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
   }
   return "255, 255, 255";
+}
+
+function toggleFundAction(btn, event) {
+  event.stopPropagation();
+  const dropdown = btn.nextElementSibling;
+  const isOpen = dropdown.classList.contains("is-open");
+
+  // Close all other dropdowns
+  document.querySelectorAll(".fund-action-dropdown.is-open").forEach((d) => {
+    if (d !== dropdown) d.classList.remove("is-open");
+  });
+
+  dropdown.classList.toggle("is-open");
+}
+
+function closeFundActionDropdown(btn) {
+  const dropdown = btn.closest(".fund-action-dropdown");
+  if (dropdown) dropdown.classList.remove("is-open");
+}
+
+// Close dropdown when clicking outside
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".fund-item-actions")) {
+    document.querySelectorAll(".fund-action-dropdown.is-open").forEach((d) => {
+      d.classList.remove("is-open");
+    });
+  }
+  if (!e.target.closest(".cashflow-row-actions")) {
+    document.querySelectorAll(".cashflow-action-dropdown.is-open").forEach((d) => {
+      d.classList.remove("is-open");
+    });
+  }
+});
+
+function toggleCashflowAction(btn) {
+  const dropdown = btn.nextElementSibling;
+  dropdown.classList.toggle("is-open");
+}
+
+function closeCashflowActionDropdown() {
+  document.querySelectorAll(".cashflow-action-dropdown.is-open").forEach((d) => {
+    d.classList.remove("is-open");
+  });
 }
 
 function openAddFundModal() {

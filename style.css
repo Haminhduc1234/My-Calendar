@@ -10111,9 +10111,32 @@ input[type="datetime-local"] {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
   position: relative;
   z-index: 1;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.countdown-toggle-arrow {
+  color: rgba(255, 255, 255, 0.5);
+  transition: transform 0.3s ease;
+  flex-shrink: 0;
+}
+
+.countdown-section.collapsed .countdown-toggle-arrow {
+  transform: rotate(-90deg);
+}
+
+.countdown-content {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.countdown-section:not(.collapsed) .countdown-content {
+  max-height: 500px;
+  opacity: 1;
 }
 
 .countdown-title {

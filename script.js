@@ -15886,6 +15886,13 @@ async function initCountdown() {
   }
 }
 
+function toggleCountdownSection() {
+  const section = document.getElementById("countdownSection");
+  if (!section) return;
+  
+  section.classList.toggle("collapsed");
+}
+
 function renderCountdown() {
   const section = document.getElementById("countdownSection");
   const display = document.getElementById("countdownDisplay");
@@ -15898,9 +15905,8 @@ function renderCountdown() {
     return;
   }
 
-  // Hiện section và countdown display khi có data
+  // Hiện section khi có data (content visibility do CSS .collapsed handle)
   section.style.display = "block";
-  display.style.display = "flex";
   
   const target = new Date(countdownData.targetDate + "T00:00:00");
   const now = new Date();

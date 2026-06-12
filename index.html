@@ -131,36 +131,41 @@
           <div id="clock"></div>
         </div>
         <!-- Countdown to target date -->
-        <div id="countdownSection" class="countdown-section" style="display: none">
+        <div id="countdownSection" class="countdown-section collapsed" style="display: none">
           <div class="left-border"></div>
           <div class="right-border"></div>
-          <div class="countdown-header">
+          <div class="countdown-header" onclick="toggleCountdownSection()">
             <span class="countdown-title" id="countdownTitle">Đếm ngược</span>
+            <svg class="countdown-toggle-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
           </div>
           
-          <div id="countdownDisplay" class="countdown-display"></div>
-          <div id="workDaysDisplay" class="work-days-display"></div>
-          <!-- Progress Bar -->
-          <div
-            id="countdownProgress"
-            class="countdown-progress"
-            style="display: none"
-          >
-            <div class="progress-info">
-              <span id="progressStartLabel" class="progress-label"></span>
-              <span id="progressPercent" class="progress-percent">0%</span>
-              <span id="progressEndLabel" class="progress-label"></span>
-            </div>
-            <div class="progress-track">
-              <div id="progressBar" class="progress-bar">
-                <div id="progressGlow" class="progress-glow"></div>
-                <div id="progressShine" class="progress-shine"></div>
+          <div id="countdownContent" class="countdown-content">
+            <div id="countdownDisplay" class="countdown-display"></div>
+            <div id="workDaysDisplay" class="work-days-display"></div>
+            <!-- Progress Bar -->
+            <div
+              id="countdownProgress"
+              class="countdown-progress"
+              style="display: none"
+            >
+              <div class="progress-info">
+                <span id="progressStartLabel" class="progress-label"></span>
+                <span id="progressPercent" class="progress-percent">0%</span>
+                <span id="progressEndLabel" class="progress-label"></span>
               </div>
-              <div id="progressMarker" class="progress-marker"></div>
-            </div>
-            <div class="progress-dates">
-              <span id="progressStartDate" class="progress-date"></span>
-              <span id="progressEndDate" class="progress-date"></span>
+              <div class="progress-track">
+                <div id="progressBar" class="progress-bar">
+                  <div id="progressGlow" class="progress-glow"></div>
+                  <div id="progressShine" class="progress-shine"></div>
+                </div>
+                <div id="progressMarker" class="progress-marker"></div>
+              </div>
+              <div class="progress-dates">
+                <span id="progressStartDate" class="progress-date"></span>
+                <span id="progressEndDate" class="progress-date"></span>
+              </div>
             </div>
           </div>
         </div>

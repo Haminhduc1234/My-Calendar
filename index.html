@@ -1711,6 +1711,35 @@
         </div>
       </div>
 
+      <!-- Topup Fund Modal -->
+      <div id="topupFundModal" class="modal">
+        <div class="modal-content confirm-modal-content">
+          <div class="confirm-modal-header">
+            <h3>Thêm vào quỹ</h3>
+          </div>
+          <div class="fund-form">
+            <label class="fund-input-item">
+              <span>Số tiền thêm vào</span>
+              <input
+                type="text"
+                id="topupAmount"
+                placeholder="VD: 500.000"
+                autocomplete="off"
+                inputmode="numeric"
+              />
+            </label>
+          </div>
+          <div class="confirm-modal-actions">
+            <button class="confirm-cancel-btn" onclick="closeTopupFundModal()">
+              Hủy
+            </button>
+            <button class="funds-btn-add" onclick="confirmTopupFund()">
+              Xác nhận
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Projects Modal -->
       <div id="projectsModal" class="modal">
         <div class="modal-content event-modal-wrapper">

@@ -6767,6 +6767,13 @@ function renderFundsList() {
             </svg>
             Sửa quỹ
           </button>
+          <button class="fund-action-item" onclick="openTopupFundModal('${fund.id}'); closeFundActionDropdown(this);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Thêm vào quỹ
+          </button>
           <button class="fund-action-item danger" onclick="confirmDeleteFund('${fund.id}'); closeFundActionDropdown(this);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"/>
@@ -6966,6 +6973,58 @@ function confirmDeleteFund(fundId) {
   renderFundsDashboard();
 }
 
+let topupFundId = "";
+
+function openTopupFundModal(fundId) {
+  const fund = fundsData.funds.find((f) => f.id === fundId);
+  if (!fund) return;
+
+  topupFundId = fundId;
+  document.getElementById("topupAmount").value = "";
+  document.getElementById("topupFundModal").style.display = "flex";
+}
+
+function closeTopupFundModal() {
+  document.getElementById("topupFundModal").style.display = "none";
+  topupFundId = "";
+}
+
+function confirmTopupFund() {
+  const amountInput = document.getElementById("topupAmount");
+  const amount = parseInt(amountInput.value.replace(/\D/g, ""), 10) || 0;
+
+  if (amount <= 0) {
+    alert("Vui lòng nhập số tiền lớn hơn 0");
+    return;
+  }
+
+  const fund = fundsData.funds.find((f) => f.id === topupFundId);
+  if (!fund) return;
+
+  const balance = getFundBalance(topupFundId);
+  const target = fund.target || 0;
+
+  // Validate against target limit if set
+  if (target > 0) {
+    const maxAllowed = target - balance;
+    if (amount > maxAllowed) {
+      alert(`Số tiền vượt quá giới hạn khả dụng. Bạn chỉ có thể thêm tối đa ${maxAllowed.toLocaleString("vi-VN")} đ vào quỹ này.`);
+      return;
+    }
+  }
+
+  // Update fund initialAmount by adding the topup amount
+  const fundIndex = fundsData.funds.findIndex((f) => f.id === topupFundId);
+  if (fundIndex >= 0) {
+    fundsData.funds[fundIndex].initialAmount = (fundsData.funds[fundIndex].initialAmount || 0) + amount;
+    fundsData.funds[fundIndex].updatedAt = Date.now();
+  }
+
+  saveFundsToFirebase();
+  closeTopupFundModal();
+  renderFundsDashboard();
+}
+
 function openAllocateModal() {
   const totalIncome = fundsData.totalIncome || calculateTotalIncome();
   const totalAllocated = calculateTotalAllocated();
@@ -7144,6 +7203,21 @@ function renderAllocateHistory() {
   if (allocateModal) {
     allocateModal.addEventListener("click", (e) => {
       if (e.target === allocateModal) closeAllocateModal();
+    });
+  }
+
+  const topupFundModal = document.getElementById("topupFundModal");
+  if (topupFundModal) {
+    topupFundModal.addEventListener("click", (e) => {
+      if (e.target === topupFundModal) closeTopupFundModal();
+    });
+  }
+
+  // Initialize topup amount input formatting
+  const topupAmountInput = document.getElementById("topupAmount");
+  if (topupAmountInput) {
+    topupAmountInput.addEventListener("input", () => {
+      formatCurrencyInput(topupAmountInput);
     });
   }
 })();

@@ -5313,6 +5313,7 @@ input[type="datetime-local"] {
   cursor: pointer;
   border-radius: 6px;
   transition: background 0.15s;
+  white-space: nowrap;
 }
 
 .fund-action-item:hover {

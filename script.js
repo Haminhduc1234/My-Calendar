@@ -6816,41 +6816,115 @@ function toggleFundAction(btn, event) {
   const dropdown = btn.nextElementSibling;
   const isOpen = dropdown.classList.contains("is-open");
 
-  // Close all other dropdowns
   document.querySelectorAll(".fund-action-dropdown.is-open").forEach((d) => {
-    if (d !== dropdown) d.classList.remove("is-open");
+    if (d !== dropdown) restoreFundDropdown(d);
   });
 
-  dropdown.classList.toggle("is-open");
+  if (!isOpen) {
+    const originalParent = dropdown.parentNode;
+    if (originalParent && originalParent.classList.contains("fund-item-actions")) {
+      dropdown._originalParent = originalParent;
+      const rect = btn.getBoundingClientRect();
+      dropdown.style.position = "fixed";
+      dropdown.style.top = `${rect.bottom + 4}px`;
+      dropdown.style.right = `${window.innerWidth - rect.right}px`;
+      dropdown.style.left = "auto";
+      dropdown.style.bottom = "auto";
+      dropdown.style.marginTop = "0";
+      document.body.appendChild(dropdown);
+      dropdown.classList.add("is-open");
+    }
+  } else {
+    restoreFundDropdown(dropdown);
+  }
+}
+
+function restoreFundDropdown(dropdown) {
+  if (!dropdown) return;
+  const originalParent = dropdown._originalParent;
+  if (originalParent && originalParent.parentNode) {
+    dropdown.style.position = "";
+    dropdown.style.top = "";
+    dropdown.style.right = "";
+    dropdown.style.left = "";
+    dropdown.style.bottom = "";
+    dropdown.style.marginTop = "";
+    originalParent.appendChild(dropdown);
+  }
+  delete dropdown._originalParent;
+  dropdown.classList.remove("is-open");
 }
 
 function closeFundActionDropdown(btn) {
   const dropdown = btn.closest(".fund-action-dropdown");
-  if (dropdown) dropdown.classList.remove("is-open");
+  if (dropdown) {
+    restoreFundDropdown(dropdown);
+  }
 }
 
 // Close dropdown when clicking outside
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".fund-item-actions")) {
     document.querySelectorAll(".fund-action-dropdown.is-open").forEach((d) => {
-      d.classList.remove("is-open");
+      restoreFundDropdown(d);
     });
   }
   if (!e.target.closest(".cashflow-row-actions")) {
     document.querySelectorAll(".cashflow-action-dropdown.is-open").forEach((d) => {
-      d.classList.remove("is-open");
+      restoreCashflowDropdown(d);
     });
   }
 });
 
 function toggleCashflowAction(btn) {
   const dropdown = btn.nextElementSibling;
-  dropdown.classList.toggle("is-open");
+  if (!dropdown) return;
+  const isOpen = dropdown.classList.contains("is-open");
+
+  document.querySelectorAll(".cashflow-action-dropdown.is-open").forEach((d) => {
+    if (d !== dropdown) {
+      restoreCashflowDropdown(d);
+    }
+  });
+
+  if (!isOpen) {
+    const originalParent = dropdown.parentNode;
+    if (originalParent && originalParent.classList.contains("cashflow-row-actions")) {
+      dropdown._originalParent = originalParent;
+      const rect = btn.getBoundingClientRect();
+      dropdown.style.position = "fixed";
+      dropdown.style.top = `${rect.bottom + 4}px`;
+      dropdown.style.right = `${window.innerWidth - rect.right}px`;
+      dropdown.style.left = "auto";
+      dropdown.style.bottom = "auto";
+      dropdown.style.marginTop = "0";
+      document.body.appendChild(dropdown);
+      dropdown.classList.add("is-open");
+    }
+  } else {
+    restoreCashflowDropdown(dropdown);
+  }
+}
+
+function restoreCashflowDropdown(dropdown) {
+  if (!dropdown) return;
+  const originalParent = dropdown._originalParent;
+  if (originalParent && originalParent.parentNode) {
+    dropdown.style.position = "";
+    dropdown.style.top = "";
+    dropdown.style.right = "";
+    dropdown.style.left = "";
+    dropdown.style.bottom = "";
+    dropdown.style.marginTop = "";
+    originalParent.appendChild(dropdown);
+  }
+  delete dropdown._originalParent;
+  dropdown.classList.remove("is-open");
 }
 
 function closeCashflowActionDropdown() {
   document.querySelectorAll(".cashflow-action-dropdown.is-open").forEach((d) => {
-    d.classList.remove("is-open");
+    restoreCashflowDropdown(d);
   });
 }
 

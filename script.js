@@ -6774,6 +6774,12 @@ function renderFundsList() {
             </svg>
             Thêm vào quỹ
           </button>
+          <button class="fund-action-item" onclick="openWithdrawFundModal('${fund.id}'); closeFundActionDropdown(this);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Lấy ra từ quỹ
+          </button>
           <button class="fund-action-item danger" onclick="confirmDeleteFund('${fund.id}'); closeFundActionDropdown(this);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"/>
@@ -6974,12 +6980,32 @@ function confirmDeleteFund(fundId) {
 }
 
 let topupFundId = "";
+let topupFundMode = "topup"; // 'topup' | 'withdraw'
 
 function openTopupFundModal(fundId) {
   const fund = fundsData.funds.find((f) => f.id === fundId);
   if (!fund) return;
 
   topupFundId = fundId;
+  topupFundMode = "topup";
+  document.getElementById("topupFundModalTitle").innerText = "Thêm vào quỹ";
+  document.getElementById("topupFundAmountLabel").innerText = "Số tiền thêm vào";
+  document.getElementById("topupFundConfirmBtn").innerText = "Xác nhận";
+  document.getElementById("topupAmount").placeholder = "VD: 500.000";
+  document.getElementById("topupAmount").value = "";
+  document.getElementById("topupFundModal").style.display = "flex";
+}
+
+function openWithdrawFundModal(fundId) {
+  const fund = fundsData.funds.find((f) => f.id === fundId);
+  if (!fund) return;
+
+  topupFundId = fundId;
+  topupFundMode = "withdraw";
+  document.getElementById("topupFundModalTitle").innerText = "Lấy ra từ quỹ";
+  document.getElementById("topupFundAmountLabel").innerText = "Số tiền lấy ra";
+  document.getElementById("topupFundConfirmBtn").innerText = "Xác nhận";
+  document.getElementById("topupAmount").placeholder = "VD: 500.000";
   document.getElementById("topupAmount").value = "";
   document.getElementById("topupFundModal").style.display = "flex";
 }
@@ -6987,6 +7013,7 @@ function openTopupFundModal(fundId) {
 function closeTopupFundModal() {
   document.getElementById("topupFundModal").style.display = "none";
   topupFundId = "";
+  topupFundMode = "topup";
 }
 
 function confirmTopupFund() {
@@ -7001,10 +7028,29 @@ function confirmTopupFund() {
   const fund = fundsData.funds.find((f) => f.id === topupFundId);
   if (!fund) return;
 
+  if (topupFundMode === "withdraw") {
+    const balance = getFundBalance(topupFundId);
+    if (amount > balance) {
+      alert(`Số tiền vượt quá số dư hiện có của quỹ (${balance.toLocaleString("vi-VN")} đ).`);
+      return;
+    }
+
+    const fundIndex = fundsData.funds.findIndex((f) => f.id === topupFundId);
+    if (fundIndex >= 0) {
+      fundsData.funds[fundIndex].initialAmount = (fundsData.funds[fundIndex].initialAmount || 0) - amount;
+      fundsData.funds[fundIndex].updatedAt = Date.now();
+    }
+
+    saveFundsToFirebase();
+    closeTopupFundModal();
+    renderFundsDashboard();
+    return;
+  }
+
+  // Topup logic
   const balance = getFundBalance(topupFundId);
   const target = fund.target || 0;
 
-  // Validate against target limit if set
   if (target > 0) {
     const maxAllowed = target - balance;
     if (amount > maxAllowed) {
@@ -7013,7 +7059,6 @@ function confirmTopupFund() {
     }
   }
 
-  // Update fund initialAmount by adding the topup amount
   const fundIndex = fundsData.funds.findIndex((f) => f.id === topupFundId);
   if (fundIndex >= 0) {
     fundsData.funds[fundIndex].initialAmount = (fundsData.funds[fundIndex].initialAmount || 0) + amount;

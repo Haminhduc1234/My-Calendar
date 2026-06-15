@@ -1716,15 +1716,15 @@
         </div>
       </div>
 
-      <!-- Topup Fund Modal -->
+      <!-- Topup/Withdraw Fund Modal -->
       <div id="topupFundModal" class="modal">
         <div class="modal-content confirm-modal-content">
           <div class="confirm-modal-header">
-            <h3>Thêm vào quỹ</h3>
+            <h3 id="topupFundModalTitle">Thêm vào quỹ</h3>
           </div>
           <div class="fund-form">
             <label class="fund-input-item">
-              <span>Số tiền thêm vào</span>
+              <span id="topupFundAmountLabel">Số tiền thêm vào</span>
               <input
                 type="text"
                 id="topupAmount"
@@ -1738,7 +1738,7 @@
             <button class="confirm-cancel-btn" onclick="closeTopupFundModal()">
               Hủy
             </button>
-            <button class="funds-btn-add" onclick="confirmTopupFund()">
+            <button class="funds-btn-add" id="topupFundConfirmBtn" onclick="confirmTopupFund()">
               Xác nhận
             </button>
           </div>

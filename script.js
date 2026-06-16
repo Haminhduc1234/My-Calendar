@@ -6005,11 +6005,16 @@ function handleCashflowChartHover(event) {
   if (positions) {
     for (let i = 0; i < positions.length; i++) {
       const bar = positions[i];
+      const topY = Math.min(meta.income.y, meta.expense.y);
+      const bottomY = Math.max(
+        meta.income.y + meta.income.h,
+        meta.expense.y + meta.expense.h,
+      );
       if (
         x >= bar.income.x - 4 &&
         x <= bar.expense.x + bar.expense.w + 4 &&
-        y >= bar.income.y - 4 &&
-        y <= bar.income.y + bar.income.h + 4
+        y >= topY - 4 &&
+        y <= bottomY + 4
       ) {
         matched = bar;
         break;
@@ -6045,11 +6050,16 @@ function handleCashflowChartClick(event) {
   if (positions) {
     for (let i = 0; i < positions.length; i++) {
       const bar = positions[i];
+      const topY = Math.min(bar.income.y, bar.expense.y);
+      const bottomY = Math.max(
+        bar.income.y + bar.income.h,
+        bar.expense.y + bar.expense.h,
+      );
       if (
         x >= bar.income.x - 4 &&
         x <= bar.expense.x + bar.expense.w + 4 &&
-        y >= bar.income.y - 4 &&
-        y <= bar.income.y + bar.income.h + 4
+        y >= topY - 4 &&
+        y <= bottomY + 4
       ) {
         matched = bar;
         break;

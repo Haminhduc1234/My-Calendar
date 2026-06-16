@@ -1293,13 +1293,24 @@
             </section>
 
             <section class="cashflow-section cashflow-chart-section">
-              <div class="cashflow-section-head">
-                <div>
-                  <div class="cashflow-section-eyebrow">Biểu đồ thu chi 12 tháng gần nhất</div>
+              <div class="cashflow-chart-title-row">
+                <div class="cashflow-section-eyebrow">
+                  Biểu đồ thu chi 12 tháng gần nhất
                 </div>
+              </div>
+              <div class="cashflow-chart-controls">
+                <label class="cashflow-month-selector-label" for="cashflowMonthSelect">
+                  Xem
+                </label>
+                <select
+                  id="cashflowMonthSelect"
+                  class="cashflow-month-selector"
+                  onchange="onCashflowMonthSelectChange()"
+                ></select>
                 <button
                   id="cashflowExportBtn"
-                  class="cashflow-export-btn"
+                  class="cashflow-export-btn cashflow-export-btn--sm"
+                  style="margin-left: auto;"
                   onclick="exportCashflowCsv()"
                 >
                   Xuất CSV
@@ -1313,6 +1324,11 @@
               <div class="cashflow-chart-wrap">
                 <canvas id="cashflowChart"></canvas>
               </div>
+              <div
+                class="cashflow-chart-tooltip"
+                id="cashflowChartTooltip"
+                style="display: none"
+              ></div>
             </section>
           </div>
         </div>

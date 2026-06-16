@@ -4852,6 +4852,7 @@ let editingCashflowId = "";
 let pendingDeleteCashflowId = "";
 let cashflowAnalyticsRange = "all";
 let cashflowSummaryRange = "all";
+let cashflowChartMonths = 12;
 let cashflowShowAllRecent = false;
 let selectedCashflowId = "";
 
@@ -4914,6 +4915,8 @@ function openCashflowModal() {
     dateInput.value = getTodayIsoDate();
   }
 
+  restoreCashflowChartMonths();
+  applyCashflowMonthSelectValue();
   cashflowShowAllRecent = false;
   modal.style.display = "flex";
   updateCashflowCategoryDropdowns();
@@ -5745,15 +5748,58 @@ function toggleCashflowRecentList() {
   renderCashflowRecentList();
 }
 
-function buildCashflowByMonth() {
+const CASHFLOW_CHART_MONTHS_KEY = "cashflowChartMonths";
+const CASHFLOW_CHART_MONTHS_DEFAULT = 12;
+
+function restoreCashflowChartMonths() {
+  try {
+    const saved = parseInt(localStorage.getItem(CASHFLOW_CHART_MONTHS_KEY), 10);
+    if (saved >= 1 && saved <= 24) {
+      cashflowChartMonths = saved;
+    }
+  } catch {
+    cashflowChartMonths = CASHFLOW_CHART_MONTHS_DEFAULT;
+  }
+}
+
+function applyCashflowMonthSelectValue() {
+  const select = document.getElementById("cashflowMonthSelect");
+  if (!select) return;
+
+  if (!select.options.length) {
+    const fragment = document.createDocumentFragment();
+    for (let i = 1; i <= 24; i++) {
+      const option = document.createElement("option");
+      option.value = String(i);
+      option.textContent = `${i} tháng`;
+      fragment.appendChild(option);
+    }
+    select.appendChild(fragment);
+  }
+
+  select.value = String(cashflowChartMonths);
+}
+
+function onCashflowMonthSelectChange() {
+  const select = document.getElementById("cashflowMonthSelect");
+  if (!select) return;
+  const value = parseInt(select.value, 10);
+  if (value < 1 || value > 24) return;
+  cashflowChartMonths = value;
+  localStorage.setItem(CASHFLOW_CHART_MONTHS_KEY, String(value));
+  renderCashflowChart();
+}
+
+function buildCashflowByMonth(monthsCount = cashflowChartMonths) {
   const now = new Date();
+  const safeMonthsCount = Math.max(1, Math.min(monthsCount, 24));
   const months = [];
-  for (let i = 11; i >= 0; i--) {
+  for (let i = safeMonthsCount - 1; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     months.push({
       year: d.getFullYear(),
       month: d.getMonth() + 1,
-      label: `T${d.getMonth() + 1}`,
+      label: `T${d.getMonth() + 1}/${d.getFullYear().toString().slice(-2)}`,
       income: 0,
       expense: 0,
     });
@@ -5772,12 +5818,15 @@ function buildCashflowByMonth() {
   return months;
 }
 
+let cashflowChartHovered = null;
+
 function renderCashflowChart() {
   const canvas = document.getElementById("cashflowChart");
+  const tooltip = document.getElementById("cashflowChartTooltip");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
 
-  const rows = buildCashflowByMonth();
+  const rows = buildCashflowByMonth(cashflowChartMonths);
   const maxVal = Math.max(
     1,
     ...rows.map((row) => Math.max(row.income, row.expense)),
@@ -5818,6 +5867,8 @@ function renderCashflowChart() {
   const oneBarW = Math.max(3, Math.floor((groupW - 2) / 2));
   const now = new Date();
 
+  const barPositions = canvas._barPositions || [];
+
   rows.forEach((row, i) => {
     const gx = padL + i * (groupW + groupGap);
     const yBottom = padT + chartH;
@@ -5828,6 +5879,12 @@ function renderCashflowChart() {
 
     const incomeX = gx;
     const expenseX = gx + oneBarW + 2;
+
+    barPositions[i] = {
+      index: i,
+      income: { x: incomeX, y: yBottom - incomeH, w: oneBarW, h: incomeH, value: row.income },
+      expense: { x: expenseX, y: yBottom - expenseH, w: oneBarW, h: expenseH, value: row.expense },
+    };
 
     if (row.income > 0) {
       const gi = ctx.createLinearGradient(
@@ -5875,6 +5932,157 @@ function renderCashflowChart() {
     ctx.textAlign = "center";
     ctx.fillText(row.label, gx + groupW / 2, H - 10);
   });
+
+  canvas._barPositions = barPositions;
+  attachCashflowChartHover();
+}
+
+function getBarCenter(meta) {
+  const midX = meta.income.x + meta.income.w / 2;
+  const topY = Math.min(meta.income.y, meta.expense.y);
+  return { midX, topY };
+}
+
+function showCashflowChartTooltip(meta) {
+  const tooltip = document.getElementById("cashflowChartTooltip");
+  if (!tooltip) return;
+
+  if (meta.income.value > 0) {
+    tooltip.innerHTML = `<strong>Thu: ${meta.income.value.toLocaleString("vi-VN")} đ</strong>`;
+  }
+  if (meta.expense.value > 0) {
+    tooltip.innerHTML = `<strong>Chi: ${meta.expense.value.toLocaleString("vi-VN")} đ</strong>`;
+  }
+  if (meta.income.value > 0 && meta.expense.value > 0) {
+    tooltip.innerHTML = `<strong>Thu: ${meta.income.value.toLocaleString("vi-VN")} đ<br>Chi: ${meta.expense.value.toLocaleString("vi-VN")} đ</strong>`;
+  }
+  if (!meta.income.value && !meta.expense.value) {
+    tooltip.innerHTML = `<strong>0 đ</strong>`;
+  }
+
+  tooltip.style.display = "block";
+}
+
+function positionCashflowTooltip(meta) {
+  const tooltip = document.getElementById("cashflowChartTooltip");
+  if (!tooltip) return;
+
+  const { midX, topY } = getBarCenter(meta);
+  const wrap = tooltip.parentElement;
+  const canvas = document.getElementById("cashflowChart");
+  if (!wrap || !canvas) return;
+
+  const tooltipRect = tooltip.getBoundingClientRect();
+  const wrapRect = wrap.getBoundingClientRect();
+  const canvasRect = canvas.getBoundingClientRect();
+
+  const relLeft = midX + (canvasRect.left - wrapRect.left);
+  const relTop = topY + (canvasRect.top - wrapRect.top);
+
+  const left = relLeft - tooltipRect.width / 2;
+  tooltip.style.left = `${Math.max(4, Math.min(left, wrap.clientWidth - tooltipRect.width - 4))}px`;
+  tooltip.style.top = `${Math.max(4, relTop - tooltipRect.height - 6)}px`;
+}
+
+function hideCashflowChartTooltip() {
+  const tooltip = document.getElementById("cashflowChartTooltip");
+  if (tooltip) {
+    tooltip.style.display = "none";
+  }
+}
+
+function handleCashflowChartHover(event) {
+  const canvas = document.getElementById("cashflowChart");
+  const tooltip = document.getElementById("cashflowChartTooltip");
+  if (!canvas || !tooltip) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const positions = canvas._barPositions;
+
+  let matched = null;
+  if (positions) {
+    for (let i = 0; i < positions.length; i++) {
+      const bar = positions[i];
+      if (
+        x >= bar.income.x - 4 &&
+        x <= bar.expense.x + bar.expense.w + 4 &&
+        y >= bar.income.y - 4 &&
+        y <= bar.income.y + bar.income.h + 4
+      ) {
+        matched = bar;
+        break;
+      }
+    }
+  }
+
+  if (matched) {
+    if (cashflowChartHovered !== matched.index) {
+      cashflowChartHovered = matched.index;
+    }
+    showCashflowChartTooltip(matched);
+    positionCashflowTooltip(matched);
+  } else {
+    if (cashflowChartHovered !== null) {
+      cashflowChartHovered = null;
+    }
+    tooltip.style.display = "none";
+  }
+}
+
+function handleCashflowChartClick(event) {
+  const canvas = document.getElementById("cashflowChart");
+  const tooltip = document.getElementById("cashflowChartTooltip");
+  if (!canvas || !tooltip) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  const positions = canvas._barPositions;
+
+  let matched = null;
+  if (positions) {
+    for (let i = 0; i < positions.length; i++) {
+      const bar = positions[i];
+      if (
+        x >= bar.income.x - 4 &&
+        x <= bar.expense.x + bar.expense.w + 4 &&
+        y >= bar.income.y - 4 &&
+        y <= bar.income.y + bar.income.h + 4
+      ) {
+        matched = bar;
+        break;
+      }
+    }
+  }
+
+  if (matched) {
+    if (cashflowChartHovered === matched.index && tooltip.style.display === "block") {
+      tooltip.style.display = "none";
+      cashflowChartHovered = null;
+    } else {
+      cashflowChartHovered = matched.index;
+      showCashflowChartTooltip(matched);
+      positionCashflowTooltip(matched);
+    }
+  } else {
+    tooltip.style.display = "none";
+    cashflowChartHovered = null;
+  }
+}
+
+function attachCashflowChartHover() {
+  const canvas = document.getElementById("cashflowChart");
+  if (!canvas) return;
+  if (canvas._hoverAttached) return;
+  canvas._hoverAttached = true;
+  canvas.addEventListener("mousemove", handleCashflowChartHover);
+  canvas.addEventListener("mouseleave", () => {
+    cashflowChartHovered = null;
+    hideCashflowChartTooltip();
+  });
+  canvas.addEventListener("click", handleCashflowChartClick);
 }
 
 function formatCashflowDate(dateIso) {

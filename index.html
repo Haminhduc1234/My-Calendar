@@ -972,13 +972,28 @@
             </div>
           </div>
 
-          <!-- <div class="gold-chart-wrap">
-                    <canvas id="goldChart" width="680" height="240"></canvas>
-                </div> -->
+          <!-- Chart controls -->
+          <div class="gold-chart-controls">
+            <div class="gold-range-filter" id="goldRangeFilter" role="tablist" aria-label="Bộ lọc thời gian giá vàng">
+              <button type="button" class="gold-range-chip" data-range="week" onclick="setGoldChartRange('week')">Tuần</button>
+              <button type="button" class="gold-range-chip active" data-range="month" onclick="setGoldChartRange('month')">Tháng</button>
+            </div>
+          </div>
 
-          <!-- <div class="gold-note" id="goldSourceNote">
-                    Nguồn: Stooq (XAUUSD) + open.er-api (USD/VND), quy đổi tham khảo toàn quốc.
-                </div> -->
+          <div class="gold-chart-wrap">
+            <canvas id="goldChart" width="680" height="240"></canvas>
+            <div class="gold-chart-legend">
+              <span class="legend-item"><span class="legend-dot buy"></span>Mua vào</span>
+              <span class="legend-item"><span class="legend-dot sell"></span>Bán ra</span>
+            </div>
+            <div class="gold-tooltip" id="goldTooltip" role="tooltip" aria-hidden="true"></div>
+          </div>
+
+          <div class="gold-chart-summary" id="goldChartSummary"></div>
+
+          <div class="gold-note" id="goldSourceNote">
+            Nguồn: giavang.org (giá vàng trong nước SJC toàn quốc)
+          </div>
         </div>
       </div>
 

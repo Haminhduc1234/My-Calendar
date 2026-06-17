@@ -3047,11 +3047,21 @@ function handleTaskDragEnd(e) {
 function openGoldModal() {
   closeAllModals();
   document.getElementById("goldModal").style.display = "flex";
+  hideGoldTooltip();
   loadGoldOnDemand();
 }
 
 function closeGoldModal() {
   document.getElementById("goldModal").style.display = "none";
+  hideGoldTooltip();
+}
+
+function hideGoldTooltip() {
+  const tooltip = document.getElementById("goldTooltip");
+  if (tooltip) {
+    tooltip.classList.remove("is-visible");
+    tooltip.setAttribute("aria-hidden", "true");
+  }
 }
 
 function getQuickNoteStorageKey() {
@@ -4596,25 +4606,69 @@ function parseCurrentVietnamGold(content) {
 }
 
 function parseVietnamHistoryDates(content) {
-  const matches = content.match(/\d{4}-\d{2}-\d{2}\.html/g) || [];
-  const uniqueDates = [...new Set(matches.map((x) => x.replace(".html", "")))];
+  const dates = [];
+  const monthYearRegex = /Tháng\s+(\d{1,2})\s*\/\s*(\d{4})/g;
+  let match;
+  let lastIndex = 0;
+
+  while ((match = monthYearRegex.exec(content)) !== null) {
+    const month = String(match[1]).padStart(2, "0");
+    const year = match[2];
+
+    const sectionStart = match.index + match[0].length;
+    const nextMonthMatch = content.indexOf("Tháng", sectionStart);
+    const sectionEnd = nextMonthMatch > 0 ? nextMonthMatch : content.length;
+    const monthContent = content.slice(sectionStart, sectionEnd);
+
+    const lines = monthContent.split('\n');
+    for (const line of lines) {
+      const dayMatches = line.match(/\b([0-9]{1,2})\b/g) || [];
+      for (const day of dayMatches) {
+        const dayNum = parseInt(day, 10);
+        if (dayNum >= 1 && dayNum <= 31) {
+          const dateStr = `${year}-${month}-${String(dayNum).padStart(2, "0")}`;
+          dates.push(dateStr);
+        }
+      }
+    }
+
+    lastIndex = match.index;
+  }
+
+  const uniqueDates = [...new Set(dates)];
   return uniqueDates.sort((a, b) => b.localeCompare(a));
 }
 
 function parseDailyVietnamGold(content, date) {
-  const buyMatch = content.match(/Mua vào\s+([0-9.,]+)\s+x1000đ\/lượng/i);
-  const sellMatch = content.match(/Bán ra\s+([0-9.,]+)\s+x1000đ\/lượng/i);
+  const buyMatch = content.match(/(?:Mua\s*vào|Giá\s*mua)\s*[≤]?\s*([0-9.,]+)\s*(?:x\s*1000\s*đ\/lượng|lượng|VND)/i) ||
+                   content.match(/([0-9.,]+)\s*x\s*1000\s*đ\/lượng/i);
+  const sellMatch = content.match(/(?:Bán\s*ra|Giá\s*bán)\s*[≤]?\s*([0-9.,]+)\s*(?:x\s*1000\s*đ\/lượng|lượng|VND)/i);
 
-  if (!buyMatch || !sellMatch) return null;
+  let buyThousand = null;
+  let sellThousand = null;
 
-  const buyThousand = parseVietnamPrice(buyMatch[1]);
-  const sellThousand = parseVietnamPrice(sellMatch[1]);
+  if (buyMatch) {
+    buyThousand = parseVietnamPrice(buyMatch[1]);
+  }
+  if (sellMatch) {
+    sellThousand = parseVietnamPrice(sellMatch[1]);
+  }
+
+  if (!buyThousand || !sellThousand) {
+    const allNumbers = content.match(/\b([0-9]{1,3}(?:[.,][0-9]{3})+)\b/g) || [];
+    if (allNumbers.length >= 2) {
+      buyThousand = parseVietnamPrice(allNumbers[0]);
+      sellThousand = parseVietnamPrice(allNumbers[1]);
+    }
+  }
+
   if (!buyThousand || !sellThousand) return null;
 
   const parts = date.split("-");
   const label = parts.length === 3 ? `${parts[2]}/${parts[1]}` : date;
 
   return {
+    date,
     label,
     buyValue: buyThousand * 1000,
     sellValue: sellThousand * 1000,
@@ -4709,52 +4763,33 @@ function drawGoldChart(canvasId, points) {
   ctx.fillText("● Bán", pad.left + 60, pad.top + 12);
 }
 
-async function fetchTextWithCorsFallback(url) {
-  // Add timestamp to bypass caching
-  const timestamp = Date.now();
-  const separator = url.includes("?") ? "&" : "?";
-  const finalUrl = `${url}${separator}t=${timestamp}`;
-
-  const proxyUrl = `https://r.jina.ai/http://${finalUrl.replace(/^https?:\/\//, "")}`;
-
-  const res = await fetch(proxyUrl, {
-    cache: "no-cache",
-    headers: {
-      "Cache-Control": "no-cache",
-    },
-  });
-  if (!res.ok) throw new Error("Không thể tải dữ liệu do CORS");
-
-  const raw = await res.text();
-  const marker = "Markdown Content:";
-  const markerIndex = raw.indexOf(marker);
-
-  if (markerIndex === -1) return raw.trim();
-  return raw.slice(markerIndex + marker.length).trim();
+async function fetchGoldApi(path) {
+  const url = `https://giavang.now${path}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Gold API error ${res.status}`);
+  return res.json();
 }
 
-async function getRecentVietnamGoldHistory(limit = 7) {
-  const indexContent = await fetchTextWithCorsFallback(
-    "https://giavang.org/trong-nuoc/sjc/lich-su",
-  );
-  const candidateDates = parseVietnamHistoryDates(indexContent).slice(0, 10);
-  const points = [];
-
-  for (const date of candidateDates) {
-    if (points.length >= limit) break;
-
-    try {
-      const dayContent = await fetchTextWithCorsFallback(
-        `https://giavang.org/trong-nuoc/sjc/lich-su/${date}.html`,
-      );
-      const point = parseDailyVietnamGold(dayContent, date);
-      if (point) points.push(point);
-    } catch {
-      // bỏ qua ngày lỗi mạng hoặc thiếu dữ liệu
-    }
+async function getRecentVietnamGoldHistory(limit = 30) {
+  const safeLimit = Math.min(limit, 30);
+  const data = await fetchGoldApi(`/api/prices?type=SJL1L10&days=${safeLimit}`);
+  if (!data?.success || !Array.isArray(data.history)) {
+    return [];
   }
-
-  return points.reverse();
+  return data.history
+    .map((item) => {
+      const price = item?.prices?.SJL1L10;
+      if (!price || !Number.isFinite(price.buy) || !Number.isFinite(price.sell)) {
+        return null;
+      }
+      return {
+        date: item.date,
+        label: item.date ? item.date.slice(8, 10) + "/" + item.date.slice(5, 7) : "",
+        buyValue: price.buy,
+        sellValue: price.sell,
+      };
+    })
+    .filter((point) => point != null);
 }
 
 async function loadGoldMarketData() {
@@ -4773,29 +4808,26 @@ async function loadGoldMarketData() {
   sellEl.innerText = "--";
 
   try {
-    const currentContent = await fetchTextWithCorsFallback(
-      "https://giavang.org/trong-nuoc/sjc",
-    );
-    const current = parseCurrentVietnamGold(currentContent);
-    if (!current) {
+    const data = await fetchGoldApi("/api/prices?type=SJL1L10");
+    if (!data?.success) {
       throw new Error("Thiếu dữ liệu giá vàng Việt Nam hiện tại");
     }
 
-    const buyVnd = current.buyThousand * 1000;
-    const sellVnd = current.sellThousand * 1000;
+    const buyVnd = data.buy;
+    const sellVnd = data.sell;
+    const dateStr = data.date || new Date().toISOString().slice(0, 10);
+    const timeStr = data.time || "";
 
     buyEl.innerText = formatVnd(buyVnd);
     sellEl.innerText = formatVnd(sellVnd);
-    updatedEl.innerText = `Giá vàng SJC hôm nay Cập nhật lúc ${current.updatedAt}`;
+    updatedEl.innerText = `Giá vàng SJC ${dateStr}${timeStr ? ' ' + timeStr : ''}`;
 
     if (noteEl) {
-      noteEl.innerText =
-        "Nguồn: giavang.org (giá vàng trong nước SJC toàn quốc hiện tại) qua proxy r.jina.ai.";
+      noteEl.innerText = "Nguồn: giavang.now (giá vàng trong nước SJC, cập nhật 5 phút/lần).";
     }
   } catch {
     if (noteEl) {
-      noteEl.innerText =
-        "Nguồn nội địa đang lỗi mạng hoặc bị chặn. Vui lòng thử lại sau.";
+      noteEl.innerText = "Không thể tải giá vàng hiện tại. Vui lòng thử lại sau.";
     }
   } finally {
     if (buyEl && sellEl) {
@@ -4803,7 +4835,325 @@ async function loadGoldMarketData() {
       sellEl.classList.remove("is-loading");
     }
   }
+
+  loadGoldChartData();
 }
+
+let goldChartRange = "month";
+let goldChartData = [];
+let goldChartLoading = false;
+let goldChartPoints = [];
+
+const GOLD_CHART_RANGE_KEY = "goldChartRange";
+
+function restoreGoldChartRange() {
+  try {
+    const saved = localStorage.getItem(GOLD_CHART_RANGE_KEY);
+    if (["week", "month"].includes(saved)) {
+      goldChartRange = saved;
+    }
+  } catch {}
+}
+
+function saveGoldChartRange(range) {
+  goldChartRange = range;
+  localStorage.setItem(GOLD_CHART_RANGE_KEY, range);
+  updateGoldRangeFilterUI();
+}
+
+function updateGoldRangeFilterUI() {
+  document.querySelectorAll(".gold-range-chip").forEach((chip) => {
+    chip.classList.toggle("active", chip.dataset.range === goldChartRange);
+  });
+}
+
+function setGoldChartRange(range) {
+  saveGoldChartRange(range);
+  loadGoldChartData();
+}
+
+function getGoldChartPointsForRange(range, rawData) {
+  if (!rawData || rawData.length === 0) return [];
+
+  const now = new Date();
+
+  switch (range) {
+    case "week": {
+      const points = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        const found = rawData.find((p) => p.date === dateStr);
+        if (found) {
+          points.push({ ...found, label: `${d.getDate()}/${d.getMonth() + 1}` });
+        }
+      }
+      return points;
+    }
+
+    case "month": {
+      const points = [];
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(d.getDate() - i);
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        const found = rawData.find((p) => p.date === dateStr);
+        if (found) {
+          points.push({ ...found, label: `${d.getDate()}/${d.getMonth() + 1}` });
+        }
+      }
+      return points;
+    }
+
+    default:
+      return [];
+  }
+}
+
+async function loadGoldChartData() {
+  if (goldChartLoading) return;
+  goldChartLoading = true;
+
+  const canvas = document.getElementById("goldChart");
+  const summaryEl = document.getElementById("goldChartSummary");
+  if (!canvas) {
+    goldChartLoading = false;
+    return;
+  }
+
+  summaryEl.innerHTML = '<div class="gold-chart-loading">Đang tải dữ liệu biểu đồ...</div>';
+
+  try {
+    const rawData = await getRecentVietnamGoldHistory(30);
+    console.log('Gold chart rawData:', rawData);
+    goldChartData = rawData;
+    const points = getGoldChartPointsForRange(goldChartRange, rawData);
+    console.log('Gold chart points:', points);
+    renderGoldChart(points);
+    renderGoldChartSummary(points, rawData);
+  } catch (err) {
+    console.error('Gold chart error:', err);
+    summaryEl.innerHTML = '<div class="gold-chart-loading">Không thể tải dữ liệu. Vui lòng thử lại.</div>';
+  } finally {
+    goldChartLoading = false;
+  }
+}
+
+function renderGoldChart(points) {
+  const canvas = document.getElementById("goldChart");
+  const tooltip = document.getElementById("goldTooltip");
+  if (!canvas || points.length === 0) return;
+
+  const ratio = window.devicePixelRatio || 1;
+  const width = canvas.clientWidth || 680;
+  const height = 240;
+  canvas.width = Math.floor(width * ratio);
+  canvas.height = Math.floor(height * ratio);
+
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+
+  const validBuy = points.filter((p) => p.buyValue != null && !p.isPlaceholder).map((p) => p.buyValue);
+  const validSell = points.filter((p) => p.sellValue != null && !p.isPlaceholder).map((p) => p.sellValue);
+
+  if (validBuy.length === 0 && validSell.length === 0) return;
+
+  const allValues = [...validBuy, ...validSell];
+  const min = Math.min(...allValues);
+  const max = Math.max(...allValues);
+  const padding = (max - min) * 0.1 || 1000000;
+  const chartMin = min - padding;
+  const chartMax = max + padding;
+  const range = chartMax - chartMin || 1;
+
+  const pad = { top: 20, right: 12, bottom: 36, left: 12 };
+  const chartW = width - pad.left - pad.right;
+  const chartH = height - pad.top - pad.bottom;
+
+  ctx.strokeStyle = "rgba(183, 208, 255, 0.15)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 3; i++) {
+    const y = pad.top + (chartH / 3) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(width - pad.right, y);
+    ctx.stroke();
+    const val = chartMax - (range * i) / 3;
+    ctx.fillStyle = "rgba(183, 208, 255, 0.45)";
+    ctx.font = "10px Be Vietnam Pro";
+    ctx.textAlign = "left";
+    ctx.fillText(formatVnd(Math.round(val)), pad.left + 2, y - 3);
+  }
+
+  const toXY = (value, idx) => {
+    const x = pad.left + (chartW * idx) / Math.max(points.length - 1, 1);
+    const y = pad.top + ((chartMax - value) / range) * chartH;
+    return { x, y };
+  };
+
+  const drawLine = (key, color) => {
+    const validPoints = points.filter((p) => p[key] != null && !p.isPlaceholder);
+    if (validPoints.length < 2) return;
+
+    ctx.beginPath();
+    validPoints.forEach((point, idx) => {
+      const globalIdx = points.indexOf(point);
+      const { x, y } = toXY(point[key], globalIdx);
+      if (idx === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  };
+
+  drawLine("buyValue", "#7fd3ff");
+  drawLine("sellValue", "#ffe39c");
+
+  const pointCoords = [];
+
+  points.forEach((p, idx) => {
+    const coords = [];
+
+    if (p.buyValue != null && !p.isPlaceholder) {
+      const { x, y } = toXY(p.buyValue, idx);
+      ctx.fillStyle = "#7fd3ff";
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      coords.push({ x, y, type: "Mua vào", value: p.buyValue });
+    }
+    if (p.sellValue != null && !p.isPlaceholder) {
+      const { x, y } = toXY(p.sellValue, idx);
+      ctx.fillStyle = "#ffe39c";
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      coords.push({ x, y, type: "Bán ra", value: p.sellValue });
+    }
+
+    if (coords.length > 0) {
+      pointCoords.push({ date: p.label, coords });
+    }
+  });
+
+  ctx.fillStyle = "#9ab3e4";
+  ctx.font = "11px Be Vietnam Pro";
+  const step = Math.max(1, Math.floor(points.length / 6));
+
+  points.forEach((p, idx) => {
+    if (idx % step === 0 || idx === points.length - 1) {
+      const { x } = toXY(p.buyValue != null ? p.buyValue : p.sellValue, idx);
+      ctx.textAlign = "center";
+      ctx.fillText(p.label, x, height - 6);
+    }
+  });
+
+  goldChartPoints = pointCoords;
+
+  canvas.onclick = (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
+
+    let hoveredPoint = null;
+    let hoveredCoord = null;
+
+    for (const point of goldChartPoints) {
+      for (const coord of point.coords) {
+        const distance = Math.sqrt((clickX - coord.x) ** 2 + (clickY - coord.y) ** 2);
+        if (distance <= 10) {
+          hoveredPoint = point;
+          hoveredCoord = coord;
+          break;
+        }
+      }
+      if (hoveredPoint) break;
+    }
+
+    if (hoveredPoint && hoveredCoord && tooltip) {
+      tooltip.innerHTML = `
+        <div class="gold-tooltip-row">
+          <span class="gold-tooltip-label">Ngày</span>
+          <span class="gold-tooltip-value">${hoveredPoint.date}</span>
+        </div>
+        <div class="gold-tooltip-row">
+          <span class="gold-tooltip-label">${hoveredCoord.type}</span>
+          <span class="gold-tooltip-value">${formatVnd(Math.round(hoveredCoord.value))} đ</span>
+        </div>
+      `;
+
+      const wrap = canvas.closest(".gold-chart-wrap");
+      const wrapRect = wrap.getBoundingClientRect();
+
+      let left = hoveredCoord.x + 12;
+      let top = hoveredCoord.y - 12;
+
+      if (left + tooltip.offsetWidth > wrapRect.width - 10) {
+        left = hoveredCoord.x - tooltip.offsetWidth - 12;
+      }
+      if (top + tooltip.offsetHeight > wrapRect.height - 10) {
+        top = wrapRect.height - tooltip.offsetHeight - 10;
+      }
+      if (top < 10) top = 10;
+      if (left < 10) left = 10;
+
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+      tooltip.classList.add("is-visible");
+      tooltip.setAttribute("aria-hidden", "false");
+    } else if (tooltip) {
+      tooltip.classList.remove("is-visible");
+      tooltip.setAttribute("aria-hidden", "true");
+    }
+  };
+}
+
+function renderGoldChartSummary(points, rawData) {
+  const summaryEl = document.getElementById("goldChartSummary");
+  if (!summaryEl || points.length === 0) return;
+
+  const validPoints = points.filter((p) => p.buyValue != null && !p.isPlaceholder);
+  if (validPoints.length === 0) {
+    summaryEl.innerHTML = '<div class="gold-chart-loading">Không đủ dữ liệu cho khoảng thời gian này.</div>';
+    return;
+  }
+
+  const first = validPoints[0];
+  const last = validPoints[validPoints.length - 1];
+
+  const buyChange = first.buyValue ? ((last.buyValue - first.buyValue) / first.buyValue) * 100 : 0;
+  const sellChange = first.sellValue ? ((last.sellValue - first.sellValue) / first.sellValue) * 100 : 0;
+  const avgBuy = validPoints.reduce((s, p) => s + p.buyValue, 0) / validPoints.length;
+  const avgSell = validPoints.reduce((s, p) => s + p.sellValue, 0) / validPoints.length;
+  const maxBuy = Math.max(...validPoints.map((p) => p.buyValue));
+  const minBuy = Math.min(...validPoints.map((p) => p.buyValue));
+  const maxSell = Math.max(...validPoints.map((p) => p.sellValue));
+  const minSell = Math.min(...validPoints.map((p) => p.sellValue));
+
+  summaryEl.innerHTML = `
+    <div class="gold-summary-stat">
+      <div class="stat-label">Giá mua TB</div>
+      <div class="stat-value">${formatVnd(Math.round(avgBuy))}</div>
+      <div class="stat-change ${buyChange >= 0 ? 'up' : 'down'}">${buyChange >= 0 ? "+" : ""}${buyChange.toFixed(2)}%</div>
+    </div>
+    <div class="gold-summary-stat">
+      <div class="stat-label">Cao nhất</div>
+      <div class="stat-value">${formatVnd(Math.round(maxBuy))}</div>
+      <div class="stat-change">Mua: ${formatVnd(Math.round(maxSell))}</div>
+    </div>
+    <div class="gold-summary-stat">
+      <div class="stat-label">Thấp nhất</div>
+      <div class="stat-value">${formatVnd(Math.round(minBuy))}</div>
+      <div class="stat-change">Bán: ${formatVnd(Math.round(minSell))}</div>
+    </div>
+  `;
+}
+
+restoreGoldChartRange();
+updateGoldRangeFilterUI();
 
 const salaryInput = document.getElementById("hourSalary");
 const OVERTIME_HOURLY_SALARY_KEY = "overtimeHourlySalary";

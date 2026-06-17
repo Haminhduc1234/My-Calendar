@@ -5051,7 +5051,6 @@ input[type="datetime-local"] {
 /* ========================== FUNDS MODAL ========================== */
 
 .funds-container {
-  max-height: calc(100vh - 85px);
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -5205,13 +5204,14 @@ input[type="datetime-local"] {
 
 .funds-list-section {
   margin-bottom: 12px;
+  max-height: calc(100vh - 300px);
 }
 
 .funds-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 320px;
+  max-height: calc(100vh - 370px);
   overflow-y: auto;
 }
 
@@ -5465,6 +5465,19 @@ input[type="datetime-local"] {
   opacity: 0.3;
   border: 2px dashed rgba(168, 85, 247, 0.5);
   background: rgba(168, 85, 247, 0.05);
+}
+
+.fund-item.fund-item-touch-dragging {
+  opacity: 0.92;
+  background: #f5f3ff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+}
+
+.fund-item-placeholder {
+  height: 0;
+  visibility: hidden;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .drag-position-indicator {

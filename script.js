@@ -6923,7 +6923,10 @@ function renderFundsList() {
     return;
   }
 
-  for (const fund of fundsData.funds) {
+  // Sort by sortOrder
+  const sortedFunds = [...fundsData.funds].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+  for (const fund of sortedFunds) {
     const balance = getFundBalance(fund.id);
     const target = fund.target || 0;
     // Percentage based on target (not total balance)
@@ -6948,6 +6951,8 @@ function renderFundsList() {
 
     const item = document.createElement("div");
     item.className = "fund-item";
+    item.draggable = true;
+    item.dataset.fundId = fund.id;
     item.style.setProperty("--fund-color", color);
     item.style.setProperty("--fund-color-light", `rgba(${colorRgb}, 0.4)`);
     item.innerHTML = `
@@ -7019,6 +7024,94 @@ function renderFundsList() {
       item.style.transform = "translateY(0)";
     });
   }
+
+  attachFundDragEvents();
+}
+
+function attachFundDragEvents() {
+  const listEl = document.getElementById("fundsList");
+  if (!listEl || listEl._dragAttached) return;
+  listEl._dragAttached = true;
+
+  listEl.addEventListener("dragstart", (e) => {
+    const item = e.target.closest(".fund-item");
+    if (!item) return;
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", item.dataset.fundId);
+    item.classList.add("dragging");
+    listEl.classList.add("dragging-active");
+    setTimeout(() => {
+      item.style.opacity = "0.4";
+    }, 0);
+  });
+
+  listEl.addEventListener("dragend", (e) => {
+    const item = e.target.closest(".fund-item");
+    if (item) {
+      item.classList.remove("dragging");
+      item.style.opacity = "";
+    }
+    listEl.classList.remove("dragging-active");
+    listEl.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
+    listEl.querySelectorAll(".drag-placeholder").forEach((el) => el.remove());
+  });
+
+  listEl.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    const draggingItem = listEl.querySelector(".dragging");
+    if (!draggingItem) return;
+
+    // Remove previous indicators
+    listEl.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
+    listEl.querySelectorAll(".drag-position-indicator").forEach((el) => el.remove());
+
+    const afterElement = getDragAfterElement(listEl, e.clientY);
+
+    // Insert at new position (creates visual gap as items shift)
+    if (afterElement == null) {
+      listEl.appendChild(draggingItem);
+    } else if (afterElement !== draggingItem) {
+      listEl.insertBefore(draggingItem, afterElement);
+    }
+  });
+
+  listEl.addEventListener("dragleave", (e) => {
+    if (!listEl.contains(e.relatedTarget)) {
+      listEl.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
+    }
+  });
+
+  listEl.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const draggedId = e.dataTransfer.getData("text/plain");
+    if (!draggedId) return;
+
+    listEl.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
+    const indicator = listEl.querySelector(".drag-position-indicator");
+    if (indicator) indicator.remove();
+
+    const newOrder = [...listEl.querySelectorAll(".fund-item")].map((el) => el.dataset.fundId);
+    newOrder.forEach((id, index) => {
+      const fund = fundsData.funds.find((f) => f.id === id);
+      if (fund) fund.sortOrder = index;
+    });
+
+    saveFundsToFirebase();
+    renderFundsList();
+  });
+}
+
+function getDragAfterElement(container, y) {
+  const draggableElements = [...container.querySelectorAll(".fund-item:not(.dragging)")];
+  return draggableElements.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      return { offset, element: child };
+    }
+    return closest;
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 function hexToRgb(hex) {
@@ -7238,12 +7331,14 @@ function saveFund() {
     // Add new fund
     const targetInput = document.getElementById("fundTarget");
     const target = parseFloat(targetInput.value.replace(/\D/g, "")) || 0;
+    const sortOrder = fundsData.funds.length;
     const newFund = {
       id: `fund-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       name,
       color: selectedFundColor,
       initialAmount: 0,
       target: target,
+      sortOrder,
       createdAt: Date.now(),
     };
     fundsData.funds.push(newFund);

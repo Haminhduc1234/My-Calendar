@@ -7568,7 +7568,6 @@ function startFundTouchDragging() {
   item.classList.add("fund-item-touch-dragging");
   item.style.width = `${item.offsetWidth}px`;
   item.style.opacity = "0.92";
-  item.style.background = "#f5f3ff";
   item.style.boxShadow = "0 10px 24px rgba(15, 23, 42, 0.16)";
 }
 

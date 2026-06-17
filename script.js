@@ -6005,10 +6005,10 @@ function handleCashflowChartHover(event) {
   if (positions) {
     for (let i = 0; i < positions.length; i++) {
       const bar = positions[i];
-      const topY = Math.min(meta.income.y, meta.expense.y);
+      const topY = Math.min(bar.income.y, bar.expense.y);
       const bottomY = Math.max(
-        meta.income.y + meta.income.h,
-        meta.expense.y + meta.expense.h,
+        bar.income.y + bar.income.h,
+        bar.expense.y + bar.expense.h,
       );
       if (
         x >= bar.income.x - 4 &&

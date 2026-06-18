@@ -7456,191 +7456,167 @@ function attachFundDragEvents() {
   });
   listEl.addEventListener("touchmove", handleFundTouchMove, { passive: false });
   listEl.addEventListener("touchend", handleFundTouchEnd);
-  listEl.addEventListener("touchcancel", resetFundTouchDrag);
+  listEl.addEventListener("touchcancel", handleFundTouchCancel);
 }
 
-let fundTouchDragState = {
-  active: false,
-  dragging: false,
-  list: null,
-  item: null,
-  itemId: "",
-  startY: 0,
-  currentY: 0,
-  offsetY: 0,
-  placeholder: null,
-};
+let _fundTouchSrcEl = null;
+let _fundTouchSrcId = null;
+let _fundTouchDragging = false;
+let _fundTouchStartY = 0;
+let _fundTouchCurrentY = 0;
 
 function handleFundTouchStart(e) {
   const item = e.target.closest(".fund-item");
   if (!item) return;
 
-  if (e.target.closest(".fund-item-actions")) {
+  if (
+    e.target.closest(".fund-item-actions") ||
+    e.target.closest("button")
+  ) {
     return;
   }
 
   e.preventDefault();
 
-  const list = document.getElementById("fundsList");
-  if (!item || !list) return;
+  _fundTouchStartY = e.touches[0].clientY;
+  _fundTouchCurrentY = _fundTouchStartY;
+  _fundTouchSrcEl = e.currentTarget;
+  _fundTouchSrcId = item.dataset.fundId;
+  _fundTouchDragging = false;
 
-  const touch = e.touches[0];
-  const rect = item.getBoundingClientRect();
-  fundTouchDragState.active = true;
-  fundTouchDragState.dragging = false;
-  fundTouchDragState.list = list;
-  fundTouchDragState.item = item;
-  fundTouchDragState.itemId = item.dataset.fundId || "";
-  fundTouchDragState.startY = touch.clientY;
-  fundTouchDragState.currentY = touch.clientY;
-  fundTouchDragState.offsetY = touch.clientY - rect.top;
-  fundTouchDragState.placeholder = null;
+  _fundTouchSrcEl.classList.add("dragging");
+  _fundTouchSrcEl.style.opacity = "0.4";
+
+  document.querySelectorAll(".fund-item").forEach((el) => {
+    if (el.dataset.fundId !== _fundTouchSrcId) {
+      el.classList.add("drop-target");
+    }
+  });
 }
 
 function handleFundTouchMove(e) {
-  if (!fundTouchDragState.active || !fundTouchDragState.item) return;
-
-  const touch = e.touches[0];
-  fundTouchDragState.currentY = touch.clientY;
-  const deltaY = Math.abs(touch.clientY - fundTouchDragState.startY);
-
-  if (!fundTouchDragState.dragging && deltaY < 8) {
-    return;
-  }
-
+  if (!_fundTouchSrcEl) return;
   e.preventDefault();
 
-  if (!fundTouchDragState.dragging) {
-    startFundTouchDragging();
+  _fundTouchCurrentY = e.touches[0].clientY;
+  const diff = Math.abs(_fundTouchCurrentY - _fundTouchStartY);
+
+  if (diff > 10) {
+    _fundTouchDragging = true;
+    _fundTouchSrcEl.style.transform = `translateY(${_fundTouchCurrentY - _fundTouchStartY}px)`;
+    _fundTouchSrcEl.style.zIndex = "1000";
+    _fundTouchSrcEl.style.position = "relative";
+
+    document.querySelectorAll(".fund-item").forEach((item) => {
+      if (item === _fundTouchSrcEl) return;
+      item.style.borderTop = "";
+      item.style.borderBottom = "";
+
+      const rect = item.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+
+      if (_fundTouchCurrentY < midY) {
+        item.style.borderTop = "3px solid #a855f7";
+      } else {
+        item.style.borderBottom = "3px solid #a855f7";
+      }
+    });
   }
+}
 
-  const { item, list, offsetY } = fundTouchDragState;
-  const listRect = list.getBoundingClientRect();
-  const top = touch.clientY - listRect.top - offsetY + list.scrollTop;
+function handleFundTouchEnd(e) {
+  if (!_fundTouchSrcEl) return;
 
-  item.style.transform = "none";
-  item.style.position = "absolute";
-  item.style.left = "0";
-  item.style.right = "0";
-  item.style.top = `${top}px`;
-  item.style.zIndex = "1000";
-  item.style.pointerEvents = "none";
+  _fundTouchSrcEl.classList.remove("dragging");
+  _fundTouchSrcEl.style.opacity = "";
+  _fundTouchSrcEl.style.transform = "";
+  _fundTouchSrcEl.style.zIndex = "";
+  _fundTouchSrcEl.style.position = "";
 
-  const siblings = Array.from(
-    list.querySelectorAll(".fund-item:not(.fund-item-touch-dragging)"),
-  );
-  const currentYInList = touch.clientY - listRect.top + list.scrollTop;
-  let inserted = false;
-
-  siblings.forEach((sibling) => {
-    const siblingTop = sibling.offsetTop;
-    const siblingMiddle = siblingTop + sibling.offsetHeight / 2;
-    if (!inserted && currentYInList < siblingMiddle) {
-      list.insertBefore(fundTouchDragState.placeholder, sibling);
-      inserted = true;
-    }
+  document.querySelectorAll(".drop-target, .drag-over").forEach((el) => {
+    el.classList.remove("drop-target", "drag-over");
+    el.style.transform = "";
+    el.style.boxShadow = "";
+    el.style.zIndex = "";
+    el.style.borderTop = "";
+    el.style.borderBottom = "";
   });
 
-  if (!inserted) {
-    list.appendChild(fundTouchDragState.placeholder);
-  }
-}
+  if (_fundTouchDragging && _fundTouchSrcId) {
+    const touch = e.changedTouches[0];
+    const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetItem = targetEl
+      ? targetEl.closest(".fund-item")
+      : null;
 
-function startFundTouchDragging() {
-  const { item, list } = fundTouchDragState;
-  if (!item || !list) return;
+    if (targetItem && targetItem.dataset.fundId !== _fundTouchSrcId) {
+      const targetId = targetItem.dataset.fundId;
+      const rect = targetItem.getBoundingClientRect();
+      const midY = rect.top + rect.height / 2;
+      const insertAbove = touch.clientY < midY;
 
-  fundTouchDragState.dragging = true;
-
-  const placeholder = item.cloneNode(false);
-  placeholder.className = "fund-item fund-item-placeholder";
-  placeholder.removeAttribute("draggable");
-  placeholder.innerHTML = "";
-  placeholder.style.visibility = "hidden";
-  placeholder.style.height = `${item.offsetHeight}px`;
-  placeholder.style.margin = "0";
-
-  fundTouchDragState.placeholder = placeholder;
-
-  list.insertBefore(placeholder, item.nextSibling);
-  list.style.position = "relative";
-
-  item.classList.add("fund-item-touch-dragging");
-  item.style.width = `${item.offsetWidth}px`;
-  item.style.opacity = "0.92";
-  item.style.boxShadow = "0 10px 24px rgba(15, 23, 42, 0.16)";
-}
-
-function handleFundTouchEnd() {
-  if (!fundTouchDragState.active) return;
-
-  const { dragging, item, placeholder, itemId } = fundTouchDragState;
-  if (!dragging || !item || !placeholder || !itemId) {
-    resetFundTouchDrag();
-    return;
-  }
-
-  placeholder.replaceWith(item);
-
-  const domItems = Array.from(
-    document.querySelectorAll("#fundsList .fund-item"),
-  );
-  const toIndex = domItems.findIndex((el) => el.dataset.fundId === itemId);
-
-  if (toIndex !== -1) {
-    const sortedFunds = [...fundsData.funds].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-    const fromIndex = sortedFunds.findIndex((f) => f.id === itemId);
-    if (fromIndex !== -1 && fromIndex !== toIndex) {
-      const [moved] = sortedFunds.splice(fromIndex, 1);
-      sortedFunds.splice(toIndex, 0, moved);
-      sortedFunds.forEach((f, idx) => {
-        fundsData.funds.find((x) => x.id === f.id).sortOrder = idx;
-      });
-      saveFundsToFirebase();
-      renderFundsList();
-    } else {
-      resetFundTouchDrag();
+      performFundReorder(_fundTouchSrcId, targetId, insertAbove);
     }
-  } else {
-    resetFundTouchDrag();
   }
+
+  _fundTouchSrcEl = null;
+  _fundTouchSrcId = null;
+  _fundTouchDragging = false;
+}
+
+function handleFundTouchCancel() {
+  if (_fundTouchSrcEl) {
+    _fundTouchSrcEl.classList.remove("dragging");
+    _fundTouchSrcEl.style.opacity = "";
+    _fundTouchSrcEl.style.transform = "";
+    _fundTouchSrcEl.style.zIndex = "";
+    _fundTouchSrcEl.style.position = "";
+  }
+
+  document.querySelectorAll(".drop-target, .drag-over").forEach((el) => {
+    el.classList.remove("drop-target", "drag-over");
+    el.style.transform = "";
+    el.style.boxShadow = "";
+    el.style.zIndex = "";
+    el.style.borderTop = "";
+    el.style.borderBottom = "";
+  });
+
+  _fundTouchSrcEl = null;
+  _fundTouchSrcId = null;
+  _fundTouchDragging = false;
+}
+
+function performFundReorder(srcId, targetId, insertAbove) {
+  const sortedFunds = [...fundsData.funds].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+  const srcIdx = sortedFunds.findIndex((f) => f.id === srcId);
+  const targetIdx = sortedFunds.findIndex((f) => f.id === targetId);
+
+  if (srcIdx < 0 || targetIdx < 0) return;
+
+  const [movedFund] = sortedFunds.splice(srcIdx, 1);
+
+  let insertIdx = insertAbove ? targetIdx : targetIdx + 1;
+  if (srcIdx < targetIdx && !insertAbove) {
+    insertIdx = targetIdx;
+  } else if (srcIdx > targetIdx && insertAbove) {
+    insertIdx = targetIdx + 1;
+  }
+
+  sortedFunds.splice(Math.max(0, Math.min(insertIdx, sortedFunds.length)), 0, movedFund);
+
+  sortedFunds.forEach((f, idx) => {
+    const fund = fundsData.funds.find((x) => x.id === f.id);
+    if (fund) fund.sortOrder = idx;
+  });
+
+  saveFundsToFirebase();
+  renderFundsList();
 }
 
 function resetFundTouchDrag() {
-  const { item, placeholder, list } = fundTouchDragState;
-
-  if (item) {
-    item.classList.remove("fund-item-touch-dragging");
-    item.style.opacity = "";
-    item.style.background = "";
-    item.style.boxShadow = "";
-    item.style.width = "";
-    item.style.position = "";
-    item.style.left = "";
-    item.style.right = "";
-    item.style.top = "";
-    item.style.zIndex = "";
-    item.style.pointerEvents = "";
-    item.style.transform = "";
-  }
-
-  if (placeholder && placeholder.parentNode) {
-    placeholder.parentNode.removeChild(placeholder);
-  }
-
-  if (list) {
-    list.style.position = "";
-  }
-
-  fundTouchDragState.active = false;
-  fundTouchDragState.dragging = false;
-  fundTouchDragState.list = null;
-  fundTouchDragState.item = null;
-  fundTouchDragState.itemId = "";
-  fundTouchDragState.startY = 0;
-  fundTouchDragState.currentY = 0;
-  fundTouchDragState.offsetY = 0;
-  fundTouchDragState.placeholder = null;
+  // Legacy function - kept for compatibility
 }
 
 function getDragAfterElement(container, y) {

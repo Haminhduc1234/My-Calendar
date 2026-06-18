@@ -34,6 +34,114 @@ let translateHistoryCache = [];
 let syncWriteErrorShown = false;
 let profileSettingsCache = {};
 
+// Modal history management for back-button support
+let _modalHistoryStack = [];
+let _isHandlingHistoryModal = false;
+
+function getOpenModalId() {
+  const modalIds = [
+    "addEventModal",
+    "dayDetailsModal",
+    "overtimeModal",
+    "goldModal",
+    "quickNoteModal",
+    "myMusicModal",
+    "cashflowModal",
+    "cashflowDeleteConfirmModal",
+    "currencyModal",
+    "fundsModal",
+    "fundModal",
+    "allocateModal",
+    "topupFundModal",
+    "profileSettingsModal",
+    "cropModal",
+    "newsModal",
+    "translateModal",
+    "learnModal",
+    "quizModal",
+    "countdownModal",
+    "projectsModal",
+    "projectTasksModal",
+    "projectFormModal",
+    "taskFormModal",
+    "cashflowQuickViewModal",
+    "cashflowCategoryModal",
+  ];
+  for (const id of modalIds) {
+    const el = document.getElementById(id);
+    if (el && el.style.display === "flex") return id;
+  }
+  return null;
+}
+
+function closeCurrentModalForHistory() {
+  const openId = getOpenModalId();
+  if (!openId) return false;
+  const closer = window[`close${openId
+    .replace(/([A-Z])/g, (m) => m)
+    .replace(/^[a-z]/, (m) => m.toUpperCase())}Modal`];
+  if (typeof closer === "function") {
+    closer();
+  } else {
+    const el = document.getElementById(openId);
+    if (el) el.style.display = "none";
+  }
+  return true;
+}
+
+function _syncModalHistoryState() {
+  const openId = getOpenModalId();
+  const url = openId ? `#modal:${openId}` : window.location.pathname;
+  if (window.location.hash !== `#modal:${openId}`) {
+    if (openId) {
+      history.pushState({ modal: openId }, "", url);
+    } else {
+      history.pushState({ modal: null }, "", url);
+    }
+  }
+}
+
+function initModalHistory() {
+  window.addEventListener(
+    "popstate",
+    (e) => {
+      if (_isHandlingHistoryModal) return;
+      _isHandlingHistoryModal = true;
+
+      const openId = getOpenModalId();
+      if (openId) {
+        closeCurrentModalForHistory();
+      } else if (
+        e.state &&
+        typeof e.state.modal === "string" &&
+        e.state.modal !== "null"
+      ) {
+        const opener = window[`open${e.state.modal
+          .replace(/([A-Z])/g, (m) => m)
+          .replace(/^[a-z]/, (m) => m.toUpperCase())}Modal`];
+        if (typeof opener === "function") opener();
+      }
+
+      setTimeout(() => {
+        _isHandlingHistoryModal = false;
+      }, 0);
+    },
+    false,
+  );
+
+  const observer = new MutationObserver(() => {
+    if (_isHandlingHistoryModal) return;
+    _syncModalHistoryState();
+  });
+
+  document.querySelectorAll(".modal").forEach((modal) => {
+    observer.observe(modal, {
+      attributes: true,
+      attributeFilter: ["style"],
+    });
+  });
+}
+
 // Projects state
 let projectsDataCache = {};
 let currentOpenedProjectId = null;

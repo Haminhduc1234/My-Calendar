@@ -5213,6 +5213,7 @@ input[type="datetime-local"] {
   gap: 8px;
   max-height: calc(100vh - 370px);
   overflow-y: auto;
+  touch-action: pan-y;
 }
 
 .fund-jar {
@@ -5996,7 +5997,9 @@ input[type="datetime-local"] {
   color: rgba(189, 168, 222, 0.6);
   font-size: 14px;
   cursor: grab;
+  touch-action: none;
   user-select: none;
+  -webkit-user-select: none;
   transition: color 0.2s ease;
   padding-top: 3px;
 }
@@ -7346,6 +7349,7 @@ input[type="datetime-local"] {
   overflow-y: auto;
   padding-bottom: 24px;
   max-height: 60vh;
+  touch-action: pan-y;
 }
 
 .project-item,
@@ -7482,6 +7486,19 @@ input[type="datetime-local"] {
 }
 
 .task-drag-handle:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.fund-drag-handle {
+  cursor: grab;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.fund-drag-handle:hover {
   color: rgba(255, 255, 255, 0.8);
 }
 

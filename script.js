@@ -7451,12 +7451,14 @@ function attachFundDragEvents() {
     renderFundsList();
   });
 
-  listEl.addEventListener("touchstart", handleFundTouchStart, {
-    passive: false,
+  listEl.querySelectorAll(".fund-drag-handle").forEach((handle) => {
+    handle.addEventListener("touchstart", handleFundTouchStart, {
+      passive: false,
+    });
+    handle.addEventListener("touchmove", handleFundTouchMove, { passive: false });
+    handle.addEventListener("touchend", handleFundTouchEnd);
+    handle.addEventListener("touchcancel", handleFundTouchCancel);
   });
-  listEl.addEventListener("touchmove", handleFundTouchMove, { passive: false });
-  listEl.addEventListener("touchend", handleFundTouchEnd);
-  listEl.addEventListener("touchcancel", handleFundTouchCancel);
 }
 
 let _fundTouchSrcEl = null;
@@ -7466,15 +7468,11 @@ let _fundTouchStartY = 0;
 let _fundTouchCurrentY = 0;
 
 function handleFundTouchStart(e) {
-  const item = e.target.closest(".fund-item");
-  if (!item) return;
+  const handle = e.target.closest(".fund-drag-handle");
+  if (!handle) return;
 
-  if (
-    e.target.closest(".fund-item-actions") ||
-    e.target.closest("button")
-  ) {
-    return;
-  }
+  const item = handle.closest(".fund-item");
+  if (!item) return;
 
   e.preventDefault();
 

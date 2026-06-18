@@ -7480,7 +7480,7 @@ function handleFundTouchStart(e) {
 
   _fundTouchStartY = e.touches[0].clientY;
   _fundTouchCurrentY = _fundTouchStartY;
-  _fundTouchSrcEl = e.currentTarget;
+  _fundTouchSrcEl = item;
   _fundTouchSrcId = item.dataset.fundId;
   _fundTouchDragging = false;
 

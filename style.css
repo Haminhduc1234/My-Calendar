@@ -7476,6 +7476,9 @@ input[type="datetime-local"] {
   cursor: grab;
   color: rgba(255, 255, 255, 0.4);
   font-size: 14px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .task-drag-handle:hover {

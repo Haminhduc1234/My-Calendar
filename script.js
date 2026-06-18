@@ -2779,37 +2779,34 @@ function bindTaskDragDrop(projectId) {
     item.addEventListener("drop", (e) => handleTaskDrop(e, projectId));
     item.addEventListener("dragend", handleTaskDragEnd);
 
-    // Mobile touch events
-    item.addEventListener("touchstart", handleTaskTouchStart, {
-      passive: false,
-    });
-    item.addEventListener("touchmove", handleTaskTouchMove, { passive: false });
-    item.addEventListener("touchend", (e) => handleTaskTouchEnd(e, projectId));
+    // Mobile touch events - only on handle
+    const handle = item.querySelector(".task-drag-handle");
+    if (handle) {
+      handle.addEventListener("touchstart", handleTaskTouchStart, {
+        passive: false,
+      });
+      handle.addEventListener("touchmove", handleTaskTouchMove, { passive: false });
+      handle.addEventListener("touchend", (e) => handleTaskTouchEnd(e, projectId));
+    }
   });
 }
 
 function handleTaskTouchStart(e) {
-  if (
-    e.target.closest(".item-actions") ||
-    e.target.closest(".task-drag-handle")
-  ) {
-    return;
-  }
+  const handle = e.target.closest(".task-drag-handle");
+  if (!handle) return;
+
+  const item = handle.closest(".task-item.draggable");
+  if (!item) return;
+
   e.preventDefault();
   _touchStartY = e.touches[0].clientY;
   _touchCurrentY = _touchStartY;
-  _touchDragSrcEl = e.currentTarget;
-  _taskDragSrcId = e.currentTarget.dataset.taskId;
+  _touchDragSrcEl = item;
+  _taskDragSrcId = item.dataset.taskId;
   _touchDragging = false;
 
   _touchDragSrcEl.classList.add("dragging");
   _touchDragSrcEl.style.opacity = "0.4";
-
-  document.querySelectorAll(".task-item.draggable").forEach((item) => {
-    if (item.dataset.taskId !== _taskDragSrcId) {
-      item.classList.add("drop-target");
-    }
-  });
 }
 
 function handleTaskTouchMove(e) {
@@ -3144,7 +3141,7 @@ function renderQuickNotes() {
     .map((note) => {
       return `
       <div class="quick-note-item ${note.done ? "is-done" : ""}" draggable="true" data-note-id="${note.id}">
-        <span class="note-drag-handle" aria-hidden="true">☰</span>
+        <span class="note-drag-handle" aria-hidden="true" data-drag-handle="true">☰</span>
         <input type="checkbox" ${note.done ? "checked" : ""} aria-label="Đánh dấu hoàn thành" onclick="toggleQuickNoteDone('${note.id}')">
         <div class="quick-note-text" onclick="editQuickNote('${note.id}')" title="Nhấn để sửa">${escapeHtml(note.text)}</div>
         <button type="button" class="quick-note-delete" onclick="deleteQuickNote('${note.id}')" aria-label="Xóa ghi chú">×</button>
@@ -7306,6 +7303,9 @@ function renderFundsList() {
     item.style.setProperty("--fund-color", color);
     item.style.setProperty("--fund-color-light", `rgba(${colorRgb}, 0.4)`);
     item.innerHTML = `
+      <div class="drag-controls">
+        <button class="fund-drag-handle" data-drag-handle="true" title="Kéo để sắp xếp">☰</button>
+      </div>
       <div class="fund-jar">
         <div class="fund-jar-lid"></div>
         <div class="fund-jar-neck"></div>
@@ -7507,18 +7507,29 @@ function handleFundTouchMove(e) {
     _fundTouchSrcEl.style.zIndex = "1000";
     _fundTouchSrcEl.style.position = "relative";
 
-    document.querySelectorAll(".fund-item").forEach((item) => {
+    const dragRect = _fundTouchSrcEl.getBoundingClientRect();
+    const dragMidY = dragRect.top + dragRect.height / 2;
+    const items = Array.from(document.querySelectorAll(".fund-item"));
+    const draggedIndex = items.indexOf(_fundTouchSrcEl);
+
+    items.forEach((item, index) => {
       if (item === _fundTouchSrcEl) return;
-      item.style.borderTop = "";
-      item.style.borderBottom = "";
+
+      item.style.transform = "";
+      item.style.transition = "";
 
       const rect = item.getBoundingClientRect();
       const midY = rect.top + rect.height / 2;
+      const itemHeight = rect.height;
 
-      if (_fundTouchCurrentY < midY) {
-        item.style.borderTop = "3px solid #a855f7";
-      } else {
-        item.style.borderBottom = "3px solid #a855f7";
+      if (draggedIndex !== -1 && index > draggedIndex && _fundTouchCurrentY > dragMidY) {
+        const distance = Math.min(_fundTouchCurrentY - dragMidY, itemHeight);
+        item.style.transform = `translateY(${distance}px)`;
+        item.style.transition = "transform 0.1s ease";
+      } else if (draggedIndex !== -1 && index < draggedIndex && _fundTouchCurrentY < dragMidY) {
+        const distance = Math.max(_fundTouchCurrentY - dragMidY, -itemHeight);
+        item.style.transform = `translateY(${distance}px)`;
+        item.style.transition = "transform 0.1s ease";
       }
     });
   }
@@ -7533,13 +7544,15 @@ function handleFundTouchEnd(e) {
   _fundTouchSrcEl.style.zIndex = "";
   _fundTouchSrcEl.style.position = "";
 
+  document.querySelectorAll(".fund-item").forEach((el) => {
+    el.style.transform = "";
+    el.style.transition = "";
+  });
+
   document.querySelectorAll(".drop-target, .drag-over").forEach((el) => {
     el.classList.remove("drop-target", "drag-over");
-    el.style.transform = "";
     el.style.boxShadow = "";
     el.style.zIndex = "";
-    el.style.borderTop = "";
-    el.style.borderBottom = "";
   });
 
   if (_fundTouchDragging && _fundTouchSrcId) {
@@ -7573,13 +7586,15 @@ function handleFundTouchCancel() {
     _fundTouchSrcEl.style.position = "";
   }
 
+  document.querySelectorAll(".fund-item").forEach((el) => {
+    el.style.transform = "";
+    el.style.transition = "";
+  });
+
   document.querySelectorAll(".drop-target, .drag-over").forEach((el) => {
     el.classList.remove("drop-target", "drag-over");
-    el.style.transform = "";
     el.style.boxShadow = "";
     el.style.zIndex = "";
-    el.style.borderTop = "";
-    el.style.borderBottom = "";
   });
 
   _fundTouchSrcEl = null;

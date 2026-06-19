@@ -5522,21 +5522,12 @@ function initCashflowImageUpload() {
   if (!uploadArea || !fileInput) return;
 
   if (removeBtn) {
-    removeBtn.addEventListener("touchend", (e) => {
+    removeBtn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
       removeCashflowImage();
     });
   }
-
-  const triggerFileInput = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    fileInput.click();
-  };
-
-  uploadArea.addEventListener("click", triggerFileInput);
-  uploadArea.addEventListener("touchend", triggerFileInput);
 
   fileInput.addEventListener("change", (e) => {
     const file = e.target.files[0];

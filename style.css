@@ -4125,17 +4125,12 @@ body::before {
   position: relative;
   width: 100%;
   min-height: 80px;
-  min-height: env(-webkit-fill-available, 80px);
   border-radius: 12px;
   border: 2px dashed rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.03);
   transition: all 0.2s ease;
-  overflow: hidden;
+  overflow: visible;
   cursor: pointer;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-touch-callout: none;
-  user-select: none;
 }
 
 .cashflow-image-upload-area:active {
@@ -4151,6 +4146,7 @@ body::before {
 .cashflow-image-upload-area.has-image {
   border-style: solid;
   border-color: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
 }
 
 .cashflow-image-loading {
@@ -4192,6 +4188,8 @@ body::before {
   cursor: pointer;
   color: var(--muted);
   font-size: 13px;
+  position: relative;
+  z-index: 5;
 }
 
 .cashflow-image-placeholder svg {
@@ -4205,7 +4203,7 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  touch-action: manipulation;
+  z-index: 5;
 }
 
 .cashflow-image-preview img {
@@ -4213,9 +4211,6 @@ body::before {
   max-height: 200px;
   border-radius: 8px;
   object-fit: contain;
-  pointer-events: none;
-  -webkit-user-select: none;
-  user-select: none;
 }
 
 .cashflow-image-remove {
@@ -4234,9 +4229,7 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  z-index: 10;
+  z-index: 20;
 }
 
 .cashflow-image-remove:active {

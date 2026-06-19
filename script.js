@@ -5566,10 +5566,37 @@ function initCashflowImageUpload() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      if (loadingEl.parentNode) loadingEl.remove();
-      previewImg.src = event.target.result;
-      preview.style.display = "flex";
-      uploadArea.classList.add("has-image");
+      const img = new Image();
+      img.onload = () => {
+        if (loadingEl.parentNode) loadingEl.remove();
+
+        const maxW = 1200;
+        const maxH = 1200;
+        let w = img.width, h = img.height;
+        if (w > maxW || h > maxH) {
+          const ratio = Math.min(maxW / w, maxH / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        const compressed = canvas.toDataURL("image/jpeg", 0.7);
+
+        previewImg.src = compressed;
+        preview.style.display = "flex";
+        uploadArea.classList.add("has-image");
+      };
+      img.onerror = () => {
+        if (loadingEl.parentNode) loadingEl.remove();
+        previewImg.src = event.target.result;
+        preview.style.display = "flex";
+        uploadArea.classList.add("has-image");
+      };
+      img.src = event.target.result;
     };
     reader.onerror = () => {
       if (loadingEl.parentNode) loadingEl.remove();

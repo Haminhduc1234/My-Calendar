@@ -488,6 +488,7 @@ function normalizeDateData(raw) {
         category: String(entry?.category || "").trim(),
         amount,
         note: String(entry?.note || "").trim(),
+        image: entry?.image || "",
         createdAt: Number(entry?.createdAt || Date.now()),
         updatedAt: Number(entry?.updatedAt || 0),
       };
@@ -5378,6 +5379,7 @@ function openCashflowModal() {
   syncCashflowFormMode();
   syncCashflowRangeFilterUI();
   loadCashflowOnDemand();
+  initCashflowImageUpload();
 }
 
 function closeCashflowModal() {
@@ -5411,6 +5413,7 @@ function addCashflowEntry() {
   const category = categoryInput.value;
   const amount = parseInt(amountInput.value.replace(/\D/g, ""), 10) || 0;
   const note = noteInput.value.trim();
+  const image = getCashflowImageData();
   const targetDateKey = isoDateToDateKey(date);
 
   if (!date || !targetDateKey) {
@@ -5448,6 +5451,7 @@ function addCashflowEntry() {
       category,
       amount,
       note,
+      image,
       createdAt: located.entry.createdAt || Date.now(),
       updatedAt: Date.now(),
     });
@@ -5460,6 +5464,7 @@ function addCashflowEntry() {
       category,
       amount,
       note,
+      image,
       createdAt: Date.now(),
     };
 
@@ -5487,6 +5492,7 @@ function startCashflowEdit(id) {
   document.getElementById("cashflowAmount").value =
     entry.amount.toLocaleString("vi-VN");
   document.getElementById("cashflowNote").value = entry.note || "";
+  setCashflowImageData(entry.image || "");
 
   if (entry.category) {
     document.getElementById("cashflowCategory").value = entry.category;
@@ -5504,6 +5510,77 @@ function cancelCashflowEdit() {
   resetCashflowForm();
 }
 
+function initCashflowImageUpload() {
+  const uploadArea = document.getElementById("cashflowImageUploadArea");
+  const fileInput = document.getElementById("cashflowImageInput");
+  const placeholder = document.getElementById("cashflowImagePlaceholder");
+  const preview = document.getElementById("cashflowImagePreview");
+  const previewImg = document.getElementById("cashflowImageImg");
+
+  if (!uploadArea || !fileInput) return;
+
+  uploadArea.addEventListener("click", () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Vui lòng chọn file ảnh");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      previewImg.src = event.target.result;
+      placeholder.style.display = "none";
+      preview.style.display = "flex";
+      uploadArea.classList.add("has-image");
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function removeCashflowImage() {
+  const uploadArea = document.getElementById("cashflowImageUploadArea");
+  const fileInput = document.getElementById("cashflowImageInput");
+  const placeholder = document.getElementById("cashflowImagePlaceholder");
+  const preview = document.getElementById("cashflowImagePreview");
+  const previewImg = document.getElementById("cashflowImageImg");
+
+  if (fileInput) fileInput.value = "";
+  if (previewImg) previewImg.src = "";
+  if (placeholder) placeholder.style.display = "flex";
+  if (preview) preview.style.display = "none";
+  if (uploadArea) uploadArea.classList.remove("has-image");
+}
+
+function getCashflowImageData() {
+  const previewImg = document.getElementById("cashflowImageImg");
+  if (previewImg && previewImg.src && !previewImg.src.includes("data:,")) {
+    return previewImg.src;
+  }
+  return "";
+}
+
+function setCashflowImageData(imageData) {
+  const uploadArea = document.getElementById("cashflowImageUploadArea");
+  const placeholder = document.getElementById("cashflowImagePlaceholder");
+  const preview = document.getElementById("cashflowImagePreview");
+  const previewImg = document.getElementById("cashflowImageImg");
+
+  if (imageData) {
+    if (previewImg) previewImg.src = imageData;
+    if (placeholder) placeholder.style.display = "none";
+    if (preview) preview.style.display = "flex";
+    if (uploadArea) uploadArea.classList.add("has-image");
+  } else {
+    removeCashflowImage();
+  }
+}
+
 function resetCashflowForm() {
   editingCashflowId = "";
   document.getElementById("cashflowDate").value = getTodayIsoDate();
@@ -5511,6 +5588,7 @@ function resetCashflowForm() {
   updateCashflowCategoryDropdowns();
   document.getElementById("cashflowAmount").value = "";
   document.getElementById("cashflowNote").value = "";
+  removeCashflowImage();
   syncCashflowFormMode();
   renderCashflowQuickView();
 }
@@ -6192,6 +6270,16 @@ function renderCashflowRecentList() {
     row.appendChild(actionsEl);
     row.appendChild(noteEl);
     row.appendChild(sublineEl);
+
+    if (entry.image) {
+      const imageEl = document.createElement("img");
+      imageEl.className = "cashflow-row-image";
+      imageEl.src = entry.image;
+      imageEl.alt = "Ảnh mô tả";
+      imageEl.loading = "lazy";
+      row.appendChild(imageEl);
+    }
+
     listEl.appendChild(row);
   }
 
@@ -6621,6 +6709,9 @@ function renderCashflowQuickView() {
   const createdLabel = formatTimestampForCsv(entry.createdAt) || "Chưa rõ";
   const noteLabel = entry.note || "Không có ghi chú";
   const amountLabel = `${entry.type === "income" ? "+" : "-"}${entry.amount.toLocaleString("vi-VN")} đ`;
+  const imageHtml = entry.image
+    ? `<div class="cashflow-quickview-image"><img src="${entry.image}" alt="Ảnh mô tả" /></div>`
+    : "";
 
   quickViewEl.innerHTML = `
     <div class="cashflow-quickview-head">
@@ -6631,6 +6722,7 @@ function renderCashflowQuickView() {
       <div class="cashflow-quickview-amount ${entry.type === "income" ? "is-income" : "is-expense"}">${amountLabel}</div>
     </div>
     <div class="cashflow-quickview-note">${noteLabel}</div>
+    ${imageHtml}
     <div class="cashflow-quickview-grid">
       <div class="cashflow-quickview-item">
         <span class="cashflow-quickview-label">Ngày giao dịch</span>

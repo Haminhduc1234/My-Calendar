@@ -4111,6 +4111,91 @@ body::before {
   margin-bottom: 8px;
 }
 
+.cashflow-image-block {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.cashflow-image-block > span {
+  display: inline-block;
+  margin-bottom: 8px;
+}
+
+.cashflow-image-upload-area {
+  position: relative;
+  width: 100%;
+  min-height: 80px;
+  border-radius: 12px;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.cashflow-image-upload-area:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.cashflow-image-upload-area.has-image {
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.cashflow-image-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.cashflow-image-placeholder svg {
+  opacity: 0.6;
+}
+
+.cashflow-image-preview {
+  position: relative;
+  width: 100%;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cashflow-image-preview img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.cashflow-image-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.cashflow-image-remove:hover {
+  background: rgba(220, 50, 50, 0.9);
+  transform: scale(1.1);
+}
+
 .cashflow-summary-label,
 .cashflow-history-title,
 .cashflow-chart-subtitle,
@@ -4543,6 +4628,21 @@ input[type="datetime-local"] {
   white-space: nowrap;
 }
 
+.cashflow-row-image {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-height: 120px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-top: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cashflow-row-image:hover {
+  cursor: pointer;
+  opacity: 0.9;
+}
+
 .cashflow-row-amount {
   grid-area: amount;
   min-width: max-content;
@@ -4747,6 +4847,21 @@ input[type="datetime-local"] {
   background: rgba(255, 255, 255, 0.04);
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.cashflow-quickview-image {
+  margin-top: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cashflow-quickview-image img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  display: block;
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .cashflow-quickview-grid {

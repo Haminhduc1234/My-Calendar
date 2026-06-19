@@ -1085,6 +1085,35 @@
                 />
               </label>
 
+              <label class="cashflow-input-item cashflow-image-item cashflow-image-block">
+                <span>Ảnh mô tả</span>
+                <div class="cashflow-image-upload-area" id="cashflowImageUploadArea">
+                  <input
+                    type="file"
+                    id="cashflowImageInput"
+                    accept="image/*"
+                    style="display: none"
+                  />
+                  <div class="cashflow-image-placeholder" id="cashflowImagePlaceholder">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    <span>Nhấn để chọn ảnh</span>
+                  </div>
+                  <div class="cashflow-image-preview" id="cashflowImagePreview" style="display: none">
+                    <img id="cashflowImageImg" src="" alt="Ảnh mô tả" />
+                    <button type="button" class="cashflow-image-remove" onclick="removeCashflowImage()" aria-label="Xóa ảnh">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </label>
+
               <div class="cashflow-actions">
                 <button
                   id="cashflowSubmitBtn"
@@ -1310,7 +1339,7 @@
             <section class="cashflow-section cashflow-chart-section">
               <div class="cashflow-chart-title-row">
                 <div class="cashflow-section-eyebrow">
-                  Biểu đồ thu chi 12 tháng gần nhất
+                  Biểu đồ thu chi
                 </div>
               </div>
               <div class="cashflow-chart-controls">

@@ -5520,9 +5520,14 @@ function initCashflowImageUpload() {
 
   if (!uploadArea || !fileInput) return;
 
-  uploadArea.addEventListener("click", () => {
+  const triggerFileInput = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     fileInput.click();
-  });
+  };
+
+  uploadArea.addEventListener("click", triggerFileInput);
+  uploadArea.addEventListener("touchend", triggerFileInput);
 
   fileInput.addEventListener("change", (e) => {
     const file = e.target.files[0];
@@ -5539,6 +5544,9 @@ function initCashflowImageUpload() {
       placeholder.style.display = "none";
       preview.style.display = "flex";
       uploadArea.classList.add("has-image");
+    };
+    reader.onerror = () => {
+      alert("Không thể đọc file ảnh. Vui lòng thử lại.");
     };
     reader.readAsDataURL(file);
   });

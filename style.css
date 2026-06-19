@@ -4125,11 +4125,22 @@ body::before {
   position: relative;
   width: 100%;
   min-height: 80px;
+  min-height: env(-webkit-fill-available, 80px);
   border-radius: 12px;
   border: 2px dashed rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.03);
   transition: all 0.2s ease;
   overflow: hidden;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.cashflow-image-upload-area:active {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .cashflow-image-upload-area:hover {

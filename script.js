@@ -5570,9 +5570,9 @@ function initCashflowImageUpload() {
       img.onload = () => {
         if (loadingEl.parentNode) loadingEl.remove();
 
-        const maxW = 1200;
-        const maxH = 1200;
         let w = img.width, h = img.height;
+        const maxW = 800;
+        const maxH = 800;
         if (w > maxW || h > maxH) {
           const ratio = Math.min(maxW / w, maxH / h);
           w = Math.round(w * ratio);
@@ -5584,7 +5584,14 @@ function initCashflowImageUpload() {
         canvas.height = h;
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, w, h);
-        const compressed = canvas.toDataURL("image/jpeg", 0.7);
+        let compressed = canvas.toDataURL("image/jpeg", 0.5);
+
+        const base64Len = compressed.length - "data:image/jpeg;base64,".length;
+        const sizeKB = Math.round(base64Len * 0.75 / 1024);
+
+        if (sizeKB > 200) {
+          compressed = canvas.toDataURL("image/jpeg", 0.3);
+        }
 
         previewImg.src = compressed;
         preview.style.display = "flex";

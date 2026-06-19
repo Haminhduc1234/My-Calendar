@@ -5538,14 +5538,27 @@ function initCashflowImageUpload() {
       return;
     }
 
+    placeholder.style.display = "none";
+    preview.style.display = "none";
+    const loadingEl = document.createElement("div");
+    loadingEl.className = "cashflow-image-loading";
+    loadingEl.id = "cashflowImageLoading";
+    loadingEl.innerHTML = `
+      <div class="cashflow-image-loading-spinner"></div>
+      <span class="cashflow-image-loading-text">Đang xử lý...</span>
+    `;
+    uploadArea.appendChild(loadingEl);
+
     const reader = new FileReader();
     reader.onload = (event) => {
+      if (loadingEl.parentNode) loadingEl.remove();
       previewImg.src = event.target.result;
-      placeholder.style.display = "none";
       preview.style.display = "flex";
       uploadArea.classList.add("has-image");
     };
     reader.onerror = () => {
+      if (loadingEl.parentNode) loadingEl.remove();
+      placeholder.style.display = "flex";
       alert("Không thể đọc file ảnh. Vui lòng thử lại.");
     };
     reader.readAsDataURL(file);
@@ -6288,7 +6301,9 @@ function renderCashflowRecentList() {
       imageEl.loading = "lazy";
       imageEl.addEventListener("click", (e) => {
         e.stopPropagation();
-        openImageModal(entry.image);
+        selectedCashflowId = entry.id;
+        renderCashflowRecentList();
+        openCashflowQuickViewModal();
       });
       row.appendChild(imageEl);
     }

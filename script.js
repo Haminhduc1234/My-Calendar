@@ -5440,23 +5440,38 @@ function addCashflowEntry() {
     }
 
     const previousDateKey = located.dateKey;
-    const previousData = getDateData(previousDateKey);
-    previousData.cashflowEntries.splice(located.index, 1);
-    saveDateData(previousDateKey, previousData);
+    const sameDate = previousDateKey === targetDateKey;
 
-    const targetData = getDateData(targetDateKey);
-    targetData.cashflowEntries.push({
-      id: located.entry.id,
-      date,
-      type,
-      category,
-      amount,
-      note,
-      image,
-      createdAt: located.entry.createdAt || Date.now(),
-      updatedAt: Date.now(),
-    });
-    saveDateData(targetDateKey, targetData);
+    if (sameDate) {
+      const data = getDateData(targetDateKey);
+      const entry = data.cashflowEntries[located.index];
+      entry.date = date;
+      entry.type = type;
+      entry.category = category;
+      entry.amount = amount;
+      entry.note = note;
+      entry.image = image;
+      entry.updatedAt = Date.now();
+      saveDateData(targetDateKey, data);
+    } else {
+      const previousData = getDateData(previousDateKey);
+      previousData.cashflowEntries.splice(located.index, 1);
+      saveDateData(previousDateKey, previousData);
+
+      const targetData = getDateData(targetDateKey);
+      targetData.cashflowEntries.push({
+        id: located.entry.id,
+        date,
+        type,
+        category,
+        amount,
+        note,
+        image,
+        createdAt: located.entry.createdAt || Date.now(),
+        updatedAt: Date.now(),
+      });
+      saveDateData(targetDateKey, targetData);
+    }
   } else {
     const entry = {
       id: `cf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,

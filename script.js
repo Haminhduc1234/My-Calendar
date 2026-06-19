@@ -481,6 +481,7 @@ function normalizeDateData(raw) {
       const normalizedDate = normalizeIsoDateString(entry?.date || "");
       const type = entry?.type === "expense" ? "expense" : "income";
       const amount = Math.max(0, parseInt(entry?.amount, 10) || 0);
+      const image = entry?.image && entry.image.startsWith("data:") ? entry.image : "";
       return {
         id: String(entry?.id || "").trim(),
         date: normalizedDate,
@@ -488,7 +489,7 @@ function normalizeDateData(raw) {
         category: String(entry?.category || "").trim(),
         amount,
         note: String(entry?.note || "").trim(),
-        image: entry?.image || "",
+        image,
         createdAt: Number(entry?.createdAt || Date.now()),
         updatedAt: Number(entry?.updatedAt || 0),
       };
@@ -5571,7 +5572,7 @@ function setCashflowImageData(imageData) {
   const preview = document.getElementById("cashflowImagePreview");
   const previewImg = document.getElementById("cashflowImageImg");
 
-  if (imageData) {
+  if (imageData && imageData.trim() && imageData.startsWith("data:")) {
     if (previewImg) previewImg.src = imageData;
     if (placeholder) placeholder.style.display = "none";
     if (preview) preview.style.display = "flex";

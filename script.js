@@ -6271,12 +6271,16 @@ function renderCashflowRecentList() {
     row.appendChild(noteEl);
     row.appendChild(sublineEl);
 
-    if (entry.image) {
+    if (entry.image && entry.image.trim() && entry.image.startsWith("data:")) {
       const imageEl = document.createElement("img");
       imageEl.className = "cashflow-row-image";
       imageEl.src = entry.image;
       imageEl.alt = "Ảnh mô tả";
       imageEl.loading = "lazy";
+      imageEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openImageModal(entry.image);
+      });
       row.appendChild(imageEl);
     }
 
@@ -6709,7 +6713,7 @@ function renderCashflowQuickView() {
   const createdLabel = formatTimestampForCsv(entry.createdAt) || "Chưa rõ";
   const noteLabel = entry.note || "Không có ghi chú";
   const amountLabel = `${entry.type === "income" ? "+" : "-"}${entry.amount.toLocaleString("vi-VN")} đ`;
-  const imageHtml = entry.image
+  const imageHtml = entry.image && entry.image.trim() && entry.image.startsWith("data:")
     ? `<div class="cashflow-quickview-image"><img src="${entry.image}" alt="Ảnh mô tả" /></div>`
     : "";
 

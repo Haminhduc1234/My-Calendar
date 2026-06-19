@@ -5517,8 +5517,17 @@ function initCashflowImageUpload() {
   const placeholder = document.getElementById("cashflowImagePlaceholder");
   const preview = document.getElementById("cashflowImagePreview");
   const previewImg = document.getElementById("cashflowImageImg");
+  const removeBtn = document.querySelector(".cashflow-image-remove");
 
   if (!uploadArea || !fileInput) return;
+
+  if (removeBtn) {
+    removeBtn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      removeCashflowImage();
+    });
+  }
 
   const triggerFileInput = (e) => {
     e.preventDefault();

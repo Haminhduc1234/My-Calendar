@@ -4205,6 +4205,7 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
 }
 
 .cashflow-image-preview img {
@@ -4212,14 +4213,19 @@ body::before {
   max-height: 200px;
   border-radius: 8px;
   object-fit: contain;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .cashflow-image-remove {
   position: absolute;
   top: 8px;
   right: 8px;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   border-radius: 50%;
   border: none;
   background: rgba(0, 0, 0, 0.7);
@@ -4228,7 +4234,14 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 10;
+}
+
+.cashflow-image-remove:active {
+  background: rgba(220, 53, 69, 0.9);
+  transform: scale(0.95);
 }
 
 .cashflow-image-remove:hover {

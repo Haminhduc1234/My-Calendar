@@ -4792,7 +4792,7 @@ input[type="datetime-local"] {
 .cashflow-quickview-modal {
   position: fixed;
   inset: 0;
-  z-index: 3000;
+  z-index: 3100;
   display: none;
   align-items: center;
   justify-content: center;
@@ -4827,6 +4827,89 @@ input[type="datetime-local"] {
 
 .cashflow-quickview-close:hover {
   background: rgba(255, 255, 255, 0.14);
+}
+
+.cashflow-all-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(2, 8, 23, 0.62);
+  backdrop-filter: blur(10px);
+}
+
+.cashflow-all-dialog {
+  position: relative;
+  width: min(680px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  background: linear-gradient(
+    180deg,
+    rgba(12, 28, 55, 0.98),
+    rgba(8, 20, 41, 0.98)
+  );
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+}
+
+.cashflow-all-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid rgba(183, 208, 255, 0.12);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.cashflow-all-header h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: #eef5ff;
+}
+
+.cashflow-all-close {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #eef5ff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cashflow-all-close:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.cashflow-all-body {
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cashflow-all-body .cashflow-row {
+  margin: 0;
+}
+
+.cashflow-all-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .cashflow-quickview {
@@ -6791,7 +6874,7 @@ input[type="datetime-local"] {
 .cashflow-quickview-modal {
   position: fixed;
   inset: 0;
-  z-index: 3000;
+  z-index: 3100;
   display: none;
   align-items: center;
   justify-content: center;
@@ -6826,6 +6909,89 @@ input[type="datetime-local"] {
 
 .cashflow-quickview-close:hover {
   background: rgba(255, 255, 255, 0.14);
+}
+
+.cashflow-all-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(2, 8, 23, 0.68);
+  backdrop-filter: blur(8px);
+}
+
+.cashflow-all-dialog {
+  position: relative;
+  width: min(680px, calc(100vw - 24px));
+  max-height: calc(100vh - 32px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  background: linear-gradient(
+    180deg,
+    rgba(12, 28, 55, 0.98),
+    rgba(8, 20, 41, 0.98)
+  );
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.42);
+}
+
+.cashflow-all-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgba(183, 208, 255, 0.12);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.cashflow-all-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #eef5ff;
+}
+
+.cashflow-all-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: #eef5ff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cashflow-all-close:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.cashflow-all-body {
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cashflow-all-body .cashflow-row {
+  margin: 0;
+}
+
+.cashflow-all-empty {
+  text-align: center;
+  padding: 36px 16px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .cashflow-quickview {

@@ -1223,7 +1223,7 @@
                     type="button"
                     class="cashflow-history-toggle"
                     id="cashflowViewAllBtn"
-                    onclick="toggleCashflowRecentList()"
+                    onclick="openCashflowAllTransactionsModal()"
                     style="display: none"
                   >
                     Xem tất cả
@@ -1357,7 +1357,7 @@
                   style="margin-left: auto;"
                   onclick="exportCashflowCsv()"
                 >
-                  Xuất CSV
+                  Xuất HTML
                 </button>
               </div>
 
@@ -1378,6 +1378,7 @@
         </div>
       </div>
 
+      <!-- Cashflow QuickView Modal -->
       <div
         id="cashflowQuickViewModal"
         class="cashflow-quickview-modal"
@@ -1397,6 +1398,28 @@
               Chọn một giao dịch để xem nhanh đầy đủ chi tiết.
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Cashflow All Transactions Modal -->
+      <div
+        id="cashflowAllTransactionsModal"
+        class="cashflow-all-modal"
+        style="display: none"
+      >
+        <div class="cashflow-all-dialog">
+          <div class="cashflow-all-header">
+            <h3>Tất cả giao dịch</h3>
+            <button
+              type="button"
+              class="cashflow-all-close"
+              onclick="closeCashflowAllTransactionsModal()"
+              aria-label="Đóng danh sách giao dịch"
+            >
+              ×
+            </button>
+          </div>
+          <div class="cashflow-all-body" id="cashflowAllList"></div>
         </div>
       </div>
 

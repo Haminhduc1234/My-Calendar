@@ -1133,123 +1133,56 @@
               </div>
             </section>
 
-            <section class="cashflow-section cashflow-summary-section">
-              <div class="cashflow-section-head cashflow-section-head-stacked">
-                <div>
-                  <div class="cashflow-section-eyebrow">Tổng quan</div>
-                </div>
-                <div
-                  class="cashflow-range-filter"
-                  id="cashflowSummaryRangeFilter"
-                  role="tablist"
-                  aria-label="Bộ lọc thời gian tổng quan thu chi"
-                >
-                  <button
-                    type="button"
-                    class="cashflow-range-chip active"
-                    data-range="all"
-                    onclick="setCashflowSummaryRange('all')"
-                  >
-                    Tất cả
-                  </button>
-                  <button
-                    type="button"
-                    class="cashflow-range-chip"
-                    data-range="year"
-                    onclick="setCashflowSummaryRange('year')"
-                  >
-                    Năm
-                  </button>
-                  <button
-                    type="button"
-                    class="cashflow-range-chip"
-                    data-range="month"
-                    onclick="setCashflowSummaryRange('month')"
-                  >
-                    Tháng
-                  </button>
-                  <button
-                    type="button"
-                    class="cashflow-range-chip"
-                    data-range="week"
-                    onclick="setCashflowSummaryRange('week')"
-                  >
-                    Tuần
-                  </button>
-                </div>
-              </div>
-
-              <div class="cashflow-summary-grid">
-                <div class="cashflow-summary-card">
-                  <div class="cashflow-summary-label">Thu</div>
-                  <div
-                    class="cashflow-summary-value is-income"
-                    id="cashflowIncomeMonth"
-                  >
-                    0 đ
-                  </div>
-                </div>
-                <div class="cashflow-summary-card">
-                  <div class="cashflow-summary-label">Chi</div>
-                  <div
-                    class="cashflow-summary-value is-expense"
-                    id="cashflowExpenseMonth"
-                  >
-                    0 đ
-                  </div>
-                </div>
-                <div class="cashflow-summary-card">
-                  <div class="cashflow-summary-label">Chênh lệch</div>
-                  <div class="cashflow-summary-value" id="cashflowNetMonth">
-                    0 đ
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section
-              class="cashflow-section cashflow-history-section cashflow-collapsible-section collapsed"
-              id="cashflowHistorySection"
-            >
-              <div
-                class="cashflow-collapsible-header"
-                onclick="toggleCashflowCollapsibleSection('cashflowHistoryContent')"
-              >
+            <section class="cashflow-section cashflow-history-section cashflow-collapsible-section collapsed" id="cashflowHistorySection">
+              <div class="cashflow-collapsible-header" onclick="toggleCashflowCollapsibleSection('cashflowHistoryContent')">
                 <div class="cashflow-collapsible-header-text">
-                  <div class="cashflow-section-eyebrow">
-                    Khoản thu/chi gần đây
-                  </div>
+                  <div class="cashflow-section-eyebrow">Khoản thu/chi gần đây</div>
                 </div>
-                <svg
-                  class="cashflow-collapsible-arrow"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  aria-hidden="true"
-                >
+                <svg class="cashflow-collapsible-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
               </div>
-
               <div class="cashflow-history-box cashflow-collapsible-content" id="cashflowHistoryContent">
                 <div class="cashflow-history-head">
-                  <div class="cashflow-history-title">
-                    Danh sách 6 giao dịch gần nhất
-                  </div>
-                  <button
-                    type="button"
-                    class="cashflow-history-toggle"
-                    id="cashflowViewAllBtn"
-                    onclick="openCashflowAllTransactionsModal()"
-                    style="display: none"
-                  >
-                    Xem tất cả
-                  </button>
+                  <div class="cashflow-history-title">Danh sách 6 giao dịch gần nhất</div>
+                  <button type="button" class="cashflow-history-toggle" id="cashflowViewAllBtn" onclick="openCashflowAllTransactionsModal()" style="display: none">Xem tất cả</button>
                 </div>
                 <div class="cashflow-recent-list" id="cashflowRecentList"></div>
+              </div>
+            </section>
+
+            <section class="cashflow-section cashflow-summary-section cashflow-collapsible-section" id="cashflowSummarySection">
+              <div class="cashflow-collapsible-header" onclick="toggleCashflowCollapsibleSection('cashflowSummaryContent')">
+                <div class="cashflow-collapsible-header-text">
+                  <div class="cashflow-section-eyebrow">Tổng quan</div>
+                </div>
+                <svg class="cashflow-collapsible-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+              <div class="cashflow-collapsible-content" id="cashflowSummaryContent">
+                <div class="cashflow-section-head cashflow-section-head-stacked">
+                  <div class="cashflow-range-filter" id="cashflowSummaryRangeFilter" role="tablist" aria-label="Bộ lọc thời gian tổng quan thu chi">
+                    <button type="button" class="cashflow-range-chip active" data-range="all" onclick="setCashflowSummaryRange('all')">Tất cả</button>
+                    <button type="button" class="cashflow-range-chip" data-range="year" onclick="setCashflowSummaryRange('year')">Năm</button>
+                    <button type="button" class="cashflow-range-chip" data-range="month" onclick="setCashflowSummaryRange('month')">Tháng</button>
+                    <button type="button" class="cashflow-range-chip" data-range="week" onclick="setCashflowSummaryRange('week')">Tuần</button>
+                  </div>
+                </div>
+                <div class="cashflow-summary-grid">
+                  <div class="cashflow-summary-card">
+                    <div class="cashflow-summary-label">Thu</div>
+                    <div class="cashflow-summary-value is-income" id="cashflowIncomeMonth">0 đ</div>
+                  </div>
+                  <div class="cashflow-summary-card">
+                    <div class="cashflow-summary-label">Chi</div>
+                    <div class="cashflow-summary-value is-expense" id="cashflowExpenseMonth">0 đ</div>
+                  </div>
+                  <div class="cashflow-summary-card">
+                    <div class="cashflow-summary-label">Chênh lệch</div>
+                    <div class="cashflow-summary-value" id="cashflowNetMonth">0 đ</div>
+                  </div>
+                </div>
               </div>
             </section>
 

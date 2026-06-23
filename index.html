@@ -1207,14 +1207,34 @@
               </div>
             </section>
 
-            <section class="cashflow-section cashflow-history-section">
-              <div class="cashflow-section-head">
-                <div>
-                  <div class="cashflow-section-eyebrow">Khoản thu/chi gần đây</div>
+            <section
+              class="cashflow-section cashflow-history-section cashflow-collapsible-section collapsed"
+              id="cashflowHistorySection"
+            >
+              <div
+                class="cashflow-collapsible-header"
+                onclick="toggleCashflowCollapsibleSection('cashflowHistoryContent')"
+              >
+                <div class="cashflow-collapsible-header-text">
+                  <div class="cashflow-section-eyebrow">
+                    Khoản thu/chi gần đây
+                  </div>
                 </div>
+                <svg
+                  class="cashflow-collapsible-arrow"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
               </div>
 
-              <div class="cashflow-history-box">
+              <div class="cashflow-history-box cashflow-collapsible-content" id="cashflowHistoryContent">
                 <div class="cashflow-history-head">
                   <div class="cashflow-history-title">
                     Danh sách 6 giao dịch gần nhất
@@ -1248,11 +1268,37 @@
               </div>
             </div>
 
-            <section class="cashflow-section cashflow-analysis-section">
-              <div class="cashflow-section-head cashflow-section-head-stacked">
-                <div>
-                  <div class="cashflow-section-eyebrow">Cơ cấu thu và chi theo khoảng thời gian</div>
+            <section
+              class="cashflow-section cashflow-analysis-section cashflow-collapsible-section collapsed"
+              id="cashflowAnalysisSection"
+            >
+              <div
+                class="cashflow-collapsible-header"
+                onclick="toggleCashflowCollapsibleSection('cashflowAnalysisContent')"
+              >
+                <div class="cashflow-collapsible-header-text">
+                  <div class="cashflow-section-eyebrow">
+                    Cơ cấu thu và chi theo khoảng thời gian
+                  </div>
                 </div>
+                <svg
+                  class="cashflow-collapsible-arrow"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+
+              <div
+                class="cashflow-pie-grid cashflow-analytics-fade-target cashflow-collapsible-content"
+                id="cashflowAnalysisContent"
+              >
                 <div
                   class="cashflow-range-filter"
                   id="cashflowRangeFilter"
@@ -1292,12 +1338,7 @@
                     Tuần
                   </button>
                 </div>
-              </div>
 
-              <div
-                class="cashflow-pie-grid cashflow-analytics-fade-target"
-                id="cashflowPieGrid"
-              >
                 <article class="cashflow-pie-card">
                   <div class="cashflow-pie-card-header">
                     <div>
@@ -1336,42 +1377,65 @@
               </div>
             </section>
 
-            <section class="cashflow-section cashflow-chart-section">
-              <div class="cashflow-chart-title-row">
-                <div class="cashflow-section-eyebrow">
-                  Biểu đồ thu chi
+            <section
+              class="cashflow-section cashflow-chart-section cashflow-collapsible-section collapsed"
+              id="cashflowChartSection"
+            >
+              <div
+                class="cashflow-collapsible-header"
+                onclick="toggleCashflowCollapsibleSection('cashflowChartContent')"
+              >
+                <div class="cashflow-collapsible-header-text">
+                  <div class="cashflow-section-eyebrow">
+                    Biểu đồ thu chi
+                  </div>
                 </div>
-              </div>
-              <div class="cashflow-chart-controls">
-                <label class="cashflow-month-selector-label" for="cashflowMonthSelect">
-                  Xem
-                </label>
-                <select
-                  id="cashflowMonthSelect"
-                  class="cashflow-month-selector"
-                  onchange="onCashflowMonthSelectChange()"
-                ></select>
-                <button
-                  id="cashflowExportBtn"
-                  class="cashflow-export-btn cashflow-export-btn--sm"
-                  style="margin-left: auto;"
-                  onclick="exportCashflowCsv()"
+                <svg
+                  class="cashflow-collapsible-arrow"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  aria-hidden="true"
                 >
-                  Xuất HTML
-                </button>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
               </div>
 
-              <div class="cashflow-legend">
-                <span class="legend-item legend-income">Thu</span>
-                <span class="legend-item legend-expense">Chi</span>
-              </div>
-              <div class="cashflow-chart-wrap">
-                <canvas id="cashflowChart"></canvas>
-                <div
-                  class="cashflow-chart-tooltip"
-                  id="cashflowChartTooltip"
-                  style="display: none"
-                ></div>
+              <div class="cashflow-chart-content cashflow-collapsible-content" id="cashflowChartContent">
+                <div class="cashflow-chart-controls">
+                  <label class="cashflow-month-selector-label" for="cashflowMonthSelect">
+                    Xem
+                  </label>
+                  <select
+                    id="cashflowMonthSelect"
+                    class="cashflow-month-selector"
+                    onchange="onCashflowMonthSelectChange()"
+                  ></select>
+                  <button
+                    id="cashflowExportBtn"
+                    class="cashflow-export-btn cashflow-export-btn--sm"
+                    style="margin-left: auto;"
+                    onclick="exportCashflowCsv()"
+                  >
+                    Xuất HTML
+                  </button>
+                </div>
+
+                <div class="cashflow-legend">
+                  <span class="legend-item legend-income">Thu</span>
+                  <span class="legend-item legend-expense">Chi</span>
+                </div>
+                <div class="cashflow-chart-wrap">
+                  <canvas id="cashflowChart"></canvas>
+                  <div
+                    class="cashflow-chart-tooltip"
+                    id="cashflowChartTooltip"
+                    style="display: none"
+                  ></div>
+                </div>
               </div>
             </section>
           </div>

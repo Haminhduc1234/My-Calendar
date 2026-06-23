@@ -17402,6 +17402,34 @@ function toggleCountdownSection() {
   section.classList.toggle("collapsed");
 }
 
+function toggleCashflowCollapsibleSection(contentId) {
+  const content = document.getElementById(contentId);
+  if (!content) return;
+
+  const section = content.closest(".cashflow-collapsible-section");
+  if (!section) return;
+
+  const isCollapsed = content.classList.toggle("collapsed");
+  section.classList.toggle("collapsed", isCollapsed);
+
+  if (isCollapsed) {
+    content.style.maxHeight = content.scrollHeight + "px";
+    requestAnimationFrame(() => {
+      content.style.maxHeight = "0";
+    });
+  } else {
+    content.style.maxHeight = content.scrollHeight + "px";
+    content.addEventListener("transitionend", function handler() {
+      content.style.maxHeight = "none";
+      content.removeEventListener("transitionend", handler);
+    });
+  }
+
+  if (!isCollapsed && contentId === "cashflowChartContent") {
+    requestAnimationFrame(() => renderCashflowChart());
+  }
+}
+
 function renderCountdown() {
   const section = document.getElementById("countdownSection");
   const display = document.getElementById("countdownDisplay");

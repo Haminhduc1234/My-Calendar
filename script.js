@@ -17409,23 +17409,27 @@ function toggleCashflowCollapsibleSection(contentId) {
   const section = content.closest(".cashflow-collapsible-section");
   if (!section) return;
 
-  const isCollapsed = content.classList.toggle("collapsed");
-  section.classList.toggle("collapsed", isCollapsed);
+  const shouldCollapse = !section.classList.contains("collapsed");
+  content.classList.toggle("collapsed", shouldCollapse);
+  section.classList.toggle("collapsed", shouldCollapse);
 
-  if (isCollapsed) {
+  if (shouldCollapse) {
     content.style.maxHeight = content.scrollHeight + "px";
     requestAnimationFrame(() => {
       content.style.maxHeight = "0";
     });
   } else {
-    content.style.maxHeight = content.scrollHeight + "px";
+    content.style.maxHeight = "0";
+    requestAnimationFrame(() => {
+      content.style.maxHeight = content.scrollHeight + "px";
+    });
     content.addEventListener("transitionend", function handler() {
       content.style.maxHeight = "none";
       content.removeEventListener("transitionend", handler);
     });
   }
 
-  if (!isCollapsed && contentId === "cashflowChartContent") {
+  if (!shouldCollapse && contentId === "cashflowChartContent") {
     requestAnimationFrame(() => renderCashflowChart());
   }
 }

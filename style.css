@@ -947,10 +947,17 @@ body::before {
     justify-content: center;
   }
 
+  /* Keep cashflow and funds modals as bottom sheet on desktop */
+  #cashflowModal,
+  #fundsModal {
+    align-items: flex-end;
+    justify-content: center;
+  }
+
   /* All modal contents centered on desktop - reset positioning */
-  .modal > div,
-  [class*="-modal-content"],
-  [class*="-modal-"] {
+  .modal > div:not(.cashflow-modal-shell):not(.funds-modal-shell),
+  [class*="-modal-content"]:not(.cashflow-modal-shell):not(.funds-modal-shell),
+  [class*="-modal-"]:not(.cashflow-modal-shell):not(.funds-modal-shell) {
     position: relative !important;
     left: auto !important;
     top: auto !important;
@@ -960,13 +967,12 @@ body::before {
   }
 
   /* Standard modal size on desktop */
-  .modal > div,
-  .modal-content,
+  .modal > div:not(.cashflow-modal-shell):not(.funds-modal-shell),
+  .modal-content:not(.cashflow-modal-shell):not(.funds-modal-shell),
   .overtime-modal-content,
   .gold-modal-content,
   .quick-note-modal-content,
   .my-music-modal-content,
-  .cashflow-modal-content,
   .currency-modal-content,
   .news-modal-content,
   .translate-modal-content,
@@ -987,6 +993,19 @@ body::before {
     padding: 12px !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
     overflow-y: auto;
+  }
+
+  /* Reset positioning for standard modals only */
+  .modal > div:not(.cashflow-modal-shell):not(.funds-modal-shell),
+  .modal-content:not(.cashflow-modal-shell):not(.funds-modal-shell),
+  [class*="-modal-content"]:not(.cashflow-modal-shell):not(.funds-modal-shell),
+  [class*="-modal-"]:not(.cashflow-modal-shell):not(.funds-modal-shell) {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
   }
 }
 
@@ -1010,12 +1029,20 @@ body::before {
   }
 }
 
+@keyframes sheetSlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 .modal-content,
 .overtime-modal-content,
 .gold-modal-content,
 .quick-note-modal-content,
 .my-music-modal-content,
-.cashflow-modal-content,
 .currency-modal-content,
 .news-modal-content,
 .countdown-modal-content {
@@ -1053,6 +1080,51 @@ body::before {
   animation: modalSlideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
   overflow-y: auto;
   position: relative;
+}
+
+.cashflow-modal-shell {
+  width: min(94vw, 920px);
+  max-width: none !important;
+  max-height: min(92vh, 920px) !important;
+  border-radius: 24px 24px 0 0 !important;
+  margin: 0 !important;
+  padding: 10px 14px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(12, 28, 55, 0.98),
+    rgba(8, 20, 41, 0.98)
+  ) !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42) !important;
+  animation: sheetSlideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+.funds-modal-shell {
+  width: min(94vw, 920px);
+  max-width: none !important;
+  max-height: min(92vh, 920px) !important;
+  border-radius: 24px 24px 0 0 !important;
+  margin: 0 !important;
+  padding: 10px 14px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(12, 28, 55, 0.98),
+    rgba(8, 20, 41, 0.98)
+  ) !important;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42) !important;
+  animation: sheetSlideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+.funds-sheet-handle {
+  width: 56px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(214, 228, 255, 0.3);
+  margin: 2px auto 12px;
+  flex-shrink: 0;
+}
+
+.funds-modal-header {
+  margin-bottom: 10px;
 }
 
 .event-modal-header {
@@ -5206,15 +5278,19 @@ input[type="datetime-local"] {
 }
 
 @media (max-width: 540px) {
-  #cashflowModal {
+  #cashflowModal,
+  #fundsModal {
     align-items: flex-end;
     overflow: hidden;
     padding: 0;
+    left: 0;
+    right: 0;
   }
 
-  .cashflow-modal-shell {
-    width: 100vw;
-    max-width: none;
+  .cashflow-modal-shell,
+  .funds-modal-shell {
+    width: 100%;
+    max-width: 100vw;
     max-height: calc(100dvh - 8px);
     margin: 0;
     border-radius: 24px 24px 0 0;
@@ -5282,6 +5358,39 @@ input[type="datetime-local"] {
 
   .cashflow-chart-wrap {
     height: 200px;
+  }
+}
+
+@media (min-width: 541px) {
+  #cashflowModal,
+  #fundsModal {
+    align-items: flex-end;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .cashflow-modal-shell,
+  .funds-modal-shell {
+    width: min(94vw, 920px);
+    max-width: none;
+    max-height: calc(100vh - 48px);
+    margin: 0;
+    border-radius: 24px 24px 0 0;
+    padding: 10px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.45);
+    animation: sheetSlideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .cashflow-modal-body {
+    padding-right: 0;
+  }
+
+  .cashflow-section {
+    background: linear-gradient(
+      180deg,
+      rgba(12, 26, 51, 0.92),
+      rgba(7, 16, 34, 0.88)
+    );
   }
 }
 
@@ -5484,14 +5593,14 @@ input[type="datetime-local"] {
 
 .funds-list-section {
   margin-bottom: 12px;
-  max-height: calc(100vh - 300px);
+  max-height: calc(100vh - 374px);
 }
 
 .funds-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: calc(100vh - 370px);
+  max-height: calc(100vh - 448px);
   overflow-y: auto;
   touch-action: pan-y;
 }

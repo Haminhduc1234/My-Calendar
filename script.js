@@ -624,6 +624,10 @@ window.showLoginForm = showLoginForm;
 window.showRegisterForm = showRegisterForm;
 window.showUpgradeForm = showUpgradeForm;
 
+function isUserLoggedIn() {
+  return !!(localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE) && localStorage.getItem("calendarUsername"));
+}
+
 function closeAuthModal() {
   document.getElementById("authModal").style.display = "none";
 }
@@ -9681,6 +9685,7 @@ function loadCountdownOnDemand() {
 
 function loadQuickNotesOnDemand() {
   if (LAZY_LOAD.quickNotes) return;
+  if (!isUserLoggedIn()) return;
   showSkeleton('quicknotesSkeleton');
   LAZY_LOAD.quickNotes = true;
   renderQuickNotes();
@@ -9689,12 +9694,14 @@ function loadQuickNotesOnDemand() {
 
 function loadMyMusicOnDemand() {
   if (LAZY_LOAD.myMusic) return;
+  if (!isUserLoggedIn()) return;
   LAZY_LOAD.myMusic = true;
   initMyMusicPlayer();
 }
 
 function loadCashflowOnDemand() {
   if (LAZY_LOAD.cashflow) return;
+  if (!isUserLoggedIn()) return;
   showSkeleton('cashflowSkeleton');
   LAZY_LOAD.cashflow = true;
   renderCashflowDashboard();
@@ -9703,6 +9710,7 @@ function loadCashflowOnDemand() {
 
 function loadFundsOnDemand() {
   if (LAZY_LOAD.funds) return;
+  if (!isUserLoggedIn()) return;
   showSkeleton('fundsSkeleton');
   LAZY_LOAD.funds = true;
   renderFundsDashboard();
@@ -9711,6 +9719,7 @@ function loadFundsOnDemand() {
 
 function loadGoldOnDemand() {
   if (LAZY_LOAD.gold) return;
+  if (!isUserLoggedIn()) return;
   showSkeleton('goldSkeleton');
   LAZY_LOAD.gold = true;
   loadGoldMarketData();
@@ -9734,11 +9743,13 @@ function loadNewsOnDemand() {
 
 function loadTranslateOnDemand() {
   if (LAZY_LOAD.translate) return;
+  if (!isUserLoggedIn()) return;
   LAZY_LOAD.translate = true;
 }
 
 function loadProjectsOnDemand() {
   if (LAZY_LOAD.projects) return;
+  if (!isUserLoggedIn()) return;
   showSkeleton('projectsSkeleton');
   LAZY_LOAD.projects = true;
   renderProjectsList();
@@ -9747,6 +9758,7 @@ function loadProjectsOnDemand() {
 
 function loadProfileOnDemand() {
   if (LAZY_LOAD.profile) return;
+  if (!isUserLoggedIn()) return;
   showSkeleton('profileSkeleton');
   LAZY_LOAD.profile = true;
   initProfileOnLoad();
@@ -9770,34 +9782,34 @@ function loadTodayLunarOnDemand() {
   showSkeleton('fundsSkeleton');
   showSkeleton('goldSkeleton');
   showSkeleton('projectsSkeleton');
-  
+
   // Step 2: Render UI immediately (no waiting)
   initQuickNoteModal();
   renderToday();
-  
+
   // Step 3: Initialize Firebase in background (non-blocking)
   initFirebaseServices().catch(err => {
     console.error("[Init] Firebase error:", err);
   });
-  
+
   // Step 4: Load essential items on demand (when user interacts)
   // These will be triggered by user actions, not upfront
-  
+
   // Step 5: Load weather data in background (low priority)
   setTimeout(() => loadWeatherOnDemand(), 1000);
-  
+
   // Step 6: Load quote in background
   setTimeout(() => loadQuoteOnDemand(), 500);
-  
+
   // Step 7: Load countdown in background
   setTimeout(() => loadCountdownOnDemand(), 800);
-  
+
   // Step 8: Load lunar calendar in background
   setTimeout(() => loadTodayLunarOnDemand(), 600);
-  
+
   // Step 9: Calendar loads on first interaction
   // User must click calendar tab to trigger renderCalendar()
-  
+
   console.log("[Init] App started - content loads on demand");
 })();
 

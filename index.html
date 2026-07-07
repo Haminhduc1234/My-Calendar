@@ -509,47 +509,211 @@
 
       <!-- MODALS -->
 
-      <!-- Password Modal - shown every time page loads -->
-      <div
-        id="passwordModal"
-        class="modal"
-        style="display: flex; z-index: 1000"
-      >
-        <div class="modal-content password-modal-box">
-          <h3>🔐 Nhập mã PIN</h3>
-          <p class="password-modal-desc">
-            Nhập 6 chữ số để truy cập dữ liệu.<br />Mỗi mã PIN là một tài khoản
-            riêng.
-          </p>
-          <div
-            class="otp-group"
-            id="otpGroup"
-            role="button"
-            tabindex="0"
-            aria-label="Nhập mã PIN 6 chữ số"
-          >
-            <input
-              id="otpMasterInput"
-              class="otp-master-input"
-              type="tel"
-              inputmode="numeric"
-              pattern="[0-9]*"
-              maxlength="6"
-              autocomplete="one-time-code"
-              autocorrect="off"
-              autocapitalize="off"
-              spellcheck="false"
-              aria-label="Mã PIN"
-            />
-            <span class="otp-slot" data-otp-slot="0"></span>
-            <span class="otp-slot" data-otp-slot="1"></span>
-            <span class="otp-slot" data-otp-slot="2"></span>
-            <span class="otp-slot" data-otp-slot="3"></span>
-            <span class="otp-slot" data-otp-slot="4"></span>
-            <span class="otp-slot" data-otp-slot="5"></span>
+      <!-- Auth Modal - Login/Register -->
+      <div id="authModal" class="modal auth-modal" style="display: none; z-index: 1000">
+        <div class="auth-card">
+          <button class="auth-card-close" onclick="closeAuthModal()" aria-label="Đóng">×</button>
+
+          <!-- Header -->
+          <div class="auth-card-header">
+            <h2 class="auth-card-title">Chào mừng!</h2>
+            <p class="auth-card-subtitle">Đăng nhập hoặc đăng ký để sử dụng</p>
           </div>
-          <div id="passwordError" class="password-error">
-            Vui lòng nhập đủ 6 chữ số.
+
+          <!-- Tabs -->
+          <div class="auth-tabs">
+            <button class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">
+              Đăng Nhập
+            </button>
+            <button class="auth-tab" id="authTabRegister" onclick="switchAuthTab('register')">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              Đăng Ký
+            </button>
+          </div>
+
+          <!-- Login Form -->
+          <div class="auth-form" id="authLoginForm">
+            <div class="auth-field">
+              <label for="loginUsername">Tên đăng nhập</label>
+              <div class="auth-field-wrapper">
+                <span class="auth-field-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                  </svg>
+                </span>
+                <input
+                  id="loginUsername"
+                  type="text"
+                  placeholder="Nhập tên đăng nhập"
+                  autocomplete="username"
+                  autocapitalize="none"
+                />
+              </div>
+            </div>
+            <div class="auth-field">
+              <label for="loginPassword">Mật khẩu</label>
+              <div class="auth-field-wrapper auth-password-wrapper">
+                <span class="auth-field-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                  </svg>
+                </span>
+                <input
+                  id="loginPassword"
+                  type="password"
+                  placeholder="6 chữ số"
+                  maxlength="6"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  autocomplete="current-password"
+                />
+                <button
+                  type="button"
+                  class="auth-password-toggle"
+                  onclick="togglePasswordVisibility('loginPassword', 'loginPasswordToggle')"
+                  aria-label="Hiện/Ẩn mật khẩu"
+                >
+                  <svg id="loginPasswordToggle" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div id="loginError" class="auth-error"></div>
+            <button class="auth-submit-btn" onclick="handleLogin()">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M10 17l5-5-5-5v10z"/>
+              </svg>
+              Đăng Nhập
+            </button>
+            <p class="auth-switch-text">
+              Chưa có tài khoản?
+              <a href="#" onclick="switchAuthTab('register'); return false;">Đăng ký ngay</a>
+            </p>
+          </div>
+
+          <!-- Register Form -->
+          <div class="auth-form" id="authRegisterForm" style="display: none;">
+            <div class="auth-field">
+              <label for="regUsername">Tên đăng nhập</label>
+              <div class="auth-field-wrapper">
+                <span class="auth-field-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                  </svg>
+                </span>
+                <input
+                  id="regUsername"
+                  type="text"
+                  placeholder="Nhập tên đăng nhập"
+                  autocomplete="username"
+                  autocapitalize="none"
+                />
+              </div>
+            </div>
+            <div class="auth-field">
+              <label for="regPassword">Mật khẩu</label>
+              <div class="auth-field-wrapper auth-password-wrapper">
+                <span class="auth-field-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                  </svg>
+                </span>
+                <input
+                  id="regPassword"
+                  type="password"
+                  placeholder="6 chữ số"
+                  maxlength="6"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  class="auth-password-toggle"
+                  onclick="togglePasswordVisibility('regPassword', 'regPasswordToggle')"
+                  aria-label="Hiện/Ẩn mật khẩu"
+                >
+                  <svg id="regPasswordToggle" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div id="registerError" class="auth-error"></div>
+            <button class="auth-submit-btn" onclick="handleRegister()">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+              </svg>
+              Đăng Ký
+            </button>
+            <p class="auth-switch-text">
+              Đã có tài khoản?
+              <a href="#" onclick="switchAuthTab('login'); return false;">Đăng nhập</a>
+            </p>
+          </div>
+
+          <!-- Upgrade Form (legacy) -->
+          <div class="auth-form" id="authUpgradeForm" style="display: none;">
+            <div class="auth-field">
+              <label for="upgradeUsername">Tên đăng nhập mới</label>
+              <div class="auth-field-wrapper">
+                <span class="auth-field-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                  </svg>
+                </span>
+                <input
+                  id="upgradeUsername"
+                  type="text"
+                  placeholder="Nhập tên đăng nhập mới"
+                  autocomplete="username"
+                  autocapitalize="none"
+                />
+              </div>
+            </div>
+            <div class="auth-field">
+              <label for="upgradePassword">Mật khẩu</label>
+              <div class="auth-field-wrapper auth-password-wrapper">
+                <span class="auth-field-icon">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                  </svg>
+                </span>
+                <input
+                  id="upgradePassword"
+                  type="password"
+                  placeholder="6 chữ số"
+                  maxlength="6"
+                  inputmode="numeric"
+                  pattern="[0-9]*"
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  class="auth-password-toggle"
+                  onclick="togglePasswordVisibility('upgradePassword', 'upgradePasswordToggle')"
+                  aria-label="Hiện/Ẩn mật khẩu"
+                >
+                  <svg id="upgradePasswordToggle" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div id="upgradeError" class="auth-error"></div>
+            <button class="auth-submit-btn" onclick="handleUpgrade()">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+              </svg>
+              Cập Nhật
+            </button>
+            <p class="auth-switch-text">
+              Hoặc
+              <a href="#" onclick="logoutAndStartFresh(); return false;">Xóa dữ liệu cũ và đăng ký mới</a>
+            </p>
           </div>
         </div>
       </div>

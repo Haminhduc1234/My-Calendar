@@ -10,6 +10,7 @@ const MY_MUSIC_PREFS_KEY_PREFIX = "myMusicPrefsV1";
 const FIREBASE_EVENTS_PATH = self.FIREBASE_EVENTS_PATH || "calendarEvents";
 const FIREBASE_CLIENT_ID_KEY = "firebaseClientId";
 const FIREBASE_PROFILE_KEY_STORAGE = "calendarProfileKey";
+const FIREBASE_USERS_PATH = "users";
 const LEGACY_MIGRATION_FLAG_PREFIX = "calendarLegacyMigrated:";
 const LEGACY_CASHFLOW_MIGRATION_FLAG_PREFIX = "calendarLegacyCashflowMigrated:";
 const CASHFLOW_CATEGORY_ID_MIGRATION_FLAG_PREFIX = "cashflowCategoryIdMigrated:";
@@ -26,8 +27,11 @@ let firebaseAISettingsRef = null;
 let firebaseProfileSettingsRef = null;
 let firebaseReady = false;
 let firebaseAuth = null;
+let firebaseUsersRef = null;
 let firebaseProjectsRef = null;
 let userProfileKey = "";
+let currentUsername = "";
+let legacyProfileKey = "";
 let dateDataCache = {};
 let quickNotesCache = [];
 let translateHistoryCache = [];
@@ -544,133 +548,385 @@ function hashProfilePassword(password) {
   return `u_${(hash >>> 0).toString(16).padStart(8, "0")}`;
 }
 
+function hashPasswordWithSalt(password) {
+  const salt = "calendar_v2_";
+  let hash = 2166136261;
+  const input = salt + password;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+// Toggle password visibility for auth forms
+function togglePasswordVisibility(inputId, iconId) {
+  const input = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  if (!input || !icon) return;
+
+  if (input.type === "password") {
+    input.type = "text";
+    icon.innerHTML = `<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>`;
+  } else {
+    input.type = "password";
+    icon.innerHTML = `<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>`;
+  }
+}
+
+function switchAuthTab(tab) {
+  const loginForm = document.getElementById("authLoginForm");
+  const registerForm = document.getElementById("authRegisterForm");
+  const upgradeForm = document.getElementById("authUpgradeForm");
+  const loginTab = document.getElementById("authTabLogin");
+  const registerTab = document.getElementById("authTabRegister");
+
+  if (tab === "login") {
+    loginForm.style.display = "block";
+    registerForm.style.display = "none";
+    upgradeForm.style.display = "none";
+    loginTab.classList.add("active");
+    registerTab.classList.remove("active");
+    document.getElementById("loginUsername").value = "";
+    document.getElementById("loginPassword").value = "";
+    document.getElementById("loginError").style.display = "none";
+    setTimeout(() => document.getElementById("loginUsername").focus(), 50);
+  } else if (tab === "register") {
+    loginForm.style.display = "none";
+    registerForm.style.display = "block";
+    upgradeForm.style.display = "none";
+    loginTab.classList.remove("active");
+    registerTab.classList.add("active");
+    document.getElementById("regUsername").value = "";
+    document.getElementById("regPassword").value = "";
+    document.getElementById("registerError").style.display = "none";
+    setTimeout(() => document.getElementById("regUsername").focus(), 50);
+  } else if (tab === "upgrade") {
+    loginForm.style.display = "none";
+    registerForm.style.display = "none";
+    upgradeForm.style.display = "block";
+    loginTab.classList.remove("active");
+    registerTab.classList.remove("active");
+    document.getElementById("upgradeUsername").value = "";
+    document.getElementById("upgradePassword").value = "";
+    document.getElementById("upgradeError").style.display = "none";
+    setTimeout(() => document.getElementById("upgradeUsername").focus(), 50);
+  }
+
+  document.getElementById("authModal").style.display = "flex";
+}
+
+function showLoginForm() { switchAuthTab("login"); }
+function showRegisterForm() { switchAuthTab("register"); }
+function showUpgradeForm() { switchAuthTab("upgrade"); }
+
+window.showLoginForm = showLoginForm;
+window.showRegisterForm = showRegisterForm;
+window.showUpgradeForm = showUpgradeForm;
+
+function closeAuthModal() {
+  document.getElementById("authModal").style.display = "none";
+}
+
+function logoutAndStartFresh() {
+  const confirmed = window.confirm(
+    "Cảnh báo: Thao tác này sẽ xóa toàn bộ dữ liệu cũ của bạn!\n\nBạn có chắc chắn muốn tiếp tục?",
+  );
+  if (!confirmed) return;
+  
+  localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
+  localStorage.removeItem("calendarUsername");
+  legacyProfileKey = "";
+  
+  // Reload to start fresh
+  window.location.reload();
+}
+
+window.logoutAndStartFresh = logoutAndStartFresh;
+
+async function handleUpgrade() {
+  const username = document.getElementById("upgradeUsername").value.trim().toLowerCase();
+  const password = document.getElementById("upgradePassword").value.trim();
+  const errorEl = document.getElementById("upgradeError");
+
+  if (!username) {
+    errorEl.textContent = "Vui lòng nhập tên đăng nhập.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  if (username.length < 3) {
+    errorEl.textContent = "Tên đăng nhập phải có ít nhất 3 ký tự.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  if (!/^[a-z0-9_]+$/.test(username)) {
+    errorEl.textContent = "Tên đăng nhập chỉ chứa chữ cái, số và dấu gạch dưới.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  if (!password || password.length !== 6 || !/^\d+$/.test(password)) {
+    errorEl.textContent = "Mật khẩu phải là 6 chữ số.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  errorEl.style.display = "none";
+
+  try {
+    // Check if username already exists
+    const usersSnapshot = await firebaseUsersRef.orderByChild("username").equalTo(username).once("value");
+    
+    if (usersSnapshot.exists()) {
+      errorEl.textContent = "Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.";
+      errorEl.style.display = "block";
+      return;
+    }
+
+    // Create new user with new ID
+    const userId = `u_${Date.now().toString(16)}_${Math.random().toString(16).slice(2, 6)}`;
+    const passwordHash = hashPasswordWithSalt(username + password);
+
+    // Create new user in Firebase
+    await firebaseUsersRef.child(userId).set({
+      username: username,
+      passwordHash: passwordHash,
+      createdAt: firebase.database.ServerValue.TIMESTAMP,
+      upgradedFrom: legacyProfileKey
+    });
+
+    // Migrate all legacy data to new user ID
+    await migrateLegacyData(legacyProfileKey, userId);
+
+    // Update local storage with new credentials
+    localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, userId);
+    localStorage.setItem("calendarUsername", username);
+    localStorage.setItem("legacyProfileKey", legacyProfileKey); // Keep for reference
+    userProfileKey = userId;
+    currentUsername = username;
+
+    document.getElementById("authModal").style.display = "none";
+    initProfileOnLoad();
+    showToast("Cập nhật thành công! Dữ liệu cũ đã được bảo toàn.", "success");
+
+  } catch (err) {
+    console.error("[Auth] Upgrade error:", err);
+    errorEl.textContent = "Đã xảy ra lỗi. Vui lòng thử lại.";
+    errorEl.style.display = "block";
+  }
+}
+
+window.handleUpgrade = handleUpgrade;
+
+async function migrateLegacyData(oldKey, newKey) {
+  console.log("[Migration] Starting data migration from", oldKey, "to", newKey);
+  
+  const pathsToMigrate = [
+    `calendarEvents/${oldKey}`,
+    `quickNotes/${oldKey}`,
+    `projects/${oldKey}`,
+    `translateHistory/${oldKey}`,
+    `aiSettings/${oldKey}`,
+    `profileSettings/${oldKey}`,
+    `categories/${oldKey}`,
+    `funds/${oldKey}`,
+    `countdown/${oldKey}`
+  ];
+
+  for (const path of pathsToMigrate) {
+    try {
+      const snapshot = await firebaseDb.ref(path).once("value");
+      if (snapshot.exists()) {
+        const newPath = path.replace(`/${oldKey}`, `/${newKey}`);
+        await firebaseDb.ref(newPath).set(snapshot.val());
+        console.log("[Migration] Migrated:", path, "->", newPath);
+      }
+    } catch (err) {
+      console.error("[Migration] Error migrating", path, ":", err);
+    }
+  }
+
+  console.log("[Migration] Complete!");
+}
+
+async function handleRegister() {
+  const username = document.getElementById("regUsername").value.trim().toLowerCase();
+  const password = document.getElementById("regPassword").value.trim();
+  const errorEl = document.getElementById("registerError");
+
+  if (!username) {
+    errorEl.textContent = "Vui lòng nhập tên đăng nhập.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  if (username.length < 3) {
+    errorEl.textContent = "Tên đăng nhập phải có ít nhất 3 ký tự.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  if (!/^[a-z0-9_]+$/.test(username)) {
+    errorEl.textContent = "Tên đăng nhập chỉ chứa chữ cái, số và dấu gạch dưới.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  if (!password || password.length !== 6 || !/^\d+$/.test(password)) {
+    errorEl.textContent = "Mật khẩu phải là 6 chữ số.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  errorEl.style.display = "none";
+
+  try {
+    const usersSnapshot = await firebaseUsersRef.orderByChild("username").equalTo(username).once("value");
+    
+    if (usersSnapshot.exists()) {
+      errorEl.textContent = "Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.";
+      errorEl.style.display = "block";
+      return;
+    }
+
+    const userId = `u_${Date.now().toString(16)}_${Math.random().toString(16).slice(2, 6)}`;
+    const passwordHash = hashPasswordWithSalt(username + password);
+
+    await firebaseUsersRef.child(userId).set({
+      username: username,
+      passwordHash: passwordHash,
+      createdAt: firebase.database.ServerValue.TIMESTAMP
+    });
+
+    localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, userId);
+    localStorage.setItem("calendarUsername", username);
+    userProfileKey = userId;
+    currentUsername = username;
+
+    document.getElementById("authModal").style.display = "none";
+    initProfileOnLoad();
+    showToast("Đăng ký thành công! Chào mừng " + username + "!", "success");
+
+  } catch (err) {
+    console.error("[Auth] Register error:", err);
+    errorEl.textContent = "Đã xảy ra lỗi. Vui lòng thử lại.";
+    errorEl.style.display = "block";
+  }
+}
+
+window.handleRegister = handleRegister;
+
+async function handleLogin() {
+  const username = document.getElementById("loginUsername").value.trim().toLowerCase();
+  const password = document.getElementById("loginPassword").value.trim();
+  const errorEl = document.getElementById("loginError");
+
+  if (!username) {
+    errorEl.textContent = "Vui lòng nhập tên đăng nhập.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  if (!password || password.length !== 6 || !/^\d+$/.test(password)) {
+    errorEl.textContent = "Mật khẩu phải là 6 chữ số.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  errorEl.style.display = "none";
+
+  try {
+    const usersSnapshot = await firebaseUsersRef.orderByChild("username").equalTo(username).once("value");
+
+    if (!usersSnapshot.exists()) {
+      errorEl.textContent = "Tên đăng nhập không tồn tại.";
+      errorEl.style.display = "block";
+      return;
+    }
+
+    let foundUser = null;
+    let foundUserId = null;
+
+    usersSnapshot.forEach((child) => {
+      foundUser = child.val();
+      foundUserId = child.key;
+    });
+
+    const passwordHash = hashPasswordWithSalt(username + password);
+
+    if (foundUser.passwordHash !== passwordHash) {
+      errorEl.textContent = "Mật khẩu không đúng.";
+      errorEl.style.display = "block";
+      return;
+    }
+
+    localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, foundUserId);
+    localStorage.setItem("calendarUsername", username);
+    userProfileKey = foundUserId;
+    currentUsername = username;
+
+    document.getElementById("authModal").style.display = "none";
+    initProfileOnLoad();
+    showToast("Đăng nhập thành công!", "success");
+
+  } catch (err) {
+    console.error("[Auth] Login error:", err);
+    if (err.code === "PERMISSION_DENIED") {
+      errorEl.textContent = "Không có quyền truy cập. Vui lòng thử lại.";
+    } else {
+      errorEl.textContent = "Đã xảy ra lỗi. Vui lòng thử lại.";
+    }
+    errorEl.style.display = "block";
+  }
+}
+
+window.handleLogin = handleLogin;
+
 function ensureProfileKey() {
   return new Promise((resolve) => {
     const storedProfileKey = localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE);
-    if (storedProfileKey && /^u_[0-9a-f]{8}$/.test(storedProfileKey)) {
+    const storedUsername = localStorage.getItem("calendarUsername");
+    
+    if (storedProfileKey && storedUsername) {
       userProfileKey = storedProfileKey;
-      const modal = document.getElementById("passwordModal");
+      currentUsername = storedUsername;
+      const modal = document.getElementById("authModal");
       if (modal) modal.style.display = "none";
-      // Initialize profile UI after profile key is set
       setTimeout(() => initProfileOnLoad(), 0);
       resolve(true);
       return;
     }
 
-    const modal = document.getElementById("passwordModal");
-    const otpGroup = document.getElementById("otpGroup");
-    const masterInput = document.getElementById("otpMasterInput");
-    const slots = Array.from(document.querySelectorAll(".otp-slot"));
-    const errorEl = document.getElementById("passwordError");
-
-    modal.style.display = "flex";
-    masterInput.value = "";
-    errorEl.style.display = "none";
-    renderOtpSlots();
-
-    // Focus immediately on the input field
-    masterInput.focus({ preventScroll: true });
-
-    // Ensure focus is properly set even if first attempt doesn't work
-    requestAnimationFrame(() => {
-      masterInput.focus({ preventScroll: true });
-    });
-
-    function getOtpValue() {
-      return masterInput.value.replace(/\D/g, "").slice(0, 6);
+    // Check for legacy user (has profile key but no username)
+    if (storedProfileKey && /^u_[0-9a-f]{8}$/.test(storedProfileKey)) {
+      // Legacy user - need to upgrade
+      legacyProfileKey = storedProfileKey;
+      showUpgradeForm();
+    } else {
+      showLoginForm();
     }
-
-    function cleanup() {
-      masterInput.removeEventListener("keydown", onKeydown);
-      masterInput.removeEventListener("input", onInput);
-      masterInput.removeEventListener("paste", onPaste);
-      otpGroup.removeEventListener("click", onGroupActivate);
-      otpGroup.removeEventListener("keydown", onGroupKeydown);
-    }
-
-    function renderOtpSlots() {
-      const value = getOtpValue();
-      if (masterInput.value !== value) {
-        masterInput.value = value;
+    
+    const checkReady = setInterval(() => {
+      if (userProfileKey) {
+        clearInterval(checkReady);
+        resolve(true);
       }
-
-      slots.forEach((slot, index) => {
-        const filled = index < value.length;
-        slot.classList.toggle("is-filled", filled);
-        slot.classList.toggle("is-active", index === Math.min(value.length, 5));
-      });
-
-      return value;
-    }
-
-    function doSubmit() {
-      const value = renderOtpSlots();
-      if (value.length < 6) {
-        errorEl.style.display = "block";
-        masterInput.focus({ preventScroll: true });
-        return;
-      }
-      errorEl.style.display = "none";
-      userProfileKey = hashProfilePassword(value);
-      localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, userProfileKey);
-      modal.style.display = "none";
-      cleanup();
-      // Initialize profile UI after profile key is set
-      setTimeout(() => initProfileOnLoad(), 0);
-      resolve(true);
-    }
-
-    function onInput() {
-      const value = renderOtpSlots();
-      if (value.length === 6) {
-        requestAnimationFrame(doSubmit);
-      }
-    }
-
-    function onKeydown(e) {
-      if (e.key === "Enter") {
-        doSubmit();
-      }
-    }
-
-    function onPaste(e) {
-      e.preventDefault();
-      const text = (e.clipboardData || window.clipboardData)
-        .getData("text")
-        .replace(/\D/g, "")
-        .slice(0, 6);
-      masterInput.value = text;
-      renderOtpSlots();
-      if (text.length === 6) doSubmit();
-    }
-
-    function onGroupActivate() {
-      masterInput.focus({ preventScroll: true });
-    }
-
-    function onGroupKeydown(e) {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        masterInput.focus({ preventScroll: true });
-      }
-    }
-
-    masterInput.addEventListener("input", onInput);
-    masterInput.addEventListener("keydown", onKeydown);
-    masterInput.addEventListener("paste", onPaste);
-    otpGroup.addEventListener("click", onGroupActivate);
-    otpGroup.addEventListener("keydown", onGroupKeydown);
+    }, 100);
   });
 }
 
 function logoutProfileSession() {
   const confirmed = window.confirm(
-    "Đăng xuất phiên PIN hiện tại để nhập PIN khác?",
+    "Đăng xuất tài khoản hiện tại?",
   );
   if (!confirmed) return;
 
   localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
+  localStorage.removeItem("calendarUsername");
   userProfileKey = "";
+  currentUsername = "";
   dateDataCache = {};
 
   if (firebaseDatesRef) {
@@ -1079,6 +1335,12 @@ function initProfileOnLoad() {
   if (Object.keys(settings).length > 0) {
     profileSettingsCache = settings;
     applyProfileToUI(settings);
+  } else if (currentUsername) {
+    // If no profile settings, show username
+    const nameEl = document.getElementById("todayProfileName");
+    if (nameEl) {
+      nameEl.textContent = currentUsername;
+    }
   }
 
   // Setup file input listeners
@@ -1846,11 +2108,6 @@ async function ensureFirebaseAuth() {
 
 async function initFirebaseRealtime() {
   console.log("[Firebase] Bắt đầu khởi tạo Firebase Realtime...");
-  // Hiển thị PIN ngay để người dùng nhập mà không phải chờ auth Firebase.
-  if (!(await ensureProfileKey())) {
-    alert("Bạn cần nhập mật khẩu đồng bộ để sử dụng dữ liệu đa thiết bị.");
-    return;
-  }
 
   if (!window.firebase || !window.firebase.apps) {
     console.log("[Firebase] window.firebase không tồn tại");
@@ -1874,6 +2131,14 @@ async function initFirebaseRealtime() {
   }
 
   firebaseDb = window.firebase.database();
+  
+  // Users collection reference (for authentication)
+  firebaseUsersRef = firebaseDb.ref(FIREBASE_USERS_PATH);
+  
+  // Show auth modal BEFORE checking profile key
+  // This ensures firebaseUsersRef is available for login/register
+  await ensureProfileKey();
+
   firebaseDatesRef = firebaseDb.ref(
     `${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`,
   );

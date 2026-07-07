@@ -11975,6 +11975,123 @@ input[type="datetime-local"] {
   gap: 24px;
 }
 
+/* Profile Password Section */
+.profile-password-section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.profile-section-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--text);
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-password-section .profile-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(235, 240, 255, 0.85);
+}
+
+.profile-password-section .profile-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.profile-password-section .profile-input:focus {
+  border-color: rgba(120, 170, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(120, 170, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.profile-password-section .auth-field-wrapper.auth-password-wrapper {
+  position: relative;
+}
+
+.profile-password-section .auth-password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.35);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.18s, background 0.18s;
+}
+
+.profile-password-section .auth-password-toggle:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.profile-password-section .auth-error {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #ff8a8a;
+  min-height: 18px;
+}
+
+.profile-change-password-btn {
+  align-self: flex-start;
+  padding: 11px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  border: none;
+  color: #fff;
+  background: linear-gradient(135deg, #5b9cf6, #3f7bf7);
+  box-shadow: 0 6px 18px rgba(91, 156, 246, 0.35);
+  transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+}
+
+.profile-change-password-btn:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(91, 156, 246, 0.45);
+}
+
+.profile-change-password-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(91, 156, 246, 0.3);
+}
+
+.profile-change-password-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  filter: grayscale(0.1);
+}
+
 /* ==================== PROFILE SETTINGS MODAL ==================== */
 
 /* Profile Avatar in Modal - Larger */

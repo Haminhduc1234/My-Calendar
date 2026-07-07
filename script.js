@@ -1370,6 +1370,90 @@ function saveProfileSettings() {
 
 window.saveProfileSettings = saveProfileSettings;
 
+async function handleChangePassword() {
+  if (!currentUsername || !userProfileKey || !firebaseUsersRef) {
+    showToast("Vui lòng đăng nhập trước khi đổi mật khẩu.", "error");
+    return;
+  }
+
+  const currentPassword = document
+    .getElementById("profileCurrentPassword")
+    .value.trim();
+  const newPassword = document
+    .getElementById("profileNewPassword")
+    .value.trim();
+  const confirmNewPassword = document
+    .getElementById("profileConfirmNewPassword")
+    .value.trim();
+  const errorEl = document.getElementById("profileChangePasswordError");
+
+  if (!currentPassword || !newPassword || !confirmNewPassword) {
+    errorEl.textContent = "Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  if (!/^[0-9]{6}$/.test(newPassword)) {
+    errorEl.textContent = "Mật khẩu mới phải là 6 chữ số.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    errorEl.textContent = "Mật khẩu mới không khớp.";
+    errorEl.style.display = "block";
+    return;
+  }
+
+  errorEl.style.display = "none";
+
+  try {
+    const usersSnapshot = await firebaseUsersRef
+      .orderByChild("username")
+      .equalTo(currentUsername)
+      .once("value");
+
+    if (!usersSnapshot.exists()) {
+      errorEl.textContent = "Không tìm thấy tài khoản. Vui lòng đăng nhập lại.";
+      errorEl.style.display = "block";
+      return;
+    }
+
+    let foundUser = null;
+    let foundUserId = null;
+
+    usersSnapshot.forEach((child) => {
+      foundUser = child.val();
+      foundUserId = child.key;
+    });
+
+    const currentPasswordHash = hashPasswordWithSalt(currentUsername + currentPassword);
+    if (foundUser.passwordHash !== currentPasswordHash) {
+      errorEl.textContent = "Mật khẩu hiện tại không đúng.";
+      errorEl.style.display = "block";
+      return;
+    }
+
+    const newPasswordHash = hashPasswordWithSalt(currentUsername + newPassword);
+    await firebaseUsersRef.child(foundUserId).update({
+      passwordHash: newPasswordHash,
+    });
+
+    document.getElementById("profileCurrentPassword").value = "";
+    document.getElementById("profileNewPassword").value = "";
+    document.getElementById("profileConfirmNewPassword").value = "";
+    errorEl.style.display = "none";
+
+    showToast("Đã đổi mật khẩu thành công!", 2000);
+  } catch (err) {
+    console.error("[Auth] Change password error:", err);
+    errorEl.textContent = "Đã xảy ra lỗi. Vui lòng thử lại.";
+    errorEl.style.display = "block";
+  }
+}
+
+window.handleChangePassword = handleChangePassword;
+
 function saveProfileSettingsToFirebase(settings) {
   console.log(
     "[Profile] saveProfileSettingsToFirebase called, firebaseProfileSettingsRef:",

@@ -704,6 +704,7 @@ async function handleUpgrade() {
     localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, userId);
     localStorage.setItem("calendarUsername", username);
     localStorage.setItem("legacyProfileKey", legacyProfileKey); // Keep for reference
+    const upgradedFromKey = legacyProfileKey;
     userProfileKey = userId;
     currentUsername = username;
     legacyProfileKey = ""; // Clear legacy key after successful upgrade
@@ -712,7 +713,7 @@ async function handleUpgrade() {
     await reloadFirebaseForUser();
     
     // Fix migrated data with correct pKey
-    await fixMigratedCalendarData(legacyProfileKey, userId);
+    await fixMigratedCalendarData(upgradedFromKey, userId);
 
     showToast("Cập nhật thành công! Dữ liệu cũ đã được bảo toàn.", "success");
 
@@ -967,7 +968,7 @@ async function handleLogin() {
 
 window.handleLogin = handleLogin;
 
-function ensureProfileKey() {
+async function ensureProfileKey() {
   return new Promise((resolve) => {
     const storedProfileKey = localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE);
     const storedUsername = localStorage.getItem("calendarUsername");
@@ -984,9 +985,37 @@ function ensureProfileKey() {
 
     // Check for legacy user (has profile key but no username)
     if (storedProfileKey && /^u_[0-9a-f]{8}$/.test(storedProfileKey)) {
-      // Legacy user - need to upgrade
-      legacyProfileKey = storedProfileKey;
-      showUpgradeForm();
+      // Check if this legacy profile has already been upgraded on another device
+      // by querying Firebase for any user with upgradedFrom === this legacy key
+      const checkUpgraded = async () => {
+        try {
+          const usersSnapshot = await firebaseUsersRef.orderByChild("upgradedFrom").equalTo(storedProfileKey).once("value");
+          if (usersSnapshot.exists()) {
+            // This legacy account has been upgraded, show login form
+            legacyProfileKey = storedProfileKey;
+            showLoginForm();
+          } else {
+            // Not upgraded yet, need to upgrade
+            legacyProfileKey = storedProfileKey;
+            showUpgradeForm();
+          }
+        } catch (err) {
+          console.error("[Auth] Error checking upgrade status:", err);
+          // Fallback to upgrade form
+          legacyProfileKey = storedProfileKey;
+          showUpgradeForm();
+        }
+      };
+      
+      checkUpgraded().then(() => {
+        const checkReady = setInterval(() => {
+          if (userProfileKey) {
+            clearInterval(checkReady);
+            resolve(true);
+          }
+        }, 100);
+      });
+      return;
     } else {
       showLoginForm();
     }

@@ -706,9 +706,14 @@ async function handleUpgrade() {
     localStorage.setItem("legacyProfileKey", legacyProfileKey); // Keep for reference
     userProfileKey = userId;
     currentUsername = username;
+    legacyProfileKey = ""; // Clear legacy key after successful upgrade
 
     document.getElementById("authModal").style.display = "none";
-    initProfileOnLoad();
+    await reloadFirebaseForUser();
+    
+    // Fix migrated data with correct pKey
+    await fixMigratedCalendarData(legacyProfileKey, userId);
+
     showToast("Cập nhật thành công! Dữ liệu cũ đã được bảo toàn.", "success");
 
   } catch (err) {
@@ -723,8 +728,39 @@ window.handleUpgrade = handleUpgrade;
 async function migrateLegacyData(oldKey, newKey) {
   console.log("[Migration] Starting data migration from", oldKey, "to", newKey);
   
-  const pathsToMigrate = [
-    `calendarEvents/${oldKey}`,
+  // Special handling for calendarEvents - need to update pKey in each record
+  try {
+    const calendarPath = `calendarEvents/${oldKey}`;
+    const snapshot = await firebaseDb.ref(calendarPath).once("value");
+    if (snapshot.exists()) {
+      const calendarData = snapshot.val();
+      // Update pKey in each date record
+      const datesData = calendarData.dates || calendarData;
+      if (datesData && typeof datesData === "object") {
+        const migratedDates = {};
+        Object.keys(datesData).forEach((dateKey) => {
+          if (!isDateKey(dateKey)) return;
+          const record = datesData[dateKey];
+          if (record && typeof record === "object") {
+            migratedDates[dateKey] = {
+              ...record,
+              pKey: newKey // Update pKey to new user ID
+            };
+          }
+        });
+        // Save to new location with updated pKey
+        await firebaseDb.ref(`calendarEvents/${newKey}`).set({
+          dates: migratedDates
+        });
+        console.log("[Migration] Migrated calendarEvents with updated pKey");
+      }
+    }
+  } catch (err) {
+    console.error("[Migration] Error migrating calendarEvents:", err);
+  }
+  
+  // Migrate other paths
+  const otherPathsToMigrate = [
     `quickNotes/${oldKey}`,
     `projects/${oldKey}`,
     `translateHistory/${oldKey}`,
@@ -735,7 +771,7 @@ async function migrateLegacyData(oldKey, newKey) {
     `countdown/${oldKey}`
   ];
 
-  for (const path of pathsToMigrate) {
+  for (const path of otherPathsToMigrate) {
     try {
       const snapshot = await firebaseDb.ref(path).once("value");
       if (snapshot.exists()) {
@@ -749,6 +785,47 @@ async function migrateLegacyData(oldKey, newKey) {
   }
 
   console.log("[Migration] Complete!");
+}
+
+async function fixMigratedCalendarData(oldKey, newKey) {
+  if (!oldKey || !newKey || oldKey === newKey) return;
+  
+  try {
+    const snapshot = await firebaseDb.ref(`calendarEvents/${oldKey}`).once("value");
+    if (!snapshot.exists()) {
+      console.log("[FixMigrated] No legacy calendar data found at", oldKey);
+      return;
+    }
+    
+    const calendarData = snapshot.val();
+    const datesData = calendarData.dates || calendarData;
+    
+    if (!datesData || typeof datesData !== "object") return;
+    
+    const fixedDates = {};
+    let needsUpdate = false;
+    
+    Object.keys(datesData).forEach((dateKey) => {
+      if (!isDateKey(dateKey)) return;
+      const record = datesData[dateKey];
+      if (record && typeof record === "object" && record.pKey !== newKey) {
+        fixedDates[dateKey] = {
+          ...record,
+          pKey: newKey
+        };
+        needsUpdate = true;
+      }
+    });
+    
+    if (needsUpdate) {
+      await firebaseDb.ref(`calendarEvents/${newKey}`).set({
+        dates: fixedDates
+      });
+      console.log("[FixMigrated] Fixed pKey for calendar data from", oldKey, "to", newKey);
+    }
+  } catch (err) {
+    console.error("[FixMigrated] Error fixing migrated data:", err);
+  }
 }
 
 async function handleRegister() {
@@ -806,7 +883,7 @@ async function handleRegister() {
     currentUsername = username;
 
     document.getElementById("authModal").style.display = "none";
-    initProfileOnLoad();
+    await reloadFirebaseForUser();
     showToast("Đăng ký thành công! Chào mừng " + username + "!", "success");
 
   } catch (err) {
@@ -868,7 +945,13 @@ async function handleLogin() {
     currentUsername = username;
 
     document.getElementById("authModal").style.display = "none";
-    initProfileOnLoad();
+    await reloadFirebaseForUser();
+
+    // Auto-fix migrated data if this user was upgraded from legacy
+    if (foundUser.upgradedFrom) {
+      await fixMigratedCalendarData(foundUser.upgradedFrom, foundUserId);
+    }
+
     showToast("Đăng nhập thành công!", "success");
 
   } catch (err) {
@@ -2380,6 +2463,203 @@ async function initFirebaseRealtime() {
 
   // Realtime database initialized
   console.log("Firebase Realtime Database connected");
+}
+
+// Reload all Firebase references and data when user changes (after login/register/upgrade)
+async function reloadFirebaseForUser() {
+  if (!firebaseDb || !userProfileKey) {
+    console.warn("[Firebase] Cannot reload - firebaseDb or userProfileKey not ready");
+    return;
+  }
+
+  console.log("[Firebase] Reloading Firebase data for user:", userProfileKey);
+
+  // Clear existing caches
+  dateDataCache = {};
+  quickNotesCache = [];
+  translateHistoryCache = [];
+  projectsDataCache = {};
+  projectTasksCache = {};
+
+  // Off existing listeners to prevent duplicates
+  if (firebaseDatesRef) firebaseDatesRef.off();
+  if (firebaseQuickNotesRef) firebaseQuickNotesRef.off();
+  if (firebaseTranslateHistoryRef) firebaseTranslateHistoryRef.off();
+  if (firebaseProjectsRef) firebaseProjectsRef.off();
+
+  // Update Firebase references with new userProfileKey
+  firebaseDatesRef = firebaseDb.ref(`${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`);
+  firebaseQuickNotesRef = firebaseDb.ref(`quickNotes/${userProfileKey}`);
+  firebaseProjectsRef = firebaseDb.ref(`projects/${userProfileKey}`);
+  firebaseTranslateHistoryRef = firebaseDb.ref(`${FIREBASE_TRANSLATE_HISTORY_PATH}/${userProfileKey}`);
+  firebaseAISettingsRef = firebaseDb.ref(`aiSettings/${userProfileKey}`);
+  firebaseProfileSettingsRef = firebaseDb.ref(`${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`);
+
+  // Reload Funds
+  initFundsFirebase();
+
+  // Reload Cashflow categories
+  loadCashflowCategoriesFromStorage();
+
+  // Load dates from Firebase
+  try {
+    const datesSnapshot = await firebaseDatesRef.once("value");
+    const remoteDates = datesSnapshot.val() || {};
+    Object.keys(remoteDates).forEach((dateKey) => {
+      if (!isDateKey(dateKey)) return;
+      if (!isDateRecordTrusted(remoteDates[dateKey])) return;
+      dateDataCache[dateKey] = normalizeDateData(remoteDates[dateKey]);
+    });
+    console.log("[Firebase] Loaded", Object.keys(dateDataCache).length, "date records");
+  } catch (err) {
+    console.error("[Firebase] Error loading dates:", err);
+  }
+
+  // Load Quick Notes
+  try {
+    const quickNotesSnapshot = await firebaseQuickNotesRef.once("value");
+    const quickNotesData = quickNotesSnapshot.val();
+    if (Array.isArray(quickNotesData)) {
+      quickNotesCache = quickNotesData;
+      localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(quickNotesData));
+    }
+  } catch (err) {
+    console.error("[Firebase] Error loading quick notes:", err);
+  }
+
+  // Load Projects
+  try {
+    const projectsSnapshot = await firebaseProjectsRef.once("value");
+    const projectsData = projectsSnapshot.val() || {};
+    Object.keys(projectsData).forEach((key) => {
+      const val = projectsData[key];
+      if (val && typeof val === "object") {
+        if (val.tasks) {
+          projectTasksCache[key] = val.tasks;
+          const { tasks, ...projectData } = val;
+          projectsDataCache[key] = projectData;
+        } else if (val.id || val.title) {
+          projectsDataCache[key] = val;
+        }
+      }
+    });
+  } catch (err) {
+    console.error("[Firebase] Error loading projects:", err);
+  }
+
+  // Load Translate History
+  try {
+    const translateSnapshot = await firebaseTranslateHistoryRef.once("value");
+    const translateData = translateSnapshot.val() || {};
+    translateHistoryCache = Object.keys(translateData)
+      .map((key) => ({ id: key, ...translateData[key] }))
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  } catch (err) {
+    console.error("[Firebase] Error loading translate history:", err);
+  }
+
+  // Load AI Settings
+  loadAISettingsFromFirebase();
+
+  // Setup real-time listeners
+  setupProfileFirebaseListener();
+  loadProfileSettingsFromFirebase();
+
+  // Realtime listener for dates
+  firebaseDatesRef.on("value", (dataSnapshot) => {
+    const incoming = dataSnapshot.val() || {};
+    const nextCache = {};
+
+    Object.keys(incoming).forEach((dateKey) => {
+      if (!isDateKey(dateKey)) return;
+      if (!isDateRecordTrusted(incoming[dateKey])) return;
+      nextCache[dateKey] = normalizeDateData(incoming[dateKey]);
+      localStorage.setItem(
+        dateKey,
+        JSON.stringify({
+          __type: "date_data",
+          events: nextCache[dateKey].events,
+          overtimeHours: nextCache[dateKey].overtimeHours,
+          cashflowEntries: nextCache[dateKey].cashflowEntries,
+          updatedAt: Date.now(),
+        }),
+      );
+    });
+
+    dateDataCache = nextCache;
+    loadCalendarOnDemand();
+    renderCalendar();
+    renderOvertime();
+    renderOvertimeSalary();
+    if (LAZY_LOAD.cashflow) {
+      renderCashflowDashboard();
+    }
+  });
+
+  // Realtime listener for quick notes
+  firebaseQuickNotesRef.on("value", (snapshot) => {
+    const incoming = snapshot.val();
+    if (Array.isArray(incoming)) {
+      quickNotesCache = incoming;
+      localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(incoming));
+      if (LAZY_LOAD.quickNotes) {
+        renderQuickNotes();
+      }
+    }
+  });
+
+  // Realtime listener for translate history
+  firebaseTranslateHistoryRef.on("value", (snapshot) => {
+    const remoteData = snapshot.val() || {};
+    translateHistoryCache = Object.keys(remoteData)
+      .map((key) => ({ id: key, ...remoteData[key] }))
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    renderTranslateHistory();
+  });
+
+  // Realtime listener for projects
+  firebaseProjectsRef.on("value", (snapshot) => {
+    const remoteData = snapshot.val() || {};
+    projectsDataCache = {};
+    const newTasksCache = {};
+
+    Object.keys(remoteData).forEach((key) => {
+      const val = remoteData[key];
+      if (val && typeof val === "object") {
+        if (val.tasks) {
+          newTasksCache[key] = val.tasks;
+          const { tasks, ...projectData } = val;
+          projectsDataCache[key] = projectData;
+        } else if (val.id || val.title) {
+          projectsDataCache[key] = val;
+        }
+      }
+    });
+
+    projectTasksCache = { ...projectTasksCache, ...newTasksCache };
+    renderProjectsList();
+    if (currentOpenedProjectId) {
+      renderProjectTasksList(currentOpenedProjectId);
+    }
+  });
+
+  // Clear local date cache to avoid cross-profile pollution
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (k && isDateKey(k)) localStorage.removeItem(k);
+  }
+
+  // Re-render UI
+  renderCalendar();
+  renderOvertime();
+  renderOvertimeSalary();
+  if (LAZY_LOAD.quickNotes) {
+    renderQuickNotes();
+  }
+  renderProjectsList();
+  renderTranslateHistory();
+
+  console.log("[Firebase] Reload complete for user:", userProfileKey);
 }
 
 // Load AI Settings from Firebase

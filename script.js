@@ -5,6 +5,7 @@ let selectedEventIndex = -1;
 let geoPromptRequestedThisLoad = false;
 const TOOLBOX_STATE_KEY = "quickToolboxState";
 const GEO_PROMPT_ASKED_KEY = "geoPromptAsked";
+const GEO_COORDS_CACHE_KEY = "geoCoordsCache";
 const QUICK_NOTE_STORAGE_KEY_PREFIX = "quickNotesV1";
 const MY_MUSIC_PREFS_KEY_PREFIX = "myMusicPrefsV1";
 const FIREBASE_EVENTS_PATH = self.FIREBASE_EVENTS_PATH || "calendarEvents";
@@ -4891,11 +4892,41 @@ function loadWeatherFromCurrentPosition() {
   navigator.geolocation.getCurrentPosition(
     (position) => {
       localStorage.setItem("geoPermission", "granted");
+      localStorage.setItem(GEO_COORDS_CACHE_KEY, JSON.stringify({
+        lat: position.coords.latitude,
+        lon: position.coords.longitude,
+        timestamp: Date.now()
+      }));
       handleWeather(position.coords.latitude, position.coords.longitude);
     },
-    handleLocationError,
+    (error) => {
+      // Fallback: thử dùng cached coordinates trước khi báo lỗi
+      const cached = getCachedGeoCoords();
+      if (cached) {
+        localStorage.setItem("geoPermission", "granted");
+        handleWeather(cached.lat, cached.lon);
+      } else {
+        handleLocationError(error);
+      }
+    },
     getGeolocationOptions(),
   );
+}
+
+function getCachedGeoCoords() {
+  try {
+    const cached = localStorage.getItem(GEO_COORDS_CACHE_KEY);
+    if (!cached) return null;
+    const data = JSON.parse(cached);
+    // Cache có hiệu lực trong 24 giờ
+    if (Date.now() - data.timestamp > 86400000) {
+      localStorage.removeItem(GEO_COORDS_CACHE_KEY);
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
 }
 
 function getAddressFromCoords(lat, lon) {
@@ -5171,8 +5202,15 @@ async function fetchWeatherByLocation() {
 
   const cachedPermission = localStorage.getItem("geoPermission");
 
-  // Đã từng được cấp quyền → thử lấy vị trí trực tiếp, không hỏi lại.
-  // handleLocationError sẽ cập nhật cache nếu user thu hồi quyền sau này.
+  // Ưu tiên 1: Đã có cached coordinates → dùng luôn, không cần browser prompt
+  const cachedCoords = getCachedGeoCoords();
+  if (cachedCoords) {
+    localStorage.setItem("geoPermission", "granted");
+    handleWeather(cachedCoords.lat, cachedCoords.lon);
+    return;
+  }
+
+  // Ưu tiên 2: Đã từng được cấp quyền → thử lấy vị trí hiện tại (browser sẽ dùng internal cache)
   if (cachedPermission === "granted") {
     loadWeatherFromCurrentPosition();
     return;

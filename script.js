@@ -433,9 +433,6 @@ function renderCalendar() {
 
 /* ========================== THÁNG ========================== */
 function changeMonth(step) {
-  // Load calendar on first interaction
-  loadCalendarOnDemand();
-  
   currentDate.setMonth(currentDate.getMonth() + step);
   renderCalendar();
   renderOvertime();
@@ -2439,6 +2436,11 @@ async function initFirebaseRealtime() {
     dateDataCache[dateKey] = normalizeDateData(remoteData[dateKey]);
   });
 
+  // Render calendar immediately after loading Firebase data
+  renderCalendar();
+  renderOvertime();
+  renderOvertimeSalary();
+
   const migrationFlag = `${LEGACY_MIGRATION_FLAG_PREFIX}${userProfileKey}`;
   const migrated = localStorage.getItem(migrationFlag) === "1";
   if (!migrated) {
@@ -2525,6 +2527,7 @@ async function initFirebaseRealtime() {
     }
   });
 
+  // Listen for date data changes from Firebase
   firebaseDatesRef.on("value", (dataSnapshot) => {
     const incoming = dataSnapshot.val() || {};
     const nextCache = {};
@@ -2546,10 +2549,12 @@ async function initFirebaseRealtime() {
     });
 
     dateDataCache = nextCache;
-    loadCalendarOnDemand();
+
+    // Re-render calendar after Firebase data loads to display events and overtime
     renderCalendar();
     renderOvertime();
     renderOvertimeSalary();
+
     if (LAZY_LOAD.cashflow) {
       renderCashflowDashboard();
     }
@@ -2682,6 +2687,9 @@ async function reloadFirebaseForUser() {
   setupProfileFirebaseListener();
   loadProfileSettingsFromFirebase();
 
+  // Track first Firebase data load for this user
+  let isFirstReloadLoad = true;
+
   // Realtime listener for dates
   firebaseDatesRef.on("value", (dataSnapshot) => {
     const incoming = dataSnapshot.val() || {};
@@ -2704,10 +2712,12 @@ async function reloadFirebaseForUser() {
     });
 
     dateDataCache = nextCache;
-    loadCalendarOnDemand();
+
+    // Always render calendar after login (user changed)
     renderCalendar();
     renderOvertime();
     renderOvertimeSalary();
+
     if (LAZY_LOAD.cashflow) {
       renderCashflowDashboard();
     }
@@ -9655,13 +9665,21 @@ function hideSkeleton(id) {
   if (el) el.classList.remove('is-loading');
 }
 
-// Lazy load trigger functions
+// Render calendar immediately - no skeleton, no waiting
+// Calendar renders instantly on app load, Firebase data updates in background
 function loadCalendarOnDemand() {
-  if (LAZY_LOAD.calendar) return;
-  showSkeleton('calendarSkeleton');
-  LAZY_LOAD.calendar = true;
   renderCalendar();
-  hideSkeleton('calendarSkeleton');
+  renderOvertime();
+  renderOvertimeSalary();
+}
+
+// Refresh calendar UI after Firebase data loads
+function refreshCalendarUI() {
+  if (!LAZY_LOAD.calendar) return;
+  renderCalendar();
+  renderOvertime();
+  renderOvertimeSalary();
+  renderTodayEvents();
 }
 
 function loadWeatherOnDemand() {
@@ -9776,18 +9794,25 @@ function loadTodayLunarOnDemand() {
 (function initApp() {
   // Step 1: Show all skeletons initially for loading state
   showSkeleton('weatherSkeleton');
-  showSkeleton('calendarSkeleton');
   showSkeleton('quicknotesSkeleton');
   showSkeleton('cashflowSkeleton');
   showSkeleton('fundsSkeleton');
   showSkeleton('goldSkeleton');
   showSkeleton('projectsSkeleton');
+  // Note: calendar renders immediately, no skeleton needed
 
   // Step 2: Render UI immediately (no waiting)
   initQuickNoteModal();
   renderToday();
+  
+  // Step 3: Render calendar immediately - no waiting for Firebase!
+  console.log("[Init] Rendering calendar...");
+  renderCalendar();
+  renderOvertime();
+  renderOvertimeSalary();
+  console.log("[Init] Calendar rendered");
 
-  // Step 3: Initialize Firebase in background (non-blocking)
+  // Step 4: Initialize Firebase in background (non-blocking)
   initFirebaseServices().catch(err => {
     console.error("[Init] Firebase error:", err);
   });
@@ -9807,10 +9832,10 @@ function loadTodayLunarOnDemand() {
   // Step 8: Load lunar calendar in background
   setTimeout(() => loadTodayLunarOnDemand(), 600);
 
-  // Step 9: Calendar loads on first interaction
-  // User must click calendar tab to trigger renderCalendar()
+  // Step 9: Mark calendar as loaded (already rendered above)
+  LAZY_LOAD.calendar = true;
 
-  console.log("[Init] App started - content loads on demand");
+  console.log("[Init] App started - calendar rendered immediately");
 })();
 
 /* ========================== TIN TỨC ========================== */

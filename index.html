@@ -1148,6 +1148,22 @@
         <div class="overtime-modal-content">
           <button class="modal-close" onclick="closeOvertimeModal()">×</button>
           <h3>Thống kê tăng ca</h3>
+          
+          <div class="overtime-chart-section">
+            <div class="overtime-chart-header">
+              <span class="chart-title">Mật độ tăng ca 12 tháng năm nay</span>
+              <span class="chart-current-month" id="otChartCurrentMonth"></span>
+            </div>
+            <div class="overtime-chart-wrapper">
+              <canvas id="overtimeLineChart" class="overtime-chart-canvas"></canvas>
+              <div id="otChartTooltip" class="ot-chart-tooltip"></div>
+            </div>
+            <div class="overtime-chart-legend">
+              <span class="legend-item"><span class="legend-dot" style="background: #ff8800;"></span> Tổng giờ OT</span>
+              <span class="legend-item"><span class="legend-dot" style="background: #00d4ff;"></span> Tháng hiện tại</span>
+            </div>
+          </div>
+          
           <div class="overtime-box">
             <div>
               <span class="title">Ngày thường</span>

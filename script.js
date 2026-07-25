@@ -24,7 +24,6 @@ let firebaseDb = null;
 let firebaseDatesRef = null;
 let firebaseQuickNotesRef = null;
 let firebaseTranslateHistoryRef = null;
-let firebaseAISettingsRef = null;
 let firebaseProfileSettingsRef = null;
 let firebaseReady = false;
 let firebaseAuth = null;
@@ -2352,9 +2351,6 @@ async function initFirebaseRealtime() {
   // Cashflow categories
   loadCashflowCategoriesFromStorage();
 
-  // AI Settings reference (API Key + Model)
-  firebaseAISettingsRef = firebaseDb.ref(`aiSettings/${userProfileKey}`);
-
   // Profile Settings reference (Avatar, Cover, DisplayName, Bio)
   firebaseProfileSettingsRef = firebaseDb.ref(
     `${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`,
@@ -2581,9 +2577,6 @@ async function initFirebaseRealtime() {
   // Initialize profile UI
   initProfileOnLoad();
 
-  // Load AI Settings from Firebase
-  loadAISettingsFromFirebase();
-
   // Realtime database initialized
   console.log("Firebase Realtime Database connected");
 }
@@ -2615,7 +2608,6 @@ async function reloadFirebaseForUser() {
   firebaseQuickNotesRef = firebaseDb.ref(`quickNotes/${userProfileKey}`);
   firebaseProjectsRef = firebaseDb.ref(`projects/${userProfileKey}`);
   firebaseTranslateHistoryRef = firebaseDb.ref(`${FIREBASE_TRANSLATE_HISTORY_PATH}/${userProfileKey}`);
-  firebaseAISettingsRef = firebaseDb.ref(`aiSettings/${userProfileKey}`);
   firebaseProfileSettingsRef = firebaseDb.ref(`${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`);
 
   // Reload Funds
@@ -2680,9 +2672,6 @@ async function reloadFirebaseForUser() {
   } catch (err) {
     console.error("[Firebase] Error loading translate history:", err);
   }
-
-  // Load AI Settings
-  loadAISettingsFromFirebase();
 
   // Setup real-time listeners
   setupProfileFirebaseListener();
@@ -2788,79 +2777,6 @@ async function reloadFirebaseForUser() {
   renderTranslateHistory();
 
   console.log("[Firebase] Reload complete for user:", userProfileKey);
-}
-
-// Load AI Settings from Firebase
-function loadAISettingsFromFirebase() {
-  if (!firebaseAISettingsRef) return;
-
-  firebaseAISettingsRef
-    .once("value")
-    .then((snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        // Update global variables
-        if (data.apiKey) {
-          aiApiKey = data.apiKey;
-          localStorage.setItem("aiApiKey", data.apiKey);
-        }
-        if (data.model) {
-          aiModel = data.model;
-          localStorage.setItem("aiModel", data.model);
-        }
-        // Update UI
-        updateAIStatus();
-        console.log("AI Settings loaded from Firebase");
-      }
-    })
-    .catch((err) => {
-      console.error("Error loading AI settings from Firebase:", err);
-    });
-
-  // Listen for real-time updates
-  firebaseAISettingsRef.on("value", (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-      if (data.apiKey && data.apiKey !== aiApiKey) {
-        aiApiKey = data.apiKey;
-        localStorage.setItem("aiApiKey", data.apiKey);
-        updateAIStatus();
-        showToast("API Key đã được đồng bộ từ thiết bị khác!");
-      }
-      if (data.model && data.model !== aiModel) {
-        aiModel = data.model;
-        localStorage.setItem("aiModel", data.model);
-      }
-    }
-  });
-}
-
-// Save AI Settings to Firebase
-function saveAISettingsToFirebase(apiKey, model) {
-  if (!firebaseAISettingsRef) {
-    // Fallback to localStorage
-    localStorage.setItem("aiApiKey", apiKey);
-    localStorage.setItem("aiModel", model);
-    return;
-  }
-
-  const settings = {
-    apiKey: apiKey,
-    model: model,
-    updatedAt: Date.now(),
-  };
-
-  firebaseAISettingsRef
-    .set(settings)
-    .then(() => {
-      console.log("AI Settings saved to Firebase");
-    })
-    .catch((err) => {
-      console.error("Error saving AI settings to Firebase:", err);
-      // Fallback to localStorage
-      localStorage.setItem("aiApiKey", apiKey);
-      localStorage.setItem("aiModel", model);
-    });
 }
 
 function closeAllModals() {

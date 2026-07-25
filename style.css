@@ -804,38 +804,31 @@ body::before {
 }
 
 .today {
-  border: none;
+  border: 2px solid #ff9933;
   background: linear-gradient(
-    135deg,
-    #ff6600,
-    #ff9933,
-    #ffcc00,
-    #ff8800,
-    #ff6600
+    180deg,
+    rgba(42, 42, 62, 0.96),
+    rgba(32, 32, 52, 0.95)
   ) !important;
   position: relative;
   box-shadow:
-    0 4px 16px rgba(255, 100, 150, 0.4),
-    0 0 24px rgba(100, 150, 255, 0.3);
+    0 0 0 1px rgba(255, 204, 0, 0.2),
+    0 0 12px rgba(255, 153, 51, 0.25);
 }
 
 .today::before {
-  display: none;
+  display: block;
 }
 
 .today .solar {
-  color: #ffffff;
-  text-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.9),
-    0 2px 8px rgba(0, 0, 0, 0.6);
+  color: #f5f9ff;
+  text-shadow: none;
 }
 
 .today .lunar {
-  color: #ffffff;
-  font-weight: 600;
-  text-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.9),
-    0 2px 8px rgba(0, 0, 0, 0.6);
+  color: #a8bce0;
+  font-weight: 400;
+  text-shadow: none;
 }
 
 .holiday {

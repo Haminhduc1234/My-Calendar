@@ -5451,7 +5451,7 @@ function renderOvertimeLineChart() {
     if (idx === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   });
-  ctx.strokeStyle = "#ff8800";
+  ctx.strokeStyle = "#64B5F6";
   ctx.lineWidth = 2;
   ctx.stroke();
   
@@ -5475,7 +5475,7 @@ function renderOvertimeLineChart() {
     
     ctx.beginPath();
     ctx.arc(x, y, isCurrentMonth ? 6 : 4, 0, Math.PI * 2);
-    ctx.fillStyle = isCurrentMonth ? "#00d4ff" : "#ff8800";
+    ctx.fillStyle = isCurrentMonth ? "#00d4ff" : "#64B5F6";
     ctx.fill();
     
     if (isCurrentMonth) {
@@ -5655,7 +5655,7 @@ function renderOvertimeLineChart() {
       if (idx === 0) ctx.moveTo(x, y);
       else ctx.lineTo(x, y);
     });
-    ctx.strokeStyle = "#ff8800";
+    ctx.strokeStyle = "#64B5F6";
     ctx.lineWidth = 2;
     ctx.stroke();
     
@@ -5686,7 +5686,7 @@ function renderOvertimeLineChart() {
       
       ctx.beginPath();
       ctx.arc(x, y, isCurrentMonth ? 6 : (isHovered ? 6 : 4), 0, Math.PI * 2);
-      ctx.fillStyle = isCurrentMonth ? "#00d4ff" : (isHovered ? "#ffcc00" : "#ff8800");
+      ctx.fillStyle = isCurrentMonth ? "#00d4ff" : (isHovered ? "#90CAF9" : "#64B5F6");
       ctx.fill();
       
       if (isCurrentMonth) {
@@ -6449,7 +6449,7 @@ const CASHFLOW_PIE_COLORS = [
   "#60a5fa",
   "#34d399",
   "#f59e0b",
-  "#f472b6",
+  "#64B5F6",
   "#a78bfa",
   "#f87171",
   "#22d3ee",
@@ -8654,7 +8654,7 @@ let fundsData = {
   totalIncome: 0,
 };
 let editingFundId = "";
-let selectedFundColor = "#a855f7";
+let selectedFundColor = "#64B5F6";
 
 function initFundsFirebase() {
   if (!firebaseDb || !userProfileKey) return;
@@ -9343,7 +9343,7 @@ function openAddFundModal() {
   editingFundId = "";
   document.getElementById("fundModalTitle").innerText = "Thêm Quỹ mới";
   document.getElementById("fundName").value = "";
-  selectedFundColor = "#a855f7";
+  selectedFundColor = "#64B5F6";
 
   // Hide initial amount field for new fund
   document.getElementById("fundInitialAmountLabel").style.display = "none";
@@ -17772,7 +17772,7 @@ async function displayLocalVocabularyResults(results, translatedQuery = null) {
   // If there was a Vietnamese input, show header
   let headerHtml = "";
   if (translatedQuery) {
-    headerHtml = `<div style="padding:12px 16px;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:white;border-radius:8px;margin:12px 16px 8px;">
+    headerHtml = `<div style="padding:12px 16px;background:#64B5F6;color:white;border-radius:8px;margin:12px 16px 8px;">
       <div style="font-size:12px;opacity:0.9;">Từ tiếng Việt:</div>
       <div style="font-size:18px;font-weight:600;margin-top:4px;">${results[0]?.meaning || ""}</div>
     </div>`;
@@ -17812,14 +17812,14 @@ async function displayAPIVocabularyResultsWithTranslation(
   // Show Vietnamese translation header (for Vietnamese input or English input)
   if (translatedQuery) {
     // User typed Vietnamese - show what we found
-    html += `<div style="padding:12px 16px;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:white;border-radius:8px;margin:12px 16px 8px;">
+    html += `<div style="padding:12px 16px;background:#64B5F6;color:white;border-radius:8px;margin:12px 16px 8px;">
       <div style="font-size:12px;opacity:0.9;">🔍 Từ tiếng Việt: "${query}"</div>
       <div style="font-size:14px;opacity:0.9;margin-top:4px;">→ Từ tiếng Anh: "${translatedQuery}"</div>
       <div style="font-size:18px;font-weight:600;margin-top:8px;">${mainTranslation}</div>
     </div>`;
   } else {
     // User typed English - show Vietnamese meaning
-    html += `<div style="padding:12px 16px;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:white;border-radius:8px;margin:12px 16px 8px;">
+    html += `<div style="padding:12px 16px;background:#64B5F6;color:white;border-radius:8px;margin:12px 16px 8px;">
       <div style="font-size:12px;opacity:0.9;">Nghĩa tiếng Việt:</div>
       <div style="font-size:18px;font-weight:600;margin-top:4px;">${mainTranslation}</div>
     </div>`;
@@ -18598,20 +18598,17 @@ function renderCountdown() {
 
     // Thay đổi màu progress khi gần hoàn thành
     if (progress >= 90) {
-      progressBar.style.background =
-        "linear-gradient(90deg, #f472b6 0%, #fb7185 100%)";
+      progressBar.style.background = "#90CAF9";
       progressBar.style.boxShadow =
-        "0 0 12px rgba(244, 114, 182, 0.6), 0 0 24px rgba(251, 113, 133, 0.3)";
+        "0 0 12px rgba(100, 181, 246, 0.6), 0 0 24px rgba(144, 202, 249, 0.3)";
     } else if (progress >= 70) {
-      progressBar.style.background =
-        "linear-gradient(90deg, #818cf8 0%, #a78bfa 100%)";
+      progressBar.style.background = "#64B5F6";
       progressBar.style.boxShadow =
-        "0 0 12px rgba(129, 140, 248, 0.6), 0 0 24px rgba(167, 139, 250, 0.3)";
+        "0 0 12px rgba(66, 165, 245, 0.6), 0 0 24px rgba(100, 181, 246, 0.3)";
     } else {
-      progressBar.style.background =
-        "linear-gradient(90deg, #6366f1 0%, #818cf8 50%, #a78bfa 100%)";
+      progressBar.style.background = "#42A5F5";
       progressBar.style.boxShadow =
-        "0 0 12px rgba(167, 139, 250, 0.6), 0 0 24px rgba(99, 102, 241, 0.3)";
+        "0 0 12px rgba(100, 181, 246, 0.6), 0 0 24px rgba(66, 165, 245, 0.3)";
     }
   } else {
     progressSection.style.display = "none";

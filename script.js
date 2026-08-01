@@ -4590,12 +4590,55 @@ function applyStoredToolboxState() {
 }
 
 // ========================== MORE MENU ==========================
+// On desktop the more dropdown is moved out of .bottom-nav and appended
+// directly to <body> so its position:fixed is relative to the viewport
+// (no backdrop-filter/overflow ancestor can clip it).
+function positionMoreMenu() {
+  const dropdown = document.getElementById("moreMenuDropdown");
+  const btn = document.querySelector(".nav-item.more-fab");
+  if (!dropdown || !btn) return;
+  const isDesktop =
+    window.matchMedia && window.matchMedia("(min-width: 1024px)").matches;
+  if (isDesktop) {
+    // Move out of .bottom-nav so backdrop-filter doesn't capture it.
+    if (dropdown.parentElement !== document.body) {
+      document.body.appendChild(dropdown);
+    }
+    const rect = btn.getBoundingClientRect();
+    // Anchor: right of the sidebar, aligned with the button's BOTTOM.
+    // (The "Khác" button is the last item in the sidebar so anchoring
+    // top→button.top would push the dropdown below the viewport.)
+    const sidebar = document.querySelector(".bottom-nav");
+    const sidebarRect = sidebar ? sidebar.getBoundingClientRect() : null;
+    const left = sidebarRect ? sidebarRect.right + 12 : rect.right + 12;
+    dropdown.style.position = "fixed";
+    dropdown.style.left = `${left}px`;
+    dropdown.style.bottom = `${window.innerHeight - rect.bottom}px`;
+    dropdown.style.top = "auto";
+    dropdown.style.right = "auto";
+    dropdown.style.transformOrigin = "bottom left";
+  } else {
+    // Restore DOM placement & let default CSS handle positioning (popup above).
+    const wrapper = document.querySelector(".nav-more-wrapper");
+    if (wrapper && dropdown.parentElement !== wrapper) {
+      wrapper.appendChild(dropdown);
+    }
+    dropdown.style.position = "";
+    dropdown.style.left = "";
+    dropdown.style.top = "";
+    dropdown.style.right = "";
+    dropdown.style.bottom = "";
+    dropdown.style.transformOrigin = "";
+  }
+}
+
 function toggleMoreMenu() {
   const dropdown = document.getElementById("moreMenuDropdown");
   const btn = document.querySelector(".nav-item.more-fab");
   if (!dropdown || !btn) return;
 
   const isOpen = dropdown.classList.toggle("is-open");
+  if (isOpen) positionMoreMenu();
   btn.setAttribute("aria-expanded", String(isOpen));
 }
 
@@ -8142,6 +8185,10 @@ function renderCashflowQuickView() {
     if (document.getElementById("cashflowModal").style.display === "flex") {
       renderCashflowChart();
       renderCashflowPieCharts();
+    }
+    const moreDropdown = document.getElementById("moreMenuDropdown");
+    if (moreDropdown && moreDropdown.classList.contains("is-open")) {
+      positionMoreMenu();
     }
   });
 

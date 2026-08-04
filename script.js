@@ -5244,26 +5244,45 @@ async function fetchWeatherByLocation() {
 
 function weatherCodeToText(code) {
   const map = {
+    // Trời quang
     0: "Trời quang",
+    // Mây che phủ
     1: "Ít mây",
     2: "Mây rải rác",
     3: "Nhiều mây",
+    // Sương mù
     45: "Sương mù",
     48: "Sương mù dày",
+    // Mưa phùn
     51: "Mưa phùn nhẹ",
     53: "Mưa phùn",
     55: "Mưa phùn dày",
+    // Mưa phùn đóng băng
+    56: "Mưa phùn đóng băng nhẹ",
+    57: "Mưa phùn đóng băng dày",
+    // Mưa
     61: "Mưa nhỏ",
     63: "Mưa vừa",
     65: "Mưa to",
+    // Mưa đóng băng
+    66: "Mưa đóng băng nhẹ",
+    67: "Mưa đóng băng nặng",
+    // Tuyết
     71: "Tuyết nhẹ",
     73: "Tuyết",
     75: "Tuyết dày",
+    77: "Mưa tuyết",
+    // Mưa rào
     80: "Mưa rào nhẹ",
     81: "Mưa rào",
     82: "Mưa rào mạnh",
+    // Mưa tuyết rào
+    85: "Mưa tuyết nhẹ",
+    86: "Mưa tuyết mạnh",
+    // Dông
     95: "Dông",
-    99: "Dông mạnh",
+    96: "Dông kèm mưa đá nhẹ",
+    99: "Dông kèm mưa đá mạnh",
   };
   return map[code] || "Thời tiết không xác định";
 }

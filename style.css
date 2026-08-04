@@ -13407,3 +13407,31 @@ input[type="datetime-local"] {
     right: 16px;
   }
 }
+
+/* ==================== FIX iOS ZOOM ON INPUT FOCUS ==================== */
+/* Ngăn iOS Safari tự động zoom khi focus vào input có font-size < 16px.
+   Áp dụng cho mọi thiết bị di động (màn hình nhỏ) */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+@media (max-width: 768px) {
+  input,
+  textarea,
+  select,
+  input[type="text"],
+  input[type="number"],
+  input[type="password"],
+  input[type="email"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="datetime-local"],
+  input[type="date"],
+  input[type="time"],
+  input[type="month"],
+  input[type="week"] {
+    font-size: 16px !important;
+  }
+}

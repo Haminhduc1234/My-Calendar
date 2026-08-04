@@ -901,6 +901,7 @@ async function handleLogin() {
   const username = document.getElementById("loginUsername").value.trim().toLowerCase();
   const password = document.getElementById("loginPassword").value.trim();
   const errorEl = document.getElementById("loginError");
+  const submitBtn = document.querySelector("#loginForm .auth-submit-btn") || document.querySelector(".auth-submit-btn");
 
   if (!username) {
     errorEl.textContent = "Vui lòng nhập tên đăng nhập.";
@@ -915,6 +916,12 @@ async function handleLogin() {
   }
 
   errorEl.style.display = "none";
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.dataset.originalText = submitBtn.dataset.originalText || submitBtn.textContent.trim();
+    submitBtn.innerHTML = '<span class="auth-submit-spinner" aria-hidden="true"></span><span>Đang đăng nhập...</span>';
+  }
 
   try {
     const usersSnapshot = await firebaseUsersRef.orderByChild("username").equalTo(username).once("value");
@@ -964,10 +971,33 @@ async function handleLogin() {
       errorEl.textContent = "Đã xảy ra lỗi. Vui lòng thử lại.";
     }
     errorEl.style.display = "block";
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = submitBtn.dataset.originalText || "Đăng Nhập";
+      delete submitBtn.dataset.originalText;
+    }
   }
 }
 
 window.handleLogin = handleLogin;
+
+// Cho phép nhấn Enter trong ô tên đăng nhập/mật khẩu để đăng nhập
+(function setupLoginEnterKey() {
+  const usernameInput = document.getElementById("loginUsername");
+  const passwordInput = document.getElementById("loginPassword");
+  if (!usernameInput || !passwordInput) return;
+
+  const triggerLogin = (e) => {
+    if (e.key === "Enter" || e.keyCode === 13) {
+      e.preventDefault();
+      handleLogin();
+    }
+  };
+
+  usernameInput.addEventListener("keydown", triggerLogin);
+  passwordInput.addEventListener("keydown", triggerLogin);
+})();
 
 async function ensureProfileKey() {
   return new Promise((resolve) => {
@@ -6842,14 +6872,27 @@ function resetCashflowForm() {
 function syncCashflowFormMode() {
   const submitBtn = document.getElementById("cashflowSubmitBtn");
   const cancelBtn = document.getElementById("cashflowCancelEditBtn");
-  if (!submitBtn || !cancelBtn) return;
+  const mobileAddBtn = document.getElementById("cashflowMobileAddBtn");
+  const mobileCloseBtn = document.querySelector(".cashflow-mobile-close-btn");
 
   if (editingCashflowId) {
-    submitBtn.innerText = "Lưu chỉnh sửa";
-    cancelBtn.style.display = "block";
+    if (submitBtn) submitBtn.innerText = "Lưu chỉnh sửa";
+    if (cancelBtn) cancelBtn.style.display = "block";
+    if (mobileAddBtn) mobileAddBtn.innerText = "Lưu chỉnh sửa";
+    if (mobileCloseBtn) {
+      mobileCloseBtn.innerText = "Hủy sửa";
+      mobileCloseBtn.onclick = cancelCashflowEdit;
+      mobileCloseBtn.classList.add("is-cancel-mode");
+    }
   } else {
-    submitBtn.innerText = "+ Thêm giao dịch";
-    cancelBtn.style.display = "none";
+    if (submitBtn) submitBtn.innerText = "+ Thêm giao dịch";
+    if (cancelBtn) cancelBtn.style.display = "none";
+    if (mobileAddBtn) mobileAddBtn.innerText = "+ Thêm thu chi";
+    if (mobileCloseBtn) {
+      mobileCloseBtn.innerText = "Đóng";
+      mobileCloseBtn.onclick = closeCashflowModal;
+      mobileCloseBtn.classList.remove("is-cancel-mode");
+    }
   }
 }
 

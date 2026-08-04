@@ -567,9 +567,6 @@
             </div>
             <div id="loginError" class="auth-error"></div>
             <button class="auth-submit-btn" onclick="handleLogin()">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                <path d="M10 17l5-5-5-5v10z"/>
-              </svg>
               Đăng Nhập
             </button>
             <p class="auth-switch-text">
@@ -1363,7 +1360,7 @@
                 </div>
               </label>
 
-              <div class="cashflow-actions">
+              <!-- <div class="cashflow-actions">
                 <button
                   id="cashflowSubmitBtn"
                   class="cashflow-add-btn"
@@ -1379,7 +1376,7 @@
                 >
                   Hủy sửa
                 </button>
-              </div>
+              </div> -->
             </section>
 
             <section class="cashflow-section cashflow-history-section cashflow-collapsible-section collapsed" id="cashflowHistorySection">
@@ -1620,6 +1617,26 @@
                 </div>
               </div>
             </section>
+          </div>
+
+          <!-- Mobile Footer Bar (chỉ hiển thị trên mobile) -->
+          <div class="cashflow-mobile-footer">
+            <button
+              type="button"
+              class="cashflow-mobile-close-btn"
+              onclick="closeCashflowModal()"
+              aria-label="Đóng modal quản lý thu chi"
+            >
+              Đóng
+            </button>
+            <button
+              type="button"
+              id="cashflowMobileAddBtn"
+              class="cashflow-mobile-add-btn"
+              onclick="addCashflowEntry()"
+            >
+              + Thêm giao dịch
+            </button>
           </div>
         </div>
       </div>

@@ -10418,6 +10418,35 @@ function loadTodayLunarOnDemand() {
   LAZY_LOAD.calendar = true;
 
   console.log("[Init] App started - calendar rendered immediately");
+
+  // Swipe gesture để chuyển tháng trên mobile
+  (function initCalendarSwipe() {
+    const calendarEl = document.getElementById("calendar");
+    if (!calendarEl) return;
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    calendarEl.addEventListener("touchstart", function (e) {
+      touchStartX = e.changedTouches[0].clientX;
+      touchStartY = e.changedTouches[0].clientY;
+    }, { passive: true });
+
+    calendarEl.addEventListener("touchend", function (e) {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      const MIN_SWIPE = 50; // px tối thiểu để tính là vuốt
+
+      // Chỉ xử lý nếu vuốt ngang nhiều hơn dọc (tránh nhầm với cuộn)
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > MIN_SWIPE) {
+        if (dx > 0) {
+          changeMonth(-1); // Vuốt sang phải → tháng trước
+        } else {
+          changeMonth(1);  // Vuốt sang trái → tháng sau
+        }
+      }
+    }, { passive: true });
+  })();
 })();
 
 /* ========================== TIN TỨC ========================== */

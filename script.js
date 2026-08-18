@@ -13526,6 +13526,51 @@ async function translateViToEn(text) {
   return fetchTranslationCustom(text, "vi|en");
 }
 
+// Open Language Picker Modal (shown first when user clicks "Học Tiếng")
+function openLearnModal() {
+  const picker = document.getElementById("learnLangPickerModal");
+  picker.style.display = "flex";
+  document.body.style.overflow = "hidden";
+}
+
+// Close Language Picker Modal
+function closeLearnLangPicker() {
+  const picker = document.getElementById("learnLangPickerModal");
+  picker.style.display = "none";
+  document.body.style.overflow = "";
+}
+
+// User selected a language from picker → open the learn modal
+function selectLearnLanguageAndOpen(lang) {
+  closeLearnLangPicker();
+  const modal = document.getElementById("learnModal");
+  modal.style.display = "flex";
+  document.body.style.overflow = "hidden";
+
+  // Reset to vocabulary tab
+  document.querySelectorAll(".learn-tab").forEach((t) => t.classList.remove("active"));
+  document.querySelectorAll(".learn-tab-content").forEach((c) => c.classList.remove("active"));
+  document.querySelector('.learn-tab[data-tab="vocabulary"]').classList.add("active");
+  document.getElementById("learnVocabularyTab").classList.add("active");
+  initVocabSearchResultsCollapsed();
+
+  // Apply chosen language
+  switchLearnLanguage(lang);
+}
+
+// Back button inside learn modal → close learn modal, reopen picker
+function backToLearnLangPicker() {
+  document.getElementById("learnModal").style.display = "none";
+  const picker = document.getElementById("learnLangPickerModal");
+  picker.style.display = "flex";
+}
+
+// Close Learn Modal
+function closeLearnModal() {
+  document.getElementById("learnModal").style.display = "none";
+  document.body.style.overflow = "";
+}
+
 // No results HTML template with illustration
 function getNoResultsHTML(message = "Không tìm thấy kết quả nào.") {
   return `
@@ -13758,34 +13803,6 @@ function closeVocabSearchResults() {
   if (wrapper) wrapper.classList.remove("has-results");
 }
 
-// Open Learn Modal
-function openLearnModal() {
-  const modal = document.getElementById("learnModal");
-  modal.style.display = "flex";
-  document.body.style.overflow = "hidden";
-
-  // Reset to first tab content
-  document
-    .querySelectorAll(".learn-tab")
-    .forEach((t) => t.classList.remove("active"));
-  document
-    .querySelectorAll(".learn-tab-content")
-    .forEach((c) => c.classList.remove("active"));
-  document
-    .querySelector('.learn-tab[data-tab="vocabulary"]')
-    .classList.add("active");
-  document.getElementById("learnVocabularyTab").classList.add("active");
-  initVocabSearchResultsCollapsed();
-
-  // Apply stored language
-  switchLearnLanguage(currentLearnLanguage);
-}
-
-// Close Learn Modal
-function closeLearnModal() {
-  document.getElementById("learnModal").style.display = "none";
-  document.body.style.overflow = "";
-}
 
 // Switch Learn Tab
 function switchLearnTab(tab) {

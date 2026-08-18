@@ -2830,32 +2830,38 @@
       </div>
     </div>
 
-    <!-- Learn English Modal -->
+    <!-- Language Picker Modal -->
+    <div id="learnLangPickerModal" class="modal">
+      <div class="learn-lang-picker-overlay" onclick="closeLearnLangPicker()"></div>
+      <div class="learn-lang-picker-content">
+        <button class="modal-close learn-lang-picker-close" onclick="closeLearnLangPicker()">×</button>
+        <div class="learn-lang-picker-icon">📚</div>
+        <h2 class="learn-lang-picker-title">Bạn muốn học ngôn ngữ nào?</h2>
+        <p class="learn-lang-picker-subtitle">Chọn ngôn ngữ để bắt đầu hành trình học tập của bạn</p>
+        <div class="learn-lang-picker-options">
+          <button class="learn-lang-picker-btn" onclick="selectLearnLanguageAndOpen('en')">
+            <span class="learn-lang-picker-flag">🇬🇧</span>
+            <span class="learn-lang-picker-label">Tiếng Anh</span>
+            <span class="learn-lang-picker-desc">English</span>
+          </button>
+          <button class="learn-lang-picker-btn" onclick="selectLearnLanguageAndOpen('zh')">
+            <span class="learn-lang-picker-flag">🇨🇳</span>
+            <span class="learn-lang-picker-label">Tiếng Trung</span>
+            <span class="learn-lang-picker-desc">中文</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Learn Modal -->
     <div id="learnModal" class="modal">
       <div class="learn-modal-content">
         <div class="learn-modal-header">
           <div class="learn-header-left">
+            <button class="learn-back-btn" onclick="backToLearnLangPicker()" title="Chọn ngôn ngữ khác">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            </button>
             <h3 id="learnModalTitle">Học Tiếng Anh</h3>
-            <div class="learn-lang-selector">
-              <button
-                type="button"
-                class="learn-lang-btn active"
-                id="learnLangEnBtn"
-                onclick="switchLearnLanguage('en')"
-                data-lang="en"
-              >
-                🇬🇧 Tiếng Anh
-              </button>
-              <button
-                type="button"
-                class="learn-lang-btn"
-                id="learnLangZhBtn"
-                onclick="switchLearnLanguage('zh')"
-                data-lang="zh"
-              >
-                🇨🇳 Tiếng Trung
-              </button>
-            </div>
           </div>
           <button class="modal-close" onclick="closeLearnModal()">×</button>
         </div>

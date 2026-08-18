@@ -468,8 +468,8 @@ function changeMonth(step) {
   }
 
   // Hướng slide: step > 0 (tháng sau) → slide sang trái; step < 0 (tháng trước) → slide sang phải
-  const outClass = step > 0 ? "cal-slide-out-left"  : "cal-slide-out-right";
-  const inClass  = step > 0 ? "cal-slide-in-right"  : "cal-slide-in-left";
+  const outClass = step > 0 ? "cal-slide-out-left" : "cal-slide-out-right";
+  const inClass = step > 0 ? "cal-slide-in-right" : "cal-slide-in-left";
 
   // Xoá class cũ nếu animation đang chạy dở
   calDom.classList.remove(
@@ -5285,12 +5285,14 @@ function renderForecast(daily, hourly) {
   forecastEl.innerHTML = "";
   const today = new Date().toISOString().slice(0, 10);
 
-  for (let i = 1; i < daily.time.length; i++) {
+  for (let i = 0; i < daily.time.length; i++) {
     const date = new Date(daily.time[i]);
 
-    // Format day label: Ngày mai, Ngày kia, or weekday + date
+    // Format day label: Hôm nay, Ngày mai, Ngày kia, or weekday + date
     let dayLabel;
-    if (i === 1) {
+    if (i === 0) {
+      dayLabel = "Hôm nay";
+    } else if (i === 1) {
       dayLabel = "Ngày mai";
     } else if (i === 2) {
       dayLabel = "Ngày kia";

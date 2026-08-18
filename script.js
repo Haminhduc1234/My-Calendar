@@ -458,10 +458,51 @@ function renderCalendar() {
 
 /* ========================== THÁNG ========================== */
 function changeMonth(step) {
-  currentDate.setMonth(currentDate.getMonth() + step);
-  renderCalendar();
-  renderOvertime();
-  renderOvertimeSalary();
+  const calDom = document.getElementById("calendar");
+  if (!calDom) {
+    currentDate.setMonth(currentDate.getMonth() + step);
+    renderCalendar();
+    renderOvertime();
+    renderOvertimeSalary();
+    return;
+  }
+
+  // Hướng slide: step > 0 (tháng sau) → slide sang trái; step < 0 (tháng trước) → slide sang phải
+  const outClass = step > 0 ? "cal-slide-out-left"  : "cal-slide-out-right";
+  const inClass  = step > 0 ? "cal-slide-in-right"  : "cal-slide-in-left";
+
+  // Xoá class cũ nếu animation đang chạy dở
+  calDom.classList.remove(
+    "cal-slide-in-right", "cal-slide-in-left",
+    "cal-slide-out-left", "cal-slide-out-right"
+  );
+
+  // Bước 1: slide out
+  calDom.classList.add(outClass);
+
+  const onOutEnd = () => {
+    calDom.removeEventListener("animationend", onOutEnd);
+    calDom.classList.remove(outClass);
+
+    // Bước 2: đổi tháng và re-render
+    currentDate.setMonth(currentDate.getMonth() + step);
+    renderCalendar();
+    renderOvertime();
+    renderOvertimeSalary();
+
+    // Bước 3: slide in
+    // Dùng requestAnimationFrame để đảm bảo DOM đã cập nhật trước khi thêm class
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        calDom.classList.add(inClass);
+        calDom.addEventListener("animationend", () => {
+          calDom.classList.remove(inClass);
+        }, { once: true });
+      });
+    });
+  };
+
+  calDom.addEventListener("animationend", onOutEnd, { once: true });
 }
 
 function isDateKey(key) {

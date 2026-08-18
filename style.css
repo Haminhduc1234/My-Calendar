@@ -756,6 +756,38 @@ body::before {
   grid-template-columns: repeat(7, 1fr);
 }
 
+/* ── Calendar month slide animation ── */
+.calendar-slide-wrapper {
+  overflow: hidden;
+  position: relative;
+}
+
+.days {
+  will-change: transform, opacity;
+}
+
+@keyframes calSlideInFromRight {
+  from { transform: translateX(40px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes calSlideInFromLeft {
+  from { transform: translateX(-40px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+@keyframes calSlideOutToLeft {
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(-40px); opacity: 0; }
+}
+@keyframes calSlideOutToRight {
+  from { transform: translateX(0);   opacity: 1; }
+  to   { transform: translateX(40px); opacity: 0; }
+}
+
+.cal-slide-in-right  { animation: calSlideInFromRight  0.32s cubic-bezier(0.4,0,0.2,1) both; }
+.cal-slide-in-left   { animation: calSlideInFromLeft   0.32s cubic-bezier(0.4,0,0.2,1) both; }
+.cal-slide-out-left  { animation: calSlideOutToLeft    0.18s cubic-bezier(0.4,0,0.2,1) both; }
+.cal-slide-out-right { animation: calSlideOutToRight   0.18s cubic-bezier(0.4,0,0.2,1) both; }
+
 .weekdays div {
   text-align: center;
   font-size: 12px;

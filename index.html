@@ -2834,7 +2834,29 @@
     <div id="learnModal" class="modal">
       <div class="learn-modal-content">
         <div class="learn-modal-header">
-          <h3>Học Tiếng Anh</h3>
+          <div class="learn-header-left">
+            <h3 id="learnModalTitle">Học Tiếng Anh</h3>
+            <div class="learn-lang-selector">
+              <button
+                type="button"
+                class="learn-lang-btn active"
+                id="learnLangEnBtn"
+                onclick="switchLearnLanguage('en')"
+                data-lang="en"
+              >
+                🇬🇧 Tiếng Anh
+              </button>
+              <button
+                type="button"
+                class="learn-lang-btn"
+                id="learnLangZhBtn"
+                onclick="switchLearnLanguage('zh')"
+                data-lang="zh"
+              >
+                🇨🇳 Tiếng Trung
+              </button>
+            </div>
+          </div>
           <button class="modal-close" onclick="closeLearnModal()">×</button>
         </div>
         <div class="learn-tabs">
@@ -2933,7 +2955,7 @@
             </div>
             <div id="vocabSearchResults" class="learn-search-results"></div>
           </div>
-          <div class="learn-category-selector">
+          <div class="learn-category-selector" id="vocabCategorySelector">
             <button
               class="learn-category-btn active"
               onclick="selectVocabCategory('all')"
@@ -3181,7 +3203,7 @@
 
         <!-- Grammar Section -->
         <div id="learnGrammarTab" class="learn-tab-content">
-          <div class="learn-category-selector">
+          <div class="learn-category-selector" id="grammarCategorySelector">
             <button
               class="learn-category-btn active"
               onclick="selectGrammarCategory('all')"
@@ -3282,7 +3304,7 @@
 
         <!-- Phrases Section -->
         <div id="learnPhrasesTab" class="learn-tab-content">
-          <div class="learn-category-selector">
+          <div class="learn-category-selector" id="phraseCategorySelector">
             <button
               class="learn-category-btn active"
               onclick="selectPhraseCategory('all')"
@@ -3515,6 +3537,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
     <script src="public/my-music-library.js"></script>
+    <script src="learn-en-data.js"></script>
+    <script src="learn-zh-data.js"></script>
     <script src="script.js"></script>
     <!-- <script src="MapSearch.js"></script> -->
 

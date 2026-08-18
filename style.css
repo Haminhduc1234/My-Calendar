@@ -767,26 +767,68 @@ body::before {
 }
 
 @keyframes calSlideInFromRight {
-  from { transform: translateX(40px); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
-@keyframes calSlideInFromLeft {
-  from { transform: translateX(-40px); opacity: 0; }
-  to   { transform: translateX(0);     opacity: 1; }
-}
-@keyframes calSlideOutToLeft {
-  from { transform: translateX(0);    opacity: 1; }
-  to   { transform: translateX(-40px); opacity: 0; }
-}
-@keyframes calSlideOutToRight {
-  from { transform: translateX(0);   opacity: 1; }
-  to   { transform: translateX(40px); opacity: 0; }
+  from {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
-.cal-slide-in-right  { animation: calSlideInFromRight  0.32s cubic-bezier(0.4,0,0.2,1) both; }
-.cal-slide-in-left   { animation: calSlideInFromLeft   0.32s cubic-bezier(0.4,0,0.2,1) both; }
-.cal-slide-out-left  { animation: calSlideOutToLeft    0.18s cubic-bezier(0.4,0,0.2,1) both; }
-.cal-slide-out-right { animation: calSlideOutToRight   0.18s cubic-bezier(0.4,0,0.2,1) both; }
+@keyframes calSlideInFromLeft {
+  from {
+    transform: translateX(-40px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes calSlideOutToLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translateX(-40px);
+    opacity: 0;
+  }
+}
+
+@keyframes calSlideOutToRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+
+  to {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+}
+
+.cal-slide-in-right {
+  animation: calSlideInFromRight 0.32s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.cal-slide-in-left {
+  animation: calSlideInFromLeft 0.32s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.cal-slide-out-left {
+  animation: calSlideOutToLeft 0.18s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.cal-slide-out-right {
+  animation: calSlideOutToRight 0.18s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
 
 .weekdays div {
   text-align: center;
@@ -2112,7 +2154,7 @@ body::before {
 .forecast-card {
   min-width: 160px;
   border-radius: 14px;
-  padding: 12px;
+  padding: 8px 12px;
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -10503,6 +10545,49 @@ input[type="datetime-local"] {
   padding: 16px 20px;
   border-bottom: 1px solid var(--line);
   background: var(--surface-1);
+}
+
+.learn-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.learn-lang-selector {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface-2, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
+  border-radius: 20px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.learn-lang-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted, #8e9bb0);
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.learn-lang-btn:hover {
+  color: var(--text, #ffffff);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.learn-lang-btn.active {
+  background: var(--accent, #64B5F6);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(100, 181, 246, 0.35);
 }
 
 .learn-modal-header h3 {

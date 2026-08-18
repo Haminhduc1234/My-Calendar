@@ -35,6 +35,8 @@ const FILES_TO_CACHE = [
     "./firebase-config.js",
     "./firebase-messaging-sw.js",
     "./style.css",
+    "./learn-en-data.js",
+    "./learn-zh-data.js",
     "./script.js",
     "./manifest.json",
     "./public/favicon.png",

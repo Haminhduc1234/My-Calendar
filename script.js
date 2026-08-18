@@ -348,10 +348,11 @@ function renderTodayEvents() {
               minute: "2-digit",
             })
           : "";
-        return `<div class="today-event-item">
-        ${timeStr ? `<span class="today-event-time">${timeStr}</span>` : ""}
-        <span class="today-event-title">${ev.title || "(Không có tiêu đề)"}</span>
-        ${ev.text ? `<span class="today-event-text">${ev.text}</span>` : ""}
+        const evColor = escapeHtml(ev.color || "#3b82f6");
+        return `<div class="today-event-item" style="--event-color: ${evColor}; border-left-color: ${evColor};">
+        ${timeStr ? `<span class="today-event-time" style="color: ${evColor};">${timeStr}</span>` : ""}
+        <span class="today-event-title">${escapeHtml(ev.title || "(Không có tiêu đề)")}</span>
+        ${ev.text ? `<span class="today-event-text">${escapeHtml(ev.text)}</span>` : ""}
       </div>`;
       })
       .join("")}</div>
@@ -391,9 +392,10 @@ function renderCalendar() {
 
     const lunar = convertSolarToLunar(d, m, y);
     const key = `${y}-${m}-${d}`;
+    const dayEvents = getEventsForDate(key);
 
     if (cellDate.getTime() === today.getTime()) div.classList.add("today");
-    if (getEventsForDate(key).length > 0) div.classList.add("has-event");
+    if (dayEvents.length > 0) div.classList.add("has-event");
     if (getOvertimeHoursForDateKey(key) > 0) div.classList.add("has-overtime");
 
     const isCustomHoliday = !!getDateData(key).isHoliday;
@@ -420,9 +422,27 @@ function renderCalendar() {
       holidayName = "Ngày nghỉ lễ";
     }
 
+    let dotsHtml = "";
+    if (dayEvents.length > 0) {
+      const displayDots = dayEvents.slice(0, 4);
+      const extraCount = dayEvents.length - displayDots.length;
+      dotsHtml = `
+        <div class="day-event-dots">
+          ${displayDots
+            .map((ev) => {
+              const c = escapeHtml(ev.color || "#3b82f6");
+              return `<span class="day-event-dot" style="background-color: ${c}; color: ${c};" title="${escapeHtml(ev.title || "Sự kiện")}"></span>`;
+            })
+            .join("")}
+          ${extraCount > 0 ? `<span class="day-event-more">+${extraCount}</span>` : ""}
+        </div>
+      `;
+    }
+
     div.innerHTML = `
   <div class="solar">${d}</div>
   <div class="lunar">${lunar.lunarDay}/${lunar.lunarMonth}${lunar.lunarLeap ? "N" : ""}</div>
+  ${dotsHtml}
 `;
 
     div.onclick = () => openModal(key, d, m, y);
@@ -465,6 +485,7 @@ function normalizeDateData(raw) {
     title: String(event?.title || "").trim(),
     text: String(event?.text || "").trim(),
     eventDateTime: String(event?.eventDateTime || ""),
+    color: String(event?.color || "").trim() || "#3b82f6",
     createdAt: Number(event?.createdAt || Date.now()),
     updatedAt: Number(event?.updatedAt || 0),
   }));
@@ -1987,6 +2008,7 @@ async function exportEventsCsv() {
         ev.title || "",
         ev.text || "",
         ev.eventDateTime || "",
+        ev.color || "#3b82f6",
         formatTimestampForCsv(ev.createdAt),
         formatTimestampForCsv(ev.updatedAt),
       ]);
@@ -2004,6 +2026,7 @@ async function exportEventsCsv() {
       "Tiêu đề",
       "Nội dung",
       "Ngày giờ sự kiện",
+      "Màu sắc",
       "Tạo lúc",
       "Cập nhật lúc",
     ],
@@ -2202,6 +2225,7 @@ function addEventToDate(dateKey, eventData) {
     title: String(eventData.title || "").trim(),
     text: String(eventData.text || "").trim(),
     eventDateTime: String(eventData.eventDateTime || ""),
+    color: String(eventData.color || "").trim() || "#3b82f6",
     createdAt: Date.now(),
   });
   saveDateData(dateKey, data);
@@ -2216,6 +2240,7 @@ function updateEventInDate(dateKey, eventIndex, eventData) {
     title: String(eventData.title || "").trim(),
     text: String(eventData.text || "").trim(),
     eventDateTime: String(eventData.eventDateTime || ""),
+    color: String(eventData.color || "").trim() || previous.color || "#3b82f6",
     createdAt: previous.createdAt || Date.now(),
     updatedAt: Date.now(),
   };
@@ -2848,6 +2873,65 @@ function openAddEventModalForToday() {
 
 /* ========================== MO-ĐAL ========================== */
 
+/* ========================== EVENT COLOR HELPERS ========================== */
+const EVENT_COLOR_DEFAULT = "#3b82f6";
+
+function setEventModalColor(hex) {
+  const color = hex || EVENT_COLOR_DEFAULT;
+  const hiddenInput = document.getElementById("newEventColor");
+  const colorPicker = document.getElementById("newEventColorPicker");
+  if (hiddenInput) hiddenInput.value = color;
+  if (colorPicker) colorPicker.value = color;
+
+  const swatches = document.querySelectorAll("#eventColorPalette .event-color-swatch");
+  let matchedSwatch = false;
+  swatches.forEach((swatch) => {
+    if (
+      swatch.dataset.color &&
+      swatch.dataset.color.toLowerCase() === color.toLowerCase()
+    ) {
+      swatch.classList.add("active");
+      matchedSwatch = true;
+    } else {
+      swatch.classList.remove("active");
+    }
+  });
+
+  const customBtn = document.querySelector(".event-custom-color-btn");
+  if (customBtn) {
+    if (!matchedSwatch) {
+      customBtn.style.borderColor = color;
+      customBtn.style.boxShadow = `0 0 10px ${color}`;
+    } else {
+      customBtn.style.borderColor = "";
+      customBtn.style.boxShadow = "";
+    }
+  }
+}
+
+function onCustomEventColorChange(hex) {
+  setEventModalColor(hex);
+}
+
+function initEventColorPalette() {
+  const palette = document.getElementById("eventColorPalette");
+  if (!palette) return;
+  if (palette._colorPaletteInited) return;
+  palette._colorPaletteInited = true;
+  palette.addEventListener("click", (e) => {
+    const swatch = e.target.closest(".event-color-swatch");
+    if (swatch && swatch.dataset.color) {
+      setEventModalColor(swatch.dataset.color);
+    }
+  });
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initEventColorPalette);
+} else {
+  initEventColorPalette();
+}
+
 function openAddEventModalFromDayDetails() {
   if (!selectedKey) return;
   const [y, m, d] = selectedKey.split("-").map(Number);
@@ -2871,6 +2955,7 @@ function openEditEventModal(eventIndex) {
   document.getElementById("newEventDateTime").value = toDatetimeLocalValue(
     event.eventDateTime,
   );
+  setEventModalColor(event.color || EVENT_COLOR_DEFAULT);
   document.getElementById("addEventModalTitle").innerText = "Chỉnh sửa sự kiện";
   document.getElementById("saveEventBtn").innerText = "Cập nhật";
 
@@ -2913,6 +2998,9 @@ function openDayDetailsModal(dateKey, d, m, y) {
     data.events.forEach((event, idx) => {
       const eventDiv = document.createElement("div");
       eventDiv.className = "event-item";
+      const evColor = escapeHtml(event.color || EVENT_COLOR_DEFAULT);
+      eventDiv.style.setProperty("--event-color", evColor);
+      eventDiv.style.borderLeftColor = evColor;
       const timeStr = event.eventDateTime
         ? new Date(event.eventDateTime).toLocaleTimeString("vi-VN", {
             hour: "2-digit",
@@ -2920,10 +3008,10 @@ function openDayDetailsModal(dateKey, d, m, y) {
           })
         : "--:--";
       eventDiv.innerHTML = `
-        <div class="event-time">${timeStr}</div>
+        <div class="event-time" style="color: ${evColor};">${timeStr}</div>
         <div class="event-content">
-          <div class="event-title">${event.title || "(Không có tiêu đề)"}</div>
-          <div class="event-text">${event.text}</div>
+          <div class="event-title">${escapeHtml(event.title || "(Không có tiêu đề)")}</div>
+          <div class="event-text">${escapeHtml(event.text || "")}</div>
         </div>
         <div class="event-actions">
           <button class="event-edit" onclick="openEditEventModal(${idx})" title="Sửa" aria-label="Sửa sự kiện">
@@ -2975,6 +3063,7 @@ function openAddEventModal(dateKey, d, m, y) {
       `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}T09:00`,
     ),
   );
+  setEventModalColor(EVENT_COLOR_DEFAULT);
   document.getElementById("addEventModalTitle").innerText = "Thêm sự kiện";
   document.getElementById("saveEventBtn").innerText = "Lưu";
 
@@ -2989,6 +3078,8 @@ function saveNewEvent() {
   const title = document.getElementById("newEventTitle").value.trim();
   const text = document.getElementById("newEventText").value.trim();
   const eventDateTime = document.getElementById("newEventDateTime").value;
+  const colorInput = document.getElementById("newEventColor");
+  const color = colorInput && colorInput.value ? colorInput.value.trim() : EVENT_COLOR_DEFAULT;
 
   if (!title && !text) {
     alert("Vui lòng nhập tiêu đề hoặc nội dung sự kiện");
@@ -2999,6 +3090,7 @@ function saveNewEvent() {
     title,
     text,
     eventDateTime,
+    color,
   };
 
   if (selectedEventIndex >= 0) {
@@ -3017,6 +3109,7 @@ function saveNewEvent() {
   const [y, m, d] = selectedKey.split("-").map(Number);
   openDayDetailsModal(selectedKey, d, m, y);
 }
+
 
 function openModal(key, d, m, y) {
   // Alias for backwards compatibility - now opens day details
@@ -4728,6 +4821,8 @@ function saveEvent() {
   const title = document.getElementById("newEventTitle").value.trim();
   const text = document.getElementById("newEventText").value.trim();
   const eventDateTime = document.getElementById("newEventDateTime").value;
+  const colorInput = document.getElementById("newEventColor");
+  const color = colorInput && colorInput.value ? colorInput.value.trim() : "#3b82f6";
 
   if (!title && !text) {
     alert("Vui lòng nhập tiêu đề hoặc nội dung sự kiện");
@@ -4738,6 +4833,7 @@ function saveEvent() {
     title,
     text,
     eventDateTime,
+    color,
   });
 
   renderOvertime();

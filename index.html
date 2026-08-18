@@ -1096,6 +1096,30 @@
 
             <label class="field-label" for="newEventDateTime">Ngày/Giờ</label>
             <input id="newEventDateTime" type="datetime-local" />
+
+            <label class="field-label">Màu sắc sự kiện</label>
+            <div class="event-color-picker-group">
+              <div class="event-color-palette" id="eventColorPalette">
+                <!-- Color swatches rendered dynamically or statically -->
+                <button type="button" class="event-color-swatch active" data-color="#3b82f6" style="--swatch-color: #3b82f6;" title="Xanh dương"></button>
+                <button type="button" class="event-color-swatch" data-color="#10b981" style="--swatch-color: #10b981;" title="Xanh lá"></button>
+                <button type="button" class="event-color-swatch" data-color="#8b5cf6" style="--swatch-color: #8b5cf6;" title="Tím"></button>
+                <button type="button" class="event-color-swatch" data-color="#f59e0b" style="--swatch-color: #f59e0b;" title="Vàng hổ phách"></button>
+                <button type="button" class="event-color-swatch" data-color="#ef4444" style="--swatch-color: #ef4444;" title="Đỏ"></button>
+                <button type="button" class="event-color-swatch" data-color="#06b6d4" style="--swatch-color: #06b6d4;" title="Xanh lơ (Cyan)"></button>
+                <button type="button" class="event-color-swatch" data-color="#ec4899" style="--swatch-color: #ec4899;" title="Hồng"></button>
+                <button type="button" class="event-color-swatch" data-color="#f97316" style="--swatch-color: #f97316;" title="Cam"></button>
+                <button type="button" class="event-color-swatch" data-color="#6366f1" style="--swatch-color: #6366f1;" title="Chàm (Indigo)"></button>
+                <button type="button" class="event-color-swatch" data-color="#14b8a6" style="--swatch-color: #14b8a6;" title="Xanh mòng két (Teal)"></button>
+              </div>
+              <div class="event-custom-color-wrap">
+                <label class="event-custom-color-btn" title="Chọn màu tùy chỉnh">
+                  <input type="color" id="newEventColorPicker" value="#3b82f6" onchange="onCustomEventColorChange(this.value)" />
+                  <span class="custom-color-icon">🎨</span>
+                </label>
+              </div>
+              <input type="hidden" id="newEventColor" value="#3b82f6" />
+            </div>
           </div>
 
           <div class="modal-actions">

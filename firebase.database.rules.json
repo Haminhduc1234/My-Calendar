@@ -13,7 +13,7 @@
             ".validate": "$dateKey.matches(/^\\d{4}-\\d{1,2}-\\d{1,2}$/) && newData.hasChildren(['__type','overtimeHours','updatedAt']) && newData.child('__type').isString() && newData.child('__type').val() === 'date_data' && newData.child('overtimeHours').isNumber() && newData.child('overtimeHours').val() >= 0 && newData.child('overtimeHours').val() <= 24 && newData.child('updatedAt').isNumber() && (!newData.child('pKey').exists() || newData.child('pKey').isString())",
             "events": {
               "$idx": {
-                ".validate": "newData.hasChildren(['title','text','eventDateTime','createdAt']) && newData.child('title').isString() && newData.child('title').val().length <= 80 && newData.child('text').isString() && newData.child('text').val().length <= 2000 && newData.child('eventDateTime').isString() && newData.child('eventDateTime').val().length <= 40 && newData.child('createdAt').isNumber() && (!newData.child('updatedAt').exists() || newData.child('updatedAt').isNumber())"
+                ".validate": "newData.hasChildren(['title','text','eventDateTime','createdAt']) && newData.child('title').isString() && newData.child('title').val().length <= 80 && newData.child('text').isString() && newData.child('text').val().length <= 2000 && newData.child('eventDateTime').isString() && newData.child('eventDateTime').val().length <= 40 && newData.child('createdAt').isNumber() && (!newData.child('updatedAt').exists() || newData.child('updatedAt').isNumber()) && (!newData.child('color').exists() || (newData.child('color').isString() && newData.child('color').val().length <= 30))"
               }
             },
             "cashflowEntries": {

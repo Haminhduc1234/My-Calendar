@@ -633,24 +633,20 @@ function confirmAIAction() {
 }
 
 function createQuickNoteFromAI(content) {
-  const key = getQuickNoteStorageKey();
-  let notes = JSON.parse(localStorage.getItem(key) || "[]");
-  
+  const notes = typeof loadQuickNotes === "function" ? loadQuickNotes() : [];
   notes.unshift({
-    id: generateId(),
+    id: typeof generateId === "function" ? generateId() : `qn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     text: content,
     done: false,
     createdAt: Date.now()
   });
-  
-  localStorage.setItem(key, JSON.stringify(notes));
-  quickNotesCache = notes;
-  
-  if (firebaseReady && firebaseQuickNotesRef) {
-    firebaseQuickNotesRef.set(notes);
+
+  if (typeof saveQuickNotes === "function") {
+    saveQuickNotes(notes);
   }
-  
-  renderQuickNotes();
+  if (typeof renderQuickNotes === "function") {
+    renderQuickNotes();
+  }
 }
 
 function showNoteConfirmation(noteContent) {

@@ -33,7 +33,7 @@ let userProfileKey = "";
 let currentUsername = "";
 let legacyProfileKey = "";
 let dateDataCache = {};
-let quickNotesCache = [];
+let quickNotesCache = null;
 let translateHistoryCache = [];
 let syncWriteErrorShown = false;
 let profileSettingsCache = {};
@@ -344,9 +344,9 @@ function renderTodayEvents() {
       .map((ev) => {
         const timeStr = ev.eventDateTime
           ? new Date(ev.eventDateTime).toLocaleTimeString("vi-VN", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
+            hour: "2-digit",
+            minute: "2-digit",
+          })
           : "";
         const evColor = escapeHtml(ev.color || "#3b82f6");
         return `<div class="today-event-item" style="--event-color: ${evColor}; border-left-color: ${evColor};">
@@ -422,19 +422,24 @@ function renderCalendar() {
       holidayName = "Ngày nghỉ lễ";
     }
 
+    const hasOvertime = getOvertimeHoursForDateKey(key) > 0;
     let dotsHtml = "";
-    if (dayEvents.length > 0) {
-      const displayDots = dayEvents.slice(0, 4);
+    if (dayEvents.length > 0 || hasOvertime) {
+      const displayDots = dayEvents.slice(0, 5);
       const extraCount = dayEvents.length - displayDots.length;
+      const overtimeDot = hasOvertime
+        ? `<span class="day-event-dot day-overtime-dot" style="background-color: #4ade80; color: #4ade80;" title="Tăng ca"></span>`
+        : "";
       dotsHtml = `
         <div class="day-event-dots">
           ${displayDots
-            .map((ev) => {
-              const c = escapeHtml(ev.color || "#3b82f6");
-              return `<span class="day-event-dot" style="background-color: ${c}; color: ${c};" title="${escapeHtml(ev.title || "Sự kiện")}"></span>`;
-            })
-            .join("")}
+          .map((ev) => {
+            const c = escapeHtml(ev.color || "#3b82f6");
+            return `<span class="day-event-dot" style="background-color: ${c}; color: ${c};" title="${escapeHtml(ev.title || "Sự kiện")}"></span>`;
+          })
+          .join("")}
           ${extraCount > 0 ? `<span class="day-event-more">+${extraCount}</span>` : ""}
+          ${overtimeDot}
         </div>
       `;
     }
@@ -477,8 +482,8 @@ function normalizeDateData(raw) {
     ? payload.events
     : payload.events && typeof payload.events === "object"
       ? Object.keys(payload.events)
-          .sort((a, b) => Number(a) - Number(b))
-          .map((key) => payload.events[key])
+        .sort((a, b) => Number(a) - Number(b))
+        .map((key) => payload.events[key])
       : [];
 
   const events = rawEvents.map((event) => ({
@@ -494,8 +499,8 @@ function normalizeDateData(raw) {
     ? payload.cashflowEntries
     : payload.cashflowEntries && typeof payload.cashflowEntries === "object"
       ? Object.keys(payload.cashflowEntries)
-          .sort((a, b) => Number(a) - Number(b))
-          .map((key) => payload.cashflowEntries[key])
+        .sort((a, b) => Number(a) - Number(b))
+        .map((key) => payload.cashflowEntries[key])
       : [];
 
   const cashflowEntries = rawCashflowEntries
@@ -655,11 +660,11 @@ function logoutAndStartFresh() {
     "Cảnh báo: Thao tác này sẽ xóa toàn bộ dữ liệu cũ của bạn!\n\nBạn có chắc chắn muốn tiếp tục?",
   );
   if (!confirmed) return;
-  
+
   localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
   localStorage.removeItem("calendarUsername");
   legacyProfileKey = "";
-  
+
   // Reload to start fresh
   window.location.reload();
 }
@@ -700,7 +705,7 @@ async function handleUpgrade() {
   try {
     // Check if username already exists
     const usersSnapshot = await firebaseUsersRef.orderByChild("username").equalTo(username).once("value");
-    
+
     if (usersSnapshot.exists()) {
       errorEl.textContent = "Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.";
       errorEl.style.display = "block";
@@ -733,7 +738,7 @@ async function handleUpgrade() {
 
     document.getElementById("authModal").style.display = "none";
     await reloadFirebaseForUser();
-    
+
     // Fix migrated data with correct pKey
     await fixMigratedCalendarData(upgradedFromKey, userId);
 
@@ -750,7 +755,7 @@ window.handleUpgrade = handleUpgrade;
 
 async function migrateLegacyData(oldKey, newKey) {
   console.log("[Migration] Starting data migration from", oldKey, "to", newKey);
-  
+
   // Special handling for calendarEvents - need to update pKey in each record
   try {
     const calendarPath = `calendarEvents/${oldKey}`;
@@ -781,7 +786,7 @@ async function migrateLegacyData(oldKey, newKey) {
   } catch (err) {
     console.error("[Migration] Error migrating calendarEvents:", err);
   }
-  
+
   // Migrate other paths
   const otherPathsToMigrate = [
     `quickNotes/${oldKey}`,
@@ -812,22 +817,22 @@ async function migrateLegacyData(oldKey, newKey) {
 
 async function fixMigratedCalendarData(oldKey, newKey) {
   if (!oldKey || !newKey || oldKey === newKey) return;
-  
+
   try {
     const snapshot = await firebaseDb.ref(`calendarEvents/${oldKey}`).once("value");
     if (!snapshot.exists()) {
       console.log("[FixMigrated] No legacy calendar data found at", oldKey);
       return;
     }
-    
+
     const calendarData = snapshot.val();
     const datesData = calendarData.dates || calendarData;
-    
+
     if (!datesData || typeof datesData !== "object") return;
-    
+
     const fixedDates = {};
     let needsUpdate = false;
-    
+
     Object.keys(datesData).forEach((dateKey) => {
       if (!isDateKey(dateKey)) return;
       const record = datesData[dateKey];
@@ -839,7 +844,7 @@ async function fixMigratedCalendarData(oldKey, newKey) {
         needsUpdate = true;
       }
     });
-    
+
     if (needsUpdate) {
       await firebaseDb.ref(`calendarEvents/${newKey}`).set({
         dates: fixedDates
@@ -884,7 +889,7 @@ async function handleRegister() {
 
   try {
     const usersSnapshot = await firebaseUsersRef.orderByChild("username").equalTo(username).once("value");
-    
+
     if (usersSnapshot.exists()) {
       errorEl.textContent = "Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.";
       errorEl.style.display = "block";
@@ -1024,7 +1029,7 @@ async function ensureProfileKey() {
   return new Promise((resolve) => {
     const storedProfileKey = localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE);
     const storedUsername = localStorage.getItem("calendarUsername");
-    
+
     if (storedProfileKey && storedUsername) {
       userProfileKey = storedProfileKey;
       currentUsername = storedUsername;
@@ -1058,7 +1063,7 @@ async function ensureProfileKey() {
           showUpgradeForm();
         }
       };
-      
+
       checkUpgraded().then(() => {
         const checkReady = setInterval(() => {
           if (userProfileKey) {
@@ -1071,7 +1076,7 @@ async function ensureProfileKey() {
     } else {
       showLoginForm();
     }
-    
+
     const checkReady = setInterval(() => {
       if (userProfileKey) {
         clearInterval(checkReady);
@@ -1129,7 +1134,7 @@ function saveProfileSettingsData(settings) {
 
 function openProfileSettingsModal() {
   loadProfileOnDemand();
-  
+
   const modal = document.getElementById("profileSettingsModal");
   const settings =
     Object.keys(profileSettingsCache).length > 0
@@ -2288,7 +2293,7 @@ function parseEventRecord(raw) {
         overtimeHours: Math.max(0, parseInt(parsed.overtimeHours, 10) || 0),
       };
     }
-  } catch {}
+  } catch { }
 
   const legacyHours = parseLegacyOvertimeHours(text);
   return {
@@ -2383,10 +2388,10 @@ async function initFirebaseRealtime() {
   }
 
   firebaseDb = window.firebase.database();
-  
+
   // Users collection reference (for authentication)
   firebaseUsersRef = firebaseDb.ref(FIREBASE_USERS_PATH);
-  
+
   // Show auth modal BEFORE checking profile key
   // This ensures firebaseUsersRef is available for login/register
   await ensureProfileKey();
@@ -2524,18 +2529,41 @@ async function initFirebaseRealtime() {
   const qnSnapshot = await firebaseQuickNotesRef.once("value");
   const remoteNotes = qnSnapshot.val();
 
-  if (Array.isArray(remoteNotes)) {
-    quickNotesCache = remoteNotes;
-    // Update local storage as backup
-    localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(remoteNotes));
-    renderQuickNotes();
-  } else {
-    // Migration: if empty on Firebase, try local storage
-    const localNotes = loadQuickNotes();
-    if (localNotes.length > 0) {
-      quickNotesCache = localNotes;
-      await firebaseQuickNotesRef.set(localNotes);
+  if (remoteNotes !== null && remoteNotes !== undefined) {
+    const parsed = normalizeQuickNotes(remoteNotes);
+    quickNotesCache = parsed;
+    localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(parsed));
+    if (LAZY_LOAD.quickNotes) {
       renderQuickNotes();
+    }
+  } else {
+    // Migration: only migrate from legacy local storage ONCE per profile if flag not set
+    const migrationFlag = `quickNotesMigrated:${userProfileKey}`;
+    const migrated = localStorage.getItem(migrationFlag) === "1";
+    if (!migrated) {
+      const localRaw = localStorage.getItem(getQuickNoteStorageKey()) || localStorage.getItem(QUICK_NOTE_STORAGE_KEY_PREFIX);
+      let localNotes = [];
+      try {
+        if (localRaw) localNotes = normalizeQuickNotes(JSON.parse(localRaw));
+      } catch (e) { }
+
+      if (localNotes.length > 0) {
+        quickNotesCache = localNotes;
+        await firebaseQuickNotesRef.set(localNotes);
+        if (LAZY_LOAD.quickNotes) {
+          renderQuickNotes();
+        }
+      } else {
+        quickNotesCache = [];
+        localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify([]));
+      }
+      localStorage.setItem(migrationFlag, "1");
+    } else {
+      quickNotesCache = [];
+      localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify([]));
+      if (LAZY_LOAD.quickNotes) {
+        renderQuickNotes();
+      }
     }
   }
 
@@ -2614,13 +2642,11 @@ async function initFirebaseRealtime() {
 
   firebaseQuickNotesRef.on("value", (snapshot) => {
     const incoming = snapshot.val();
-    if (Array.isArray(incoming)) {
-      quickNotesCache = incoming;
-      localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(incoming));
-      // Only render if already loaded or if quickNotes is visible
-      if (LAZY_LOAD.quickNotes) {
-        renderQuickNotes();
-      }
+    const normalized = normalizeQuickNotes(incoming);
+    quickNotesCache = normalized;
+    localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(normalized));
+    if (LAZY_LOAD.quickNotes) {
+      renderQuickNotes();
     }
   });
 
@@ -2689,10 +2715,9 @@ async function reloadFirebaseForUser() {
   try {
     const quickNotesSnapshot = await firebaseQuickNotesRef.once("value");
     const quickNotesData = quickNotesSnapshot.val();
-    if (Array.isArray(quickNotesData)) {
-      quickNotesCache = quickNotesData;
-      localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(quickNotesData));
-    }
+    const normalized = normalizeQuickNotes(quickNotesData);
+    quickNotesCache = normalized;
+    localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(normalized));
   } catch (err) {
     console.error("[Firebase] Error loading quick notes:", err);
   }
@@ -2771,12 +2796,11 @@ async function reloadFirebaseForUser() {
   // Realtime listener for quick notes
   firebaseQuickNotesRef.on("value", (snapshot) => {
     const incoming = snapshot.val();
-    if (Array.isArray(incoming)) {
-      quickNotesCache = incoming;
-      localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(incoming));
-      if (LAZY_LOAD.quickNotes) {
-        renderQuickNotes();
-      }
+    const normalized = normalizeQuickNotes(incoming);
+    quickNotesCache = normalized;
+    localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(normalized));
+    if (LAZY_LOAD.quickNotes) {
+      renderQuickNotes();
     }
   });
 
@@ -3003,15 +3027,15 @@ function openDayDetailsModal(dateKey, d, m, y) {
       eventDiv.style.borderLeftColor = evColor;
       const timeStr = event.eventDateTime
         ? new Date(event.eventDateTime).toLocaleTimeString("vi-VN", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })
+          hour: "2-digit",
+          minute: "2-digit",
+        })
         : "--:--";
       eventDiv.innerHTML = `
         <div class="event-time" style="color: ${evColor};">${timeStr}</div>
         <div class="event-content">
           <div class="event-title">${escapeHtml(event.title || "(Không có tiêu đề)")}</div>
-          <div class="event-text">${escapeHtml(event.text || "")}</div>
+          ${event.text ? `<div class="event-text">${escapeHtml(event.text)}</div>` : ""}
         </div>
         <div class="event-actions">
           <button class="event-edit" onclick="openEditEventModal(${idx})" title="Sửa" aria-label="Sửa sự kiện">
@@ -3998,51 +4022,63 @@ function getQuickNoteStorageKey() {
     : QUICK_NOTE_STORAGE_KEY_PREFIX;
 }
 
+function normalizeQuickNotes(raw) {
+  if (!raw) return [];
+  let list = [];
+  if (Array.isArray(raw)) {
+    list = raw;
+  } else if (typeof raw === "object") {
+    list = Object.values(raw);
+  }
+  return list
+    .filter((note) => note && typeof note === "object")
+    .map((note) => ({
+      id: String(note?.id || "").trim() || `qn-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      text: String(note?.text || "").trim(),
+      done: Boolean(note?.done),
+      createdAt: Number(note?.createdAt || Date.now()),
+    }))
+    .filter((note) => note.id && note.text);
+}
+
 function loadQuickNotes() {
-  if (Array.isArray(quickNotesCache) && quickNotesCache.length > 0) {
+  if (Array.isArray(quickNotesCache)) {
     return quickNotesCache;
   }
 
   const key = getQuickNoteStorageKey();
   const raw = localStorage.getItem(key);
-  if (!raw) return [];
+  if (!raw) {
+    quickNotesCache = [];
+    return [];
+  }
 
   try {
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-
-    return parsed
-      .map((note) => ({
-        id: String(note?.id || "").trim(),
-        text: String(note?.text || "").trim(),
-        done: Boolean(note?.done),
-        createdAt: Number(note?.createdAt || Date.now()),
-      }))
-      .filter((note) => note.id && note.text);
+    quickNotesCache = normalizeQuickNotes(parsed);
+    return quickNotesCache;
   } catch {
+    quickNotesCache = [];
     return [];
   }
 }
 
 function saveQuickNotes(notes) {
-  const normalized = Array.isArray(notes)
-    ? notes
-        .map((note) => ({
-          id: String(note?.id || "").trim(),
-          text: String(note?.text || "").trim(),
-          done: Boolean(note?.done),
-          createdAt: Number(note?.createdAt || Date.now()),
-        }))
-        .filter((note) => note.id && note.text)
-    : [];
+  const normalized = normalizeQuickNotes(notes);
 
   quickNotesCache = normalized;
   localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(normalized));
 
   if (firebaseQuickNotesRef) {
-    firebaseQuickNotesRef.set(normalized).catch((err) => {
-      console.error("Firebase Quick Notes save error:", err);
-    });
+    if (normalized.length === 0) {
+      firebaseQuickNotesRef.set(null).catch((err) => {
+        console.error("Firebase Quick Notes clear error:", err);
+      });
+    } else {
+      firebaseQuickNotesRef.set(normalized).catch((err) => {
+        console.error("Firebase Quick Notes save error:", err);
+      });
+    }
   }
 }
 
@@ -4237,7 +4273,7 @@ function submitQuickNote() {
 
 function toggleQuickNoteDone(noteId) {
   const notes = loadQuickNotes();
-  const idx = notes.findIndex((note) => note.id === noteId);
+  const idx = notes.findIndex((note) => String(note.id) === String(noteId));
   if (idx < 0) return;
 
   notes[idx].done = !notes[idx].done;
@@ -4246,42 +4282,32 @@ function toggleQuickNoteDone(noteId) {
 }
 
 function deleteQuickNote(noteId) {
-  const notes = loadQuickNotes().filter((note) => note.id !== noteId);
+  const currentNotes = loadQuickNotes();
+  const notes = currentNotes.filter((note) => String(note.id) !== String(noteId));
   saveQuickNotes(notes);
   renderQuickNotes();
 }
 
 function initQuickNoteModal() {
   const modal = document.getElementById("quickNoteModal");
-  const input = document.getElementById("quickNoteInput");
-
   if (modal) {
     modal.addEventListener("click", function (e) {
       if (e.target === this) closeQuickNoteModal();
-    });
-  }
-
-  if (input) {
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        submitQuickNote();
-      }
     });
   }
 }
 
 let MY_MUSIC_TRACKS = Array.isArray(self.MY_LOCAL_MUSIC_TRACKS)
   ? self.MY_LOCAL_MUSIC_TRACKS.filter((track) => {
-      return (
-        track &&
-        typeof track.title === "string" &&
-        typeof track.artist === "string" &&
-        typeof track.src === "string" &&
-        typeof track.cover === "string" &&
-        track.src.trim().length > 0
-      );
-    })
+    return (
+      track &&
+      typeof track.title === "string" &&
+      typeof track.artist === "string" &&
+      typeof track.src === "string" &&
+      typeof track.cover === "string" &&
+      track.src.trim().length > 0
+    );
+  })
   : [];
 
 const myMusicState = {
@@ -5503,37 +5529,37 @@ function renderOvertime() {
   otTotalBase.innerText = ot.total.base;
   otTotalBonus.innerText = ot.total.bonus;
   otTotalSum.innerText = ot.total.sum;
-  
+
   // Render line chart for 12 months
   renderOvertimeLineChart();
 }
 
 function calcOvertimeByMonthForYear(year) {
   const monthlyData = [];
-  
+
   for (let month = 1; month <= 12; month++) {
     let weekday = { base: 0, bonus: 0 };
     let sunday = { base: 0, bonus: 0 };
     const dateKeys = getAllDateKeysFromCache();
-    
+
     for (const key of dateKeys) {
       const [y, m, d] = key.split("-").map(Number);
-      
+
       if (y !== year || m !== month) continue;
-      
+
       const date = new Date(y, m - 1, d);
       const dayOfWeek = date.getDay();
-      
+
       const baseHours = getOvertimeHoursForDateKey(key);
       if (baseHours <= 0) continue;
-      
+
       let bonusHours = 0;
       if (dayOfWeek === 0) {
         if (baseHours >= 10) bonusHours = 0.5;
       } else {
         if (baseHours >= 2) bonusHours = 0.5;
       }
-      
+
       if (dayOfWeek === 0) {
         sunday.base += baseHours;
         sunday.bonus += bonusHours;
@@ -5542,7 +5568,7 @@ function calcOvertimeByMonthForYear(year) {
         weekday.bonus += bonusHours;
       }
     }
-    
+
     monthlyData.push({
       month,
       weekday: weekday,
@@ -5554,41 +5580,41 @@ function calcOvertimeByMonthForYear(year) {
       }
     });
   }
-  
+
   return monthlyData;
 }
 
 function renderOvertimeLineChart() {
   const canvas = document.getElementById("overtimeLineChart");
   if (!canvas) return;
-  
+
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
   const monthNames = ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"];
-  
+
   const data = calcOvertimeByMonthForYear(currentYear);
   const currentMonthEl = document.getElementById("otChartCurrentMonth");
   if (currentMonthEl) {
     currentMonthEl.textContent = `Tháng hiện tại: ${monthNames[currentMonth - 1]}/${currentYear}`;
   }
-  
+
   const ratio = window.devicePixelRatio || 1;
   const width = canvas.clientWidth || 480;
   const height = 180;
   canvas.width = Math.floor(width * ratio);
   canvas.height = Math.floor(height * ratio);
-  
+
   const ctx = canvas.getContext("2d");
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   ctx.clearRect(0, 0, width, height);
-  
+
   const pad = { top: 20, right: 12, bottom: 28, left: 36 };
   const chartW = width - pad.left - pad.right;
   const chartH = height - pad.top - pad.bottom;
-  
+
   const values = data.map(d => d.total.sum);
   const max = Math.max(...values, 1);
-  
+
   // Grid lines
   ctx.strokeStyle = "rgba(183, 208, 255, 0.12)";
   ctx.lineWidth = 1;
@@ -5598,7 +5624,7 @@ function renderOvertimeLineChart() {
     ctx.moveTo(pad.left, y);
     ctx.lineTo(width - pad.right, y);
     ctx.stroke();
-    
+
     // Y-axis labels
     const val = Math.round(max - (max / 4) * i);
     ctx.fillStyle = "#7a92c4";
@@ -5606,19 +5632,19 @@ function renderOvertimeLineChart() {
     ctx.textAlign = "right";
     ctx.fillText(val + "h", pad.left - 6, y + 3);
   }
-  
+
   const toXY = (value, idx) => {
     const x = pad.left + (chartW * idx) / Math.max(data.length - 1, 1);
     const y = pad.top + ((max - value) / max) * chartH;
     return { x, y };
   };
-  
+
   // Store point positions for tooltip detection
   const pointPositions = data.map((d, idx) => {
     const pos = toXY(d.total.sum, idx);
     return { ...pos, month: d.month, data: d };
   });
-  
+
   // Draw area fill for all months
   ctx.beginPath();
   data.forEach((d, idx) => {
@@ -5631,7 +5657,7 @@ function renderOvertimeLineChart() {
   ctx.closePath();
   ctx.fillStyle = "rgba(255, 136, 0, 0.12)";
   ctx.fill();
-  
+
   // Draw main line (all months)
   ctx.beginPath();
   data.forEach((d, idx) => {
@@ -5642,10 +5668,10 @@ function renderOvertimeLineChart() {
   ctx.strokeStyle = "#64B5F6";
   ctx.lineWidth = 2;
   ctx.stroke();
-  
+
   // Highlight current month point
   const currentPoint = toXY(data[currentMonth - 1].total.sum, currentMonth - 1);
-  
+
   // Draw vertical line for current month
   ctx.strokeStyle = "rgba(0, 212, 255, 0.4)";
   ctx.lineWidth = 1;
@@ -5655,17 +5681,17 @@ function renderOvertimeLineChart() {
   ctx.lineTo(currentPoint.x, pad.top + chartH);
   ctx.stroke();
   ctx.setLineDash([]);
-  
+
   // Draw dots for all months
   data.forEach((d, idx) => {
     const { x, y } = toXY(d.total.sum, idx);
     const isCurrentMonth = idx === currentMonth - 1;
-    
+
     ctx.beginPath();
     ctx.arc(x, y, isCurrentMonth ? 6 : 4, 0, Math.PI * 2);
     ctx.fillStyle = isCurrentMonth ? "#00d4ff" : "#64B5F6";
     ctx.fill();
-    
+
     if (isCurrentMonth) {
       ctx.strokeStyle = "rgba(0, 212, 255, 0.4)";
       ctx.lineWidth = 2;
@@ -5674,7 +5700,7 @@ function renderOvertimeLineChart() {
       ctx.stroke();
     }
   });
-  
+
   // X-axis labels
   ctx.fillStyle = "#8db4ff";
   ctx.font = "11px Be Vietnam Pro";
@@ -5683,23 +5709,23 @@ function renderOvertimeLineChart() {
     const { x } = toXY(d.total.sum, idx);
     ctx.fillText(monthNames[idx], x, height - 8);
   });
-  
+
   // Current month label above point
   ctx.fillStyle = "#00d4ff";
   ctx.font = "bold 11px Be Vietnam Pro";
   ctx.fillText(data[currentMonth - 1].total.sum + "h", currentPoint.x, currentPoint.y - 14);
-  
+
   // ============ TOOLTIP HANDLING ============
   let hoveredIndex = -1;
   let tooltipVisible = false;
-  
+
   function showTooltip(index, x, y) {
     const tooltip = document.getElementById("otChartTooltip");
     if (!tooltip) return;
-    
+
     const d = data[index];
     const isCurrentMonth = index === currentMonth - 1;
-    
+
     tooltip.innerHTML = `
       <div class="tooltip-header">${monthNames[index]}/${currentYear}${isCurrentMonth ? ' <span class="current-badge">Hiện tại</span>' : ''}</div>
       <div class="tooltip-divider"></div>
@@ -5717,13 +5743,13 @@ function renderOvertimeLineChart() {
         <span class="tooltip-value">${d.total.sum}h</span>
       </div>
     `;
-    
+
     // Position tooltip
     const canvasRect = canvas.getBoundingClientRect();
     const tooltipWidth = 180;
     let left = x + 10;
     let top = y - 60;
-    
+
     // Adjust if tooltip goes off canvas
     if (left + tooltipWidth > canvasRect.width) {
       left = x - tooltipWidth - 10;
@@ -5731,20 +5757,20 @@ function renderOvertimeLineChart() {
     if (top < 0) {
       top = y + 15;
     }
-    
+
     tooltip.style.left = left + "px";
     tooltip.style.top = top + "px";
     tooltip.style.display = "block";
     tooltipVisible = true;
   }
-  
+
   function hideTooltip() {
     const tooltip = document.getElementById("otChartTooltip");
     if (tooltip) tooltip.style.display = "none";
     tooltipVisible = false;
     hoveredIndex = -1;
   }
-  
+
   function getMousePos(e) {
     const rect = canvas.getBoundingClientRect();
     return {
@@ -5752,12 +5778,12 @@ function renderOvertimeLineChart() {
       y: e.clientY - rect.top
     };
   }
-  
+
   function findClosestPoint(mouseX, mouseY) {
     let closestIndex = -1;
     let closestDist = Infinity;
     const hitRadius = 20;
-    
+
     pointPositions.forEach((p, idx) => {
       const dist = Math.sqrt(Math.pow(mouseX - p.x, 2) + Math.pow(mouseY - p.y, 2));
       if (dist < hitRadius && dist < closestDist) {
@@ -5765,21 +5791,21 @@ function renderOvertimeLineChart() {
         closestIndex = idx;
       }
     });
-    
+
     return closestIndex;
   }
-  
+
   // Mouse move handler
-  canvas.onmousemove = function(e) {
+  canvas.onmousemove = function (e) {
     const pos = getMousePos(e);
     const idx = findClosestPoint(pos.x, pos.y);
-    
+
     if (idx !== hoveredIndex) {
       hoveredIndex = idx;
       if (idx >= 0) {
         const p = pointPositions[idx];
         showTooltip(idx, p.x, p.y);
-        
+
         // Redraw with hover highlight
         redrawChartWithHover(idx);
       } else {
@@ -5788,24 +5814,24 @@ function renderOvertimeLineChart() {
       }
     }
   };
-  
+
   // Click handler
-  canvas.onclick = function(e) {
+  canvas.onclick = function (e) {
     const pos = getMousePos(e);
     const idx = findClosestPoint(pos.x, pos.y);
-    
+
     if (idx >= 0) {
       const p = pointPositions[idx];
       showTooltip(idx, p.x, p.y);
-      
+
       // Keep the hover state after click
       redrawChartWithHover(idx);
     }
   };
-  
+
   function redrawChartWithHover(hoverIdx) {
     ctx.clearRect(0, 0, width, height);
-    
+
     // Redraw grid
     ctx.strokeStyle = "rgba(183, 208, 255, 0.12)";
     ctx.lineWidth = 1;
@@ -5815,14 +5841,14 @@ function renderOvertimeLineChart() {
       ctx.moveTo(pad.left, y);
       ctx.lineTo(width - pad.right, y);
       ctx.stroke();
-      
+
       const val = Math.round(max - (max / 4) * i);
       ctx.fillStyle = "#7a92c4";
       ctx.font = "10px Be Vietnam Pro";
       ctx.textAlign = "right";
       ctx.fillText(val + "h", pad.left - 6, y + 3);
     }
-    
+
     // Redraw area fill
     ctx.beginPath();
     data.forEach((d, idx) => {
@@ -5835,7 +5861,7 @@ function renderOvertimeLineChart() {
     ctx.closePath();
     ctx.fillStyle = "rgba(255, 136, 0, 0.12)";
     ctx.fill();
-    
+
     // Redraw main line
     ctx.beginPath();
     data.forEach((d, idx) => {
@@ -5846,7 +5872,7 @@ function renderOvertimeLineChart() {
     ctx.strokeStyle = "#64B5F6";
     ctx.lineWidth = 2;
     ctx.stroke();
-    
+
     // Redraw vertical line for current month
     const curPt = toXY(data[currentMonth - 1].total.sum, currentMonth - 1);
     ctx.strokeStyle = "rgba(0, 212, 255, 0.4)";
@@ -5857,13 +5883,13 @@ function renderOvertimeLineChart() {
     ctx.lineTo(curPt.x, pad.top + chartH);
     ctx.stroke();
     ctx.setLineDash([]);
-    
+
     // Redraw all dots with hover effect
     data.forEach((d, idx) => {
       const { x, y } = toXY(d.total.sum, idx);
       const isCurrentMonth = idx === currentMonth - 1;
       const isHovered = idx === hoverIdx;
-      
+
       if (isHovered) {
         // Hover effect - outer glow
         ctx.beginPath();
@@ -5871,12 +5897,12 @@ function renderOvertimeLineChart() {
         ctx.fillStyle = "rgba(255, 136, 0, 0.3)";
         ctx.fill();
       }
-      
+
       ctx.beginPath();
       ctx.arc(x, y, isCurrentMonth ? 6 : (isHovered ? 6 : 4), 0, Math.PI * 2);
       ctx.fillStyle = isCurrentMonth ? "#00d4ff" : (isHovered ? "#90CAF9" : "#64B5F6");
       ctx.fill();
-      
+
       if (isCurrentMonth) {
         ctx.strokeStyle = "rgba(0, 212, 255, 0.4)";
         ctx.lineWidth = 2;
@@ -5885,7 +5911,7 @@ function renderOvertimeLineChart() {
         ctx.stroke();
       }
     });
-    
+
     // X-axis labels
     ctx.fillStyle = "#8db4ff";
     ctx.font = "11px Be Vietnam Pro";
@@ -5894,7 +5920,7 @@ function renderOvertimeLineChart() {
       const { x } = toXY(d.total.sum, idx);
       ctx.fillText(monthNames[idx], x, height - 8);
     });
-    
+
     // Current month label above point
     ctx.fillStyle = "#00d4ff";
     ctx.font = "bold 11px Be Vietnam Pro";
@@ -6068,7 +6094,7 @@ function parseVietnamHistoryDates(content) {
 
 function parseDailyVietnamGold(content, date) {
   const buyMatch = content.match(/(?:Mua\s*vào|Giá\s*mua)\s*[≤]?\s*([0-9.,]+)\s*(?:x\s*1000\s*đ\/lượng|lượng|VND)/i) ||
-                   content.match(/([0-9.,]+)\s*x\s*1000\s*đ\/lượng/i);
+    content.match(/([0-9.,]+)\s*x\s*1000\s*đ\/lượng/i);
   const sellMatch = content.match(/(?:Bán\s*ra|Giá\s*bán)\s*[≤]?\s*([0-9.,]+)\s*(?:x\s*1000\s*đ\/lượng|lượng|VND)/i);
 
   let buyThousand = null;
@@ -6279,7 +6305,7 @@ function restoreGoldChartRange() {
     if (["week", "month"].includes(saved)) {
       goldChartRange = saved;
     }
-  } catch {}
+  } catch { }
 }
 
 function saveGoldChartRange(range) {
@@ -10360,7 +10386,7 @@ function loadTodayLunarOnDemand() {
   // Step 2: Render UI immediately (no waiting)
   initQuickNoteModal();
   renderToday();
-  
+
   // Step 3: Render calendar immediately - no waiting for Firebase!
   console.log("[Init] Rendering calendar...");
   renderCalendar();
@@ -10958,7 +10984,7 @@ async function loadEnglishPhonetics(text, pronunciationEl) {
             }
           }
         }
-      } catch (e) {}
+      } catch (e) { }
     }
   }
 
@@ -18649,7 +18675,7 @@ async function initCountdown() {
 function toggleCountdownSection() {
   const section = document.getElementById("countdownSection");
   if (!section) return;
-  
+
   section.classList.toggle("collapsed");
 }
 
@@ -18699,7 +18725,7 @@ function renderCountdown() {
 
   // Hiện section khi có data (content visibility do CSS .collapsed handle)
   section.style.display = "block";
-  
+
   const target = new Date(countdownData.targetDate + "T00:00:00");
   const now = new Date();
   const diff = target - now;
@@ -18868,7 +18894,7 @@ function stopCountdownTimer() {
 
 function openCountdownModal() {
   loadCountdownOnDemand();
-  
+
   const modal = document.getElementById("countdownModal");
   const labelInput = document.getElementById("countdownLabelInput");
   const dateInput = document.getElementById("countdownDateInput");
@@ -18925,8 +18951,8 @@ async function saveCountdown() {
       pendingCountdownData = data;
       alert(
         "Lỗi khi lưu lên Firebase: " +
-          err.message +
-          "\nĐã lưu local. Sẽ thử lại sau.",
+        err.message +
+        "\nĐã lưu local. Sẽ thử lại sau.",
       );
     }
   } else {
@@ -18964,5 +18990,5 @@ function loadCountdownFromLocal() {
       renderCountdown();
       startCountdownTimer();
     }
-  } catch (e) {}
+  } catch (e) { }
 }

@@ -13892,39 +13892,35 @@ function switchLearnTab(tab) {
 let currentBasicsSubTab = "initials";
 function switchBasicsSubTab(subTab) {
   currentBasicsSubTab = subTab;
-  renderBasicsSection();
+  const container = document.getElementById("learnBasicsContainer");
+  if (!container) return;
+
+  // Chỉ cập nhật active class trên nút, không re-render toàn bộ
+  container.querySelectorAll(".basics-subtab-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.subTab === subTab);
+  });
+
+  // Chỉ render lại phần nội dung
+  const panel = container.querySelector(".basics-content-panel");
+  if (panel) {
+    panel.innerHTML = renderBasicsContentHTML();
+  }
+
+  // Cuộn thanh subtab bar ngang đến nút active
+  const bar = container.querySelector(".basics-subtab-bar");
+  const activeBtn = bar ? bar.querySelector(".basics-subtab-btn.active") : null;
+  if (bar && activeBtn) {
+    const barRect = bar.getBoundingClientRect();
+    const btnRect = activeBtn.getBoundingClientRect();
+    const btnCenter = btnRect.left - barRect.left + bar.scrollLeft + btnRect.width / 2;
+    bar.scrollTo({ left: btnCenter - bar.offsetWidth / 2, behavior: "smooth" });
+  }
 }
 
-function renderBasicsSection() {
-  const container = document.getElementById("learnBasicsContainer");
-  if (!container || typeof ZH_BASICS_DATA === "undefined") return;
-
-  const subTabs = [
-    { key: "initials", label: "23 Thanh Mẫu (Phụ âm)", icon: "🗣️" },
-    { key: "finals", label: "36 Vận Mẫu (Nguyên âm)", icon: "🎵" },
-    { key: "tones", label: "4 Thanh Điệu & Biến Điệu", icon: "📈" },
-    { key: "strokes", label: "8 Nét & Bút Thuận", icon: "✍️" },
-    { key: "radicals", label: "20+ Bộ Thủ Thường Gặp", icon: "🧱" },
-  ];
-
-  let html = `
-    <div class="basics-header-card">
-      <div class="basics-header-title">🇨🇳 Nền Tảng Tiếng Trung Dành Cho Người Mới</div>
-      <div class="basics-header-desc">Học chắc Bảng chữ cái Pinyin, 4 Thanh điệu và Các bộ thủ cốt lõi để phát âm chuẩn và nhớ chữ Hán siêu tốc.</div>
-    </div>
-    <div class="basics-subtab-bar">
-      ${subTabs
-        .map(
-          (st) => `
-        <button class="basics-subtab-btn ${currentBasicsSubTab === st.key ? "active" : ""}" onclick="switchBasicsSubTab('${st.key}')">
-          <span>${st.icon}</span> ${st.label}
-        </button>
-      `
-        )
-        .join("")}
-    </div>
-    <div class="basics-content-panel">
-  `;
+// Render only the content panel HTML (no header/subtab bar)
+function renderBasicsContentHTML() {
+  if (typeof ZH_BASICS_DATA === "undefined") return "";
+  let html = "";
 
   if (currentBasicsSubTab === "initials") {
     html += `
@@ -14033,8 +14029,40 @@ function renderBasicsSection() {
     `;
   }
 
-  html += `</div>`;
-  container.innerHTML = html;
+  return html;
+}
+
+// Render full basics section (called once on tab open)
+function renderBasicsSection() {
+  const container = document.getElementById("learnBasicsContainer");
+  if (!container || typeof ZH_BASICS_DATA === "undefined") return;
+
+  const subTabs = [
+    { key: "initials", label: "23 Thanh Mẫu (Phụ âm)", icon: "🗣️" },
+    { key: "finals", label: "36 Vận Mẫu (Nguyên âm)", icon: "🎵" },
+    { key: "tones", label: "4 Thanh Điệu & Biến Điệu", icon: "📈" },
+    { key: "strokes", label: "8 Nét & Bút Thuận", icon: "✍️" },
+    { key: "radicals", label: "20+ Bộ Thủ Thường Gặp", icon: "🧱" },
+  ];
+
+  container.innerHTML = `
+    <div class="basics-header-card">
+      <div class="basics-header-title">🇨🇳 Nền Tảng Tiếng Trung Dành Cho Người Mới</div>
+      <div class="basics-header-desc">Học chắc Bảng chữ cái Pinyin, 4 Thanh điệu và Các bộ thủ cốt lõi để phát âm chuẩn và nhớ chữ Hán siêu tốc.</div>
+    </div>
+    <div class="basics-subtab-bar">
+      ${subTabs
+        .map(
+          (st) => `
+        <button class="basics-subtab-btn ${currentBasicsSubTab === st.key ? "active" : ""}" data-sub-tab="${st.key}" onclick="switchBasicsSubTab('${st.key}')">
+          <span>${st.icon}</span> ${st.label}
+        </button>
+      `
+        )
+        .join("")}
+    </div>
+    <div class="basics-content-panel">${renderBasicsContentHTML()}</div>
+  `;
 }
 
 // Vocabulary Category Selection

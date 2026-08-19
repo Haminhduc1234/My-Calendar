@@ -81,35 +81,35 @@ const ZH_BASICS_DATA = {
       symbol: "ā (55)",
       desc: "Cao và bằng phẳng, giữ đều giọng ở mức cao nhất.",
       example: "mā (妈 - Mẹ)",
-      audioText: "mā"
+      audioText: "妈"
     },
     {
       tone: "Thanh 2 (Dương Bình)",
       symbol: "á (35)",
       desc: "Kéo từ mức trung bình lên cao, giống dấu sắc nhẹ trong tiếng Việt.",
       example: "má (麻 - Vừng/Gai)",
-      audioText: "má"
+      audioText: "麻"
     },
     {
       tone: "Thanh 3 (Thượng Thanh)",
       symbol: "ǎ (214)",
       desc: "Hạ giọng xuống thấp nhất rồi hơi đưa lên, giống dấu hỏi kết hợp dấu ngã.",
       example: "mǎ (马 - Con ngựa)",
-      audioText: "mǎ"
+      audioText: "马"
     },
     {
       tone: "Thanh 4 (Khứ Thanh)",
       symbol: "à (51)",
       desc: "Rơi thẳng từ đỉnh cao xuống thấp nhất một cách dứt khoát, mạnh mẽ.",
       example: "mà (骂 - Mắng mỏ)",
-      audioText: "mà"
+      audioText: "骂"
     },
     {
       tone: "Khinh Thanh (Thanh nhẹ)",
       symbol: "ma (không dấu)",
       desc: "Đọc thật nhẹ, ngắn gọn, lướt qua.",
       example: "māma (妈妈 - Mẹ)",
-      audioText: "māma"
+      audioText: "妈妈"
     },
     {
       tone: "Quy tắc biến điệu quan trọng",

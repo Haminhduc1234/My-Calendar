@@ -13850,12 +13850,15 @@ function closeVocabSearchResults() {
 function speakChinese(text) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel(); // Dừng câu trước nếu đang đọc
-  const cleanText = text.replace(/\(.*?\)/g, "").trim(); // Bỏ phần ngoặc chú thích nếu có
+  // Lọc bỏ phần Latin/pinyin (ký tự ASCII + dấu thanh Latin), chỉ giữ chữ Hán và khoảng trắng giữa chúng
+  const chineseOnly = text.replace(/[a-zA-Z\u00C0-\u024F\u1E00-\u1EFF]+/g, " ").replace(/\(.*?\)/g, "").replace(/\s+/g, " ").trim();
+  const cleanText = (chineseOnly || text).trim();
   const utterance = new SpeechSynthesisUtterance(cleanText);
   utterance.lang = "zh-CN";
   utterance.rate = 0.85; // Tốc độ vừa phải cho người mới học
   window.speechSynthesis.speak(utterance);
 }
+
 
 // Speak English TTS helper
 function speakEnglish(text) {

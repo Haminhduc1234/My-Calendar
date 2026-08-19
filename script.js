@@ -13456,10 +13456,33 @@ async function searchVocabFromAPI() {
       const transResult = await fetchTranslationCustom(query, langPair);
 
       if (transResult) {
+        const chineseWord = isVietnamese ? transResult : query;
+        const vietnameseMeaning = isVietnamese ? query : transResult;
+
+        // Try to generate Pinyin for the Chinese word
+        let pinyinText = "";
+        try {
+          if (typeof pinyinPro !== "undefined" && pinyinPro.pinyin) {
+            pinyinText = pinyinPro.pinyin(chineseWord, { toneType: "symbol" });
+          } else {
+            // Check basic pinyin dictionary
+            const basicResults = getBasicPinyin(chineseWord);
+            if (basicResults && basicResults.length > 0) {
+              pinyinText = basicResults[0].pinyin;
+            }
+          }
+        } catch (e) {
+          console.warn("Pinyin conversion error:", e);
+        }
+
         resultsContainer.innerHTML = `
           <div class="learn-search-result-item">
-            <div class="learn-search-result-word">${isVietnamese ? transResult : query}</div>
-            <div class="learn-search-result-meaning">${isVietnamese ? query : transResult}</div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div class="learn-search-result-word learn-card-word-zh" style="font-size: 24px;">${chineseWord}</div>
+              <button class="learn-card-example-speak-btn" onclick="speakChinese('${escapeHtml(chineseWord)}')" title="Nghe phát âm" style="font-size: 18px; padding: 4px 8px; background: rgba(168, 85, 247, 0.15); border-radius: 50%;">🔊</button>
+            </div>
+            ${pinyinText ? `<div class="learn-search-result-phonetic" style="color: #38bdf8; font-weight: 500; font-family: 'Fira Code', monospace; margin: 4px 0 6px;">${pinyinText}</div>` : ""}
+            <div class="learn-search-result-meaning" style="font-size: 15px; font-weight: 600; color: var(--text);">${vietnameseMeaning}</div>
           </div>
         `;
       } else {

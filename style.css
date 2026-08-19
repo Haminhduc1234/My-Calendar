@@ -10578,19 +10578,26 @@ input[type="datetime-local"] {
 .learn-lang-picker-content {
   position: relative;
   background: var(--surface-1, #1e2535);
-  border: 1px solid var(--line, rgba(255,255,255,0.12));
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
   border-radius: 24px;
   padding: 48px 40px 44px;
   width: min(440px, 92vw);
   text-align: center;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
   z-index: 1;
   animation: pickerSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes pickerSlideIn {
-  from { opacity: 0; transform: scale(0.85) translateY(20px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .learn-lang-picker-close {
@@ -10634,9 +10641,9 @@ input[type="datetime-local"] {
   align-items: center;
   gap: 8px;
   padding: 24px 16px;
-  border: 2px solid var(--line, rgba(255,255,255,0.12));
+  border: 2px solid var(--line, rgba(255, 255, 255, 0.12));
   border-radius: 18px;
-  background: var(--surface-2, rgba(255,255,255,0.05));
+  background: var(--surface-2, rgba(255, 255, 255, 0.05));
   color: var(--text, #ffffff);
   cursor: pointer;
   transition: all 0.22s ease;
@@ -10674,7 +10681,7 @@ input[type="datetime-local"] {
   height: 32px;
   border: none;
   border-radius: 50%;
-  background: var(--surface-2, rgba(255,255,255,0.08));
+  background: var(--surface-2, rgba(255, 255, 255, 0.08));
   color: var(--muted, #8e9bb0);
   cursor: pointer;
   transition: all 0.18s ease;
@@ -10720,6 +10727,7 @@ input[type="datetime-local"] {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .learn-tab:hover {
@@ -11145,6 +11153,12 @@ input[type="datetime-local"] {
   margin-bottom: 4px;
 }
 
+.learn-card-phrase-zh {
+  font-size: 22px;
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  letter-spacing: 0.5px;
+}
+
 .learn-card-situation {
   display: inline-block;
   padding: 4px 10px;
@@ -11153,6 +11167,430 @@ input[type="datetime-local"] {
   color: var(--accent-strong);
   font-size: 11px;
   margin-bottom: 12px;
+}
+
+/* ========================== CHINESE CARD & AUDIO ENHANCEMENTS ========================== */
+.learn-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.learn-card-speak-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: var(--accent-strong);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.learn-card-speak-btn:hover {
+  background: var(--accent);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.learn-card-word-zh {
+  font-size: 34px;
+  font-weight: 700;
+  font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  letter-spacing: 1.5px;
+  color: #f39c12;
+  text-shadow: 0 2px 10px rgba(243, 156, 18, 0.2);
+}
+
+.learn-card-phonetic-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.learn-card-phonetic-badge .learn-card-phonetic {
+  margin-bottom: 0;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: #38bdf8;
+  font-family: "Fira Code", monospace;
+  font-weight: 500;
+}
+
+.learn-card-hanviet {
+  font-size: 12px;
+  color: #a78bfa;
+  font-weight: 600;
+}
+
+.learn-card-example-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.learn-card-example-speak-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  opacity: 0.8;
+  transition: transform 0.15s ease;
+  padding: 2px 4px;
+}
+
+.learn-card-example-speak-btn:hover {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.learn-card-example-zh {
+  font-size: 16px;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.learn-card-example-pinyin {
+  font-size: 13px;
+  color: #38bdf8;
+  font-style: italic;
+  margin-bottom: 4px;
+}
+
+.learn-card-note {
+  background: rgba(251, 191, 36, 0.1);
+  border-left: 3px solid #fbbf24;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #fde68a;
+  margin-top: 12px;
+}
+
+/* ========================== BASICS TAB (PINYIN & CHINESE BASICS) ========================== */
+.learn-basics-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px 16px 24px;
+  max-height: calc(100vh - 135px);
+  overflow-y: auto;
+}
+
+.basics-header-card {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(245, 158, 11, 0.12));
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.basics-header-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fca5a5;
+  margin-bottom: 6px;
+}
+
+.basics-header-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.basics-subtab-bar {
+  position: sticky;
+  top: -14px;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  padding: 10px 4px 10px;
+  background: var(--surface-0, #141b2d);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  overflow-x: auto;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line, rgba(255, 255, 255, 0.08));
+  margin: -6px 0 2px;
+  scrollbar-width: none;
+  /* Ẩn thanh cuộn trên Firefox */
+  min-height: 54px;
+}
+
+.basics-subtab-bar::-webkit-scrollbar {
+  display: none;
+  /* Ẩn thanh cuộn trên Chrome/Safari */
+}
+
+.basics-subtab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.basics-subtab-btn:hover {
+  border-color: var(--accent);
+  background: rgba(168, 85, 247, 0.1);
+  transform: translateY(-1px);
+}
+
+.basics-subtab-btn.active {
+  background: linear-gradient(135deg, #ef4444, #f59e0b);
+  border-color: transparent;
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 10px rgba(239, 68, 68, 0.35);
+}
+
+.basics-grid-intro {
+  background: var(--surface-0);
+  border-left: 3px solid #38bdf8;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+.basics-pinyin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.basics-pinyin-card {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.basics-pinyin-card:hover {
+  border-color: #ef4444;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+  background: var(--surface-2);
+}
+
+.basics-pinyin-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.basics-pinyin-char {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f87171;
+  font-family: "Fira Code", monospace;
+}
+
+.basics-pinyin-ipa {
+  font-size: 12px;
+  color: #38bdf8;
+  font-family: monospace;
+}
+
+.basics-audio-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.basics-pinyin-card:hover .basics-audio-btn {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.basics-pinyin-tip {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.basics-tones-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.basics-tone-card {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.basics-tone-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.basics-tone-badge {
+  background: linear-gradient(135deg, #ef4444, #f59e0b);
+  color: white;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: monospace;
+}
+
+.basics-tone-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.basics-tone-play-btn {
+  margin-left: auto;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.basics-tone-play-btn:hover {
+  background: #38bdf8;
+  color: black;
+}
+
+.basics-tone-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.basics-strokes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.basics-stroke-card {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+}
+
+.basics-stroke-char {
+  font-size: 32px;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-bottom: 6px;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.basics-stroke-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.basics-stroke-desc {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.basics-radicals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.basics-radical-card {
+  background: var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.basics-radical-card:hover {
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+}
+
+.basics-radical-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.basics-radical-char {
+  font-size: 26px;
+  font-weight: 700;
+  color: #38bdf8;
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+.basics-radical-pinyin {
+  font-size: 12px;
+  color: #a78bfa;
+  font-family: monospace;
+}
+
+.basics-radical-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.basics-radical-meaning {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.basics-radical-example {
+  font-size: 11px;
+  color: #94a3b8;
+  background: var(--bg-0);
+  padding: 4px 8px;
+  border-radius: 6px;
 }
 
 /* ========================== QUIZ MODAL ========================== */

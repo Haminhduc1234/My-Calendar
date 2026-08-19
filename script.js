@@ -13321,6 +13321,12 @@ function switchLearnLanguage(lang) {
   if (enBtn) enBtn.classList.toggle("active", lang === "en");
   if (zhBtn) zhBtn.classList.toggle("active", lang === "zh");
 
+  // Show/Hide Basics Tab Button (Only for Chinese)
+  const basicsTabBtn = document.getElementById("learnBasicsTabBtn");
+  if (basicsTabBtn) {
+    basicsTabBtn.style.display = lang === "zh" ? "flex" : "none";
+  }
+
   // Update modal title
   const titleEl = document.getElementById("learnModalTitle");
   if (titleEl) {
@@ -13355,6 +13361,11 @@ function switchLearnLanguage(lang) {
     "all",
     "selectPhraseCategory",
   );
+
+  // Render Basics section if in Chinese mode
+  if (lang === "zh") {
+    renderBasicsSection();
+  }
 
   // Reset tab contents
   currentVocabCategory = "all";
@@ -13634,17 +13645,25 @@ async function displayLocalVocabularyResults(results, translatedQuery = null) {
     </div>`;
   }
 
+  const isZh = currentLearnLanguage === "zh";
+
   resultsContainer.innerHTML =
     headerHtml +
     results
       .map(
         (item) => `
     <div class="learn-search-result-item">
-      <div class="learn-search-result-word">${item.word}</div>
-      <div class="learn-search-result-phonetic">${item.phonetic || ""}</div>
-      <div class="learn-search-result-meaning">${item.meaning}</div>
-      ${item.example ? `<div class="learn-search-result-example">${item.example}</div>` : ""}
-      ${item.exampleVi ? `<div class="learn-search-result-example">${item.exampleVi}</div>` : ""}
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <div class="learn-search-result-word ${isZh ? "learn-card-word-zh" : ""}" style="font-size: 22px;">${item.word}</div>
+        <button class="learn-card-example-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.word)}')` : `speakEnglish('${escapeHtml(item.word)}')`}" title="Nghe phát âm" style="font-size: 16px;">🔊</button>
+      </div>
+      <div class="learn-search-result-phonetic" style="color: #38bdf8; font-weight: 500;">
+        ${item.phonetic || ""} ${item.hanviet ? `<span style="color: #a78bfa; margin-left: 6px;">[${item.hanviet}]</span>` : ""}
+      </div>
+      <div class="learn-search-result-meaning" style="font-weight: 600; margin-top: 4px;">${item.meaning}</div>
+      ${item.example ? `<div class="learn-search-result-example" style="font-style: normal; color: var(--accent-strong);">${item.example}</div>` : ""}
+      ${item.examplePinyin ? `<div style="font-size: 12px; color: #38bdf8; font-style: italic;">${item.examplePinyin}</div>` : ""}
+      ${item.exampleVi ? `<div class="learn-search-result-example" style="color: var(--muted);">${item.exampleVi}</div>` : ""}
     </div>
   `,
       )
@@ -13804,6 +13823,27 @@ function closeVocabSearchResults() {
 }
 
 
+// Speak Chinese TTS helper
+function speakChinese(text) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel(); // Dừng câu trước nếu đang đọc
+  const cleanText = text.replace(/\(.*?\)/g, "").trim(); // Bỏ phần ngoặc chú thích nếu có
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  utterance.lang = "zh-CN";
+  utterance.rate = 0.85; // Tốc độ vừa phải cho người mới học
+  window.speechSynthesis.speak(utterance);
+}
+
+// Speak English TTS helper
+function speakEnglish(text) {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-US";
+  utterance.rate = 0.9;
+  window.speechSynthesis.speak(utterance);
+}
+
 // Switch Learn Tab
 function switchLearnTab(tab) {
   document
@@ -13812,16 +13852,166 @@ function switchLearnTab(tab) {
   document
     .querySelectorAll(".learn-tab-content")
     .forEach((c) => c.classList.remove("active"));
-  document
-    .querySelector(`.learn-tab[data-tab="${tab}"]`)
-    .classList.add("active");
-  document
-    .getElementById(`learn${tab.charAt(0).toUpperCase() + tab.slice(1)}Tab`)
-    .classList.add("active");
+  
+  const targetTabBtn = document.querySelector(`.learn-tab[data-tab="${tab}"]`);
+  if (targetTabBtn) targetTabBtn.classList.add("active");
 
-  if (tab === "vocabulary") selectVocabCategory("all");
+  const targetContent = document.getElementById(`learn${tab.charAt(0).toUpperCase() + tab.slice(1)}Tab`);
+  if (targetContent) targetContent.classList.add("active");
+
+  if (tab === "basics") renderBasicsSection();
+  else if (tab === "vocabulary") selectVocabCategory("all");
   else if (tab === "grammar") selectGrammarCategory("all");
   else if (tab === "phrases") selectPhraseCategory("all");
+}
+
+// Render Chinese Basics (Pinyin, Vận mẫu, Thanh mẫu, Thanh điệu, Các nét, Bộ thủ)
+let currentBasicsSubTab = "initials";
+function switchBasicsSubTab(subTab) {
+  currentBasicsSubTab = subTab;
+  renderBasicsSection();
+}
+
+function renderBasicsSection() {
+  const container = document.getElementById("learnBasicsContainer");
+  if (!container || typeof ZH_BASICS_DATA === "undefined") return;
+
+  const subTabs = [
+    { key: "initials", label: "23 Thanh Mẫu (Phụ âm)", icon: "🗣️" },
+    { key: "finals", label: "36 Vận Mẫu (Nguyên âm)", icon: "🎵" },
+    { key: "tones", label: "4 Thanh Điệu & Biến Điệu", icon: "📈" },
+    { key: "strokes", label: "8 Nét & Bút Thuận", icon: "✍️" },
+    { key: "radicals", label: "20+ Bộ Thủ Thường Gặp", icon: "🧱" },
+  ];
+
+  let html = `
+    <div class="basics-header-card">
+      <div class="basics-header-title">🇨🇳 Nền Tảng Tiếng Trung Dành Cho Người Mới</div>
+      <div class="basics-header-desc">Học chắc Bảng chữ cái Pinyin, 4 Thanh điệu và Các bộ thủ cốt lõi để phát âm chuẩn và nhớ chữ Hán siêu tốc.</div>
+    </div>
+    <div class="basics-subtab-bar">
+      ${subTabs
+        .map(
+          (st) => `
+        <button class="basics-subtab-btn ${currentBasicsSubTab === st.key ? "active" : ""}" onclick="switchBasicsSubTab('${st.key}')">
+          <span>${st.icon}</span> ${st.label}
+        </button>
+      `
+        )
+        .join("")}
+    </div>
+    <div class="basics-content-panel">
+  `;
+
+  if (currentBasicsSubTab === "initials") {
+    html += `
+      <div class="basics-grid-intro">
+        💡 <strong>Mẹo học Thanh mẫu:</strong> Bấm vào từng âm để nghe giọng đọc bản xứ. Chú ý phân biệt nhóm âm bật hơi (<strong>p, t, k, q, ch, c</strong>) và âm uốn lưỡi (<strong>zh, ch, sh, r</strong>).
+      </div>
+      <div class="basics-pinyin-grid">
+        ${ZH_BASICS_DATA.initials
+          .map(
+            (item) => `
+          <div class="basics-pinyin-card" onclick="speakChinese('${item.audioText || item.char}')" title="Bấm để nghe phát âm">
+            <div class="basics-pinyin-top">
+              <span class="basics-pinyin-char">${item.char}</span>
+              <span class="basics-pinyin-ipa">${item.ipa}</span>
+              <button class="basics-audio-btn" aria-label="Phát âm">🔊</button>
+            </div>
+            <div class="basics-pinyin-tip">${item.tip}</div>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+    `;
+  } else if (currentBasicsSubTab === "finals") {
+    html += `
+      <div class="basics-grid-intro">
+        💡 <strong>Mẹo học Vận mẫu:</strong> Vận mẫu đặc biệt <strong>ü</strong> (u hai chấm) giữ nguyên khẩu hình tròn môi khi phát âm. Bấm vào thẻ để nghe đọc.
+      </div>
+      <div class="basics-pinyin-grid">
+        ${ZH_BASICS_DATA.finals
+          .map(
+            (item) => `
+          <div class="basics-pinyin-card" onclick="speakChinese('${item.char}')" title="Bấm để nghe phát âm">
+            <div class="basics-pinyin-top">
+              <span class="basics-pinyin-char">${item.char}</span>
+              <button class="basics-audio-btn" aria-label="Phát âm">🔊</button>
+            </div>
+            <div class="basics-pinyin-tip">${item.tip}</div>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+    `;
+  } else if (currentBasicsSubTab === "tones") {
+    html += `
+      <div class="basics-tones-list">
+        ${ZH_BASICS_DATA.tones
+          .map(
+            (item) => `
+          <div class="basics-tone-card">
+            <div class="basics-tone-header">
+              <div class="basics-tone-badge">${item.symbol}</div>
+              <div class="basics-tone-name">${item.tone}</div>
+              <button class="basics-tone-play-btn" onclick="speakChinese('${item.audioText}')">🔊 Nghe mẫu (${item.example})</button>
+            </div>
+            <div class="basics-tone-desc" style="white-space: pre-line;">${item.desc}</div>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+    `;
+  } else if (currentBasicsSubTab === "strokes") {
+    html += `
+      <div class="basics-grid-intro">
+        ✍️ <strong>7 Quy tắc thuận bút:</strong> 1. Ngang trước sổ sau; 2. Phẩy trước mác sau; 3. Trên trước dưới sau; 4. Trái trước phải sau; 5. Ngoài trước trong sau; 6. Vào trước đóng sau; 7. Giữa trước hai bên sau.
+      </div>
+      <div class="basics-strokes-grid">
+        ${ZH_BASICS_DATA.strokes
+          .map(
+            (item) => `
+          <div class="basics-stroke-card">
+            <div class="basics-stroke-char">${item.char}</div>
+            <div class="basics-stroke-name">${item.name}</div>
+            <div class="basics-stroke-desc">${item.desc}</div>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+    `;
+  } else if (currentBasicsSubTab === "radicals") {
+    html += `
+      <div class="basics-grid-intro">
+        🧱 <strong>Bộ thủ (Radicals):</strong> Là linh hồn của chữ Hán, hiểu bộ thủ giúp bạn đoán được 80% trường nghĩa của từ vựng mới!
+      </div>
+      <div class="basics-radicals-grid">
+        ${ZH_BASICS_DATA.radicals
+          .map(
+            (item) => `
+          <div class="basics-radical-card" onclick="speakChinese('${item.char}')">
+            <div class="basics-radical-top">
+              <span class="basics-radical-char">${item.char}</span>
+              <span class="basics-radical-pinyin">${item.pinyin}</span>
+              <button class="basics-audio-btn">🔊</button>
+            </div>
+            <div class="basics-radical-name">${item.name}</div>
+            <div class="basics-radical-meaning">${item.meaning}</div>
+            <div class="basics-radical-example">Ví dụ: <strong>${item.example}</strong></div>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  container.innerHTML = html;
 }
 
 // Vocabulary Category Selection
@@ -13902,18 +14092,41 @@ function renderVocabCard() {
   const item = currentVocabList[currentVocabIndex];
   counter.textContent = `${currentVocabIndex + 1} / ${currentVocabList.length}`;
 
+  const isZh = currentLearnLanguage === "zh";
+
   container.innerHTML = `
-    <div class="learn-card">
-      <div class="learn-card-category">${getCategoryName(currentVocabCategory)}</div>
-      <div class="learn-card-word">${item.word}</div>
-      <div class="learn-card-phonetic">${item.phonetic || ""}</div>
+    <div class="learn-card ${isZh ? "learn-card-zh" : ""}">
+      <div class="learn-card-top-row">
+        <div class="learn-card-category">${getCategoryName(currentVocabCategory)}</div>
+        <button class="learn-card-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.word)}')` : `speakEnglish('${escapeHtml(item.word)}')`}" title="Nghe phát âm">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+          </svg>
+          Phát âm
+        </button>
+      </div>
+
+      <div class="learn-card-word ${isZh ? "learn-card-word-zh" : ""}">${item.word}</div>
+      
+      ${item.phonetic ? `
+        <div class="learn-card-phonetic-badge">
+          <span class="learn-card-phonetic">${item.phonetic}</span>
+          ${item.hanviet ? `<span class="learn-card-hanviet">[Hán-Việt: ${item.hanviet}]</span>` : ""}
+        </div>
+      ` : ""}
+
       <div class="learn-card-meaning">${item.meaning}</div>
+
       ${
         item.example
           ? `
       <div class="learn-card-example">
-        <div class="learn-card-example-label">Ví dụ</div>
-        <div class="learn-card-example-en">${item.example}</div>
+        <div class="learn-card-example-header">
+          <div class="learn-card-example-label">Ví dụ minh họa</div>
+          <button class="learn-card-example-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.example)}')` : `speakEnglish('${escapeHtml(item.example)}')`}" title="Nghe ví dụ">🔊</button>
+        </div>
+        <div class="learn-card-example-en ${isZh ? "learn-card-example-zh" : ""}">${item.example}</div>
+        ${item.examplePinyin ? `<div class="learn-card-example-pinyin">${item.examplePinyin}</div>` : ""}
         <div class="learn-card-example-vi">${item.exampleVi || ""}</div>
       </div>
       `
@@ -13937,19 +14150,26 @@ function renderGrammarCard() {
 
   const item = currentGrammarList[currentGrammarIndex];
   counter.textContent = `${currentGrammarIndex + 1} / ${currentGrammarList.length}`;
+  const isZh = currentLearnLanguage === "zh";
 
   container.innerHTML = `
-    <div class="learn-card">
-      <div class="learn-card-category">${getGrammarCategoryName(currentGrammarCategory)}</div>
+    <div class="learn-card ${isZh ? "learn-card-zh" : ""}">
+      <div class="learn-card-top-row">
+        <div class="learn-card-category">${getGrammarCategoryName(currentGrammarCategory)}</div>
+      </div>
       <div class="learn-card-word">${item.title}</div>
       <div class="learn-card-formula">${item.formula}</div>
       <div class="learn-card-usage">${item.usage}</div>
       <div class="learn-card-example">
-        <div class="learn-card-example-label">Ví dụ</div>
-        <div class="learn-card-example-en">${item.example}</div>
+        <div class="learn-card-example-header">
+          <div class="learn-card-example-label">Ví dụ áp dụng</div>
+          <button class="learn-card-example-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.example)}')` : `speakEnglish('${escapeHtml(item.example)}')`}" title="Nghe ví dụ">🔊</button>
+        </div>
+        <div class="learn-card-example-en ${isZh ? "learn-card-example-zh" : ""}">${item.example}</div>
+        ${item.examplePinyin ? `<div class="learn-card-example-pinyin">${item.examplePinyin}</div>` : ""}
         <div class="learn-card-example-vi">${item.exampleVi || ""}</div>
       </div>
-      ${item.note ? `<div class="learn-card-usage" style="margin-top: 10px; font-style: italic;">${item.note}</div>` : ""}
+      ${item.note ? `<div class="learn-card-note">📌 <strong>Lưu ý:</strong> ${item.note}</div>` : ""}
     </div>
   `;
 }
@@ -13968,11 +14188,21 @@ function renderPhraseCard() {
 
   const item = currentPhraseList[currentPhraseIndex];
   counter.textContent = `${currentPhraseIndex + 1} / ${currentPhraseList.length}`;
+  const isZh = currentLearnLanguage === "zh";
 
   container.innerHTML = `
-    <div class="learn-card">
-      <div class="learn-card-situation">${item.situation || ""}</div>
-      <div class="learn-card-phrase">${item.phrase}</div>
+    <div class="learn-card ${isZh ? "learn-card-zh" : ""}">
+      <div class="learn-card-top-row">
+        <div class="learn-card-situation">${item.situation || getPhraseCategoryName(currentPhraseCategory)}</div>
+        <button class="learn-card-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.phrase)}')` : `speakEnglish('${escapeHtml(item.phrase)}')`}" title="Nghe đọc mẫu câu">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+          </svg>
+          Phát âm
+        </button>
+      </div>
+      <div class="learn-card-phrase ${isZh ? "learn-card-phrase-zh" : ""}">${item.phrase}</div>
+      ${item.phonetic ? `<div class="learn-card-example-pinyin" style="margin-bottom: 8px;">${item.phonetic}</div>` : ""}
       <div class="learn-card-meaning">${item.meaning}</div>
     </div>
   `;

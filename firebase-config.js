@@ -10,5 +10,5 @@ self.FIREBASE_WEB_CONFIG = {
   appId: "1:247189635275:web:84f0e7918a285180ab5b4e",
   measurementId: "G-8KXCC4R122",
   // VAPID Key for FCM Web Push (tùy chọn - lấy từ Firebase Console > Project Settings > Cloud Messaging > Web configuration)
-  vapidKey: ""
+  vapidKey: "BPOgn_dHrCGZ-Ug5rikz5Hg5tR215RdyZThokiREqAA1QdXb0pgCkkm2qm5eDbjTh2Qu2B-mvG3Q8apvlGJ2e74"
 };

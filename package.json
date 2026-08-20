@@ -1,0 +1,12 @@
+{
+  "name": "my-calendar",
+  "version": "1.0.0",
+  "description": "Lịch cá nhân & Quản lý công việc với Realtime Push Notification",
+  "main": "script.js",
+  "scripts": {
+    "start": "serve ."
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}

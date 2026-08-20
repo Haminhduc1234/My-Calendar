@@ -2730,6 +2730,7 @@ async function initFirebaseRealtime() {
 
   // Initialize Firebase Cloud Messaging for Push Notifications
   initFirebaseMessaging();
+  setupNotificationQueueListener();
 
   // Realtime database initialized
   console.log("Firebase Realtime Database connected");
@@ -2950,6 +2951,7 @@ async function reloadFirebaseForUser() {
 
   // Re-sync Push Notification token for the new user profile
   initFirebaseMessaging();
+  setupNotificationQueueListener();
 
   console.log("[Firebase] Reload complete for user:", userProfileKey);
 }
@@ -2993,6 +2995,22 @@ function openAddEventModalForToday() {
 
 /* ==================== PUSH NOTIFICATION & FCM MULTI-DEVICE ==================== */
 
+let _currentTabSessionId = null;
+function getOrCreateTabSessionId() {
+  if (!_currentTabSessionId) {
+    try {
+      _currentTabSessionId = sessionStorage.getItem("calendarTabSessionId");
+      if (!_currentTabSessionId) {
+        _currentTabSessionId = `tab_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+        sessionStorage.setItem("calendarTabSessionId", _currentTabSessionId);
+      }
+    } catch (e) {
+      _currentTabSessionId = `tab_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    }
+  }
+  return _currentTabSessionId;
+}
+
 function getOrCreateDeviceId() {
   let devId = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
   if (!devId) {
@@ -3000,6 +3018,29 @@ function getOrCreateDeviceId() {
     localStorage.setItem(DEVICE_ID_STORAGE_KEY, devId);
   }
   return devId;
+}
+
+function playNotificationChime() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+
+    gain.gain.setValueAtTime(0.18, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.5);
+  } catch (e) {}
 }
 
 function showAppPushToast(title, body, dateKey) {
@@ -3053,6 +3094,8 @@ window.openEventDateFromPush = openEventDateFromPush;
  */
 function notifyNewEventFromRealtime(eventData, dateKey) {
   if (!eventData) return;
+  if (localStorage.getItem("calendarDevicePushEnabled") === "0") return;
+
   const title = eventData.title ? `🔔 ${eventData.title}` : "🔔 Sự kiện mới từ thiết bị khác";
   const bodyParts = [];
   if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
@@ -3070,8 +3113,11 @@ function notifyNewEventFromRealtime(eventData, dateKey) {
   // 1. Luôn hiển thị Toast Banner trên màn hình web
   showAppPushToast(title, body, dateKey);
 
-  // 2. Nếu tab đang ở background / ẩn và người dùng đã cấp quyền, hiển thị System Notification qua Service Worker
-  if (document.visibilityState !== "visible" && "Notification" in window && Notification.permission === "granted") {
+  // 2. Phát chuông thông báo
+  playNotificationChime();
+
+  // 3. Hiển thị System Notification qua Service Worker hoặc Notification API
+  if ("Notification" in window && Notification.permission === "granted") {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.ready.then((reg) => {
         reg.showNotification(title, {
@@ -3090,10 +3136,14 @@ function notifyNewEventFromRealtime(eventData, dateKey) {
           new Notification(title, { body, icon: "./public/favicon.png" });
         } catch (e) { }
       });
+    } else {
+      try {
+        new Notification(title, { body, icon: "./public/favicon.png" });
+      } catch (e) { }
     }
   }
 
-  // 3. Rung nếu thiết bị hỗ trợ
+  // 4. Rung nếu thiết bị hỗ trợ
   if ("vibrate" in navigator) {
     try { navigator.vibrate([100, 50, 100]); } catch (e) { }
   }
@@ -3144,7 +3194,7 @@ async function initFirebaseMessaging() {
 }
 
 async function requestNotificationPermissionAndRegisterToken(silent = false) {
-  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+  if (!("Notification" in window)) {
     if (!silent) alert("Trình duyệt của bạn không hỗ trợ nhận thông báo đẩy Web Push.");
     updateNotificationUIState();
     return false;
@@ -3165,45 +3215,57 @@ async function requestNotificationPermissionAndRegisterToken(silent = false) {
       return false;
     }
 
-    if (!firebaseMessaging && window.firebase?.messaging) {
-      firebaseMessaging = window.firebase.messaging();
+    // Đảm bảo Service Worker đã được đăng ký và sẵn sàng hoạt động
+    let swReg = null;
+    if ("serviceWorker" in navigator) {
+      try {
+        swReg = await navigator.serviceWorker.getRegistration();
+        if (!swReg || !swReg.active) {
+          await navigator.serviceWorker.register("./service-worker.js");
+          swReg = await navigator.serviceWorker.ready;
+        }
+      } catch (swErr) {
+        console.warn("[SW] Service worker ready check warning:", swErr);
+      }
     }
 
-    if (!firebaseMessaging) {
-      if (!silent) alert("Chưa thể khởi tạo Firebase Messaging.");
-      return false;
+    // Cố gắng lấy FCM token nếu cấu hình sẵn sàng
+    if (window.firebase?.messaging) {
+      try {
+        if (!firebaseMessaging) {
+          firebaseMessaging = window.firebase.messaging();
+        }
+
+        const vapidKey = (FIREBASE_CONFIG.vapidKey && FIREBASE_CONFIG.vapidKey.length > 20)
+          ? FIREBASE_CONFIG.vapidKey
+          : undefined;
+
+        const tokenOptions = {};
+        if (vapidKey) tokenOptions.vapidKey = vapidKey;
+        if (swReg) tokenOptions.serviceWorkerRegistration = swReg;
+
+        const token = await firebaseMessaging.getToken(tokenOptions);
+        if (token) {
+          const deviceId = getOrCreateDeviceId();
+          const tokenData = {
+            token: token,
+            deviceId: deviceId,
+            userAgent: navigator.userAgent.slice(0, 200),
+            platform: navigator.platform || "",
+            updatedAt: Date.now()
+          };
+
+          if (firebaseDb && userProfileKey) {
+            await firebaseDb.ref(`${FIREBASE_NOTIFICATION_TOKENS_PATH}/${userProfileKey}/${deviceId}`).set(tokenData);
+          }
+          console.log("[FCM] Đã đăng ký FCM Token thành công.");
+        }
+      } catch (fcmErr) {
+        console.warn("[FCM] FCM Token đăng ký nền (tiếp tục với Realtime Sync):", fcmErr);
+      }
     }
 
-    // Lấy service worker registration
-    let swReg = await navigator.serviceWorker.getRegistration();
-    if (!swReg) {
-      swReg = await navigator.serviceWorker.register("./service-worker.js");
-    }
-
-    const vapidKey = FIREBASE_CONFIG.vapidKey || undefined;
-    const token = await firebaseMessaging.getToken({
-      vapidKey: vapidKey,
-      serviceWorkerRegistration: swReg
-    });
-
-    if (!token) {
-      if (!silent) alert("Không thể lấy FCM token. Vui lòng kiểm tra VAPID Key trong firebase-config.js.");
-      return false;
-    }
-
-    const deviceId = getOrCreateDeviceId();
-    const tokenData = {
-      token: token,
-      deviceId: deviceId,
-      userAgent: navigator.userAgent.slice(0, 200),
-      platform: navigator.platform || "",
-      updatedAt: Date.now()
-    };
-
-    if (firebaseDb && userProfileKey) {
-      await firebaseDb.ref(`${FIREBASE_NOTIFICATION_TOKENS_PATH}/${userProfileKey}/${deviceId}`).set(tokenData);
-    }
-
+    localStorage.setItem("calendarDevicePushEnabled", "1");
     isPushNotificationSubscribed = true;
     updateNotificationUIState();
 
@@ -3212,7 +3274,7 @@ async function requestNotificationPermissionAndRegisterToken(silent = false) {
     }
     return true;
   } catch (err) {
-    console.error("[FCM] Lỗi đăng ký nhận thông báo:", err);
+    console.error("[Notification] Lỗi bật thông báo:", err);
     if (!silent) {
       alert("Đã xảy ra lỗi khi đăng ký thông báo: " + (err.message || err));
     }
@@ -3230,6 +3292,7 @@ async function unregisterDeviceNotificationToken() {
       console.warn("[FCM] Lỗi xóa token khỏi Firebase:", e);
     }
   }
+  localStorage.setItem("calendarDevicePushEnabled", "0");
   isPushNotificationSubscribed = false;
   updateNotificationUIState();
 }
@@ -3252,6 +3315,7 @@ function updateNotificationUIState() {
   }
 
   const permission = Notification.permission;
+  const isManuallyDisabled = localStorage.getItem("calendarDevicePushEnabled") === "0";
 
   if (permission === "denied") {
     statusEl.textContent = "Bị chặn (Blocked)";
@@ -3261,7 +3325,7 @@ function updateNotificationUIState() {
     btnToggle.disabled = true;
     btnToggle.style.opacity = "0.6";
     if (btnTest) btnTest.style.display = "none";
-  } else if (permission === "granted") {
+  } else if (permission === "granted" && !isManuallyDisabled) {
     statusEl.textContent = "Đang hoạt động (Active)";
     statusEl.style.color = "#10b981";
     descEl.textContent = "Thiết bị này đang nhận thông báo cho tài khoản hiện tại";
@@ -3270,6 +3334,15 @@ function updateNotificationUIState() {
     btnToggle.style.opacity = "1";
     btnToggle.className = "btn-secondary";
     if (btnTest) btnTest.style.display = "inline-flex";
+  } else if (permission === "granted" && isManuallyDisabled) {
+    statusEl.textContent = "Đã tắt (Tạm dừng)";
+    statusEl.style.color = "#f59e0b";
+    descEl.textContent = "Thông báo đang tạm tắt trên thiết bị này";
+    btnToggle.textContent = "Bật lại thông báo";
+    btnToggle.disabled = false;
+    btnToggle.style.opacity = "1";
+    btnToggle.className = "btn-primary";
+    if (btnTest) btnTest.style.display = "none";
   } else {
     statusEl.textContent = "Chưa bật";
     statusEl.style.color = "#f59e0b";
@@ -3288,13 +3361,16 @@ async function toggleDeviceNotificationPermission() {
     return;
   }
 
-  if (Notification.permission === "granted") {
+  const isManuallyDisabled = localStorage.getItem("calendarDevicePushEnabled") === "0";
+
+  if (Notification.permission === "granted" && !isManuallyDisabled) {
     const ok = confirm("Bạn có muốn tắt nhận thông báo trên thiết bị này?");
     if (ok) {
       await unregisterDeviceNotificationToken();
-      alert("Đã hủy nhận thông báo trên thiết bị này.");
+      showAppPushToast("Đã tắt thông báo", "Thiết bị này sẽ không nhận thông báo cho đến khi bạn bật lại.", "");
     }
   } else {
+    localStorage.setItem("calendarDevicePushEnabled", "1");
     await requestNotificationPermissionAndRegisterToken(false);
   }
 }
@@ -3316,29 +3392,89 @@ async function sendTestPushNotification() {
   showAppPushToast("Đã gửi lệnh bắn thông báo thử nghiệm", "Các thiết bị cùng đăng nhập tài khoản sẽ nhận được thông báo sau vài giây.", "");
 }
 
-/**
- * Ghi lệnh phát thông báo vào eventNotificationQueue trên Firebase Realtime Database
- */
-async function queueEventNotification(eventData, dateKey) {
-  if (!firebaseDb || !userProfileKey || !eventData) return;
+let firebaseNotificationQueueRef = null;
+const _processedNotificationKeys = new Set();
+const _appStartTime = Date.now() - 30000;
 
-  try {
-    const queueRef = firebaseDb.ref(`${FIREBASE_EVENT_NOTIFICATION_QUEUE_PATH}/${userProfileKey}`).push();
-    await queueRef.set({
-      eventData: {
-        title: String(eventData.title || "").trim(),
-        text: String(eventData.text || "").trim(),
-        eventDateTime: String(eventData.eventDateTime || ""),
-        createdAt: Number(eventData.createdAt || Date.now())
-      },
-      dateKey: String(dateKey || ""),
-      senderDeviceId: getOrCreateDeviceId(),
-      timestamp: Date.now()
-    });
-    console.log("[FCM] Đã gửi sự kiện vào hàng đợi thông báo:", dateKey);
-  } catch (err) {
-    console.warn("[FCM] Không thể ghi queue thông báo:", err);
+function setupNotificationQueueListener() {
+  if (!firebaseDb || !userProfileKey) return;
+
+  if (firebaseNotificationQueueRef) {
+    try {
+      firebaseNotificationQueueRef.off();
+    } catch (e) {}
   }
+
+  firebaseNotificationQueueRef = firebaseDb.ref(
+    `${FIREBASE_EVENT_NOTIFICATION_QUEUE_PATH}/${userProfileKey}`,
+  );
+
+  console.log("[NotificationQueue] Đang lắng nghe thông báo cho user:", userProfileKey);
+
+  firebaseNotificationQueueRef
+    .orderByChild("timestamp")
+    .startAt(_appStartTime)
+    .on("child_added", (snapshot) => {
+      const key = snapshot.key;
+      if (!key || _processedNotificationKeys.has(key)) return;
+      _processedNotificationKeys.add(key);
+
+      const data = snapshot.val();
+      if (!data || !data.eventData) return;
+
+      const mySessionId = getOrCreateTabSessionId();
+      // Nếu sự kiện được gửi từ tab khác hoặc thiết bị khác
+      if (data.senderSessionId !== mySessionId) {
+        console.log("[NotificationQueue] Nhận thông báo từ thiết bị/tab khác:", data);
+        notifyNewEventFromRealtime(data.eventData, data.dateKey);
+      }
+    });
+}
+window.setupNotificationQueueListener = setupNotificationQueueListener;
+
+async function queueEventNotification(eventData, dateKey) {
+  if (!userProfileKey || !eventData) return;
+
+  const payload = {
+    profileKey: userProfileKey,
+    eventData: {
+      title: String(eventData.title || "").trim(),
+      text: String(eventData.text || "").trim(),
+      eventDateTime: String(eventData.eventDateTime || ""),
+      createdAt: Number(eventData.createdAt || Date.now())
+    },
+    dateKey: String(dateKey || ""),
+    senderSessionId: getOrCreateTabSessionId(),
+    senderDeviceId: getOrCreateDeviceId(),
+    timestamp: Date.now()
+  };
+
+  // 1. Ghi vào Realtime Database Queue (đồng bộ tức thì các tab / app đang mở)
+  if (firebaseDb) {
+    try {
+      const queueRef = firebaseDb.ref(`${FIREBASE_EVENT_NOTIFICATION_QUEUE_PATH}/${userProfileKey}`).push();
+      await queueRef.set(payload);
+      console.log("[NotificationQueue] Đã ghi sự kiện vào RTDB queue:", dateKey);
+    } catch (err) {
+      console.warn("[NotificationQueue] Lỗi ghi RTDB queue:", err);
+    }
+  }
+
+  // 2. Gọi Serverless Endpoint /api/send-push (gửi FCM đánh thức các thiết bị đang đóng app)
+  try {
+    fetch("/api/send-push", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("[FCM Push API] Kết quả:", data);
+      })
+      .catch((apiErr) => {
+        console.log("[FCM Push API] API push ngầm:", apiErr.message);
+      });
+  } catch (e) {}
 }
 
 /**

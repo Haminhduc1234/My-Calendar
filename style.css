@@ -6041,9 +6041,19 @@ input[type="datetime-local"] {
 
 /* ========================== FUNDS MODAL ========================== */
 
+.funds-modal-shell {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 48px);
+  overflow: hidden;
+}
+
 .funds-container {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 4px;
+  padding-bottom: 8px;
 }
 
 .funds-balance-section {
@@ -6115,7 +6125,7 @@ input[type="datetime-local"] {
   background: rgba(8, 20, 42, 0.5);
   border: 1px solid rgba(168, 85, 247, 0.2);
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px 12px;
   margin-bottom: 16px;
 }
 
@@ -6195,21 +6205,82 @@ input[type="datetime-local"] {
   font-size: 12px;
   color: var(--muted);
   text-align: center;
-  padding: 8px;
+  padding: 4px;
+  line-height: 1.4;
 }
 
 .funds-list-section {
   margin-bottom: 12px;
-  max-height: calc(100vh - 374px);
 }
 
 .funds-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: calc(100vh - 448px);
-  overflow-y: auto;
   touch-action: pan-y;
+}
+
+.funds-modal-footer {
+  display: flex;
+  gap: 10px;
+  padding-top: 12px;
+  padding-bottom: 4px;
+  margin-top: auto;
+  flex-shrink: 0;
+  border-top: 1px solid rgba(168, 85, 247, 0.18);
+  background: linear-gradient(180deg, rgba(8, 20, 42, 0) 0%, rgba(8, 20, 42, 0.75) 35%, rgba(8, 20, 42, 0.98) 100%);
+}
+
+.funds-footer-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.funds-footer-btn-allocate {
+  border: 1px solid rgba(16, 185, 129, 0.5);
+  background: linear-gradient(140deg, #059669, #047857);
+  color: #d1fae5;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.22);
+}
+
+.funds-footer-btn-allocate:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.32);
+  transform: translateY(-1px);
+}
+
+.funds-footer-btn-allocate:active {
+  transform: translateY(0);
+}
+
+.funds-footer-btn-create {
+  border: 1px solid rgba(192, 132, 252, 0.55);
+  background: linear-gradient(140deg, #42A5F5, #7c3aed);
+  color: #f3e8ff;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.22);
+}
+
+.funds-footer-btn-create:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.32);
+  transform: translateY(-1px);
+}
+
+.funds-footer-btn-create:active {
+  transform: translateY(0);
 }
 
 .fund-jar {

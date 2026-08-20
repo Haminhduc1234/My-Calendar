@@ -1450,13 +1450,8 @@
           </div>
 
           <!-- Chia Quỹ -->
-          <div class="funds-allocate-section">
-            <button class="funds-btn-secondary funds-btn-secondary-bottom" onclick="openAllocateModal()">
-              + Phân bổ quỹ
-            </button>
-            <div class="funds-allocate-info" id="fundsAllocateInfo">
-              Nhấn "Phân bổ" để chia thu nhập vào các quỹ
-            </div>
+          <div class="funds-allocate-section" style="display: none;">
+            <div class="funds-allocate-info" id="fundsAllocateInfo"></div>
           </div>
 
           <!-- Danh sách Quỹ -->
@@ -1481,10 +1476,16 @@
             <div id="fundsList" class="funds-list">
               <!-- Fund items rendered here -->
             </div>
-            <button class="funds-btn-add funds-btn-add-bottom" onclick="openAddFundModal()">
-              + Tạo quỹ
-            </button>
           </div>
+        </div>
+
+        <div class="funds-modal-footer">
+          <button class="funds-footer-btn funds-footer-btn-allocate" onclick="openAllocateModal()">
+            + Phân bổ quỹ
+          </button>
+          <button class="funds-footer-btn funds-footer-btn-create" onclick="openAddFundModal()">
+            + Tạo quỹ
+          </button>
         </div>
       </div>
     </div>

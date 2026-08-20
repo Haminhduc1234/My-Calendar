@@ -9085,16 +9085,20 @@ function renderFundsDashboard() {
   availableEl.style.color = available < 0 ? "#ef4444" : "#10b981";
 
   // Update allocate info
+  const allocateSection = document.querySelector(".funds-allocate-section");
   const allocateInfo = document.getElementById("fundsAllocateInfo");
-  if (available > 0) {
-    allocateInfo.innerText = `Còn ${available.toLocaleString("vi-VN")} đ có thể phân bổ vào các quỹ`;
-    allocateInfo.style.color = "#10b981";
-  } else {
-    allocateInfo.innerText =
-      available < 0
-        ? `Số dư âm ${Math.abs(available).toLocaleString("vi-VN")} đ - Đã phân bổ vượt chênh lệch`
-        : "Đã phân bổ hết chênh lệch thu - chi";
-    allocateInfo.style.color = available < 0 ? "#ef4444" : "#f59e0b";
+  if (allocateInfo) {
+    if (available > 0) {
+      allocateInfo.innerText = "";
+      if (allocateSection) allocateSection.style.display = "none";
+    } else {
+      if (allocateSection) allocateSection.style.display = "block";
+      allocateInfo.innerText =
+        available < 0
+          ? `Số dư âm ${Math.abs(available).toLocaleString("vi-VN")} đ - Đã phân bổ vượt chênh lệch`
+          : "Đã phân bổ hết chênh lệch thu - chi";
+      allocateInfo.style.color = available < 0 ? "#ef4444" : "#f59e0b";
+    }
   }
 
   renderFundsList();

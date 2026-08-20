@@ -3040,7 +3040,7 @@ function playNotificationChime() {
 
     osc.start();
     osc.stop(ctx.currentTime + 0.5);
-  } catch (e) {}
+  } catch (e) { }
 }
 
 function showAppPushToast(title, body, dateKey) {
@@ -3305,6 +3305,10 @@ function updateNotificationUIState() {
 
   if (!statusEl || !btnToggle) return;
 
+  // Luôn đặt nowrap cho tất cả nút
+  btnToggle.style.whiteSpace = "nowrap";
+  if (btnTest) btnTest.style.whiteSpace = "nowrap";
+
   if (!("Notification" in window)) {
     statusEl.textContent = "Không hỗ trợ";
     statusEl.style.color = "#ef4444";
@@ -3402,7 +3406,7 @@ function setupNotificationQueueListener() {
   if (firebaseNotificationQueueRef) {
     try {
       firebaseNotificationQueueRef.off();
-    } catch (e) {}
+    } catch (e) { }
   }
 
   firebaseNotificationQueueRef = firebaseDb.ref(
@@ -3474,7 +3478,7 @@ async function queueEventNotification(eventData, dateKey) {
       .catch((apiErr) => {
         console.log("[FCM Push API] API push ngầm:", apiErr.message);
       });
-  } catch (e) {}
+  } catch (e) { }
 }
 
 /**
@@ -14450,7 +14454,7 @@ function switchLearnTab(tab) {
   document
     .querySelectorAll(".learn-tab-content")
     .forEach((c) => c.classList.remove("active"));
-  
+
   const targetTabBtn = document.querySelector(`.learn-tab[data-tab="${tab}"]`);
   if (targetTabBtn) targetTabBtn.classList.add("active");
 
@@ -14504,8 +14508,8 @@ function renderBasicsContentHTML() {
       </div>
       <div class="basics-pinyin-grid">
         ${ZH_BASICS_DATA.initials
-          .map(
-            (item) => `
+        .map(
+          (item) => `
           <div class="basics-pinyin-card" onclick="speakChinese('${item.audioText || item.char}')" title="Bấm để nghe phát âm">
             <div class="basics-pinyin-top">
               <span class="basics-pinyin-char">${item.char}</span>
@@ -14515,8 +14519,8 @@ function renderBasicsContentHTML() {
             <div class="basics-pinyin-tip">${item.tip}</div>
           </div>
         `
-          )
-          .join("")}
+        )
+        .join("")}
       </div>
     `;
   } else if (currentBasicsSubTab === "finals") {
@@ -14526,8 +14530,8 @@ function renderBasicsContentHTML() {
       </div>
       <div class="basics-pinyin-grid">
         ${ZH_BASICS_DATA.finals
-          .map(
-            (item) => `
+        .map(
+          (item) => `
           <div class="basics-pinyin-card" onclick="speakChinese('${item.char}')" title="Bấm để nghe phát âm">
             <div class="basics-pinyin-top">
               <span class="basics-pinyin-char">${item.char}</span>
@@ -14536,16 +14540,16 @@ function renderBasicsContentHTML() {
             <div class="basics-pinyin-tip">${item.tip}</div>
           </div>
         `
-          )
-          .join("")}
+        )
+        .join("")}
       </div>
     `;
   } else if (currentBasicsSubTab === "tones") {
     html += `
       <div class="basics-tones-list">
         ${ZH_BASICS_DATA.tones
-          .map(
-            (item) => `
+        .map(
+          (item) => `
           <div class="basics-tone-card">
             <div class="basics-tone-header">
               <div class="basics-tone-badge">${item.symbol}</div>
@@ -14555,8 +14559,8 @@ function renderBasicsContentHTML() {
             <div class="basics-tone-desc" style="white-space: pre-line;">${item.desc}</div>
           </div>
         `
-          )
-          .join("")}
+        )
+        .join("")}
       </div>
     `;
   } else if (currentBasicsSubTab === "strokes") {
@@ -14566,16 +14570,16 @@ function renderBasicsContentHTML() {
       </div>
       <div class="basics-strokes-grid">
         ${ZH_BASICS_DATA.strokes
-          .map(
-            (item) => `
+        .map(
+          (item) => `
           <div class="basics-stroke-card">
             <div class="basics-stroke-char">${item.char}</div>
             <div class="basics-stroke-name">${item.name}</div>
             <div class="basics-stroke-desc">${item.desc}</div>
           </div>
         `
-          )
-          .join("")}
+        )
+        .join("")}
       </div>
     `;
   } else if (currentBasicsSubTab === "radicals") {
@@ -14585,8 +14589,8 @@ function renderBasicsContentHTML() {
       </div>
       <div class="basics-radicals-grid">
         ${ZH_BASICS_DATA.radicals
-          .map(
-            (item) => `
+        .map(
+          (item) => `
           <div class="basics-radical-card" onclick="speakChinese('${item.char}')">
             <div class="basics-radical-top">
               <span class="basics-radical-char">${item.char}</span>
@@ -14598,8 +14602,8 @@ function renderBasicsContentHTML() {
             <div class="basics-radical-example">Ví dụ: <strong>${item.example}</strong></div>
           </div>
         `
-          )
-          .join("")}
+        )
+        .join("")}
       </div>
     `;
   }
@@ -14627,14 +14631,14 @@ function renderBasicsSection() {
     </div>
     <div class="basics-subtab-bar">
       ${subTabs
-        .map(
-          (st) => `
+      .map(
+        (st) => `
         <button class="basics-subtab-btn ${currentBasicsSubTab === st.key ? "active" : ""}" data-sub-tab="${st.key}" onclick="switchBasicsSubTab('${st.key}')">
           <span>${st.icon}</span> ${st.label}
         </button>
       `
-        )
-        .join("")}
+      )
+      .join("")}
     </div>
     <div class="basics-content-panel">${renderBasicsContentHTML()}</div>
   `;
@@ -14743,9 +14747,8 @@ function renderVocabCard() {
 
       <div class="learn-card-meaning">${item.meaning}</div>
 
-      ${
-        item.example
-          ? `
+      ${item.example
+      ? `
       <div class="learn-card-example">
         <div class="learn-card-example-header">
           <div class="learn-card-example-label">Ví dụ minh họa</div>
@@ -14756,8 +14759,8 @@ function renderVocabCard() {
         <div class="learn-card-example-vi">${item.exampleVi || ""}</div>
       </div>
       `
-          : ""
-      }
+      : ""
+    }
     </div>
   `;
 }

@@ -2,8 +2,8 @@
   "name": "my-calendar",
   "version": "1.0.0",
   "description": "Lịch cá nhân & Quản lý công việc với Realtime Push Notification",
-  "main": "script.js",
   "scripts": {
+    "build": "echo 'Build completed'",
     "start": "serve ."
   },
   "dependencies": {

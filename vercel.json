@@ -4,6 +4,13 @@
     {
       "src": "api/**/*.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "**",
+      "use": "@vercel/static",
+      "config": {
+        "zeroConfig": true
+      }
     }
   ],
   "routes": [
@@ -12,11 +19,8 @@
       "dest": "/api/$1"
     },
     {
-      "handle": "filesystem"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/$1"
     }
   ]
 }

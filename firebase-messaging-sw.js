@@ -30,8 +30,8 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
 
             return self.registration.showNotification(title, {
                 body: bodyParts.join(" | ") || "Bạn có một sự kiện mới vừa được thêm",
-                icon: "./public/favicon.png",
-                badge: "./public/favicon.png",
+                icon: "/public/favicon.png",
+                badge: "/public/favicon.png",
                 tag: `event-${dateStr || payload.data?.eventId || Date.now()}`,
                 vibrate: [200, 100, 200],
                 data: {

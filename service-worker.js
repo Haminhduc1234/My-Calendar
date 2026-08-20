@@ -30,8 +30,8 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
 
             return self.registration.showNotification(title, {
                 body: bodyParts.join(" | ") || "Bạn có một sự kiện mới vừa được thêm",
-                icon: "./public/favicon.png",
-                badge: "./public/favicon.png",
+                icon: "/public/favicon.png",
+                badge: "/public/favicon.png",
                 tag: `event-${dateStr || payload.data?.eventId || Date.now()}`,
                 vibrate: [200, 100, 200],
                 data: {
@@ -45,7 +45,7 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
     }
 }
 
-const CACHE_NAME = "calendar-pwa-v5";
+const CACHE_NAME = "calendar-pwa-v6";
 const FILES_TO_CACHE = [
     "./",
     "./index.html",
@@ -71,8 +71,30 @@ self.addEventListener("install", e => {
 });
 
 self.addEventListener("fetch", e => {
+    // Không cache các request API hoặc Firebase
+    if (
+        e.request.url.includes("/api/") || 
+        e.request.url.includes("firestore") || 
+        e.request.url.includes("firebase") ||
+        e.request.method !== "GET"
+    ) {
+        return;
+    }
+
     e.respondWith(
-        caches.match(e.request).then(res => res || fetch(e.request))
+        fetch(e.request)
+            .then(response => {
+                if (response && response.status === 200 && response.type === 'basic') {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(e.request, responseClone);
+                    });
+                }
+                return response;
+            })
+            .catch(() => {
+                return caches.match(e.request);
+            })
     );
 });
 

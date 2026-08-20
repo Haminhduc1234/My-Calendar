@@ -3219,13 +3219,21 @@ async function requestNotificationPermissionAndRegisterToken(silent = false) {
     let swReg = null;
     if ("serviceWorker" in navigator) {
       try {
-        swReg = await navigator.serviceWorker.getRegistration();
-        if (!swReg || !swReg.active) {
-          await navigator.serviceWorker.register("./service-worker.js");
-          swReg = await navigator.serviceWorker.ready;
+        // Hủy đăng ký các service worker cũ hoặc xung đột (ví dụ firebase-messaging-sw.js)
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          const scriptURL = reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || "";
+          if (scriptURL && !scriptURL.includes("service-worker.js")) {
+            console.log("[SW] Hủy đăng ký service worker xung đột:", scriptURL);
+            await reg.unregister();
+          }
         }
+        
+        // Luôn đăng ký service-worker.js mới nhất
+        swReg = await navigator.serviceWorker.register("./service-worker.js");
+        await navigator.serviceWorker.ready;
       } catch (swErr) {
-        console.warn("[SW] Service worker ready check warning:", swErr);
+        console.warn("[SW] Lỗi cấu hình service worker:", swErr);
       }
     }
 

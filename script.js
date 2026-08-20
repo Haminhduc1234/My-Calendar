@@ -2656,6 +2656,7 @@ async function initFirebaseRealtime() {
   });
 
   // Listen for date data changes from Firebase
+  let isInitialDatesLoad = true;
   firebaseDatesRef.on("value", (dataSnapshot) => {
     const incoming = dataSnapshot.val() || {};
     const nextCache = {};
@@ -2675,6 +2676,27 @@ async function initFirebaseRealtime() {
         }),
       );
     });
+
+    // Phát hiện sự kiện mới từ thiết bị khác và bắn thông báo
+    if (!isInitialDatesLoad) {
+      Object.keys(nextCache).forEach((dKey) => {
+        const oldEvents = dateDataCache[dKey]?.events || [];
+        const newEvents = nextCache[dKey]?.events || [];
+        if (newEvents.length > oldEvents.length) {
+          newEvents.forEach((nEv) => {
+            const exists = oldEvents.some(
+              (oEv) =>
+                oEv.title === nEv.title &&
+                (oEv.eventDateTime === nEv.eventDateTime || oEv.createdAt === nEv.createdAt),
+            );
+            if (!exists && nEv.createdAt && Date.now() - nEv.createdAt < 120000) {
+              notifyNewEventFromRealtime(nEv, dKey);
+            }
+          });
+        }
+      });
+    }
+    isInitialDatesLoad = false;
 
     dateDataCache = nextCache;
 
@@ -2831,6 +2853,26 @@ async function reloadFirebaseForUser() {
         }),
       );
     });
+
+    if (!isFirstReloadLoad) {
+      Object.keys(nextCache).forEach((dKey) => {
+        const oldEvents = dateDataCache[dKey]?.events || [];
+        const newEvents = nextCache[dKey]?.events || [];
+        if (newEvents.length > oldEvents.length) {
+          newEvents.forEach((nEv) => {
+            const exists = oldEvents.some(
+              (oEv) =>
+                oEv.title === nEv.title &&
+                (oEv.eventDateTime === nEv.eventDateTime || oEv.createdAt === nEv.createdAt),
+            );
+            if (!exists && nEv.createdAt && Date.now() - nEv.createdAt < 120000) {
+              notifyNewEventFromRealtime(nEv, dKey);
+            }
+          });
+        }
+      });
+    }
+    isFirstReloadLoad = false;
 
     dateDataCache = nextCache;
 
@@ -3005,6 +3047,58 @@ function openEventDateFromPush(dateKey) {
   }
 }
 window.openEventDateFromPush = openEventDateFromPush;
+
+/**
+ * Xử lý bắn thông báo Realtime đa thiết bị (Hỗ trợ 100% gói miễn phí Spark)
+ */
+function notifyNewEventFromRealtime(eventData, dateKey) {
+  if (!eventData) return;
+  const title = eventData.title ? `🔔 ${eventData.title}` : "🔔 Sự kiện mới từ thiết bị khác";
+  const bodyParts = [];
+  if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+  if (eventData.eventDateTime) {
+    try {
+      const dt = new Date(eventData.eventDateTime);
+      if (!Number.isNaN(dt.getTime())) {
+        bodyParts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
+      }
+    } catch { }
+  }
+  if (eventData.text) bodyParts.push(eventData.text);
+  const body = bodyParts.join(" | ") || "Có sự kiện mới vừa được thêm từ thiết bị khác.";
+
+  // 1. Luôn hiển thị Toast Banner trên màn hình web
+  showAppPushToast(title, body, dateKey);
+
+  // 2. Nếu tab đang ở background / ẩn và người dùng đã cấp quyền, hiển thị System Notification qua Service Worker
+  if (document.visibilityState !== "visible" && "Notification" in window && Notification.permission === "granted") {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.showNotification(title, {
+          body: body,
+          icon: "./public/favicon.png",
+          badge: "./public/favicon.png",
+          tag: `event-${dateKey || Date.now()}`,
+          vibrate: [200, 100, 200],
+          data: {
+            url: `./?date=${dateKey}`,
+            dateKey: dateKey
+          }
+        });
+      }).catch(() => {
+        try {
+          new Notification(title, { body, icon: "./public/favicon.png" });
+        } catch (e) { }
+      });
+    }
+  }
+
+  // 3. Rung nếu thiết bị hỗ trợ
+  if ("vibrate" in navigator) {
+    try { navigator.vibrate([100, 50, 100]); } catch (e) { }
+  }
+}
+window.notifyNewEventFromRealtime = notifyNewEventFromRealtime;
 
 async function initFirebaseMessaging() {
   if (!("Notification" in window) || !("serviceWorker" in navigator)) {

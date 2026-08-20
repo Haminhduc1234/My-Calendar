@@ -2,6 +2,11 @@
   "rules": {
     ".read": false,
     ".write": false,
+    "users": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".indexOn": ["username", "upgradedFrom"]
+    },
     "calendarEvents": {
       "$profileKey": {
         ".read": "auth != null",

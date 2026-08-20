@@ -3111,7 +3111,7 @@ function notifyNewEventFromRealtime(eventData, dateKey) {
   const body = bodyParts.join(" | ") || "Có sự kiện mới vừa được thêm từ thiết bị khác.";
 
   // 1. Luôn hiển thị Toast Banner trên màn hình web
-  showAppPushToast(title, body, dateKey);
+  // showAppPushToast(title, body, dateKey);
 
   // 2. Phát chuông thông báo
   playNotificationChime();
@@ -3173,7 +3173,7 @@ async function initFirebaseMessaging() {
         const body = payload.notification?.body || payload.data?.text || payload.data?.body || "";
         const dateKey = payload.data?.dateKey || payload.data?.date || "";
 
-        showAppPushToast(title, body, dateKey);
+        // showAppPushToast(title, body, dateKey);
 
         // Vibrate nhẹ nếu hỗ trợ
         if ("vibrate" in navigator) {
@@ -3228,7 +3228,7 @@ async function requestNotificationPermissionAndRegisterToken(silent = false) {
             await reg.unregister();
           }
         }
-        
+
         // Luôn đăng ký service-worker.js mới nhất
         swReg = await navigator.serviceWorker.register("./service-worker.js");
         await navigator.serviceWorker.ready;

@@ -8,5 +8,8 @@
   },
   "dependencies": {
     "firebase-admin": "^12.7.0"
+  },
+  "allowScripts": {
+    "protobufjs": true
   }
 }

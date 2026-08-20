@@ -14180,3 +14180,131 @@ html {
     font-size: 16px !important;
   }
 }
+
+/* ==================== PUSH NOTIFICATION IN-APP TOAST ==================== */
+.app-push-toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+  max-width: 380px;
+  width: calc(100% - 40px);
+}
+
+.app-push-toast {
+  pointer-events: auto;
+  background: rgba(14, 25, 48, 0.95);
+  border: 1px solid rgba(86, 154, 255, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 20px rgba(56, 189, 248, 0.15);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #fff;
+  animation: appPushToastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.app-push-toast.hiding {
+  opacity: 0;
+  transform: translateX(50px) scale(0.95);
+}
+
+@keyframes appPushToastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.app-push-toast-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.app-push-toast-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.app-push-toast-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 3px;
+  line-height: 1.3;
+}
+
+.app-push-toast-body {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.app-push-toast-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.app-push-toast-btn {
+  background: rgba(59, 130, 246, 0.25);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.app-push-toast-btn:hover {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.app-push-toast-close {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  transition: color 0.2s;
+}
+
+.app-push-toast-close:hover {
+  color: #cbd5e1;
+}
+
+@media (max-width: 600px) {
+  .app-push-toast-container {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    max-width: none;
+  }
+}

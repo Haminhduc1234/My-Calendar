@@ -711,6 +711,28 @@
             </button>
           </div>
 
+          <!-- Notification Settings Section -->
+          <div class="profile-notification-section" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line, rgba(255, 255, 255, 0.1));">
+            <h4 class="profile-section-title" style="margin-bottom: 8px;">Thông báo đẩy (Push Notifications)</h4>
+            <p style="font-size: 12px; color: var(--muted, #94a3b8); margin-bottom: 12px; line-height: 1.4;">
+              Nhận thông báo tức thì trên thiết bị này khi bạn hoặc thiết bị khác thêm sự kiện mới.
+            </p>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255, 255, 255, 0.04); padding: 12px; border-radius: 10px; border: 1px solid var(--line, rgba(255, 255, 255, 0.1));">
+              <div>
+                <div id="deviceNotifyStatus" style="font-size: 13px; font-weight: 600; color: var(--text, #fff);">Đang kiểm tra...</div>
+                <div id="deviceNotifyDesc" style="font-size: 11px; color: var(--muted, #94a3b8);">Chạm để bật nhận thông báo</div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" id="btnToggleNotification" class="btn-primary" onclick="toggleDeviceNotificationPermission()" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer;">
+                  Bật thông báo
+                </button>
+                <button type="button" id="btnTestNotification" class="btn-secondary" onclick="sendTestPushNotification()" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; display: none;">
+                  Thử nghiệm
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div class="profile-skeleton" id="profileSkeleton">
             <div class="skeleton-project">
               <div class="skeleton-project-title"></div>
@@ -2505,6 +2527,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
   <script src="public/my-music-library.js"></script>
   <script src="learn-en-data.js"></script>
   <script src="learn-zh-data.js"></script>

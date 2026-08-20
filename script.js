@@ -19,12 +19,17 @@ const LEGACY_CASHFLOW_STORAGE_KEY = "cashflowEntriesV1";
 const FIREBASE_CONFIG = self.FIREBASE_WEB_CONFIG || {};
 const FIREBASE_TRANSLATE_HISTORY_PATH =
   self.FIREBASE_TRANSLATE_HISTORY_PATH || "translateHistory";
+const FIREBASE_NOTIFICATION_TOKENS_PATH = "notificationTokens";
+const FIREBASE_EVENT_NOTIFICATION_QUEUE_PATH = "eventNotificationQueue";
+const DEVICE_ID_STORAGE_KEY = "calendarDeviceId";
 
 let firebaseDb = null;
 let firebaseDatesRef = null;
 let firebaseQuickNotesRef = null;
 let firebaseTranslateHistoryRef = null;
 let firebaseProfileSettingsRef = null;
+let firebaseMessaging = null;
+let isPushNotificationSubscribed = false;
 let firebaseReady = false;
 let firebaseAuth = null;
 let firebaseUsersRef = null;
@@ -702,6 +707,7 @@ function logoutAndStartFresh() {
   );
   if (!confirmed) return;
 
+  unregisterDeviceNotificationToken();
   localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
   localStorage.removeItem("calendarUsername");
   legacyProfileKey = "";
@@ -1224,6 +1230,7 @@ function openProfileSettingsModal() {
     settings.bio || ""
   ).length;
 
+  updateNotificationUIState();
   modal.style.display = "flex";
 }
 
@@ -2699,6 +2706,9 @@ async function initFirebaseRealtime() {
   // Initialize profile UI
   initProfileOnLoad();
 
+  // Initialize Firebase Cloud Messaging for Push Notifications
+  initFirebaseMessaging();
+
   // Realtime database initialized
   console.log("Firebase Realtime Database connected");
 }
@@ -2896,6 +2906,9 @@ async function reloadFirebaseForUser() {
   renderProjectsList();
   renderTranslateHistory();
 
+  // Re-sync Push Notification token for the new user profile
+  initFirebaseMessaging();
+
   console.log("[Firebase] Reload complete for user:", userProfileKey);
 }
 
@@ -2935,6 +2948,325 @@ function openAddEventModalForToday() {
     today.getFullYear(),
   );
 }
+
+/* ==================== PUSH NOTIFICATION & FCM MULTI-DEVICE ==================== */
+
+function getOrCreateDeviceId() {
+  let devId = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
+  if (!devId) {
+    devId = `dev_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+    localStorage.setItem(DEVICE_ID_STORAGE_KEY, devId);
+  }
+  return devId;
+}
+
+function showAppPushToast(title, body, dateKey) {
+  let container = document.getElementById("appPushToastContainer");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "appPushToastContainer";
+    container.className = "app-push-toast-container";
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement("div");
+  toast.className = "app-push-toast";
+  toast.innerHTML = `
+    <div class="app-push-toast-icon">🔔</div>
+    <div class="app-push-toast-content">
+      <div class="app-push-toast-title">${(title || "Sự kiện mới").replace(/</g, "&lt;")}</div>
+      <div class="app-push-toast-body">${(body || "").replace(/</g, "&lt;")}</div>
+      ${dateKey ? `<div class="app-push-toast-actions"><button type="button" class="app-push-toast-btn" onclick="openEventDateFromPush('${dateKey}')">Xem ngay</button></div>` : ""}
+    </div>
+    <button type="button" class="app-push-toast-close" aria-label="Đóng">&times;</button>
+  `;
+
+  const closeBtn = toast.querySelector(".app-push-toast-close");
+  const dismiss = () => {
+    toast.classList.add("hiding");
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 320);
+  };
+
+  closeBtn.onclick = dismiss;
+  container.appendChild(toast);
+
+  // Tự động đóng sau 6.5 giây
+  setTimeout(dismiss, 6500);
+}
+
+function openEventDateFromPush(dateKey) {
+  if (!dateKey) return;
+  const parts = dateKey.split("-").map(Number);
+  if (parts.length === 3) {
+    const [y, m, d] = parts;
+    openDayDetailsModal(dateKey, d, m, y);
+  }
+}
+window.openEventDateFromPush = openEventDateFromPush;
+
+async function initFirebaseMessaging() {
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    console.log("[FCM] Trình duyệt không hỗ trợ Web Push Notification.");
+    updateNotificationUIState();
+    return;
+  }
+
+  if (!window.firebase || !window.firebase.messaging) {
+    console.log("[FCM] Firebase messaging SDK chưa sẵn sàng.");
+    return;
+  }
+
+  try {
+    if (!firebaseMessaging) {
+      firebaseMessaging = window.firebase.messaging();
+
+      // Lắng nghe tin nhắn khi ứng dụng đang mở ở tab hiện tại (Foreground)
+      firebaseMessaging.onMessage((payload) => {
+        console.log("[FCM] Foreground message received:", payload);
+        const title = payload.notification?.title || payload.data?.title || "Sự kiện mới từ thiết bị khác";
+        const body = payload.notification?.body || payload.data?.text || payload.data?.body || "";
+        const dateKey = payload.data?.dateKey || payload.data?.date || "";
+
+        showAppPushToast(title, body, dateKey);
+
+        // Vibrate nhẹ nếu hỗ trợ
+        if ("vibrate" in navigator) {
+          try { navigator.vibrate([100, 50, 100]); } catch (e) { }
+        }
+      });
+    }
+
+    // Nếu người dùng đã cấp quyền, tự động đồng bộ token cho profile hiện tại
+    if (Notification.permission === "granted" && userProfileKey) {
+      await requestNotificationPermissionAndRegisterToken(true);
+    } else {
+      updateNotificationUIState();
+    }
+  } catch (err) {
+    console.error("[FCM] Lỗi khởi tạo Firebase Messaging:", err);
+  }
+}
+
+async function requestNotificationPermissionAndRegisterToken(silent = false) {
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+    if (!silent) alert("Trình duyệt của bạn không hỗ trợ nhận thông báo đẩy Web Push.");
+    updateNotificationUIState();
+    return false;
+  }
+
+  if (!userProfileKey) {
+    if (!silent) alert("Vui lòng đăng nhập để bật tính năng nhận thông báo trên thiết bị này.");
+    return false;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      if (!silent) {
+        alert("Quyền nhận thông báo chưa được cấp. Vui lòng cho phép trong cài đặt trình duyệt.");
+      }
+      updateNotificationUIState();
+      return false;
+    }
+
+    if (!firebaseMessaging && window.firebase?.messaging) {
+      firebaseMessaging = window.firebase.messaging();
+    }
+
+    if (!firebaseMessaging) {
+      if (!silent) alert("Chưa thể khởi tạo Firebase Messaging.");
+      return false;
+    }
+
+    // Lấy service worker registration
+    let swReg = await navigator.serviceWorker.getRegistration();
+    if (!swReg) {
+      swReg = await navigator.serviceWorker.register("./service-worker.js");
+    }
+
+    const vapidKey = FIREBASE_CONFIG.vapidKey || undefined;
+    const token = await firebaseMessaging.getToken({
+      vapidKey: vapidKey,
+      serviceWorkerRegistration: swReg
+    });
+
+    if (!token) {
+      if (!silent) alert("Không thể lấy FCM token. Vui lòng kiểm tra VAPID Key trong firebase-config.js.");
+      return false;
+    }
+
+    const deviceId = getOrCreateDeviceId();
+    const tokenData = {
+      token: token,
+      deviceId: deviceId,
+      userAgent: navigator.userAgent.slice(0, 200),
+      platform: navigator.platform || "",
+      updatedAt: Date.now()
+    };
+
+    if (firebaseDb && userProfileKey) {
+      await firebaseDb.ref(`${FIREBASE_NOTIFICATION_TOKENS_PATH}/${userProfileKey}/${deviceId}`).set(tokenData);
+    }
+
+    isPushNotificationSubscribed = true;
+    updateNotificationUIState();
+
+    if (!silent) {
+      showAppPushToast("Thông báo đã được bật!", "Thiết bị này sẽ nhận thông báo khi có sự kiện mới được thêm.", "");
+    }
+    return true;
+  } catch (err) {
+    console.error("[FCM] Lỗi đăng ký nhận thông báo:", err);
+    if (!silent) {
+      alert("Đã xảy ra lỗi khi đăng ký thông báo: " + (err.message || err));
+    }
+    updateNotificationUIState();
+    return false;
+  }
+}
+
+async function unregisterDeviceNotificationToken() {
+  const deviceId = getOrCreateDeviceId();
+  if (firebaseDb && userProfileKey && deviceId) {
+    try {
+      await firebaseDb.ref(`${FIREBASE_NOTIFICATION_TOKENS_PATH}/${userProfileKey}/${deviceId}`).remove();
+    } catch (e) {
+      console.warn("[FCM] Lỗi xóa token khỏi Firebase:", e);
+    }
+  }
+  isPushNotificationSubscribed = false;
+  updateNotificationUIState();
+}
+
+function updateNotificationUIState() {
+  const statusEl = document.getElementById("deviceNotifyStatus");
+  const descEl = document.getElementById("deviceNotifyDesc");
+  const btnToggle = document.getElementById("btnToggleNotification");
+  const btnTest = document.getElementById("btnTestNotification");
+
+  if (!statusEl || !btnToggle) return;
+
+  if (!("Notification" in window)) {
+    statusEl.textContent = "Không hỗ trợ";
+    statusEl.style.color = "#ef4444";
+    descEl.textContent = "Trình duyệt không hỗ trợ Web Push";
+    btnToggle.style.display = "none";
+    if (btnTest) btnTest.style.display = "none";
+    return;
+  }
+
+  const permission = Notification.permission;
+
+  if (permission === "denied") {
+    statusEl.textContent = "Bị chặn (Blocked)";
+    statusEl.style.color = "#ef4444";
+    descEl.textContent = "Bạn đã chặn quyền thông báo trong cài đặt trình duyệt";
+    btnToggle.textContent = "Bị chặn";
+    btnToggle.disabled = true;
+    btnToggle.style.opacity = "0.6";
+    if (btnTest) btnTest.style.display = "none";
+  } else if (permission === "granted") {
+    statusEl.textContent = "Đang hoạt động (Active)";
+    statusEl.style.color = "#10b981";
+    descEl.textContent = "Thiết bị này đang nhận thông báo cho tài khoản hiện tại";
+    btnToggle.textContent = "Tắt thông báo";
+    btnToggle.disabled = false;
+    btnToggle.style.opacity = "1";
+    btnToggle.className = "btn-secondary";
+    if (btnTest) btnTest.style.display = "inline-flex";
+  } else {
+    statusEl.textContent = "Chưa bật";
+    statusEl.style.color = "#f59e0b";
+    descEl.textContent = "Chạm để cấp quyền và bật nhận thông báo";
+    btnToggle.textContent = "Bật thông báo";
+    btnToggle.disabled = false;
+    btnToggle.style.opacity = "1";
+    btnToggle.className = "btn-primary";
+    if (btnTest) btnTest.style.display = "none";
+  }
+}
+
+async function toggleDeviceNotificationPermission() {
+  if (!("Notification" in window)) {
+    alert("Trình duyệt này không hỗ trợ Web Push Notification.");
+    return;
+  }
+
+  if (Notification.permission === "granted") {
+    const ok = confirm("Bạn có muốn tắt nhận thông báo trên thiết bị này?");
+    if (ok) {
+      await unregisterDeviceNotificationToken();
+      alert("Đã hủy nhận thông báo trên thiết bị này.");
+    }
+  } else {
+    await requestNotificationPermissionAndRegisterToken(false);
+  }
+}
+
+async function sendTestPushNotification() {
+  if (!userProfileKey) {
+    alert("Vui lòng đăng nhập trước khi thử nghiệm.");
+    return;
+  }
+
+  const testEvent = {
+    title: "Thông báo thử nghiệm",
+    text: "Hệ thống thông báo đẩy trên các thiết bị đang hoạt động rất tốt!",
+    eventDateTime: new Date().toISOString(),
+    createdAt: Date.now()
+  };
+
+  await queueEventNotification(testEvent, `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}`);
+  showAppPushToast("Đã gửi lệnh bắn thông báo thử nghiệm", "Các thiết bị cùng đăng nhập tài khoản sẽ nhận được thông báo sau vài giây.", "");
+}
+
+/**
+ * Ghi lệnh phát thông báo vào eventNotificationQueue trên Firebase Realtime Database
+ */
+async function queueEventNotification(eventData, dateKey) {
+  if (!firebaseDb || !userProfileKey || !eventData) return;
+
+  try {
+    const queueRef = firebaseDb.ref(`${FIREBASE_EVENT_NOTIFICATION_QUEUE_PATH}/${userProfileKey}`).push();
+    await queueRef.set({
+      eventData: {
+        title: String(eventData.title || "").trim(),
+        text: String(eventData.text || "").trim(),
+        eventDateTime: String(eventData.eventDateTime || ""),
+        createdAt: Number(eventData.createdAt || Date.now())
+      },
+      dateKey: String(dateKey || ""),
+      senderDeviceId: getOrCreateDeviceId(),
+      timestamp: Date.now()
+    });
+    console.log("[FCM] Đã gửi sự kiện vào hàng đợi thông báo:", dateKey);
+  } catch (err) {
+    console.warn("[FCM] Không thể ghi queue thông báo:", err);
+  }
+}
+
+/**
+ * Kiểm tra tham số URL (?date=YYYY-M-D) để tự động mở chi tiết ngày khi click từ thông báo
+ */
+function checkUrlParamsForDateNavigation() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const dateParam = params.get("date");
+    if (dateParam && /^\d{4}-\d{1,2}-\d{1,2}$/.test(dateParam)) {
+      setTimeout(() => {
+        const parts = dateParam.split("-").map(Number);
+        if (parts.length === 3) {
+          openDayDetailsModal(dateParam, parts[2], parts[1], parts[0]);
+        }
+      }, 500);
+    }
+  } catch (e) { }
+}
+
+window.toggleDeviceNotificationPermission = toggleDeviceNotificationPermission;
+window.sendTestPushNotification = sendTestPushNotification;
 
 /* ========================== MO-ĐAL ========================== */
 
@@ -3162,6 +3494,8 @@ function saveNewEvent() {
     updateEventInDate(selectedKey, selectedEventIndex, eventPayload);
   } else {
     addEventToDate(selectedKey, eventPayload);
+    // Bắn thông báo đẩy đến tất cả thiết bị cùng tài khoản
+    queueEventNotification(eventPayload, selectedKey);
   }
 
   loadCalendarOnDemand();
@@ -10175,6 +10509,10 @@ function formatCurrencyInput(input) {
 }
 
 function openCurrencyModal() {
+  try {
+    loadCountdownFromLocal();
+    checkUrlParamsForDateNavigation();
+  } catch (e) { }
   closeAllModals();
   document.getElementById("currencyModal").style.display = "flex";
   if (!window.currencyInitialized) {
@@ -14893,4 +15231,11 @@ function loadCountdownFromLocal() {
       startCountdownTimer();
     }
   } catch (e) { }
+}
+
+// Xử lý điều hướng đến ngày khi mở link từ Push Notification (?date=YYYY-M-D)
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", checkUrlParamsForDateNavigation);
+} else {
+  checkUrlParamsForDateNavigation();
 }

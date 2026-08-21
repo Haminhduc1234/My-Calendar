@@ -605,7 +605,16 @@ function dateKeyToIsoDate(dateKey) {
 }
 
 function getAllDateKeysFromCache() {
-  return Object.keys(dateDataCache).filter(isDateKey);
+  const keys = new Set(Object.keys(dateDataCache).filter(isDateKey));
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && isDateKey(k)) {
+        keys.add(k);
+      }
+    }
+  } catch (e) { }
+  return Array.from(keys);
 }
 
 function hashProfilePassword(password) {
@@ -1881,7 +1890,22 @@ function isDateRecordTrusted(raw) {
 }
 
 function getDateData(dateKey) {
-  if (dateDataCache[dateKey]) return normalizeDateData(dateDataCache[dateKey]);
+  if (!dateKey) {
+    return normalizeDateData({ events: [], overtimeHours: 0, cashflowEntries: [] });
+  }
+  if (dateDataCache[dateKey]) {
+    return normalizeDateData(dateDataCache[dateKey]);
+  }
+  try {
+    const raw = localStorage.getItem(dateKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        dateDataCache[dateKey] = normalizeDateData(parsed);
+        return dateDataCache[dateKey];
+      }
+    }
+  } catch (e) { }
   return normalizeDateData({
     events: [],
     overtimeHours: 0,
@@ -3070,7 +3094,8 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
   console.log("[NotificationNav] Điều hướng tới:", { type, dKey, eventData, targetUrl });
 
   if (type === "cashflow") {
-    if (typeof reloadCashflowEntriesFromCache === "function") reloadCashflowEntriesFromCache();
+    // 1. Tải danh sách giao dịch từ cache & local
+    reloadCashflowEntriesFromCache();
 
     let targetEntry = null;
     if (eventData) {
@@ -3078,12 +3103,18 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
         targetEntry = cashflowEntries.find((e) => e.id === eventData.id) || null;
       }
       if (!targetEntry && eventData.amount) {
-        targetEntry = cashflowEntries.find(
-          (e) =>
-            Number(e.amount) === Number(eventData.amount) &&
-            (!eventData.category || e.category === eventData.category)
-        ) || null;
+        targetEntry = cashflowEntries.find((e) => {
+          const matchAmt = Number(e.amount) === Number(eventData.amount);
+          const matchCat = !eventData.category || e.category === eventData.category;
+          const matchDate = !dateKey || e.date === normalizeIsoDateString(dateKey);
+          return matchAmt && matchCat && matchDate;
+        }) || null;
       }
+    }
+
+    if (!targetEntry && !eventData && dKey) {
+      const isoDate = normalizeIsoDateString(dKey) || dKey;
+      targetEntry = cashflowEntries.find((e) => e.date === isoDate) || null;
     }
 
     if (!targetEntry && eventData && (eventData.amount || eventData.category || eventData.text || eventData.title)) {
@@ -3099,6 +3130,16 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
         createdAt: Number(eventData.createdAt || Date.now()),
         updatedAt: Number(eventData.updatedAt || eventData.createdAt || Date.now())
       };
+      const targetDateKey = isoDateToDateKey(isoDate);
+      if (targetDateKey) {
+        const dData = getDateData(targetDateKey);
+        const exists = (dData.cashflowEntries || []).some((e) => e.id === targetEntry.id);
+        if (!exists) {
+          dData.cashflowEntries.push(targetEntry);
+          saveDateData(targetDateKey, dData);
+          reloadCashflowEntriesFromCache();
+        }
+      }
     }
 
     closeAllModals();
@@ -3723,17 +3764,37 @@ function checkUrlParamsForDateNavigation() {
     const params = new URLSearchParams(window.location.search);
     const dateParam = params.get("date");
     const actionParam = params.get("action");
+    const idParam = params.get("id");
+    const amountParam = params.get("amount");
+    const categoryParam = params.get("category");
+    const cashflowTypeParam = params.get("cashflowType");
+    const noteParam = params.get("note");
+    const titleParam = params.get("title");
 
-    if (!dateParam && !actionParam) return;
+    if (!dateParam && !actionParam && !idParam) return;
+
+    let eventData = null;
+    if (idParam || amountParam || categoryParam || cashflowTypeParam || noteParam || titleParam) {
+      eventData = {
+        id: idParam || "",
+        amount: Number(amountParam || 0),
+        category: categoryParam || "",
+        cashflowType: cashflowTypeParam || "",
+        text: noteParam || "",
+        note: noteParam || "",
+        title: titleParam || "",
+        date: dateParam || ""
+      };
+    }
 
     const executeNav = () => {
-      handleNotificationNavigation(actionParam, dateParam, null, window.location.href);
+      handleNotificationNavigation(actionParam, dateParam, eventData, window.location.href);
       try {
         window.history.replaceState({}, document.title, window.location.pathname);
       } catch (e) { }
     };
 
-    // Đợi 450ms để toàn bộ UI và dữ liệu calendar được tải xong
+    // Đợi một chút để toàn bộ UI và dữ liệu calendar/cashflow được nạp xong
     setTimeout(executeNav, 450);
   } catch (e) {
     console.warn("[UrlNav] Lỗi kiểm tra URL params:", e);
@@ -7711,11 +7772,12 @@ function getTodayIsoDate() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function openCashflowModal() {
+async function openCashflowModal() {
   closeAllModals();
   const modal = document.getElementById("cashflowModal");
+  if (!modal) return;
   const dateInput = document.getElementById("cashflowDate");
-  if (!dateInput.value) {
+  if (dateInput && !dateInput.value) {
     dateInput.value = getTodayIsoDate();
   }
 
@@ -7726,8 +7788,43 @@ function openCashflowModal() {
   updateCashflowCategoryDropdowns();
   syncCashflowFormMode();
   syncCashflowRangeFilterUI();
-  loadCashflowOnDemand();
   initCashflowImageUpload();
+
+  // 1. Tải tức thì từ cache / localStorage
+  reloadCashflowEntriesFromCache();
+  renderCashflowDashboard();
+
+  // 2. Nếu đã đăng nhập Firebase, fetch dữ liệu mới nhất từ server để đồng bộ và cập nhật danh sách
+  if (firebaseDb && userProfileKey) {
+    try {
+      const datesRef = firebaseDatesRef || firebaseDb.ref(`${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`);
+      const snap = await datesRef.once("value");
+      const remoteDates = snap.val() || {};
+      let updated = false;
+      Object.keys(remoteDates).forEach((dKey) => {
+        if (!isDateKey(dKey)) return;
+        if (!isDateRecordTrusted(remoteDates[dKey])) return;
+        dateDataCache[dKey] = normalizeDateData(remoteDates[dKey]);
+        localStorage.setItem(
+          dKey,
+          JSON.stringify({
+            __type: "date_data",
+            events: dateDataCache[dKey].events,
+            overtimeHours: dateDataCache[dKey].overtimeHours,
+            cashflowEntries: dateDataCache[dKey].cashflowEntries,
+            updatedAt: Date.now(),
+          })
+        );
+        updated = true;
+      });
+      if (updated && document.getElementById("cashflowModal") && document.getElementById("cashflowModal").style.display === "flex") {
+        reloadCashflowEntriesFromCache();
+        renderCashflowDashboard();
+      }
+    } catch (e) {
+      console.warn("[Cashflow] Lỗi fetch Firebase:", e);
+    }
+  }
 }
 
 function closeCashflowModal() {
@@ -8615,6 +8712,8 @@ function renderCashflowRecentList() {
     }
     row.addEventListener("click", () => {
       selectedCashflowId = entry.id;
+      activeQuickViewEntry = entry;
+      renderCashflowQuickView();
       openCashflowQuickViewModal();
       renderCashflowRecentList();
     });
@@ -8622,6 +8721,8 @@ function renderCashflowRecentList() {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         selectedCashflowId = entry.id;
+        activeQuickViewEntry = entry;
+        renderCashflowQuickView();
         openCashflowQuickViewModal();
         renderCashflowRecentList();
       }
@@ -8743,11 +8844,37 @@ function toggleCashflowRecentList() {
   renderCashflowRecentList();
 }
 
-function openCashflowAllTransactionsModal() {
+async function openCashflowAllTransactionsModal() {
   const modal = document.getElementById("cashflowAllTransactionsModal");
-  const listEl = document.getElementById("cashflowAllList");
-  if (!modal || !listEl) return;
+  if (!modal) return;
 
+  reloadCashflowEntriesFromCache();
+  renderCashflowAllTransactionsList();
+  modal.style.display = "flex";
+
+  if (firebaseDb && userProfileKey) {
+    try {
+      const datesRef = firebaseDatesRef || firebaseDb.ref(`${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`);
+      const snap = await datesRef.once("value");
+      const remoteDates = snap.val() || {};
+      let updated = false;
+      Object.keys(remoteDates).forEach((dKey) => {
+        if (!isDateKey(dKey)) return;
+        if (!isDateRecordTrusted(remoteDates[dKey])) return;
+        dateDataCache[dKey] = normalizeDateData(remoteDates[dKey]);
+        updated = true;
+      });
+      if (updated && modal.style.display === "flex") {
+        reloadCashflowEntriesFromCache();
+        renderCashflowAllTransactionsList();
+      }
+    } catch (e) { }
+  }
+}
+
+function renderCashflowAllTransactionsList() {
+  const listEl = document.getElementById("cashflowAllList");
+  if (!listEl) return;
   listEl.innerHTML = "";
 
   if (cashflowEntries.length === 0) {
@@ -8755,130 +8882,133 @@ function openCashflowAllTransactionsModal() {
     empty.className = "cashflow-all-empty";
     empty.innerText = "Chưa có giao dịch nào.";
     listEl.appendChild(empty);
-  } else {
-    const fragment = document.createDocumentFragment();
-    for (const entry of cashflowEntries) {
-      const row = document.createElement("div");
-      row.className = "cashflow-row";
-      row.tabIndex = 0;
-      row.setAttribute("role", "button");
-
-      const metaEl = document.createElement("div");
-      metaEl.className = "cashflow-row-meta";
-
-      const topLineEl = document.createElement("div");
-      topLineEl.className = "cashflow-row-topline";
-
-      const typeBadgeEl = document.createElement("span");
-      typeBadgeEl.className = `cashflow-row-type ${entry.type === "income" ? "is-income" : "is-expense"}`;
-      typeBadgeEl.innerText = getCashflowTypeLabel(entry.type);
-
-      const categoryBadgeEl = document.createElement("span");
-      categoryBadgeEl.className = "cashflow-row-category";
-      categoryBadgeEl.innerText = getCashflowCategoryLabel(entry.type, entry.category);
-
-      topLineEl.appendChild(typeBadgeEl);
-      topLineEl.appendChild(categoryBadgeEl);
-
-      const noteEl = document.createElement("div");
-      noteEl.className = "cashflow-row-note";
-      noteEl.innerText = entry.note || "Không có ghi chú";
-
-      const sublineEl = document.createElement("div");
-      sublineEl.className = "cashflow-row-subline";
-      sublineEl.innerText = `Ngày giao dịch: ${formatCashflowDate(entry.date)} • Cập nhật: ${formatTimestampForCsv(entry.updatedAt || entry.createdAt) || "Chưa rõ"}`;
-
-      metaEl.appendChild(topLineEl);
-
-      const amountEl = document.createElement("div");
-      amountEl.className = `cashflow-row-amount ${entry.type === "income" ? "is-income" : "is-expense"}`;
-      amountEl.innerText = `${entry.type === "income" ? "+" : "-"}${entry.amount.toLocaleString("vi-VN")} đ`;
-
-      const actionsEl = document.createElement("div");
-      actionsEl.className = "cashflow-row-actions";
-
-      const actionBtn = document.createElement("button");
-      actionBtn.className = "cashflow-action-btn";
-      actionBtn.type = "button";
-      actionBtn.title = "Tùy chọn";
-      actionBtn.setAttribute("aria-label", "Tùy chọn");
-      actionBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-        <circle cx="8" cy="3" r="1.5"/>
-        <circle cx="8" cy="8" r="1.5"/>
-        <circle cx="8" cy="13" r="1.5"/>
-      </svg>`;
-      actionBtn.addEventListener("click", (event) => {
-        event.stopPropagation();
-        toggleCashflowAction(actionBtn);
-      });
-
-      const dropdownEl = document.createElement("div");
-      dropdownEl.className = "cashflow-action-dropdown";
-
-      const editItem = document.createElement("button");
-      editItem.className = "cashflow-action-item";
-      editItem.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-      </svg> Sửa giao dịch`;
-      editItem.addEventListener("click", (event) => {
-        event.stopPropagation();
-        closeCashflowAllTransactionsModal();
-        startCashflowEdit(entry.id);
-        closeCashflowActionDropdown();
-      });
-
-      const deleteItem = document.createElement("button");
-      deleteItem.className = "cashflow-action-item danger";
-      deleteItem.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="3 6 5 6 21 6"/>
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-      </svg> Xóa giao dịch`;
-      deleteItem.addEventListener("click", (event) => {
-        event.stopPropagation();
-        removeCashflowEntry(entry.id);
-        closeCashflowAllTransactionsModal();
-        closeCashflowActionDropdown();
-      });
-
-      dropdownEl.appendChild(editItem);
-      dropdownEl.appendChild(deleteItem);
-      actionsEl.appendChild(actionBtn);
-      actionsEl.appendChild(dropdownEl);
-
-      row.appendChild(topLineEl);
-      row.appendChild(amountEl);
-      row.appendChild(actionsEl);
-      row.appendChild(noteEl);
-      row.appendChild(sublineEl);
-
-      if (entry.image && entry.image.trim() && entry.image.startsWith("data:")) {
-        const imageEl = document.createElement("img");
-        imageEl.className = "cashflow-row-image";
-        imageEl.src = entry.image;
-        imageEl.alt = "Ảnh mô tả";
-        imageEl.loading = "lazy";
-        row.appendChild(imageEl);
-      }
-
-      row.addEventListener("click", () => {
-        selectedCashflowId = entry.id;
-        openCashflowQuickViewModal();
-      });
-      row.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          selectedCashflowId = entry.id;
-          openCashflowQuickViewModal();
-        }
-      });
-
-      fragment.appendChild(row);
-    }
-    listEl.appendChild(fragment);
+    return;
   }
 
-  modal.style.display = "flex";
+  const fragment = document.createDocumentFragment();
+  for (const entry of cashflowEntries) {
+    const row = document.createElement("div");
+    row.className = "cashflow-row";
+    row.tabIndex = 0;
+    row.setAttribute("role", "button");
+
+    const metaEl = document.createElement("div");
+    metaEl.className = "cashflow-row-meta";
+
+    const topLineEl = document.createElement("div");
+    topLineEl.className = "cashflow-row-topline";
+
+    const typeBadgeEl = document.createElement("span");
+    typeBadgeEl.className = `cashflow-row-type ${entry.type === "income" ? "is-income" : "is-expense"}`;
+    typeBadgeEl.innerText = getCashflowTypeLabel(entry.type);
+
+    const categoryBadgeEl = document.createElement("span");
+    categoryBadgeEl.className = "cashflow-row-category";
+    categoryBadgeEl.innerText = getCashflowCategoryLabel(entry.type, entry.category);
+
+    topLineEl.appendChild(typeBadgeEl);
+    topLineEl.appendChild(categoryBadgeEl);
+
+    const noteEl = document.createElement("div");
+    noteEl.className = "cashflow-row-note";
+    noteEl.innerText = entry.note || "Không có ghi chú";
+
+    const sublineEl = document.createElement("div");
+    sublineEl.className = "cashflow-row-subline";
+    sublineEl.innerText = `Ngày giao dịch: ${formatCashflowDate(entry.date)} • Cập nhật: ${formatTimestampForCsv(entry.updatedAt || entry.createdAt) || "Chưa rõ"}`;
+
+    metaEl.appendChild(topLineEl);
+
+    const amountEl = document.createElement("div");
+    amountEl.className = `cashflow-row-amount ${entry.type === "income" ? "is-income" : "is-expense"}`;
+    amountEl.innerText = `${entry.type === "income" ? "+" : "-"}${entry.amount.toLocaleString("vi-VN")} đ`;
+
+    const actionsEl = document.createElement("div");
+    actionsEl.className = "cashflow-row-actions";
+
+    const actionBtn = document.createElement("button");
+    actionBtn.className = "cashflow-action-btn";
+    actionBtn.type = "button";
+    actionBtn.title = "Tùy chọn";
+    actionBtn.setAttribute("aria-label", "Tùy chọn");
+    actionBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+      <circle cx="8" cy="3" r="1.5"/>
+      <circle cx="8" cy="8" r="1.5"/>
+      <circle cx="8" cy="13" r="1.5"/>
+    </svg>`;
+    actionBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      toggleCashflowAction(actionBtn);
+    });
+
+    const dropdownEl = document.createElement("div");
+    dropdownEl.className = "cashflow-action-dropdown";
+
+    const editItem = document.createElement("button");
+    editItem.className = "cashflow-action-item";
+    editItem.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg> Sửa giao dịch`;
+    editItem.addEventListener("click", (event) => {
+      event.stopPropagation();
+      closeCashflowAllTransactionsModal();
+      startCashflowEdit(entry.id);
+      closeCashflowActionDropdown();
+    });
+
+    const deleteItem = document.createElement("button");
+    deleteItem.className = "cashflow-action-item danger";
+    deleteItem.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="3 6 5 6 21 6"/>
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+    </svg> Xóa giao dịch`;
+    deleteItem.addEventListener("click", (event) => {
+      event.stopPropagation();
+      removeCashflowEntry(entry.id);
+      closeCashflowAllTransactionsModal();
+      closeCashflowActionDropdown();
+    });
+
+    dropdownEl.appendChild(editItem);
+    dropdownEl.appendChild(deleteItem);
+    actionsEl.appendChild(actionBtn);
+    actionsEl.appendChild(dropdownEl);
+
+    row.appendChild(topLineEl);
+    row.appendChild(amountEl);
+    row.appendChild(actionsEl);
+    row.appendChild(noteEl);
+    row.appendChild(sublineEl);
+
+    if (entry.image && entry.image.trim() && entry.image.startsWith("data:")) {
+      const imageEl = document.createElement("img");
+      imageEl.className = "cashflow-row-image";
+      imageEl.src = entry.image;
+      imageEl.alt = "Ảnh mô tả";
+      imageEl.loading = "lazy";
+      row.appendChild(imageEl);
+    }
+
+    row.addEventListener("click", () => {
+      selectedCashflowId = entry.id;
+      activeQuickViewEntry = entry;
+      renderCashflowQuickView();
+      openCashflowQuickViewModal();
+    });
+    row.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        selectedCashflowId = entry.id;
+        activeQuickViewEntry = entry;
+        renderCashflowQuickView();
+        openCashflowQuickViewModal();
+      }
+    });
+
+    fragment.appendChild(row);
+  }
+  listEl.appendChild(fragment);
 }
 
 function closeCashflowAllTransactionsModal() {
@@ -9345,6 +9475,14 @@ function renderCashflowQuickView() {
         <span class="cashflow-quickview-label">Mã giao dịch</span>
         <strong>${entry.id}</strong>
       </div>
+    </div>
+    <div class="cashflow-quickview-actions" style="display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; flex-wrap: wrap;">
+      <button type="button" class="btn-primary" style="padding: 7px 14px; font-size: 13px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px;" onclick="closeCashflowQuickViewModal(); openCashflowModal();">
+        📊 Xem Dashboard Thu Chi
+      </button>
+      <button type="button" class="btn-secondary" style="padding: 7px 14px; font-size: 13px; border-radius: 8px;" onclick="closeCashflowQuickViewModal();">
+        Đóng
+      </button>
     </div>
   `;
 }

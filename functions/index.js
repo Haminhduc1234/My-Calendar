@@ -74,7 +74,7 @@ async function sendNotificationToProfile(profileKey, eventData, dateKey = "", ex
   if (type === "cashflow") {
     const isExpense = eventData.cashflowType === "expense";
     title = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
-    targetUrl = dateKey ? `/?action=cashflow&date=${dateKey}` : "/?action=cashflow";
+    targetUrl = `/?action=cashflow&id=${encodeURIComponent(eventData.id || "")}&date=${encodeURIComponent(dateKey || "")}&amount=${encodeURIComponent(eventData.amount || "")}&category=${encodeURIComponent(eventData.category || "")}&cashflowType=${encodeURIComponent(eventData.cashflowType || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}`;
   } else if (type === "fund_allocation") {
     title = "📊 Phân bổ quỹ mới";
     targetUrl = "/?action=funds";

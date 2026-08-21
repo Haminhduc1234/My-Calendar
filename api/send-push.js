@@ -83,7 +83,7 @@ module.exports = async (req, res) => {
       if (eventData.category) bodyParts.push(eventData.category);
       if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
       if (eventData.text) bodyParts.push(eventData.text);
-      targetUrl = dateKey ? `/?action=cashflow&date=${dateKey}` : "/?action=cashflow";
+      targetUrl = `/?action=cashflow&id=${encodeURIComponent(eventData.id || "")}&date=${encodeURIComponent(dateKey || "")}&amount=${encodeURIComponent(eventData.amount || "")}&category=${encodeURIComponent(eventData.category || "")}&cashflowType=${encodeURIComponent(eventData.cashflowType || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}`;
     } else if (type === "fund_allocation") {
       title = "📊 Phân bổ quỹ mới";
       if (eventData.fundName) bodyParts.push(`Quỹ: ${eventData.fundName}`);

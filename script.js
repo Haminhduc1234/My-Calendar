@@ -3092,58 +3092,81 @@ window.openEventDateFromPush = openEventDateFromPush;
 /**
  * Xử lý bắn thông báo Realtime đa thiết bị (Hỗ trợ 100% gói miễn phí Spark)
  */
-function notifyNewEventFromRealtime(eventData, dateKey) {
+function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
   if (!eventData) return;
   if (localStorage.getItem("calendarDevicePushEnabled") === "0") return;
 
-  const title = eventData.title ? `🔔 ${eventData.title}` : "🔔 Sự kiện mới từ thiết bị khác";
+  const type = notificationType || "event";
+  let title = "";
   const bodyParts = [];
-  if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
-  if (eventData.eventDateTime) {
-    try {
-      const dt = new Date(eventData.eventDateTime);
-      if (!Number.isNaN(dt.getTime())) {
-        bodyParts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
-      }
-    } catch { }
+  let notificationUrl = "./";
+  let notificationTag = "";
+
+  if (type === "cashflow") {
+    const isExpense = eventData.cashflowType === "expense";
+    title = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
+    if (eventData.category) bodyParts.push(eventData.category);
+    if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
+    if (eventData.text) bodyParts.push(eventData.text);
+    notificationUrl = "./?action=cashflow";
+    notificationTag = `cashflow-${Date.now()}`;
+  } else if (type === "fund_allocation") {
+    title = "📊 Phân bổ quỹ mới";
+    if (eventData.fundName) bodyParts.push(`Quỹ: ${eventData.fundName}`);
+    if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
+    if (eventData.text) bodyParts.push(eventData.text);
+    notificationUrl = "./?action=funds";
+    notificationTag = `fund-${Date.now()}`;
+  } else {
+    // event (mặc định)
+    title = eventData.title ? `🔔 ${eventData.title}` : "🔔 Sự kiện mới từ thiết bị khác";
+    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+    if (eventData.eventDateTime) {
+      try {
+        const dt = new Date(eventData.eventDateTime);
+        if (!Number.isNaN(dt.getTime())) {
+          bodyParts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
+        }
+      } catch { }
+    }
+    if (eventData.text) bodyParts.push(eventData.text);
+    notificationUrl = `./?date=${dateKey}`;
+    notificationTag = `event-${dateKey || Date.now()}`;
   }
-  if (eventData.text) bodyParts.push(eventData.text);
-  const body = bodyParts.join(" | ") || "Có sự kiện mới vừa được thêm từ thiết bị khác.";
 
-  // 1. Luôn hiển thị Toast Banner trên màn hình web
-  // showAppPushToast(title, body, dateKey);
+  const body = bodyParts.join(" | ") || "Có cập nhật mới từ thiết bị khác.";
 
-  // 2. Phát chuông thông báo
+  // 1. Phát chuông thông báo
   playNotificationChime();
 
-  // 3. Hiển thị System Notification qua Service Worker hoặc Notification API
+  // 2. Hiển thị System Notification qua Service Worker hoặc Notification API
   if ("Notification" in window && Notification.permission === "granted") {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.ready.then((reg) => {
         reg.showNotification(title, {
           body: body,
-          icon: "./public/favicon.png",
-          badge: "./public/favicon.png",
-          tag: `event-${dateKey || Date.now()}`,
+          icon: "/public/favicon.png",
+          badge: "/public/favicon.png",
+          tag: notificationTag,
           vibrate: [200, 100, 200],
           data: {
-            url: `./?date=${dateKey}`,
+            url: notificationUrl,
             dateKey: dateKey
           }
         });
       }).catch(() => {
         try {
-          new Notification(title, { body, icon: "./public/favicon.png" });
+          new Notification(title, { body, icon: "/public/favicon.png" });
         } catch (e) { }
       });
     } else {
       try {
-        new Notification(title, { body, icon: "./public/favicon.png" });
+        new Notification(title, { body, icon: "/public/favicon.png" });
       } catch (e) { }
     }
   }
 
-  // 4. Rung nếu thiết bị hỗ trợ
+  // 3. Rung nếu thiết bị hỗ trợ
   if ("vibrate" in navigator) {
     try { navigator.vibrate([100, 50, 100]); } catch (e) { }
   }
@@ -3438,22 +3461,30 @@ function setupNotificationQueueListener() {
       // Nếu sự kiện được gửi từ tab khác hoặc thiết bị khác
       if (data.senderSessionId !== mySessionId) {
         console.log("[NotificationQueue] Nhận thông báo từ thiết bị/tab khác:", data);
-        notifyNewEventFromRealtime(data.eventData, data.dateKey);
+        notifyNewEventFromRealtime(data.eventData, data.dateKey, data.notificationType);
       }
     });
 }
 window.setupNotificationQueueListener = setupNotificationQueueListener;
 
-async function queueEventNotification(eventData, dateKey) {
+async function queueEventNotification(eventData, dateKey, notificationType) {
   if (!userProfileKey || !eventData) return;
 
+  const type = notificationType || "event";
   const payload = {
     profileKey: userProfileKey,
+    notificationType: type,
     eventData: {
       title: String(eventData.title || "").trim(),
       text: String(eventData.text || "").trim(),
       eventDateTime: String(eventData.eventDateTime || ""),
-      createdAt: Number(eventData.createdAt || Date.now())
+      createdAt: Number(eventData.createdAt || Date.now()),
+      // Dữ liệu bổ sung cho cashflow
+      cashflowType: String(eventData.cashflowType || ""),
+      category: String(eventData.category || ""),
+      amount: Number(eventData.amount || 0),
+      // Dữ liệu bổ sung cho fund allocation
+      fundName: String(eventData.fundName || "")
     },
     dateKey: String(dateKey || ""),
     senderSessionId: getOrCreateTabSessionId(),
@@ -3466,7 +3497,7 @@ async function queueEventNotification(eventData, dateKey) {
     try {
       const queueRef = firebaseDb.ref(`${FIREBASE_EVENT_NOTIFICATION_QUEUE_PATH}/${userProfileKey}`).push();
       await queueRef.set(payload);
-      console.log("[NotificationQueue] Đã ghi sự kiện vào RTDB queue:", dateKey);
+      console.log(`[NotificationQueue] Đã ghi ${type} vào RTDB queue:`, dateKey);
     } catch (err) {
       console.warn("[NotificationQueue] Lỗi ghi RTDB queue:", err);
     }
@@ -3490,12 +3521,31 @@ async function queueEventNotification(eventData, dateKey) {
 }
 
 /**
- * Kiểm tra tham số URL (?date=YYYY-M-D) để tự động mở chi tiết ngày khi click từ thông báo
+ * Kiểm tra tham số URL (?date=YYYY-M-D hoặc ?action=cashflow|funds) để tự động mở chi tiết khi click từ thông báo
  */
 function checkUrlParamsForDateNavigation() {
   try {
     const params = new URLSearchParams(window.location.search);
     const dateParam = params.get("date");
+    const actionParam = params.get("action");
+
+    if (actionParam === "cashflow") {
+      setTimeout(() => {
+        if (typeof openCashflowModal === "function") openCashflowModal();
+      }, 800);
+      // Xóa param khỏi URL để không mở lại khi reload
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    if (actionParam === "funds") {
+      setTimeout(() => {
+        if (typeof openFundsModal === "function") openFundsModal();
+      }, 800);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
     if (dateParam && /^\d{4}-\d{1,2}-\d{1,2}$/.test(dateParam)) {
       setTimeout(() => {
         const parts = dateParam.split("-").map(Number);
@@ -7450,6 +7500,16 @@ function addCashflowEntry() {
     const data = getDateData(targetDateKey);
     data.cashflowEntries.push(entry);
     saveDateData(targetDateKey, data);
+
+    // Bắn thông báo đẩy đến tất cả thiết bị cùng tài khoản
+    queueEventNotification({
+      title: type === "expense" ? "Chi tiêu mới" : "Thu nhập mới",
+      text: note || "",
+      cashflowType: type,
+      category: category,
+      amount: amount,
+      createdAt: Date.now()
+    }, targetDateKey, "cashflow");
   }
 
   reloadCashflowEntriesFromCache();
@@ -10476,6 +10536,16 @@ function confirmAllocate() {
 
   fundsData.allocations.push(allocation);
   saveFundsToFirebase();
+
+  // Bắn thông báo đẩy đến tất cả thiết bị cùng tài khoản
+  const fund = fundsData.funds.find((f) => f.id === fundId);
+  queueEventNotification({
+    title: "Phân bổ quỹ mới",
+    text: `Đã phân bổ ${amount.toLocaleString("vi-VN")} đ`,
+    fundName: fund ? fund.name : "",
+    amount: amount,
+    createdAt: Date.now()
+  }, "", "fund_allocation");
 
   // Update UI
   amountInput.value = "";

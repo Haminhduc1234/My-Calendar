@@ -37,7 +37,7 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { profileKey, eventData, dateKey, senderDeviceId } = req.body || {};
+    const { profileKey, eventData, dateKey, senderDeviceId, notificationType } = req.body || {};
 
     if (!profileKey || !eventData) {
       return res.status(400).json({ error: "Thiếu profileKey hoặc eventData." });
@@ -71,19 +71,42 @@ module.exports = async (req, res) => {
       });
     }
 
-    const title = eventData.title ? `🔔 ${eventData.title}` : "🔔 Sự kiện mới từ thiết bị khác";
+    // Xây dựng title, body, url tùy theo notificationType
+    const type = notificationType || "event";
+    let title = "";
     const bodyParts = [];
-    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
-    if (eventData.eventDateTime) {
-      try {
-        const dt = new Date(eventData.eventDateTime);
-        if (!Number.isNaN(dt.getTime())) {
-          bodyParts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
-        }
-      } catch (e) {}
+    let targetUrl = "/";
+
+    if (type === "cashflow") {
+      const isExpense = eventData.cashflowType === "expense";
+      title = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
+      if (eventData.category) bodyParts.push(eventData.category);
+      if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
+      if (eventData.text) bodyParts.push(eventData.text);
+      targetUrl = "/?action=cashflow";
+    } else if (type === "fund_allocation") {
+      title = "📊 Phân bổ quỹ mới";
+      if (eventData.fundName) bodyParts.push(`Quỹ: ${eventData.fundName}`);
+      if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
+      if (eventData.text) bodyParts.push(eventData.text);
+      targetUrl = "/?action=funds";
+    } else {
+      // event (mặc định)
+      title = eventData.title ? `🔔 ${eventData.title}` : "🔔 Sự kiện mới từ thiết bị khác";
+      if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+      if (eventData.eventDateTime) {
+        try {
+          const dt = new Date(eventData.eventDateTime);
+          if (!Number.isNaN(dt.getTime())) {
+            bodyParts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
+          }
+        } catch (e) {}
+      }
+      if (eventData.text) bodyParts.push(eventData.text);
+      targetUrl = `/?date=${dateKey || ""}`;
     }
-    if (eventData.text) bodyParts.push(eventData.text);
-    const body = bodyParts.join(" | ") || "Bạn có một sự kiện mới.";
+
+    const body = bodyParts.join(" | ") || "Có cập nhật mới từ thiết bị khác.";
 
     const message = {
       tokens: tokens,
@@ -94,12 +117,13 @@ module.exports = async (req, res) => {
       data: {
         title: title,
         body: body,
+        notificationType: type,
         dateKey: String(dateKey || ""),
-        url: `/?date=${dateKey || ""}`
+        url: targetUrl
       },
       webpush: {
         fcmOptions: {
-          link: `/?date=${dateKey || ""}`
+          link: targetUrl
         },
         notification: {
           icon: "/public/favicon.png",
@@ -110,7 +134,7 @@ module.exports = async (req, res) => {
     };
 
     const response = await admin.messaging().sendEachForMulticast(message);
-    console.log(`[API Push] Đã gửi ${response.successCount} thông báo thành công, ${response.failureCount} thất bại.`);
+    console.log(`[API Push] Đã gửi ${response.successCount} thông báo (${type}) thành công, ${response.failureCount} thất bại.`);
 
     return res.status(200).json({
       success: true,

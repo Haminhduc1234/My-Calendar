@@ -3472,9 +3472,9 @@ async function queueEventNotification(eventData, dateKey) {
     }
   }
 
-  // 2. Gọi Serverless Endpoint /api/send-push (gửi FCM đánh thức các thiết bị đang đóng app)
+  // 2. Gọi Serverless Endpoint /api/send-push.js (gửi FCM đánh thức các thiết bị đang đóng app)
   try {
-    fetch("/api/send-push", {
+    fetch("/api/send-push.js", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)

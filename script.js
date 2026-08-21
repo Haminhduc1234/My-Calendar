@@ -74,6 +74,7 @@ function getOpenModalId() {
     "projectFormModal",
     "taskFormModal",
     "cashflowQuickViewModal",
+    "eventQuickViewModal",
     "cashflowCategoryModal",
   ];
   for (const id of modalIds) {
@@ -2960,12 +2961,15 @@ function closeAllModals() {
   const modals = [
     "addEventModal",
     "dayDetailsModal",
+    "eventQuickViewModal",
     "overtimeModal",
     "goldModal",
     "quickNoteModal",
     "myMusicModal",
     "cashflowModal",
+    "cashflowQuickViewModal",
     "cashflowDeleteConfirmModal",
+    "cashflowAllTransactionsModal",
     "currencyModal",
     "fundsModal",
     "fundModal",
@@ -3066,50 +3070,96 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
   console.log("[NotificationNav] Điều hướng tới:", { type, dKey, eventData, targetUrl });
 
   if (type === "cashflow") {
-    if (typeof openCashflowModal === "function") {
+    if (typeof reloadCashflowEntriesFromCache === "function") reloadCashflowEntriesFromCache();
+
+    let targetEntry = null;
+    if (eventData) {
+      if (eventData.id) {
+        targetEntry = cashflowEntries.find((e) => e.id === eventData.id) || null;
+      }
+      if (!targetEntry && eventData.amount) {
+        targetEntry = cashflowEntries.find(
+          (e) =>
+            Number(e.amount) === Number(eventData.amount) &&
+            (!eventData.category || e.category === eventData.category)
+        ) || null;
+      }
+    }
+
+    if (!targetEntry && eventData && (eventData.amount || eventData.category || eventData.text || eventData.title)) {
+      const isoDate = normalizeIsoDateString(eventData.date || dateKey || getTodayIsoDate());
+      targetEntry = {
+        id: eventData.id || `cf-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        date: isoDate,
+        type: eventData.cashflowType || (eventData.title?.includes("Thu nhập") ? "income" : "expense"),
+        category: eventData.category || "Ăn uống",
+        amount: Number(eventData.amount || 0),
+        note: eventData.text || eventData.note || "",
+        image: eventData.image || "",
+        createdAt: Number(eventData.createdAt || Date.now()),
+        updatedAt: Number(eventData.updatedAt || eventData.createdAt || Date.now())
+      };
+    }
+
+    closeAllModals();
+    if (targetEntry) {
+      activeQuickViewEntry = targetEntry;
+      selectedCashflowId = targetEntry.id;
+      renderCashflowQuickView();
+      openCashflowQuickViewModal();
+    } else {
       openCashflowModal();
       if (dKey) {
         const isoDate = dateKeyToIsoDate(dKey) || dKey;
         const dateInput = document.getElementById("cashflowDate");
         if (dateInput) dateInput.value = isoDate;
       }
-      if (eventData) {
-        if (eventData.cashflowType) {
-          const typeInput = document.getElementById("cashflowType");
-          if (typeInput) {
-            typeInput.value = eventData.cashflowType === "income" ? "income" : "expense";
-            if (typeof syncCashflowFormMode === "function") syncCashflowFormMode();
-          }
-        }
-        if (eventData.category) {
-          const categoryInput = document.getElementById("cashflowCategory");
-          if (categoryInput) categoryInput.value = eventData.category;
-        }
-      }
-      if (typeof reloadCashflowEntriesFromCache === "function") reloadCashflowEntriesFromCache();
-      if (typeof renderCashflowDashboard === "function") renderCashflowDashboard();
     }
-  } else if (type === "fund_allocation" || type === "funds") {
+    return;
+  }
+
+  if (type === "fund_allocation" || type === "funds") {
     if (typeof openFundsModal === "function") {
       openFundsModal();
     }
-  } else {
-    // Event (sự kiện lịch)
-    const targetKey = isoDateToDateKey(dKey) || dKey;
+    return;
+  }
+
+  // Event (sự kiện lịch)
+  const targetKey = isoDateToDateKey(dKey) || dKey;
+  const parts = targetKey ? targetKey.split("-").map(Number) : [];
+
+  if (eventData && (eventData.title || eventData.text)) {
     if (targetKey) {
-      const parts = targetKey.split("-").map(Number);
-      if (parts.length === 3) {
-        if (typeof openDayDetailsModal === "function") {
-          openDayDetailsModal(targetKey, parts[2], parts[1], parts[0]);
-        }
-      }
-    } else {
-      const now = new Date();
-      const todayKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-      if (typeof openDayDetailsModal === "function") {
-        openDayDetailsModal(todayKey, now.getDate(), now.getMonth() + 1, now.getFullYear());
+      const currentData = getDateData(targetKey);
+      const exists = (currentData.events || []).some(
+        (ev) => ev.title === eventData.title && (ev.eventDateTime === eventData.eventDateTime || ev.createdAt === eventData.createdAt)
+      );
+      if (!exists) {
+        currentData.events.push({
+          title: eventData.title || "",
+          text: eventData.text || "",
+          eventDateTime: eventData.eventDateTime || "",
+          color: eventData.color || EVENT_COLOR_DEFAULT,
+          createdAt: eventData.createdAt || Date.now()
+        });
+        saveDateData(targetKey, currentData);
       }
     }
+    closeAllModals();
+    openEventQuickViewModal(eventData, targetKey, -1);
+    if (parts.length === 3) {
+      selectedKey = targetKey;
+    }
+    return;
+  }
+
+  if (targetKey && parts.length === 3) {
+    openDayDetailsModal(targetKey, parts[2], parts[1], parts[0]);
+  } else {
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+    openDayDetailsModal(todayKey, now.getDate(), now.getMonth() + 1, now.getFullYear());
   }
 }
 window.handleNotificationNavigation = handleNotificationNavigation;
@@ -3615,14 +3665,19 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
     profileKey: userProfileKey,
     notificationType: type,
     eventData: {
+      id: String(eventData.id || ""),
       title: String(eventData.title || "").trim(),
-      text: String(eventData.text || "").trim(),
+      text: String(eventData.text || eventData.note || "").trim(),
+      note: String(eventData.note || eventData.text || "").trim(),
+      date: String(eventData.date || dateKey || ""),
       eventDateTime: String(eventData.eventDateTime || ""),
+      color: String(eventData.color || EVENT_COLOR_DEFAULT),
       createdAt: Number(eventData.createdAt || Date.now()),
       // Dữ liệu bổ sung cho cashflow
       cashflowType: String(eventData.cashflowType || ""),
       category: String(eventData.category || ""),
       amount: Number(eventData.amount || 0),
+      image: String(eventData.image || ""),
       // Dữ liệu bổ sung cho fund allocation
       fundName: String(eventData.fundName || "")
     },
@@ -3793,13 +3848,11 @@ function toggleDayHoliday() {
 }
 
 // Day Details Modal - shows events list and overtime editor
-function openDayDetailsModal(dateKey, d, m, y) {
-  closeAllModals();
-  selectedKey = dateKey;
-  const data = getDateData(dateKey);
-
-  document.getElementById("dayDetailsDate").innerText = `${d}/${m}/${y}`;
-  document.getElementById("dayOvertimeHours").value = data.overtimeHours || 0;
+function renderDayDetailsModalUI(dateKey, d, m, y, data) {
+  const dateEl = document.getElementById("dayDetailsDate");
+  if (dateEl) dateEl.innerText = `${d}/${m}/${y}`;
+  const otEl = document.getElementById("dayOvertimeHours");
+  if (otEl) otEl.value = data.overtimeHours || 0;
 
   const holidayCheckbox = document.getElementById("dayIsHoliday");
   if (holidayCheckbox) {
@@ -3808,14 +3861,16 @@ function openDayDetailsModal(dateKey, d, m, y) {
 
   // Render events list
   const eventsList = document.getElementById("dayEventsList");
+  if (!eventsList) return;
   eventsList.innerHTML = "";
 
-  if (data.events.length === 0) {
+  if (!data.events || data.events.length === 0) {
     eventsList.innerHTML = '<div class="no-events">Chưa có sự kiện</div>';
   } else {
     data.events.forEach((event, idx) => {
       const eventDiv = document.createElement("div");
       eventDiv.className = "event-item";
+      eventDiv.style.cursor = "pointer";
       const evColor = escapeHtml(event.color || EVENT_COLOR_DEFAULT);
       eventDiv.style.setProperty("--event-color", evColor);
       eventDiv.style.borderLeftColor = evColor;
@@ -3832,23 +3887,173 @@ function openDayDetailsModal(dateKey, d, m, y) {
           ${event.text ? `<div class="event-text">${escapeHtml(event.text)}</div>` : ""}
         </div>
         <div class="event-actions">
-          <button class="event-edit" onclick="openEditEventModal(${idx})" title="Sửa" aria-label="Sửa sự kiện">
+          <button class="event-edit" onclick="event.stopPropagation(); openEditEventModal(${idx})" title="Sửa" aria-label="Sửa sự kiện">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm17.71-10.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.09Z" />
             </svg>
           </button>
-          <button class="event-delete" onclick="deleteEventFromDateUI(${idx})" title="Xóa">×</button>
+          <button class="event-delete" onclick="event.stopPropagation(); deleteEventFromDateUI(${idx})" title="Xóa">×</button>
         </div>
       `;
+      // Click vào thẻ sự kiện để mở xem chi tiết sự kiện
+      eventDiv.onclick = (e) => {
+        if (e.target.closest(".event-actions")) return;
+        openEventQuickViewModal(event, dateKey, idx);
+      };
       eventsList.appendChild(eventDiv);
     });
   }
+}
 
+async function openDayDetailsModal(dateKey, d, m, y) {
+  closeAllModals();
+  selectedKey = dateKey;
+  const data = getDateData(dateKey);
+
+  renderDayDetailsModalUI(dateKey, d, m, y, data);
   document.getElementById("dayDetailsModal").style.display = "flex";
+
+  // Nếu đã đăng nhập Firebase, tự động fetch dữ liệu mới nhất từ server cho ngày này nếu cache đang trống hoặc cần đồng bộ
+  if (firebaseDb && userProfileKey) {
+    try {
+      const snap = await firebaseDb.ref(`${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates/${dateKey}`).once("value");
+      const remote = snap.val();
+      if (remote && isDateRecordTrusted(remote)) {
+        dateDataCache[dateKey] = normalizeDateData(remote);
+        localStorage.setItem(
+          dateKey,
+          JSON.stringify({
+            __type: "date_data",
+            events: dateDataCache[dateKey].events,
+            overtimeHours: dateDataCache[dateKey].overtimeHours,
+            cashflowEntries: dateDataCache[dateKey].cashflowEntries,
+            updatedAt: Date.now(),
+          })
+        );
+        if (selectedKey === dateKey && document.getElementById("dayDetailsModal") && document.getElementById("dayDetailsModal").style.display === "flex") {
+          renderDayDetailsModalUI(dateKey, d, m, y, dateDataCache[dateKey]);
+        }
+      }
+    } catch (e) {
+      console.warn("[DayDetails] Lỗi fetch Firebase ngày:", dateKey, e);
+    }
+  }
 }
 
 function closeDayDetailsModal() {
   document.getElementById("dayDetailsModal").style.display = "none";
+}
+
+/* ========================== EVENT QUICKVIEW MODAL ========================== */
+let currentQuickViewEvent = null;
+let currentQuickViewDateKey = "";
+let currentQuickViewIndex = -1;
+
+function openEventQuickViewModal(eventObj, dateKey, eventIndex = -1) {
+  if (!eventObj) return;
+  currentQuickViewEvent = eventObj;
+  currentQuickViewDateKey = dateKey || selectedKey || getTodayIsoDate();
+  currentQuickViewIndex = eventIndex;
+
+  renderEventQuickView(eventObj, currentQuickViewDateKey, eventIndex);
+
+  const modal = document.getElementById("eventQuickViewModal");
+  if (modal) {
+    modal.style.display = "flex";
+  }
+}
+window.openEventQuickViewModal = openEventQuickViewModal;
+
+function openEventQuickViewModalByIndex(idx) {
+  if (!selectedKey) return;
+  const data = getDateData(selectedKey);
+  if (data.events && data.events[idx]) {
+    openEventQuickViewModal(data.events[idx], selectedKey, idx);
+  }
+}
+window.openEventQuickViewModalByIndex = openEventQuickViewModalByIndex;
+
+function closeEventQuickViewModal() {
+  const modal = document.getElementById("eventQuickViewModal");
+  if (modal) modal.style.display = "none";
+  currentQuickViewEvent = null;
+}
+window.closeEventQuickViewModal = closeEventQuickViewModal;
+
+function renderEventQuickView(eventObj, dateKey, eventIndex) {
+  const quickViewEl = document.getElementById("eventQuickView");
+  if (!quickViewEl || !eventObj) return;
+
+  const color = eventObj.color || EVENT_COLOR_DEFAULT;
+  const title = eventObj.title || "(Không có tiêu đề)";
+  const note = eventObj.text || "Không có ghi chú thêm";
+
+  let timeStr = "Cả ngày";
+  let timeDetail = "--:--";
+  if (eventObj.eventDateTime) {
+    try {
+      const dt = new Date(eventObj.eventDateTime);
+      if (!Number.isNaN(dt.getTime())) {
+        timeStr = dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+        timeDetail = dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      }
+    } catch (e) { }
+  }
+
+  const parts = (dateKey || "").split("-").map(Number);
+  const formattedDate = parts.length === 3
+    ? `${String(parts[2]).padStart(2, "0")}/${String(parts[1]).padStart(2, "0")}/${parts[0]}`
+    : (formatCashflowDate(dateKey) || dateKey);
+
+  const createdLabel = eventObj.createdAt
+    ? (typeof formatTimestampForCsv === "function" ? formatTimestampForCsv(eventObj.createdAt) : new Date(eventObj.createdAt).toLocaleString("vi-VN"))
+    : "Chưa rõ";
+
+  quickViewEl.innerHTML = `
+    <div class="cashflow-quickview-head">
+      <div>
+        <div class="cashflow-quickview-eyebrow">Xem nhanh sự kiện</div>
+        <div class="cashflow-quickview-title" style="border-left: 3px solid ${escapeHtml(color)}; padding-left: 8px;">
+          ${escapeHtml(title)}
+        </div>
+      </div>
+      <div class="cashflow-quickview-amount" style="color: ${escapeHtml(color)}; font-size: 14px;">
+        ⏰ ${timeStr}
+      </div>
+    </div>
+    <div class="cashflow-quickview-note">${escapeHtml(note)}</div>
+    <div class="cashflow-quickview-grid">
+      <div class="cashflow-quickview-item">
+        <span class="cashflow-quickview-label">Ngày sự kiện</span>
+        <strong>${formattedDate}</strong>
+      </div>
+      <div class="cashflow-quickview-item">
+        <span class="cashflow-quickview-label">Thời gian</span>
+        <strong>${timeDetail !== "--:--" ? timeDetail : timeStr}</strong>
+      </div>
+      <div class="cashflow-quickview-item">
+        <span class="cashflow-quickview-label">Tạo lúc</span>
+        <strong>${createdLabel}</strong>
+      </div>
+      <div class="cashflow-quickview-item">
+        <span class="cashflow-quickview-label">Màu đánh dấu</span>
+        <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+          <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${escapeHtml(color)}; border: 1px solid rgba(255,255,255,0.4);"></span>
+          <strong style="font-size: 12px;">${escapeHtml(color)}</strong>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end;">
+      ${eventIndex >= 0 ? `
+        <button type="button" class="btn-primary" style="padding: 6px 14px; font-size: 12px; border-radius: 8px;" onclick="closeEventQuickViewModal(); openEditEventModal(${eventIndex});">
+          ✏️ Chỉnh sửa
+        </button>
+      ` : ""}
+      <button type="button" class="btn-secondary" style="padding: 6px 14px; font-size: 12px; border-radius: 8px;" onclick="closeEventQuickViewModal();">
+        Đóng
+      </button>
+    </div>
+  `;
 }
 
 function saveDayOvertime() {
@@ -7633,12 +7838,16 @@ function addCashflowEntry() {
     // Bắn thông báo đẩy đến tất cả thiết bị cùng tài khoản
     const categoryName = (cashflowCategories[type] || []).find(c => c.id === category)?.name || category;
     queueEventNotification({
+      id: entry.id,
       title: type === "expense" ? "Chi tiêu mới" : "Thu nhập mới",
       text: note || "",
+      note: note || "",
+      date: date,
       cashflowType: type,
       category: categoryName,
       amount: amount,
-      createdAt: Date.now()
+      image: image || "",
+      createdAt: entry.createdAt || Date.now()
     }, targetDateKey, "cashflow");
   }
 
@@ -9060,7 +9269,10 @@ function openCashflowQuickViewModal() {
   modal.style.display = "flex";
 }
 
+let activeQuickViewEntry = null;
+
 function closeCashflowQuickViewModal() {
+  activeQuickViewEntry = null;
   const modal = document.getElementById("cashflowQuickViewModal");
   if (modal) modal.style.display = "none";
   const atModal = document.getElementById("cashflowAllTransactionsModal");
@@ -9084,7 +9296,7 @@ function renderCashflowQuickView() {
   const quickViewEl = document.getElementById("cashflowQuickView");
   if (!quickViewEl) return;
 
-  const entry = ensureSelectedCashflowEntry();
+  const entry = activeQuickViewEntry || ensureSelectedCashflowEntry();
   if (!entry) {
     quickViewEl.innerHTML =
       '<div class="cashflow-quickview-empty">Chọn một giao dịch để xem nhanh đầy đủ chi tiết.</div>';

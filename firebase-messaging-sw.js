@@ -9,7 +9,15 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
 
         messaging.onBackgroundMessage((payload) => {
             console.log("[FCM-SW] onBackgroundMessage received:", payload);
-            const title = payload.notification?.title || payload.data?.title || "🔔 Sự kiện mới trên Lịch Việt";
+
+            // Nếu payload đã chứa block notification, Firebase SDK sẽ tự động hiển thị thông báo.
+            // Tránh gọi showNotification thủ công tại đây để không bị bắn 2 thông báo trùng nhau.
+            if (payload.notification) {
+                console.log("[FCM-SW] Notification handled automatically by SDK.");
+                return;
+            }
+
+            const title = payload.data?.title || "🔔 Sự kiện mới trên Lịch Việt";
             const bodyParts = [];
 
             const dateStr = payload.data?.dateKey || payload.data?.date;

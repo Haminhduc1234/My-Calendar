@@ -83,7 +83,7 @@ module.exports = async (req, res) => {
       if (eventData.category) bodyParts.push(eventData.category);
       if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
       if (eventData.text) bodyParts.push(eventData.text);
-      targetUrl = "/?action=cashflow";
+      targetUrl = dateKey ? `/?action=cashflow&date=${dateKey}` : "/?action=cashflow";
     } else if (type === "fund_allocation") {
       title = "📊 Phân bổ quỹ mới";
       if (eventData.fundName) bodyParts.push(`Quỹ: ${eventData.fundName}`);
@@ -119,7 +119,8 @@ module.exports = async (req, res) => {
         body: body,
         notificationType: type,
         dateKey: String(dateKey || ""),
-        url: targetUrl
+        url: targetUrl,
+        eventDataJson: JSON.stringify(eventData || {})
       },
       webpush: {
         fcmOptions: {
@@ -129,6 +130,11 @@ module.exports = async (req, res) => {
           icon: "/public/favicon.png",
           badge: "/public/favicon.png",
           vibrate: [200, 100, 200]
+        },
+        data: {
+          url: targetUrl,
+          dateKey: String(dateKey || ""),
+          notificationType: type
         }
       }
     };

@@ -3043,7 +3043,78 @@ function playNotificationChime() {
   } catch (e) { }
 }
 
-function showAppPushToast(title, body, dateKey) {
+function handleNotificationNavigation(notificationType, dateKey, eventData, targetUrl) {
+  let type = notificationType || "event";
+  let dKey = dateKey || "";
+
+  if (targetUrl) {
+    try {
+      const parsedUrl = new URL(targetUrl, window.location.origin);
+      const action = parsedUrl.searchParams.get("action");
+      const date = parsedUrl.searchParams.get("date");
+      if (action === "cashflow" || action === "expense" || action === "income") {
+        type = "cashflow";
+      } else if (action === "funds" || action === "fund") {
+        type = "fund_allocation";
+      }
+      if (date) {
+        dKey = date;
+      }
+    } catch (e) { }
+  }
+
+  console.log("[NotificationNav] Điều hướng tới:", { type, dKey, eventData, targetUrl });
+
+  if (type === "cashflow") {
+    if (typeof openCashflowModal === "function") {
+      openCashflowModal();
+      if (dKey) {
+        const isoDate = dateKeyToIsoDate(dKey) || dKey;
+        const dateInput = document.getElementById("cashflowDate");
+        if (dateInput) dateInput.value = isoDate;
+      }
+      if (eventData) {
+        if (eventData.cashflowType) {
+          const typeInput = document.getElementById("cashflowType");
+          if (typeInput) {
+            typeInput.value = eventData.cashflowType === "income" ? "income" : "expense";
+            if (typeof syncCashflowFormMode === "function") syncCashflowFormMode();
+          }
+        }
+        if (eventData.category) {
+          const categoryInput = document.getElementById("cashflowCategory");
+          if (categoryInput) categoryInput.value = eventData.category;
+        }
+      }
+      if (typeof reloadCashflowEntriesFromCache === "function") reloadCashflowEntriesFromCache();
+      if (typeof renderCashflowDashboard === "function") renderCashflowDashboard();
+    }
+  } else if (type === "fund_allocation" || type === "funds") {
+    if (typeof openFundsModal === "function") {
+      openFundsModal();
+    }
+  } else {
+    // Event (sự kiện lịch)
+    const targetKey = isoDateToDateKey(dKey) || dKey;
+    if (targetKey) {
+      const parts = targetKey.split("-").map(Number);
+      if (parts.length === 3) {
+        if (typeof openDayDetailsModal === "function") {
+          openDayDetailsModal(targetKey, parts[2], parts[1], parts[0]);
+        }
+      }
+    } else {
+      const now = new Date();
+      const todayKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+      if (typeof openDayDetailsModal === "function") {
+        openDayDetailsModal(todayKey, now.getDate(), now.getMonth() + 1, now.getFullYear());
+      }
+    }
+  }
+}
+window.handleNotificationNavigation = handleNotificationNavigation;
+
+function showAppPushToast(title, body, dateKey, notificationType, eventData) {
   let container = document.getElementById("appPushToastContainer");
   if (!container) {
     container = document.createElement("div");
@@ -3052,19 +3123,39 @@ function showAppPushToast(title, body, dateKey) {
     document.body.appendChild(container);
   }
 
+  const type = notificationType || "event";
+  let icon = "🔔";
+  let actionLabel = "Xem chi tiết";
+
+  if (type === "cashflow") {
+    const isExpense = eventData?.cashflowType === "expense" || String(title).includes("Chi tiêu");
+    icon = isExpense ? "💸" : "💰";
+    actionLabel = "Xem thu chi";
+  } else if (type === "fund_allocation" || type === "funds") {
+    icon = "📊";
+    actionLabel = "Xem quỹ";
+  } else {
+    icon = "🔔";
+    actionLabel = "Xem sự kiện";
+  }
+
   const toast = document.createElement("div");
   toast.className = "app-push-toast";
+  toast.setAttribute("role", "alert");
+  toast.title = "Chạm để xem chi tiết";
+
   toast.innerHTML = `
-    <div class="app-push-toast-icon">🔔</div>
+    <div class="app-push-toast-icon">${icon}</div>
     <div class="app-push-toast-content">
-      <div class="app-push-toast-title">${(title || "Sự kiện mới").replace(/</g, "&lt;")}</div>
-      <div class="app-push-toast-body">${(body || "").replace(/</g, "&lt;")}</div>
-      ${dateKey ? `<div class="app-push-toast-actions"><button type="button" class="app-push-toast-btn" onclick="openEventDateFromPush('${dateKey}')">Xem ngay</button></div>` : ""}
+      <div class="app-push-toast-title">${escapeHtml(title || "Thông báo mới")}</div>
+      <div class="app-push-toast-body">${escapeHtml(body || "")}</div>
+      <div class="app-push-toast-actions">
+        <button type="button" class="app-push-toast-btn">${actionLabel}</button>
+      </div>
     </div>
     <button type="button" class="app-push-toast-close" aria-label="Đóng">&times;</button>
   `;
 
-  const closeBtn = toast.querySelector(".app-push-toast-close");
   const dismiss = () => {
     toast.classList.add("hiding");
     setTimeout(() => {
@@ -3072,20 +3163,30 @@ function showAppPushToast(title, body, dateKey) {
     }, 320);
   };
 
-  closeBtn.onclick = dismiss;
+  const closeBtn = toast.querySelector(".app-push-toast-close");
+  if (closeBtn) {
+    closeBtn.onclick = (e) => {
+      e.stopPropagation();
+      dismiss();
+    };
+  }
+
+  // Click vào toàn bộ thẻ toast hoặc nút Xem chi tiết -> Điều hướng đến màn hình chi tiết
+  toast.onclick = (e) => {
+    if (e.target && e.target.classList.contains("app-push-toast-close")) return;
+    dismiss();
+    handleNotificationNavigation(type, dateKey, eventData);
+  };
+
   container.appendChild(toast);
 
-  // Tự động đóng sau 6.5 giây
-  setTimeout(dismiss, 6500);
+  // Tự động đóng sau 7 giây
+  setTimeout(dismiss, 7000);
 }
+window.showAppPushToast = showAppPushToast;
 
 function openEventDateFromPush(dateKey) {
-  if (!dateKey) return;
-  const parts = dateKey.split("-").map(Number);
-  if (parts.length === 3) {
-    const [y, m, d] = parts;
-    openDayDetailsModal(dateKey, d, m, y);
-  }
+  handleNotificationNavigation("event", dateKey);
 }
 window.openEventDateFromPush = openEventDateFromPush;
 
@@ -3108,7 +3209,7 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
     if (eventData.category) bodyParts.push(eventData.category);
     if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
     if (eventData.text) bodyParts.push(eventData.text);
-    notificationUrl = "./?action=cashflow";
+    notificationUrl = dateKey ? `./?action=cashflow&date=${dateKey}` : "./?action=cashflow";
     notificationTag = `cashflow-${Date.now()}`;
   } else if (type === "fund_allocation") {
     title = "📊 Phân bổ quỹ mới";
@@ -3139,7 +3240,10 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
   // 1. Phát chuông thông báo
   playNotificationChime();
 
-  // 2. Hiển thị System Notification qua Service Worker hoặc Notification API
+  // 2. Hiển thị Toast thông báo trực quan trong ứng dụng (ngay cả khi chưa cấp quyền push hoặc đang mở app)
+  showAppPushToast(title, body, dateKey, type, eventData);
+
+  // 3. Hiển thị System Notification qua Service Worker hoặc Notification API
   if ("Notification" in window && Notification.permission === "granted") {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.ready.then((reg) => {
@@ -3151,22 +3255,34 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
           vibrate: [200, 100, 200],
           data: {
             url: notificationUrl,
-            dateKey: dateKey
+            dateKey: dateKey,
+            notificationType: type,
+            eventData: eventData
           }
         });
       }).catch(() => {
         try {
-          new Notification(title, { body, icon: "/public/favicon.png" });
+          const n = new Notification(title, { body, icon: "/public/favicon.png" });
+          n.onclick = () => {
+            window.focus();
+            handleNotificationNavigation(type, dateKey, eventData, notificationUrl);
+            n.close();
+          };
         } catch (e) { }
       });
     } else {
       try {
-        new Notification(title, { body, icon: "/public/favicon.png" });
+        const n = new Notification(title, { body, icon: "/public/favicon.png" });
+        n.onclick = () => {
+          window.focus();
+          handleNotificationNavigation(type, dateKey, eventData, notificationUrl);
+          n.close();
+        };
       } catch (e) { }
     }
   }
 
-  // 3. Rung nếu thiết bị hỗ trợ
+  // 4. Rung nếu thiết bị hỗ trợ
   if ("vibrate" in navigator) {
     try { navigator.vibrate([100, 50, 100]); } catch (e) { }
   }
@@ -3174,6 +3290,22 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
 window.notifyNewEventFromRealtime = notifyNewEventFromRealtime;
 
 async function initFirebaseMessaging() {
+  // Lắng nghe postMessage từ Service Worker khi người dùng click vào thông báo trên background
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", (event) => {
+      if (event.data && event.data.type === "NOTIFICATION_CLICKED") {
+        console.log("[SW->Client] Nhận sự kiện click thông báo:", event.data);
+        const { url, notificationType, dateKey, eventData } = event.data;
+        handleNotificationNavigation(
+          notificationType || event.data.data?.notificationType,
+          dateKey || event.data.data?.dateKey,
+          eventData || event.data.data?.eventData,
+          url || event.data.data?.url
+        );
+      }
+    });
+  }
+
   if (!("Notification" in window) || !("serviceWorker" in navigator)) {
     console.log("[FCM] Trình duyệt không hỗ trợ Web Push Notification.");
     updateNotificationUIState();
@@ -3195,8 +3327,16 @@ async function initFirebaseMessaging() {
         const title = payload.notification?.title || payload.data?.title || "Sự kiện mới từ thiết bị khác";
         const body = payload.notification?.body || payload.data?.text || payload.data?.body || "";
         const dateKey = payload.data?.dateKey || payload.data?.date || "";
+        const notificationType = payload.data?.notificationType || "event";
+        let parsedEventData = null;
+        if (payload.data?.eventDataJson) {
+          try { parsedEventData = JSON.parse(payload.data.eventDataJson); } catch (e) {}
+        } else if (payload.data?.eventData) {
+          parsedEventData = payload.data.eventData;
+        }
 
-        // showAppPushToast(title, body, dateKey);
+        showAppPushToast(title, body, dateKey, notificationType, parsedEventData);
+        playNotificationChime();
 
         // Vibrate nhẹ nếu hỗ trợ
         if ("vibrate" in navigator) {
@@ -3529,33 +3669,22 @@ function checkUrlParamsForDateNavigation() {
     const dateParam = params.get("date");
     const actionParam = params.get("action");
 
-    if (actionParam === "cashflow") {
-      setTimeout(() => {
-        if (typeof openCashflowModal === "function") openCashflowModal();
-      }, 800);
-      // Xóa param khỏi URL để không mở lại khi reload
-      window.history.replaceState({}, document.title, window.location.pathname);
-      return;
-    }
+    if (!dateParam && !actionParam) return;
 
-    if (actionParam === "funds") {
-      setTimeout(() => {
-        if (typeof openFundsModal === "function") openFundsModal();
-      }, 800);
-      window.history.replaceState({}, document.title, window.location.pathname);
-      return;
-    }
+    const executeNav = () => {
+      handleNotificationNavigation(actionParam, dateParam, null, window.location.href);
+      try {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch (e) { }
+    };
 
-    if (dateParam && /^\d{4}-\d{1,2}-\d{1,2}$/.test(dateParam)) {
-      setTimeout(() => {
-        const parts = dateParam.split("-").map(Number);
-        if (parts.length === 3) {
-          openDayDetailsModal(dateParam, parts[2], parts[1], parts[0]);
-        }
-      }, 500);
-    }
-  } catch (e) { }
+    // Đợi 450ms để toàn bộ UI và dữ liệu calendar được tải xong
+    setTimeout(executeNav, 450);
+  } catch (e) {
+    console.warn("[UrlNav] Lỗi kiểm tra URL params:", e);
+  }
 }
+window.checkUrlParamsForDateNavigation = checkUrlParamsForDateNavigation;
 
 window.toggleDeviceNotificationPermission = toggleDeviceNotificationPermission;
 window.sendTestPushNotification = sendTestPushNotification;
@@ -7502,11 +7631,12 @@ function addCashflowEntry() {
     saveDateData(targetDateKey, data);
 
     // Bắn thông báo đẩy đến tất cả thiết bị cùng tài khoản
+    const categoryName = (cashflowCategories[type] || []).find(c => c.id === category)?.name || category;
     queueEventNotification({
       title: type === "expense" ? "Chi tiêu mới" : "Thu nhập mới",
       text: note || "",
       cashflowType: type,
-      category: category,
+      category: categoryName,
       amount: amount,
       createdAt: Date.now()
     }, targetDateKey, "cashflow");
@@ -10823,7 +10953,6 @@ function formatCurrencyInput(input) {
 function openCurrencyModal() {
   try {
     loadCountdownFromLocal();
-    checkUrlParamsForDateNavigation();
   } catch (e) { }
   closeAllModals();
   document.getElementById("currencyModal").style.display = "flex";

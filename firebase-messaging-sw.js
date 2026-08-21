@@ -17,34 +17,53 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
                 return;
             }
 
-            const title = payload.data?.title || "🔔 Sự kiện mới trên Lịch Việt";
+            const type = payload.data?.notificationType || "event";
+            const dateStr = payload.data?.dateKey || payload.data?.date || "";
+            let title = payload.data?.title || "🔔 Sự kiện mới trên Lịch Việt";
+            let targetUrl = payload.data?.url || payload.fcmOptions?.link || "./";
             const bodyParts = [];
 
-            const dateStr = payload.data?.dateKey || payload.data?.date;
-            if (dateStr) bodyParts.push(`Ngày ${dateStr}`);
-            if (payload.data?.eventDateTime) {
-                try {
-                    const dt = new Date(payload.data.eventDateTime);
-                    if (!Number.isNaN(dt.getTime())) {
-                        bodyParts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
-                    }
-                } catch { }
+            if (type === "cashflow") {
+                const isExpense = payload.data?.cashflowType === "expense";
+                title = payload.data?.title || (isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới");
+                if (payload.data?.category) bodyParts.push(payload.data.category);
+                if (payload.data?.amount) bodyParts.push(`${Number(payload.data.amount).toLocaleString("vi-VN")} đ`);
+                if (payload.data?.text) bodyParts.push(payload.data.text);
+                targetUrl = targetUrl !== "./" ? targetUrl : (dateStr ? `./?action=cashflow&date=${dateStr}` : "./?action=cashflow");
+            } else if (type === "fund_allocation") {
+                title = payload.data?.title || "📊 Phân bổ quỹ mới";
+                if (payload.data?.fundName) bodyParts.push(`Quỹ: ${payload.data.fundName}`);
+                if (payload.data?.amount) bodyParts.push(`${Number(payload.data.amount).toLocaleString("vi-VN")} đ`);
+                if (payload.data?.text) bodyParts.push(payload.data.text);
+                targetUrl = targetUrl !== "./" ? targetUrl : "./?action=funds";
+            } else {
+                if (dateStr) bodyParts.push(`Ngày ${dateStr}`);
+                if (payload.data?.eventDateTime) {
+                    try {
+                        const dt = new Date(payload.data.eventDateTime);
+                        if (!Number.isNaN(dt.getTime())) {
+                            bodyParts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
+                        }
+                    } catch { }
+                }
+                if (payload.data?.text) bodyParts.push(payload.data.text);
+                if (Number(payload.data?.overtimeHours || 0) > 0) bodyParts.push(`OT: ${payload.data.overtimeHours}h`);
+                targetUrl = targetUrl !== "./" ? targetUrl : (dateStr ? `./?date=${dateStr}` : "./");
             }
-            if (payload.notification?.body) bodyParts.push(payload.notification.body);
-            else if (payload.data?.text) bodyParts.push(payload.data.text);
-            if (Number(payload.data?.overtimeHours || 0) > 0) bodyParts.push(`OT: ${payload.data.overtimeHours}h`);
 
-            const targetUrl = payload.data?.url || payload.fcmOptions?.link || (dateStr ? `./?date=${dateStr}` : "./");
+            if (payload.notification?.body) bodyParts.push(payload.notification.body);
 
             return self.registration.showNotification(title, {
-                body: bodyParts.join(" | ") || "Bạn có một sự kiện mới vừa được thêm",
+                body: bodyParts.join(" | ") || "Bạn có một thông báo mới",
                 icon: "/public/favicon.png",
                 badge: "/public/favicon.png",
-                tag: `event-${dateStr || payload.data?.eventId || Date.now()}`,
+                tag: `notify-${type}-${dateStr || payload.data?.eventId || Date.now()}`,
                 vibrate: [200, 100, 200],
                 data: {
                     url: targetUrl,
-                    dateKey: dateStr
+                    dateKey: dateStr,
+                    notificationType: type,
+                    eventData: payload.data
                 }
             });
         });
@@ -56,19 +75,25 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
 self.addEventListener("notificationclick", (event) => {
     event.notification.close();
     const targetUrl = event.notification.data?.url || "./";
+    const notificationData = event.notification.data || {};
 
     event.waitUntil(
         clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
             for (const client of clientList) {
                 if ("focus" in client) {
-                    if ("navigate" in client && targetUrl !== "./") {
-                        client.navigate(targetUrl);
-                    }
+                    client.postMessage({
+                        type: "NOTIFICATION_CLICKED",
+                        url: targetUrl,
+                        data: notificationData,
+                        notificationType: notificationData.notificationType,
+                        dateKey: notificationData.dateKey,
+                        eventData: notificationData.eventData
+                    });
                     return client.focus();
                 }
             }
             if (clients.openWindow) {
-                return clients.openWindow(targetUrl);
+                return clients.openWindow(new URL(targetUrl, self.location.origin).href);
             }
         })
     );

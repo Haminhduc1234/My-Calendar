@@ -59,7 +59,7 @@ async function getProfileTokens(profileKey, excludeDeviceId = "") {
 /**
  * Gửi push notification đến danh sách tokens của profile
  */
-async function sendNotificationToProfile(profileKey, eventData, dateKey = "", excludeDeviceId = "") {
+async function sendNotificationToProfile(profileKey, eventData, dateKey = "", excludeDeviceId = "", notificationType = "event") {
   const tokenEntries = await getProfileTokens(profileKey, excludeDeviceId);
   if (!tokenEntries.length) {
     logger.info(`Không có FCM token nào cho profile: ${profileKey}`);
@@ -67,9 +67,23 @@ async function sendNotificationToProfile(profileKey, eventData, dateKey = "", ex
   }
 
   const tokens = Array.from(new Set(tokenEntries.map((e) => e.token)));
-  const title = eventData.title ? `🔔 ${eventData.title}` : "🔔 Sự kiện mới trên Lịch Việt";
+  const type = notificationType || "event";
+  let title = "";
+  let targetUrl = "/";
+
+  if (type === "cashflow") {
+    const isExpense = eventData.cashflowType === "expense";
+    title = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
+    targetUrl = dateKey ? `/?action=cashflow&date=${dateKey}` : "/?action=cashflow";
+  } else if (type === "fund_allocation") {
+    title = "📊 Phân bổ quỹ mới";
+    targetUrl = "/?action=funds";
+  } else {
+    title = eventData.title ? `🔔 ${eventData.title}` : "🔔 Sự kiện mới trên Lịch Việt";
+    targetUrl = dateKey ? `/?date=${dateKey}` : EVENT_LINK;
+  }
+
   const body = buildNotificationBody(eventData, dateKey);
-  const targetUrl = dateKey ? `/?date=${dateKey}` : EVENT_LINK;
 
   const message = {
     tokens,
@@ -86,20 +100,27 @@ async function sendNotificationToProfile(profileKey, eventData, dateKey = "", ex
         body,
         icon: ICON_PATH,
         badge: ICON_PATH,
-        tag: `event-${dateKey || Date.now()}`,
+        tag: `notify-${type}-${dateKey || Date.now()}`,
         requireInteraction: false,
         vibrate: [200, 100, 200]
+      },
+      data: {
+        url: targetUrl,
+        dateKey: String(dateKey || ""),
+        notificationType: type
       }
     },
     data: {
       type: "calendar_event_added",
+      notificationType: type,
       profileKey: String(profileKey),
       dateKey: String(dateKey || ""),
-      title: String(eventData.title || "Sự kiện mới"),
+      title: String(title),
       text: String(eventData.text || ""),
       eventDateTime: String(eventData.eventDateTime || ""),
       createdAt: String(eventData.createdAt || Date.now()),
-      url: targetUrl
+      url: targetUrl,
+      eventDataJson: JSON.stringify(eventData || {})
     }
   };
 
@@ -194,9 +215,9 @@ exports.onNotificationQueueCreated = onValueWritten(
 
     if (!payload || payload.processed) return;
 
-    const { eventData, dateKey, senderDeviceId } = payload;
+    const { eventData, dateKey, senderDeviceId, notificationType } = payload;
     if (eventData) {
-      await sendNotificationToProfile(profileKey, eventData, dateKey || "", senderDeviceId || "");
+      await sendNotificationToProfile(profileKey, eventData, dateKey || "", senderDeviceId || "", notificationType || "event");
     }
 
     // Xóa item sau khi xử lý

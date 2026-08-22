@@ -3253,73 +3253,8 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
 window.handleNotificationNavigation = handleNotificationNavigation;
 
 function showAppPushToast(title, body, dateKey, notificationType, eventData) {
-  let container = document.getElementById("appPushToastContainer");
-  if (!container) {
-    container = document.createElement("div");
-    container.id = "appPushToastContainer";
-    container.className = "app-push-toast-container";
-    document.body.appendChild(container);
-  }
-
-  const type = notificationType || "event";
-  let icon = "🔔";
-  let actionLabel = "Xem chi tiết";
-
-  if (type === "cashflow") {
-    const isExpense = eventData?.cashflowType === "expense" || String(title).includes("Chi tiêu");
-    icon = isExpense ? "💸" : "💰";
-    actionLabel = "Xem thu chi";
-  } else if (type === "fund_allocation" || type === "funds") {
-    icon = "📊";
-    actionLabel = "Xem quỹ";
-  } else {
-    icon = "🔔";
-    actionLabel = "Xem sự kiện";
-  }
-
-  const toast = document.createElement("div");
-  toast.className = "app-push-toast";
-  toast.setAttribute("role", "alert");
-  toast.title = "Chạm để xem chi tiết";
-
-  toast.innerHTML = `
-    <div class="app-push-toast-icon">${icon}</div>
-    <div class="app-push-toast-content">
-      <div class="app-push-toast-title">${escapeHtml(title || "Thông báo mới")}</div>
-      <div class="app-push-toast-body">${escapeHtml(body || "")}</div>
-      <div class="app-push-toast-actions">
-        <button type="button" class="app-push-toast-btn">${actionLabel}</button>
-      </div>
-    </div>
-    <button type="button" class="app-push-toast-close" aria-label="Đóng">&times;</button>
-  `;
-
-  const dismiss = () => {
-    toast.classList.add("hiding");
-    setTimeout(() => {
-      if (toast.parentNode) toast.parentNode.removeChild(toast);
-    }, 320);
-  };
-
-  const closeBtn = toast.querySelector(".app-push-toast-close");
-  if (closeBtn) {
-    closeBtn.onclick = (e) => {
-      e.stopPropagation();
-      dismiss();
-    };
-  }
-
-  // Click vào toàn bộ thẻ toast hoặc nút Xem chi tiết -> Điều hướng đến màn hình chi tiết
-  toast.onclick = (e) => {
-    if (e.target && e.target.classList.contains("app-push-toast-close")) return;
-    dismiss();
-    handleNotificationNavigation(type, dateKey, eventData);
-  };
-
-  container.appendChild(toast);
-
-  // Tự động đóng sau 7 giây
-  setTimeout(dismiss, 7000);
+  // Đã bỏ toast in-app theo yêu cầu - chỉ sử dụng thông báo gốc của hệ thống/trình duyệt
+  return;
 }
 window.showAppPushToast = showAppPushToast;
 
@@ -3378,10 +3313,7 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
   // 1. Phát chuông thông báo
   playNotificationChime();
 
-  // 2. Hiển thị Toast thông báo trực quan trong ứng dụng (ngay cả khi chưa cấp quyền push hoặc đang mở app)
-  showAppPushToast(title, body, dateKey, type, eventData);
-
-  // 3. Hiển thị System Notification qua Service Worker hoặc Notification API
+  // 2. Hiển thị System Notification của trình duyệt qua Service Worker hoặc Notification API
   if ("Notification" in window && Notification.permission === "granted") {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.ready.then((reg) => {
@@ -3420,7 +3352,7 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
     }
   }
 
-  // 4. Rung nếu thiết bị hỗ trợ
+  // 3. Rung nếu thiết bị hỗ trợ
   if ("vibrate" in navigator) {
     try { navigator.vibrate([100, 50, 100]); } catch (e) { }
   }
@@ -3473,8 +3405,55 @@ async function initFirebaseMessaging() {
           parsedEventData = payload.data.eventData;
         }
 
-        showAppPushToast(title, body, dateKey, notificationType, parsedEventData);
         playNotificationChime();
+
+        // Hiển thị thông báo hệ thống của trình duyệt (System Browser Notification)
+        if ("Notification" in window && Notification.permission === "granted") {
+          let notificationUrl = "./";
+          if (notificationType === "cashflow") {
+            notificationUrl = dateKey ? `./?action=cashflow&date=${dateKey}` : "./?action=cashflow";
+          } else if (notificationType === "fund_allocation" || notificationType === "funds") {
+            notificationUrl = "./?action=funds";
+          } else {
+            notificationUrl = `./?date=${dateKey}`;
+          }
+
+          if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.ready.then((reg) => {
+              reg.showNotification(title, {
+                body: body,
+                icon: "/public/favicon.png",
+                badge: "/public/favicon.png",
+                tag: `fcm-${Date.now()}`,
+                vibrate: [200, 100, 200],
+                data: {
+                  url: notificationUrl,
+                  dateKey: dateKey,
+                  notificationType: notificationType,
+                  eventData: parsedEventData
+                }
+              });
+            }).catch(() => {
+              try {
+                const n = new Notification(title, { body, icon: "/public/favicon.png" });
+                n.onclick = () => {
+                  window.focus();
+                  handleNotificationNavigation(notificationType, dateKey, parsedEventData, notificationUrl);
+                  n.close();
+                };
+              } catch (e) { }
+            });
+          } else {
+            try {
+              const n = new Notification(title, { body, icon: "/public/favicon.png" });
+              n.onclick = () => {
+                window.focus();
+                handleNotificationNavigation(notificationType, dateKey, parsedEventData, notificationUrl);
+                n.close();
+              };
+            } catch (e) { }
+          }
+        }
 
         // Vibrate nhẹ nếu hỗ trợ
         if ("vibrate" in navigator) {

@@ -3492,7 +3492,9 @@ async function initFirebaseMessaging() {
     }
 
     // Nếu người dùng đã cấp quyền, tự động đồng bộ token cho profile hiện tại
-    if (Notification.permission === "granted" && userProfileKey) {
+    // Nhưng phải kiểm tra xem người dùng có chủ động tắt thông báo không
+    const isManuallyDisabled = localStorage.getItem("calendarDevicePushEnabled") === "0";
+    if (Notification.permission === "granted" && userProfileKey && !isManuallyDisabled) {
       await requestNotificationPermissionAndRegisterToken(true);
     } else {
       updateNotificationUIState();

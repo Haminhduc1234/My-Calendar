@@ -48,9 +48,9 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
                         }
                     } catch { }
                 }
-                if (payload.data?.text) bodyParts.push(payload.data.text);
+                if (payload.data?.text || payload.data?.note) bodyParts.push(payload.data.text || payload.data.note);
                 targetUrl = targetUrl !== "./" ? targetUrl : (
-                    `./?action=event&title=${encodeURIComponent(payload.data?.title || "")}&text=${encodeURIComponent(payload.data?.text || "")}&eventDateTime=${encodeURIComponent(payload.data?.eventDateTime || "")}&color=${encodeURIComponent(payload.data?.color || "")}&date=${encodeURIComponent(dateStr || "")}`
+                    `./?action=event&id=${encodeURIComponent(payload.data?.id || "")}&title=${encodeURIComponent(payload.data?.title || "")}&text=${encodeURIComponent(payload.data?.text || payload.data?.note || "")}&note=${encodeURIComponent(payload.data?.note || payload.data?.text || "")}&eventDateTime=${encodeURIComponent(payload.data?.eventDateTime || "")}&color=${encodeURIComponent(payload.data?.color || "")}&createdAt=${encodeURIComponent(payload.data?.createdAt || Date.now())}&date=${encodeURIComponent(dateStr || "")}`
                 );
             }
 
@@ -75,7 +75,7 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
     }
 }
 
-const CACHE_NAME = "calendar-pwa-v8";
+const CACHE_NAME = "calendar-pwa-v9";
 const FILES_TO_CACHE = [
     "./",
     "./index.html",

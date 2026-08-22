@@ -102,7 +102,10 @@ module.exports = async (req, res) => {
           }
         } catch (e) {}
       }
-      targetUrl = `/?action=event&title=${encodeURIComponent(eventData.title || "")}&text=${encodeURIComponent(eventData.text || "")}&eventDateTime=${encodeURIComponent(eventData.eventDateTime || "")}&color=${encodeURIComponent(eventData.color || "")}&date=${encodeURIComponent(dateKey || "")}`;
+      if (eventData.text || eventData.note) {
+        bodyParts.push(eventData.text || eventData.note);
+      }
+      targetUrl = `/?action=event&id=${encodeURIComponent(eventData.id || "")}&title=${encodeURIComponent(eventData.title || "")}&text=${encodeURIComponent(eventData.text || eventData.note || "")}&note=${encodeURIComponent(eventData.note || eventData.text || "")}&eventDateTime=${encodeURIComponent(eventData.eventDateTime || "")}&color=${encodeURIComponent(eventData.color || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}&date=${encodeURIComponent(dateKey || "")}`;
     }
 
     const body = bodyParts.join(" | ") || "Có cập nhật mới từ thiết bị khác.";

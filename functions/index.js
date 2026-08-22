@@ -26,7 +26,7 @@ function buildNotificationBody(event, dateKey) {
       }
     } catch { }
   }
-  if (event.text) bodyParts.push(event.text);
+  if (event.text || event.note) bodyParts.push(event.text || event.note);
   if (Number(event.overtimeHours) > 0) bodyParts.push(`OT: ${event.overtimeHours}h`);
   return bodyParts.join(" | ") || "Bạn có một sự kiện mới";
 }
@@ -79,7 +79,7 @@ async function sendNotificationToProfile(profileKey, eventData, dateKey = "", ex
     title = "📊 Phân bổ quỹ mới";
     targetUrl = "/?action=funds";
   } else {
-    targetUrl = `/?action=event&title=${encodeURIComponent(eventData.title || "")}&text=${encodeURIComponent(eventData.text || "")}&eventDateTime=${encodeURIComponent(eventData.eventDateTime || "")}&color=${encodeURIComponent(eventData.color || "")}&date=${encodeURIComponent(dateKey || "")}`;
+    targetUrl = `/?action=event&id=${encodeURIComponent(eventData.id || "")}&title=${encodeURIComponent(eventData.title || "")}&text=${encodeURIComponent(eventData.text || eventData.note || "")}&note=${encodeURIComponent(eventData.note || eventData.text || "")}&eventDateTime=${encodeURIComponent(eventData.eventDateTime || "")}&color=${encodeURIComponent(eventData.color || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}&date=${encodeURIComponent(dateKey || "")}`;
   }
 
   const body = buildNotificationBody(eventData, dateKey);
@@ -160,50 +160,7 @@ async function sendNotificationToProfile(profileKey, eventData, dateKey = "", ex
 }
 
 /**
- * Trigger Realtime Database: Tự động phát hiện khi có sự kiện mới được thêm vào ngày
- */
-exports.onCalendarDateWritten = onValueWritten(
-  "/calendarEvents/{profileKey}/dates/{dateKey}",
-  async (event) => {
-    const profileKey = event.params.profileKey;
-    const dateKey = event.params.dateKey;
-
-    const beforeData = event.data.before.val() || {};
-    const afterData = event.data.after.val();
-
-    if (!afterData) return; // Bị xóa, không bắn thông báo
-
-    const beforeEvents = Array.isArray(beforeData.events)
-      ? beforeData.events
-      : typeof beforeData.events === "object" && beforeData.events !== null
-      ? Object.values(beforeData.events)
-      : [];
-
-    const afterEvents = Array.isArray(afterData.events)
-      ? afterData.events
-      : typeof afterData.events === "object" && afterData.events !== null
-      ? Object.values(afterData.events)
-      : [];
-
-    // Tìm các sự kiện mới thêm (sau - trước)
-    const newEvents = afterEvents.filter((afterEv) => {
-      if (!afterEv || !afterEv.title) return false;
-      const existsInBefore = beforeEvents.some(
-        (b) => b.title === afterEv.title && (b.eventDateTime === afterEv.eventDateTime || b.createdAt === afterEv.createdAt)
-      );
-      return !existsInBefore;
-    });
-
-    if (newEvents.length > 0) {
-      for (const newEv of newEvents) {
-        await sendNotificationToProfile(profileKey, newEv, dateKey);
-      }
-    }
-  }
-);
-
-/**
- * Trigger Realtime Database: Queue gửi thông báo chủ động từ client
+ * Queue gửi thông báo chủ động từ client (loại trừ thiết bị gửi, đầy đủ thông tin createdAt và text)
  */
 exports.onNotificationQueueCreated = onValueWritten(
   "/eventNotificationQueue/{profileKey}/{queueId}",

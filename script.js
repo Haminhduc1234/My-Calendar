@@ -2324,12 +2324,16 @@ function exportCashflowCsv() {
 
 function addEventToDate(dateKey, eventData) {
   const data = getDateData(dateKey);
+  const now = Date.now();
   data.events.push({
+    id: String(eventData.id || `ev-${now}-${Math.random().toString(36).slice(2, 6)}`),
     title: String(eventData.title || "").trim(),
-    text: String(eventData.text || "").trim(),
+    text: String(eventData.text || eventData.note || "").trim(),
+    note: String(eventData.note || eventData.text || "").trim(),
     eventDateTime: String(eventData.eventDateTime || ""),
     color: String(eventData.color || "").trim() || "#3b82f6",
-    createdAt: Date.now(),
+    createdAt: Number(eventData.createdAt || now),
+    updatedAt: Number(eventData.updatedAt || eventData.createdAt || now)
   });
   saveDateData(dateKey, data);
 }
@@ -3195,21 +3199,34 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
   const targetKey = isoDateToDateKey(dKey) || dKey || `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}`;
   const parts = targetKey ? targetKey.split("-").map(Number) : [];
 
-  if (eventData && (eventData.title || eventData.text)) {
+  if (eventData && (eventData.title || eventData.text || eventData.note)) {
     if (targetKey) {
       const currentData = getDateData(targetKey);
-      const exists = (currentData.events || []).some(
-        (ev) => ev.title === eventData.title && (ev.eventDateTime === eventData.eventDateTime || ev.createdAt === eventData.createdAt)
+      const existsIdx = (currentData.events || []).findIndex(
+        (ev) => (ev.id && eventData.id && ev.id === eventData.id) ||
+                (ev.title === eventData.title && (ev.eventDateTime === eventData.eventDateTime || Math.abs((ev.createdAt || 0) - (eventData.createdAt || 0)) < 10000))
       );
-      if (!exists) {
-        currentData.events.push({
+      if (existsIdx === -1) {
+        const newEv = {
+          id: eventData.id || `ev-${Date.now()}`,
           title: eventData.title || "",
-          text: eventData.text || "",
+          text: eventData.text || eventData.note || "",
+          note: eventData.note || eventData.text || "",
           eventDateTime: eventData.eventDateTime || "",
           color: eventData.color || EVENT_COLOR_DEFAULT,
-          createdAt: eventData.createdAt || Date.now()
-        });
-        saveDateData(targetKey, currentData);
+          createdAt: Number(eventData.createdAt || Date.now())
+        };
+        currentData.events.push(newEv);
+        dateDataCache[targetKey] = currentData;
+        try {
+          localStorage.setItem(targetKey, JSON.stringify({
+            __type: "date_data",
+            events: currentData.events,
+            overtimeHours: currentData.overtimeHours,
+            cashflowEntries: currentData.cashflowEntries,
+            updatedAt: Date.now()
+          }));
+        } catch (e) { }
       }
     }
     closeAllModals();
@@ -3799,11 +3816,12 @@ function checkUrlParamsForDateNavigation() {
     const textParam = params.get("text");
     const eventDateTimeParam = params.get("eventDateTime");
     const colorParam = params.get("color");
+    const createdAtParam = params.get("createdAt");
 
-    if (!dateParam && !actionParam && !idParam && !titleParam) return;
+    if (!dateParam && !actionParam && !idParam && !titleParam && !textParam) return;
 
     let eventData = null;
-    if (idParam || amountParam || categoryParam || cashflowTypeParam || noteParam || titleParam || textParam || eventDateTimeParam || colorParam) {
+    if (idParam || amountParam || categoryParam || cashflowTypeParam || noteParam || titleParam || textParam || eventDateTimeParam || colorParam || createdAtParam) {
       eventData = {
         id: idParam || "",
         amount: Number(amountParam || 0),
@@ -3814,6 +3832,7 @@ function checkUrlParamsForDateNavigation() {
         title: titleParam || "",
         eventDateTime: eventDateTimeParam || "",
         color: colorParam || "",
+        createdAt: Number(createdAtParam) || Date.now(),
         date: dateParam || ""
       };
     }
@@ -4200,11 +4219,16 @@ function saveNewEvent() {
     return;
   }
 
+  const now = Date.now();
   const eventPayload = {
+    id: `ev-${now}-${Math.random().toString(36).slice(2, 6)}`,
     title,
     text,
+    note: text,
     eventDateTime,
     color,
+    createdAt: now,
+    updatedAt: now
   };
 
   if (selectedEventIndex >= 0) {

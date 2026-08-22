@@ -565,18 +565,31 @@ body::before {
   transform: scale(0.99);
 }
 
-/* Sự kiện sắp đến hạn: viền đỏ phát sáng và rung cảnh báo */
+/* Sự kiện sắp đến hạn (1-60 phút): viền đỏ phát sáng */
 .today-event-item.is-imminent-alert {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(185, 28, 28, 0.1)) !important;
   border: 1px solid rgba(239, 68, 68, 0.65) !important;
   border-left: 4.5px solid #ef4444 !important;
-  animation: imminentVibrate 3s infinite ease-in-out, imminentGlow 1.6s infinite alternate !important;
+  animation: imminentGlow 1.6s infinite alternate !important;
 }
 
 .today-event-item.is-imminent-alert:hover {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.24), rgba(185, 28, 28, 0.16)) !important;
 }
 
+/* Sự kiện đang diễn ra: viền xanh lá cây phát sáng */
+.today-event-item.is-ongoing-alert {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(5, 150, 105, 0.1)) !important;
+  border: 1px solid rgba(16, 185, 129, 0.65) !important;
+  border-left: 4.5px solid #10b981 !important;
+  animation: ongoingGlow 1.6s infinite alternate !important;
+}
+
+.today-event-item.is-ongoing-alert:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.24), rgba(5, 150, 105, 0.16)) !important;
+}
+
+/* Tag cảnh báo: áp dụng rung nhẹ và nhịp phát sáng trực tiếp trên tag */
 .imminent-badge {
   display: inline-flex;
   align-items: center;
@@ -589,37 +602,38 @@ body::before {
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
   margin-left: auto;
-  animation: badgePulse 1.2s infinite alternate;
+  animation: imminentBadgeVibrate 2.6s infinite ease-in-out, badgePulse 1.2s infinite alternate;
 }
 
 .imminent-badge.is-live {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.5) !important;
+  animation: imminentBadgeVibrate 3.2s infinite ease-in-out, badgePulse 1.4s infinite alternate;
 }
 
-@keyframes imminentVibrate {
-  0%, 68%, 100% {
+@keyframes imminentBadgeVibrate {
+  0%, 65%, 100% {
     transform: translate(0, 0);
   }
-  70% {
-    transform: translate(-2px, 1px) rotate(-0.5deg);
+  68% {
+    transform: translate(-1.5px, 1px) rotate(-1deg);
   }
-  72% {
-    transform: translate(2px, -1px) rotate(0.5deg);
+  71% {
+    transform: translate(1.5px, -1px) rotate(1deg);
   }
   74% {
-    transform: translate(-2px, -1px) rotate(-0.5deg);
+    transform: translate(-1.5px, -1px) rotate(-1deg);
   }
-  76% {
-    transform: translate(2px, 1px) rotate(0.5deg);
-  }
-  78% {
-    transform: translate(-1px, 1px) rotate(-0.3deg);
+  77% {
+    transform: translate(1.5px, 1px) rotate(1deg);
   }
   80% {
-    transform: translate(1px, -1px) rotate(0.3deg);
+    transform: translate(-1px, 1px) rotate(-0.5deg);
   }
-  82% {
+  83% {
+    transform: translate(1px, -1px) rotate(0.5deg);
+  }
+  86% {
     transform: translate(0, 0);
   }
 }
@@ -635,10 +649,21 @@ body::before {
   }
 }
 
+@keyframes ongoingGlow {
+  0% {
+    border-color: rgba(16, 185, 129, 0.5);
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.3);
+  }
+  100% {
+    border-color: rgba(52, 211, 153, 0.95);
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.65), inset 0 0 8px rgba(16, 185, 129, 0.15);
+  }
+}
+
 @keyframes badgePulse {
   0% {
     transform: scale(0.95);
-    opacity: 0.9;
+    opacity: 0.92;
   }
   100% {
     transform: scale(1.05);

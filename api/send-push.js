@@ -102,8 +102,7 @@ module.exports = async (req, res) => {
           }
         } catch (e) {}
       }
-      if (eventData.text) bodyParts.push(eventData.text);
-      targetUrl = `/?date=${dateKey || ""}`;
+      targetUrl = `/?action=event&title=${encodeURIComponent(eventData.title || "")}&text=${encodeURIComponent(eventData.text || "")}&eventDateTime=${encodeURIComponent(eventData.eventDateTime || "")}&color=${encodeURIComponent(eventData.color || "")}&date=${encodeURIComponent(dateKey || "")}`;
     }
 
     const body = bodyParts.join(" | ") || "Có cập nhật mới từ thiết bị khác.";

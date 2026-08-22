@@ -358,7 +358,7 @@ function renderTodayEvents() {
           : "";
         const evColor = escapeHtml(ev.color || "#3b82f6");
 
-        let isImminent = false;
+        let alertClass = "";
         let imminentBadge = "";
 
         if (ev.eventDateTime) {
@@ -366,20 +366,20 @@ function renderTodayEvents() {
             const evTime = new Date(ev.eventDateTime).getTime();
             if (!Number.isNaN(evTime)) {
               const diffMinutes = Math.round((evTime - nowTime) / (60 * 1000));
-              // Sắp diễn ra trong vòng 60 phút tới (0 <= diffMinutes <= 60) hoặc vừa bắt đầu/đang diễn ra (-30 <= diffMinutes < 0)
-              if (diffMinutes >= -30 && diffMinutes <= 60) {
-                isImminent = true;
-                if (diffMinutes > 0) {
-                  imminentBadge = `<span class="imminent-badge" title="Sự kiện sắp đến hạn trong ${diffMinutes} phút">🔥 Còn ${diffMinutes}p</span>`;
-                } else {
-                  imminentBadge = `<span class="imminent-badge is-live" title="Sự kiện đang diễn ra">⚡ Đang diễn ra</span>`;
-                }
+              if (diffMinutes > 0 && diffMinutes <= 60) {
+                // Sắp đến hạn (trong 60 phút tới): Viền đỏ phát sáng & rung
+                alertClass = " is-imminent-alert";
+                imminentBadge = `<span class="imminent-badge" title="Sự kiện sắp đến hạn trong ${diffMinutes} phút">🔥 Còn ${diffMinutes}p</span>`;
+              } else if (diffMinutes <= 0 && diffMinutes >= -60) {
+                // Đang diễn ra: Viền xanh lá cây phát sáng & nhịp hiệu ứng
+                alertClass = " is-ongoing-alert";
+                imminentBadge = `<span class="imminent-badge is-live" title="Sự kiện đang diễn ra">⚡ Đang diễn ra</span>`;
               }
             }
           } catch (e) { }
         }
 
-        return `<div class="today-event-item${isImminent ? " is-imminent-alert" : ""}" 
+        return `<div class="today-event-item${alertClass}" 
                      style="--event-color: ${evColor}; border-left-color: ${evColor}; cursor: pointer;"
                      onclick="selectedKey='${key}'; openEventQuickViewModal(getEventsForDate('${key}')[${idx}], '${key}', ${idx});"
                      title="Nhấp để xem chi tiết sự kiện">
@@ -3195,7 +3195,7 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
   }
 
   // Event (sự kiện lịch)
-  const targetKey = isoDateToDateKey(dKey) || dKey;
+  const targetKey = isoDateToDateKey(dKey) || dKey || `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}`;
   const parts = targetKey ? targetKey.split("-").map(Number) : [];
 
   if (eventData && (eventData.title || eventData.text)) {
@@ -3223,12 +3223,34 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
     return;
   }
 
-  if (targetKey && parts.length === 3) {
-    openDayDetailsModal(targetKey, parts[2], parts[1], parts[0]);
-  } else {
-    const now = new Date();
-    const todayKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
-    openDayDetailsModal(todayKey, now.getDate(), now.getMonth() + 1, now.getFullYear());
+  // Nếu không có eventData cụ thể trong payload, mở sự kiện mới nhất trong ngày targetKey
+  closeAllModals();
+  const currentData = getDateData(targetKey);
+  const events = currentData.events || [];
+  if (events.length > 0) {
+    const latestEvent = events[events.length - 1];
+    openEventQuickViewModal(latestEvent, targetKey, events.length - 1);
+    if (parts.length === 3) {
+      selectedKey = targetKey;
+    }
+    return;
+  }
+
+  // Nếu chưa có trong cache, fetch Firebase ngầm và hiển thị modal chi tiết sự kiện khi nhận được
+  if (firebaseDb && userProfileKey) {
+    firebaseDb.ref(`${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates/${targetKey}`).once("value").then((snap) => {
+      const remote = snap.val();
+      if (remote && isDateRecordTrusted(remote)) {
+        dateDataCache[targetKey] = normalizeDateData(remote);
+        const remoteEvents = dateDataCache[targetKey].events || [];
+        if (remoteEvents.length > 0) {
+          openEventQuickViewModal(remoteEvents[remoteEvents.length - 1], targetKey, remoteEvents.length - 1);
+        }
+      }
+    }).catch(() => {});
+  }
+  if (parts.length === 3) {
+    selectedKey = targetKey;
   }
 }
 window.handleNotificationNavigation = handleNotificationNavigation;
@@ -3798,19 +3820,24 @@ function checkUrlParamsForDateNavigation() {
     const cashflowTypeParam = params.get("cashflowType");
     const noteParam = params.get("note");
     const titleParam = params.get("title");
+    const textParam = params.get("text");
+    const eventDateTimeParam = params.get("eventDateTime");
+    const colorParam = params.get("color");
 
-    if (!dateParam && !actionParam && !idParam) return;
+    if (!dateParam && !actionParam && !idParam && !titleParam) return;
 
     let eventData = null;
-    if (idParam || amountParam || categoryParam || cashflowTypeParam || noteParam || titleParam) {
+    if (idParam || amountParam || categoryParam || cashflowTypeParam || noteParam || titleParam || textParam || eventDateTimeParam || colorParam) {
       eventData = {
         id: idParam || "",
         amount: Number(amountParam || 0),
         category: categoryParam || "",
         cashflowType: cashflowTypeParam || "",
-        text: noteParam || "",
-        note: noteParam || "",
+        text: textParam || noteParam || "",
+        note: noteParam || textParam || "",
         title: titleParam || "",
+        eventDateTime: eventDateTimeParam || "",
+        color: colorParam || "",
         date: dateParam || ""
       };
     }

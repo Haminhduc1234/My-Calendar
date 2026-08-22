@@ -79,8 +79,7 @@ async function sendNotificationToProfile(profileKey, eventData, dateKey = "", ex
     title = "📊 Phân bổ quỹ mới";
     targetUrl = "/?action=funds";
   } else {
-    title = eventData.title ? `🔔 ${eventData.title}` : "🔔 Sự kiện mới trên Lịch Việt";
-    targetUrl = dateKey ? `/?date=${dateKey}` : EVENT_LINK;
+    targetUrl = `/?action=event&title=${encodeURIComponent(eventData.title || "")}&text=${encodeURIComponent(eventData.text || "")}&eventDateTime=${encodeURIComponent(eventData.eventDateTime || "")}&color=${encodeURIComponent(eventData.color || "")}&date=${encodeURIComponent(dateKey || "")}`;
   }
 
   const body = buildNotificationBody(eventData, dateKey);

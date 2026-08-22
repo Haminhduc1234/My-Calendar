@@ -49,8 +49,9 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
                     } catch { }
                 }
                 if (payload.data?.text) bodyParts.push(payload.data.text);
-                if (Number(payload.data?.overtimeHours || 0) > 0) bodyParts.push(`OT: ${payload.data.overtimeHours}h`);
-                targetUrl = targetUrl !== "./" ? targetUrl : (dateStr ? `./?date=${dateStr}` : "./");
+                targetUrl = targetUrl !== "./" ? targetUrl : (
+                    `./?action=event&title=${encodeURIComponent(payload.data?.title || "")}&text=${encodeURIComponent(payload.data?.text || "")}&eventDateTime=${encodeURIComponent(payload.data?.eventDateTime || "")}&color=${encodeURIComponent(payload.data?.color || "")}&date=${encodeURIComponent(dateStr || "")}`
+                );
             }
 
             if (payload.notification?.body) bodyParts.push(payload.notification.body);

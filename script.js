@@ -4036,9 +4036,6 @@ function renderNotificationList() {
           <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
         </svg>
         <div>${notificationFilterMode === "unread" ? "Không có thông báo chưa đọc" : "Chưa có thông báo nào"}</div>
-        <button type="button" class="btn-primary" style="margin-top: 12px; padding: 6px 14px; font-size: 12px; border-radius: 8px; cursor: pointer;" onclick="sendTestPushNotification()">
-          Tạo thông báo thử nghiệm
-        </button>
       </div>
     `;
     return;
@@ -4105,8 +4102,9 @@ async function handleNotificationItemClick(notifId) {
   const item = combinedNotificationsList.find((i) => i.id === notifId) || userNotificationsCache.find((i) => i.id === notifId);
   if (!item) return;
 
-  if (!item.read && !notifId.startsWith("rem_")) {
-    await markNotificationAsRead(notifId);
+  if (!item.read) {
+    item.read = true;
+    markNotificationAsRead(notifId);
   }
 
   closeNotificationModal();
@@ -4122,7 +4120,12 @@ window.handleNotificationItemClick = handleNotificationItemClick;
 async function markNotificationAsRead(notifId) {
   if (!firebaseDb || !userProfileKey || !notifId) return;
   try {
-    await firebaseDb.ref(`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}/${notifId}`).update({ read: true });
+    if (notifId.startsWith("rem_")) {
+      const remId = notifId.replace("rem_", "");
+      await firebaseDb.ref(`${FIREBASE_EVENT_REMINDERS_PATH}/${userProfileKey}/${remId}`).update({ delivered: true });
+    } else {
+      await firebaseDb.ref(`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}/${notifId}`).update({ read: true });
+    }
   } catch (e) {
     console.warn("[NotificationHistory] Lỗi đánh dấu đã đọc:", e);
   }
@@ -4131,15 +4134,22 @@ window.markNotificationAsRead = markNotificationAsRead;
 
 async function markAllNotificationsAsRead() {
   if (!firebaseDb || !userProfileKey) return;
-  const unreadItems = userNotificationsCache.filter((i) => !i.read);
+  const unreadItems = combinedNotificationsList.filter((i) => !i.read);
   if (unreadItems.length === 0) return;
 
   try {
     const updates = {};
     unreadItems.forEach((i) => {
-      updates[`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}/${i.id}/read`] = true;
+      i.read = true;
+      if (i.id.startsWith("rem_")) {
+        const remId = i.id.replace("rem_", "");
+        updates[`${FIREBASE_EVENT_REMINDERS_PATH}/${userProfileKey}/${remId}/delivered`] = true;
+      } else {
+        updates[`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}/${i.id}/read`] = true;
+      }
     });
     await firebaseDb.ref().update(updates);
+    updateNotificationBadgeUI(0);
   } catch (e) {
     console.warn("[NotificationHistory] Lỗi đánh dấu tất cả đã đọc:", e);
   }
@@ -4173,6 +4183,7 @@ async function clearAllNotifications() {
     async () => {
       try {
         await firebaseDb.ref(`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}`).remove();
+        await firebaseDb.ref(`${FIREBASE_EVENT_REMINDERS_PATH}/${userProfileKey}`).remove();
       } catch (e) {
         console.warn("[NotificationHistory] Lỗi dọn lịch sử thông báo:", e);
       }

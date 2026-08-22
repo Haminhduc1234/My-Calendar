@@ -551,12 +551,99 @@ body::before {
   border: 1px solid rgba(91, 156, 246, 0.18);
   border-left: 4px solid var(--event-color, #3b82f6);
   position: relative;
-  transition: transform 0.15s ease, background 0.15s ease;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
 .today-event-item:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(147, 197, 253, 0.45);
   transform: translateX(2px);
+}
+
+.today-event-item:active {
+  transform: scale(0.99);
+}
+
+/* Sự kiện sắp đến hạn: viền đỏ phát sáng và rung cảnh báo */
+.today-event-item.is-imminent-alert {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(185, 28, 28, 0.1)) !important;
+  border: 1px solid rgba(239, 68, 68, 0.65) !important;
+  border-left: 4.5px solid #ef4444 !important;
+  animation: imminentVibrate 3s infinite ease-in-out, imminentGlow 1.6s infinite alternate !important;
+}
+
+.today-event-item.is-imminent-alert:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.24), rgba(185, 28, 28, 0.16)) !important;
+}
+
+.imminent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  padding: 2px 7px;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+  margin-left: auto;
+  animation: badgePulse 1.2s infinite alternate;
+}
+
+.imminent-badge.is-live {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+}
+
+@keyframes imminentVibrate {
+  0%, 68%, 100% {
+    transform: translate(0, 0);
+  }
+  70% {
+    transform: translate(-2px, 1px) rotate(-0.5deg);
+  }
+  72% {
+    transform: translate(2px, -1px) rotate(0.5deg);
+  }
+  74% {
+    transform: translate(-2px, -1px) rotate(-0.5deg);
+  }
+  76% {
+    transform: translate(2px, 1px) rotate(0.5deg);
+  }
+  78% {
+    transform: translate(-1px, 1px) rotate(-0.3deg);
+  }
+  80% {
+    transform: translate(1px, -1px) rotate(0.3deg);
+  }
+  82% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes imminentGlow {
+  0% {
+    border-color: rgba(239, 68, 68, 0.5);
+    box-shadow: 0 0 6px rgba(239, 68, 68, 0.3);
+  }
+  100% {
+    border-color: rgba(248, 113, 113, 0.95);
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.65), inset 0 0 8px rgba(239, 68, 68, 0.15);
+  }
+}
+
+@keyframes badgePulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
 }
 
 .today-event-time {
@@ -5680,6 +5767,73 @@ input[type="datetime-local"] {
   color: #eef5ff;
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+.cashflow-quickview-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.cashflow-quickview-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: 1px solid rgba(147, 197, 253, 0.35);
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cashflow-quickview-btn-primary:hover {
+  background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  border-color: rgba(191, 219, 254, 0.6);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.45);
+  transform: translateY(-1px);
+}
+
+.cashflow-quickview-btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.cashflow-quickview-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  color: #e2e8f0 !important;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cashflow-quickview-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
+.cashflow-quickview-btn-secondary:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .cashflow-legend {

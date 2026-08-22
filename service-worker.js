@@ -74,7 +74,7 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
     }
 }
 
-const CACHE_NAME = "calendar-pwa-v7";
+const CACHE_NAME = "calendar-pwa-v8";
 const FILES_TO_CACHE = [
     "./",
     "./index.html",

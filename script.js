@@ -345,9 +345,11 @@ function renderTodayEvents() {
   }
 
   panel.style.display = "block";
+  const nowTime = Date.now();
+
   panel.innerHTML = `
     <div class="today-events-list">${events
-      .map((ev) => {
+      .map((ev, idx) => {
         const timeStr = ev.eventDateTime
           ? new Date(ev.eventDateTime).toLocaleTimeString("vi-VN", {
             hour: "2-digit",
@@ -355,11 +357,37 @@ function renderTodayEvents() {
           })
           : "";
         const evColor = escapeHtml(ev.color || "#3b82f6");
-        return `<div class="today-event-item" style="--event-color: ${evColor}; border-left-color: ${evColor};">
-        ${timeStr ? `<span class="today-event-time" style="color: ${evColor};">${timeStr}</span>` : ""}
-        <span class="today-event-title">${escapeHtml(ev.title || "(Không có tiêu đề)")}</span>
-        ${ev.text ? `<span class="today-event-text">${escapeHtml(ev.text)}</span>` : ""}
-      </div>`;
+
+        let isImminent = false;
+        let imminentBadge = "";
+
+        if (ev.eventDateTime) {
+          try {
+            const evTime = new Date(ev.eventDateTime).getTime();
+            if (!Number.isNaN(evTime)) {
+              const diffMinutes = Math.round((evTime - nowTime) / (60 * 1000));
+              // Sắp diễn ra trong vòng 60 phút tới (0 <= diffMinutes <= 60) hoặc vừa bắt đầu/đang diễn ra (-30 <= diffMinutes < 0)
+              if (diffMinutes >= -30 && diffMinutes <= 60) {
+                isImminent = true;
+                if (diffMinutes > 0) {
+                  imminentBadge = `<span class="imminent-badge" title="Sự kiện sắp đến hạn trong ${diffMinutes} phút">🔥 Còn ${diffMinutes}p</span>`;
+                } else {
+                  imminentBadge = `<span class="imminent-badge is-live" title="Sự kiện đang diễn ra">⚡ Đang diễn ra</span>`;
+                }
+              }
+            }
+          } catch (e) { }
+        }
+
+        return `<div class="today-event-item${isImminent ? " is-imminent-alert" : ""}" 
+                     style="--event-color: ${evColor}; border-left-color: ${evColor}; cursor: pointer;"
+                     onclick="selectedKey='${key}'; openEventQuickViewModal(getEventsForDate('${key}')[${idx}], '${key}', ${idx});"
+                     title="Nhấp để xem chi tiết sự kiện">
+          ${timeStr ? `<span class="today-event-time" style="color: ${evColor};">${timeStr}</span>` : ""}
+          <span class="today-event-title">${escapeHtml(ev.title || "(Không có tiêu đề)")}</span>
+          ${imminentBadge}
+          ${ev.text ? `<span class="today-event-text">${escapeHtml(ev.text)}</span>` : ""}
+        </div>`;
       })
       .join("")}</div>
   `;
@@ -3421,7 +3449,7 @@ async function initFirebaseMessaging() {
         const notificationType = payload.data?.notificationType || "event";
         let parsedEventData = null;
         if (payload.data?.eventDataJson) {
-          try { parsedEventData = JSON.parse(payload.data.eventDataJson); } catch (e) {}
+          try { parsedEventData = JSON.parse(payload.data.eventDataJson); } catch (e) { }
         } else if (payload.data?.eventData) {
           parsedEventData = payload.data.eventData;
         }
@@ -4092,25 +4120,18 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
         <span class="cashflow-quickview-label">Thời gian</span>
         <strong>${timeDetail !== "--:--" ? timeDetail : timeStr}</strong>
       </div>
-      <div class="cashflow-quickview-item">
+      <div class="cashflow-quickview-item cashflow-quickview-item-full">
         <span class="cashflow-quickview-label">Tạo lúc</span>
         <strong>${createdLabel}</strong>
       </div>
-      <div class="cashflow-quickview-item">
-        <span class="cashflow-quickview-label">Màu đánh dấu</span>
-        <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
-          <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: ${escapeHtml(color)}; border: 1px solid rgba(255,255,255,0.4);"></span>
-          <strong style="font-size: 12px;">${escapeHtml(color)}</strong>
-        </div>
-      </div>
     </div>
-    <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end;">
+    <div class="cashflow-quickview-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
       ${eventIndex >= 0 ? `
-        <button type="button" class="btn-primary" style="padding: 6px 14px; font-size: 12px; border-radius: 8px;" onclick="closeEventQuickViewModal(); openEditEventModal(${eventIndex});">
+        <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeEventQuickViewModal(); openEditEventModal(${eventIndex});">
           ✏️ Chỉnh sửa
         </button>
       ` : ""}
-      <button type="button" class="btn-secondary" style="padding: 6px 14px; font-size: 12px; border-radius: 8px;" onclick="closeEventQuickViewModal();">
+      <button type="button" class="cashflow-quickview-btn-secondary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 500; color: #e2e8f0 !important; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeEventQuickViewModal();">
         Đóng
       </button>
     </div>
@@ -9487,11 +9508,11 @@ function renderCashflowQuickView() {
         <strong>${entry.id}</strong>
       </div>
     </div>
-    <div class="cashflow-quickview-actions" style="display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; flex-wrap: wrap;">
-      <button type="button" class="btn-primary" style="padding: 7px 14px; font-size: 13px; border-radius: 8px; display: inline-flex; align-items: center; gap: 5px;" onclick="closeCashflowQuickViewModal(); openCashflowModal();">
-        📊 Xem Dashboard Thu Chi
+    <div class="cashflow-quickview-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+      <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeCashflowQuickViewModal(); openCashflowAllTransactionsModal();">
+        📋 Xem tất cả thu chi
       </button>
-      <button type="button" class="btn-secondary" style="padding: 7px 14px; font-size: 13px; border-radius: 8px;" onclick="closeCashflowQuickViewModal();">
+      <button type="button" class="cashflow-quickview-btn-secondary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 500; color: #e2e8f0 !important; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeCashflowQuickViewModal();">
         Đóng
       </button>
     </div>
@@ -11572,6 +11593,7 @@ function loadTodayLunarOnDemand() {
   renderCalendar();
   renderOvertime();
   renderOvertimeSalary();
+  setInterval(renderTodayEvents, 30000);
   console.log("[Init] Calendar rendered");
 
   // Step 4: Initialize Firebase in background (non-blocking)

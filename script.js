@@ -2731,27 +2731,6 @@ async function initFirebaseRealtime() {
       );
     });
 
-    // Phát hiện sự kiện mới từ thiết bị khác và bắn thông báo
-    if (!isInitialDatesLoad) {
-      Object.keys(nextCache).forEach((dKey) => {
-        const oldEvents = dateDataCache[dKey]?.events || [];
-        const newEvents = nextCache[dKey]?.events || [];
-        if (newEvents.length > oldEvents.length) {
-          newEvents.forEach((nEv) => {
-            const exists = oldEvents.some(
-              (oEv) =>
-                oEv.title === nEv.title &&
-                (oEv.eventDateTime === nEv.eventDateTime || oEv.createdAt === nEv.createdAt),
-            );
-            if (!exists && nEv.createdAt && Date.now() - nEv.createdAt < 120000) {
-              notifyNewEventFromRealtime(nEv, dKey);
-            }
-          });
-        }
-      });
-    }
-    isInitialDatesLoad = false;
-
     dateDataCache = nextCache;
 
     // Re-render calendar after Firebase data loads to display events and overtime
@@ -2908,26 +2887,6 @@ async function reloadFirebaseForUser() {
         }),
       );
     });
-
-    if (!isFirstReloadLoad) {
-      Object.keys(nextCache).forEach((dKey) => {
-        const oldEvents = dateDataCache[dKey]?.events || [];
-        const newEvents = nextCache[dKey]?.events || [];
-        if (newEvents.length > oldEvents.length) {
-          newEvents.forEach((nEv) => {
-            const exists = oldEvents.some(
-              (oEv) =>
-                oEv.title === nEv.title &&
-                (oEv.eventDateTime === nEv.eventDateTime || oEv.createdAt === nEv.createdAt),
-            );
-            if (!exists && nEv.createdAt && Date.now() - nEv.createdAt < 120000) {
-              notifyNewEventFromRealtime(nEv, dKey);
-            }
-          });
-        }
-      });
-    }
-    isFirstReloadLoad = false;
 
     dateDataCache = nextCache;
 
@@ -3285,6 +3244,21 @@ function showAppPushToast(title, body, dateKey, notificationType, eventData) {
 }
 window.showAppPushToast = showAppPushToast;
 
+const _recentlyNotifiedIds = new Map();
+
+function isDuplicateNotification(uniqueId) {
+  if (!uniqueId) return false;
+  const now = Date.now();
+  for (const [id, time] of _recentlyNotifiedIds.entries()) {
+    if (now - time > 120000) _recentlyNotifiedIds.delete(id);
+  }
+  if (_recentlyNotifiedIds.has(uniqueId)) {
+    return true;
+  }
+  _recentlyNotifiedIds.set(uniqueId, now);
+  return false;
+}
+
 function openEventDateFromPush(dateKey) {
   handleNotificationNavigation("event", dateKey);
 }
@@ -3298,6 +3272,12 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
   if (localStorage.getItem("calendarDevicePushEnabled") === "0") return;
 
   const type = notificationType || "event";
+  const uniqueKey = eventData.id || `${type}-${eventData.title || ""}-${eventData.amount || ""}-${eventData.createdAt || dateKey || ""}`;
+  if (isDuplicateNotification(uniqueKey)) {
+    console.log("[Notification] Bỏ qua thông báo trùng lặp:", uniqueKey);
+    return;
+  }
+
   let title = "";
   const bodyParts = [];
   let notificationUrl = "./";
@@ -3430,6 +3410,12 @@ async function initFirebaseMessaging() {
           try { parsedEventData = JSON.parse(payload.data.eventDataJson); } catch (e) { }
         } else if (payload.data?.eventData) {
           parsedEventData = payload.data.eventData;
+        }
+
+        const fcmUniqueKey = parsedEventData?.id || payload.data?.id || payload.messageId || `${notificationType}-${title}-${body}-${dateKey}`;
+        if (isDuplicateNotification(fcmUniqueKey)) {
+          console.log("[FCM] Bỏ qua thông báo FCM trùng lặp:", fcmUniqueKey);
+          return;
         }
 
         playNotificationChime();
@@ -3717,7 +3703,7 @@ async function sendTestPushNotification() {
 
 let firebaseNotificationQueueRef = null;
 const _processedNotificationKeys = new Set();
-const _appStartTime = Date.now() - 30000;
+const _appStartTime = Date.now();
 
 function setupNotificationQueueListener() {
   if (!firebaseDb || !userProfileKey) return;
@@ -3746,8 +3732,9 @@ function setupNotificationQueueListener() {
       if (!data || !data.eventData) return;
 
       const mySessionId = getOrCreateTabSessionId();
+      const myDeviceId = getOrCreateDeviceId();
       // Nếu sự kiện được gửi từ tab khác hoặc thiết bị khác
-      if (data.senderSessionId !== mySessionId) {
+      if (data.senderSessionId !== mySessionId && data.senderDeviceId !== myDeviceId) {
         console.log("[NotificationQueue] Nhận thông báo từ thiết bị/tab khác:", data);
         notifyNewEventFromRealtime(data.eventData, data.dateKey, data.notificationType);
       }
@@ -3849,6 +3836,9 @@ function checkUrlParamsForDateNavigation() {
         createdAt: Number(createdAtParam) || Date.now(),
         date: dateParam || ""
       };
+      if (eventData.id) {
+        _recentlyNotifiedIds.set(eventData.id, Date.now());
+      }
     }
 
     const executeNav = () => {

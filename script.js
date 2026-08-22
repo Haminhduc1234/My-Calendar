@@ -3910,102 +3910,10 @@ function markNotificationIdAsReadLocal(id) {
   } catch (e) { }
 }
 
-/**
- * Trích xuất danh sách thông báo từ tất cả sự kiện & giao dịch thu chi có trong lịch
- */
-function getNotificationsFromCalendarEvents() {
-  const items = [];
-  if (!dateDataCache) return items;
-
-  Object.keys(dateDataCache).forEach((dateKey) => {
-    const data = dateDataCache[dateKey];
-    if (!data) return;
-
-    // 1. Sự kiện (events)
-    if (Array.isArray(data.events)) {
-      data.events.forEach((ev) => {
-        if (!ev || (!ev.title && !ev.text && !ev.note)) return;
-        const id = `ev_${ev.id || ev.createdAt || dateKey + '_' + ev.title}`;
-        let timeDesc = "";
-        if (ev.eventDateTime) {
-          try {
-            const dt = new Date(ev.eventDateTime);
-            if (!Number.isNaN(dt.getTime())) {
-              timeDesc = ` Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
-            }
-          } catch (e) { }
-        }
-
-        items.push({
-          id: id,
-          notificationType: "event",
-          title: `📅 ${ev.title || "Sự kiện lịch"}`,
-          body: `Ngày ${dateKey}${timeDesc}${ev.text || ev.note ? " | " + (ev.text || ev.note) : ""}`,
-          dateKey: dateKey,
-          eventData: {
-            id: ev.id,
-            title: ev.title,
-            text: ev.text || ev.note,
-            note: ev.note || ev.text,
-            eventDateTime: ev.eventDateTime,
-            color: ev.color,
-            date: dateKey,
-            createdAt: ev.createdAt
-          },
-          createdAt: Number(ev.createdAt || Date.now()),
-          read: readNotificationIds.has(id)
-        });
-      });
-    }
-
-    // 2. Thu chi (cashflowEntries)
-    if (Array.isArray(data.cashflowEntries)) {
-      data.cashflowEntries.forEach((cf) => {
-        if (!cf) return;
-        const id = `cf_${cf.id || cf.createdAt || dateKey + '_' + cf.amount}`;
-        const isExpense = cf.type === "expense";
-        const titleStr = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
-        const amtStr = cf.amount ? `${Number(cf.amount).toLocaleString("vi-VN")} đ` : "";
-        const catStr = cf.category ? `${cf.category} - ` : "";
-        const noteStr = cf.note ? ` (${cf.note})` : "";
-
-        items.push({
-          id: id,
-          notificationType: "cashflow",
-          title: titleStr,
-          body: `${catStr}${amtStr}${noteStr}`,
-          dateKey: dateKey,
-          eventData: {
-            id: cf.id,
-            date: cf.date || dateKey,
-            type: cf.type,
-            cashflowType: cf.type,
-            amount: cf.amount,
-            category: cf.category,
-            note: cf.note,
-            text: cf.note,
-            createdAt: cf.createdAt
-          },
-          createdAt: Number(cf.createdAt || Date.now()),
-          read: readNotificationIds.has(id)
-        });
-      });
-    }
-  });
-
-  return items;
-}
-
 function syncCombinedNotifications() {
   const map = new Map();
 
-  // 1. Thêm các sự kiện & thu chi từ dateDataCache
-  const calendarNotifs = getNotificationsFromCalendarEvents();
-  calendarNotifs.forEach((item) => {
-    map.set(item.id, item);
-  });
-
-  // 2. Thêm các bản ghi từ eventReminders đã lưu trong RTDB
+  // 1. Thêm các bản ghi từ eventReminders đã lưu trong RTDB
   eventRemindersCache.forEach((rem) => {
     const id = `rem_${rem.id}`;
     map.set(id, {
@@ -4028,7 +3936,7 @@ function syncCombinedNotifications() {
     });
   });
 
-  // 3. Thêm/ghi đè các bản ghi từ userNotifications
+  // 2. Thêm/ghi đè các bản ghi từ userNotifications (thông báo thực tế đã đẩy)
   userNotificationsCache.forEach((item) => {
     map.set(item.id, {
       ...item,

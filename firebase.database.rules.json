@@ -94,6 +94,13 @@
         ".read": "auth != null",
         ".write": "auth != null"
       }
+    },
+    "eventReminders": {
+      "$profileKey": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": ["reminderAtMs"]
+      }
     }
   }
 }

@@ -21,6 +21,7 @@ const FIREBASE_TRANSLATE_HISTORY_PATH =
   self.FIREBASE_TRANSLATE_HISTORY_PATH || "translateHistory";
 const FIREBASE_NOTIFICATION_TOKENS_PATH = "notificationTokens";
 const FIREBASE_EVENT_NOTIFICATION_QUEUE_PATH = "eventNotificationQueue";
+const FIREBASE_EVENT_REMINDERS_PATH = "eventReminders";
 const DEVICE_ID_STORAGE_KEY = "calendarDeviceId";
 
 let firebaseDb = null;
@@ -2364,8 +2365,13 @@ function updateEventInDate(dateKey, eventIndex, eventData) {
 function deleteEventFromDate(dateKey, eventIndex) {
   const data = getDateData(dateKey);
   if (eventIndex >= 0 && eventIndex < data.events.length) {
+    const removedEvent = data.events[eventIndex];
     data.events.splice(eventIndex, 1);
     saveDateData(dateKey, data);
+    // Xoá reminder tương ứng nếu có
+    if (removedEvent && removedEvent.id) {
+      cancelEventReminder(removedEvent.id);
+    }
   }
 }
 
@@ -3812,6 +3818,88 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
   } catch (e) { }
 }
 
+/* ==================== EVENT REMINDER (60 phút trước sự kiện) ==================== */
+
+/**
+ * Lên lịch nhắc nhở 60 phút trước sự kiện.
+ * Ghi vào Firebase RTDB node eventReminders/{profileKey}/{reminderId}
+ * Cloud Function checkEventReminders sẽ quét và gửi push khi đến hạn.
+ */
+async function scheduleEventReminder(eventData, dateKey) {
+  if (!userProfileKey || !firebaseDb || !eventData) return;
+  if (!eventData.eventDateTime) return; // Không có giờ sự kiện thì không nhắc
+
+  try {
+    const eventTime = new Date(eventData.eventDateTime).getTime();
+    if (Number.isNaN(eventTime)) return;
+
+    const REMINDER_BEFORE_MS = 60 * 60 * 1000; // 60 phút
+    const reminderAtMs = eventTime - REMINDER_BEFORE_MS;
+
+    // Không tạo reminder nếu thời gian nhắc đã qua hoặc sự kiện trong quá khứ
+    if (reminderAtMs <= Date.now()) {
+      console.log("[Reminder] Bỏ qua - thời gian nhắc đã qua:", eventData.title);
+      return;
+    }
+
+    const reminderData = {
+      eventId: String(eventData.id || ""),
+      profileKey: userProfileKey,
+      eventTitle: String(eventData.title || "").trim(),
+      eventText: String(eventData.text || eventData.note || "").trim(),
+      eventDateTime: String(eventData.eventDateTime || ""),
+      eventColor: String(eventData.color || ""),
+      dateKey: String(dateKey || ""),
+      reminderAtMs: reminderAtMs,
+      createdAt: Date.now(),
+      delivered: false
+    };
+
+    const reminderRef = firebaseDb
+      .ref(`${FIREBASE_EVENT_REMINDERS_PATH}/${userProfileKey}`)
+      .push();
+    await reminderRef.set(reminderData);
+
+    console.log(
+      `[Reminder] Đã lên lịch nhắc nhở cho "${eventData.title}" lúc`,
+      new Date(reminderAtMs).toLocaleString("vi-VN")
+    );
+  } catch (err) {
+    console.warn("[Reminder] Lỗi lên lịch nhắc nhở:", err);
+  }
+}
+
+/**
+ * Huỷ nhắc nhở khi xoá sự kiện.
+ * Tìm và xoá tất cả reminder có eventId tương ứng.
+ */
+async function cancelEventReminder(eventId) {
+  if (!userProfileKey || !firebaseDb || !eventId) return;
+
+  try {
+    const remindersRef = firebaseDb.ref(
+      `${FIREBASE_EVENT_REMINDERS_PATH}/${userProfileKey}`
+    );
+    const snap = await remindersRef.get();
+    const reminders = snap.val();
+    if (!reminders) return;
+
+    const deletePromises = [];
+    for (const [reminderId, reminder] of Object.entries(reminders)) {
+      if (reminder && reminder.eventId === eventId) {
+        deletePromises.push(remindersRef.child(reminderId).remove());
+      }
+    }
+
+    if (deletePromises.length > 0) {
+      await Promise.all(deletePromises);
+      console.log(`[Reminder] Đã huỷ ${deletePromises.length} nhắc nhở cho event: ${eventId}`);
+    }
+  } catch (err) {
+    console.warn("[Reminder] Lỗi huỷ nhắc nhở:", err);
+  }
+}
+
 /**
  * Kiểm tra tham số URL (?date=YYYY-M-D hoặc ?action=cashflow|funds) để tự động mở chi tiết khi click từ thông báo
  */
@@ -4293,6 +4381,8 @@ function saveNewEvent() {
     addEventToDate(selectedKey, eventPayload);
     // Bắn thông báo đẩy đến tất cả thiết bị cùng tài khoản
     queueEventNotification(eventPayload, selectedKey);
+    // Lên lịch nhắc nhở 60 phút trước sự kiện
+    scheduleEventReminder(eventPayload, selectedKey);
   }
 
   loadCalendarOnDemand();

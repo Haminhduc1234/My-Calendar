@@ -9,6 +9,7 @@ const db = admin.database();
 const EVENTS_PATH = "calendarEvents";
 const TOKENS_PATH = "notificationTokens";
 const QUEUE_PATH = "eventNotificationQueue";
+const REMINDERS_PATH = "eventReminders";
 const MAX_BATCH_SIZE = 100;
 const EVENT_LINK = "/";
 const ICON_PATH = "/public/favicon.png";
@@ -78,7 +79,12 @@ async function sendNotificationToProfile(profileKey, eventData, dateKey = "", ex
   } else if (type === "fund_allocation" || type === "funds") {
     title = "📊 Phân bổ quỹ mới";
     targetUrl = `/?action=funds&id=${encodeURIComponent(eventData.id || "")}&fundName=${encodeURIComponent(eventData.fundName || "")}&amount=${encodeURIComponent(eventData.amount || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
+  } else if (type === "event_reminder") {
+    // Nhắc nhở trước 60 phút - title đã được set từ caller (⏰ Sắp đến giờ: ...)
+    title = eventData.title || "⏰ Nhắc nhở sự kiện";
+    targetUrl = `/?action=event&id=${encodeURIComponent(eventData.id || "")}&title=${encodeURIComponent(eventData.title || "")}&text=${encodeURIComponent(eventData.text || eventData.note || "")}&note=${encodeURIComponent(eventData.note || eventData.text || "")}&eventDateTime=${encodeURIComponent(eventData.eventDateTime || "")}&color=${encodeURIComponent(eventData.color || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}&date=${encodeURIComponent(dateKey || "")}`;
   } else {
+    title = eventData.title ? `🔔 ${eventData.title}` : "🔔 Sự kiện mới";
     targetUrl = `/?action=event&id=${encodeURIComponent(eventData.id || "")}&title=${encodeURIComponent(eventData.title || "")}&text=${encodeURIComponent(eventData.text || eventData.note || "")}&note=${encodeURIComponent(eventData.note || eventData.text || "")}&eventDateTime=${encodeURIComponent(eventData.eventDateTime || "")}&color=${encodeURIComponent(eventData.color || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}&date=${encodeURIComponent(dateKey || "")}`;
   }
 
@@ -241,5 +247,98 @@ exports.dispatchCalendarNotifications = onSchedule("every 1 minutes", async () =
       deliveredCount: response.successCount,
       deliveryErrorCount: response.failureCount
     });
+  }
+});
+
+/**
+ * Cron Job nhắc nhở sự kiện trước 60 phút
+ * Quét tất cả eventReminders, tìm reminder đến hạn, gửi FCM push
+ */
+exports.checkEventReminders = onSchedule("every 1 minutes", async () => {
+  const now = Date.now();
+  const remindersSnap = await db.ref(REMINDERS_PATH).get();
+  const allProfiles = remindersSnap.val() || {};
+
+  if (!Object.keys(allProfiles).length) return;
+
+  const promises = [];
+
+  for (const [profileKey, reminders] of Object.entries(allProfiles)) {
+    if (!reminders || typeof reminders !== "object") continue;
+
+    for (const [reminderId, reminder] of Object.entries(reminders)) {
+      if (!reminder || reminder.delivered === true) continue;
+
+      const reminderAtMs = Number(reminder.reminderAtMs || 0);
+      if (reminderAtMs <= 0 || reminderAtMs > now) continue;
+
+      // Reminder đã đến hạn → gửi thông báo
+      const eventTitle = reminder.eventTitle || "Sự kiện";
+      const eventText = reminder.eventText || "";
+      const eventDateTime = reminder.eventDateTime || "";
+      const dateKey = reminder.dateKey || "";
+
+      // Tính thời gian còn lại đến sự kiện
+      let timeLeftStr = "60 phút";
+      if (eventDateTime) {
+        try {
+          const eventTime = new Date(eventDateTime).getTime();
+          const diffMs = eventTime - now;
+          if (diffMs > 0) {
+            const diffMin = Math.round(diffMs / 60000);
+            timeLeftStr = diffMin >= 60
+              ? `${Math.floor(diffMin / 60)} giờ ${diffMin % 60} phút`
+              : `${diffMin} phút`;
+          }
+        } catch {}
+      }
+
+      const reminderEventData = {
+        id: reminder.eventId || reminderId,
+        title: `⏰ Sắp đến giờ: ${eventTitle}`,
+        text: eventText,
+        note: eventText,
+        eventDateTime: eventDateTime,
+        date: dateKey,
+        color: reminder.eventColor || "#f59e0b",
+        createdAt: reminder.createdAt || now
+      };
+
+      // Gửi đến tất cả thiết bị của profile (không loại trừ thiết bị nào)
+      const sendPromise = sendNotificationToProfile(
+        profileKey,
+        reminderEventData,
+        dateKey,
+        "",  // không exclude device nào
+        "event_reminder"
+      ).then(async () => {
+        // Đánh dấu đã gửi
+        await db.ref(`${REMINDERS_PATH}/${profileKey}/${reminderId}`).update({
+          delivered: true,
+          deliveredAt: now
+        });
+        logger.info("Đã gửi nhắc nhở sự kiện", { profileKey, eventTitle, reminderId });
+      }).catch((err) => {
+        logger.error("Lỗi gửi nhắc nhở:", { profileKey, reminderId, error: err.message });
+      });
+
+      promises.push(sendPromise);
+    }
+  }
+
+  if (promises.length > 0) {
+    await Promise.all(promises);
+    logger.info(`Đã xử lý ${promises.length} nhắc nhở sự kiện`);
+  }
+
+  // Dọn dẹp reminder đã gửi quá 24 giờ
+  const cleanupThreshold = now - 24 * 60 * 60 * 1000;
+  for (const [profileKey, reminders] of Object.entries(allProfiles)) {
+    if (!reminders || typeof reminders !== "object") continue;
+    for (const [reminderId, reminder] of Object.entries(reminders)) {
+      if (reminder?.delivered === true && Number(reminder.deliveredAt || 0) < cleanupThreshold) {
+        await db.ref(`${REMINDERS_PATH}/${profileKey}/${reminderId}`).remove();
+      }
+    }
   }
 });

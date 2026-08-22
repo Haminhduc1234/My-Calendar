@@ -28,16 +28,16 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
                 title = payload.data?.title || (isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới");
                 if (payload.data?.category) bodyParts.push(payload.data.category);
                 if (payload.data?.amount) bodyParts.push(`${Number(payload.data.amount).toLocaleString("vi-VN")} đ`);
-                if (payload.data?.text) bodyParts.push(payload.data.text);
+                if (payload.data?.text || payload.data?.note) bodyParts.push(payload.data.text || payload.data.note);
                 targetUrl = targetUrl !== "./" ? targetUrl : (
-                    `./?action=cashflow&id=${encodeURIComponent(payload.data?.id || "")}&date=${encodeURIComponent(dateStr || "")}&amount=${encodeURIComponent(payload.data?.amount || "")}&category=${encodeURIComponent(payload.data?.category || "")}&cashflowType=${encodeURIComponent(payload.data?.cashflowType || "")}&note=${encodeURIComponent(payload.data?.text || payload.data?.note || "")}`
+                    `./?action=cashflow&id=${encodeURIComponent(payload.data?.id || "")}&date=${encodeURIComponent(dateStr || "")}&amount=${encodeURIComponent(payload.data?.amount || "")}&category=${encodeURIComponent(payload.data?.category || "")}&cashflowType=${encodeURIComponent(payload.data?.cashflowType || "")}&note=${encodeURIComponent(payload.data?.text || payload.data?.note || "")}&createdAt=${encodeURIComponent(payload.data?.createdAt || Date.now())}`
                 );
-            } else if (type === "fund_allocation") {
+            } else if (type === "fund_allocation" || type === "funds") {
                 title = payload.data?.title || "📊 Phân bổ quỹ mới";
                 if (payload.data?.fundName) bodyParts.push(`Quỹ: ${payload.data.fundName}`);
                 if (payload.data?.amount) bodyParts.push(`${Number(payload.data.amount).toLocaleString("vi-VN")} đ`);
-                if (payload.data?.text) bodyParts.push(payload.data.text);
-                targetUrl = targetUrl !== "./" ? targetUrl : "./?action=funds";
+                if (payload.data?.text || payload.data?.note) bodyParts.push(payload.data.text || payload.data.note);
+                targetUrl = targetUrl !== "./" ? targetUrl : `./?action=funds&id=${encodeURIComponent(payload.data?.id || "")}&fundName=${encodeURIComponent(payload.data?.fundName || "")}&amount=${encodeURIComponent(payload.data?.amount || "")}&note=${encodeURIComponent(payload.data?.text || payload.data?.note || "")}&createdAt=${encodeURIComponent(payload.data?.createdAt || Date.now())}`;
             } else {
                 if (dateStr) bodyParts.push(`Ngày ${dateStr}`);
                 if (payload.data?.eventDateTime) {

@@ -3165,7 +3165,17 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
         const exists = (dData.cashflowEntries || []).some((e) => e.id === targetEntry.id);
         if (!exists) {
           dData.cashflowEntries.push(targetEntry);
-          saveDateData(targetDateKey, dData);
+          dateDataCache[targetDateKey] = dData;
+          try {
+            localStorage.setItem(targetDateKey, JSON.stringify({
+              __type: "date_data",
+              events: dData.events,
+              overtimeHours: dData.overtimeHours,
+              cashflowEntries: dData.cashflowEntries,
+              isHoliday: dData.isHoliday,
+              updatedAt: Date.now()
+            }));
+          } catch (e) { }
           reloadCashflowEntriesFromCache();
         }
       }
@@ -3298,16 +3308,16 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
     title = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
     if (eventData.category) bodyParts.push(eventData.category);
     if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
-    if (eventData.text) bodyParts.push(eventData.text);
-    notificationUrl = dateKey ? `./?action=cashflow&date=${dateKey}` : "./?action=cashflow";
-    notificationTag = `cashflow-${Date.now()}`;
-  } else if (type === "fund_allocation") {
+    if (eventData.text || eventData.note) bodyParts.push(eventData.text || eventData.note);
+    notificationUrl = `./?action=cashflow&id=${encodeURIComponent(eventData.id || "")}&date=${encodeURIComponent(dateKey || "")}&amount=${encodeURIComponent(eventData.amount || "")}&category=${encodeURIComponent(eventData.category || "")}&cashflowType=${encodeURIComponent(eventData.cashflowType || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
+    notificationTag = `cashflow-${eventData.id || dateKey || Date.now()}`;
+  } else if (type === "fund_allocation" || type === "funds") {
     title = "📊 Phân bổ quỹ mới";
     if (eventData.fundName) bodyParts.push(`Quỹ: ${eventData.fundName}`);
     if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
-    if (eventData.text) bodyParts.push(eventData.text);
-    notificationUrl = "./?action=funds";
-    notificationTag = `fund-${Date.now()}`;
+    if (eventData.text || eventData.note) bodyParts.push(eventData.text || eventData.note);
+    notificationUrl = `./?action=funds&id=${encodeURIComponent(eventData.id || "")}&fundName=${encodeURIComponent(eventData.fundName || "")}&amount=${encodeURIComponent(eventData.amount || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
+    notificationTag = `fund-${eventData.id || Date.now()}`;
   } else {
     // event (mặc định)
     title = eventData.title ? `🔔 ${eventData.title}` : "🔔 Sự kiện mới từ thiết bị khác";
@@ -3320,9 +3330,9 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
         }
       } catch { }
     }
-    if (eventData.text) bodyParts.push(eventData.text);
-    notificationUrl = `./?date=${dateKey}`;
-    notificationTag = `event-${dateKey || Date.now()}`;
+    if (eventData.text || eventData.note) bodyParts.push(eventData.text || eventData.note);
+    notificationUrl = `./?action=event&id=${encodeURIComponent(eventData.id || "")}&title=${encodeURIComponent(eventData.title || "")}&text=${encodeURIComponent(eventData.text || eventData.note || "")}&note=${encodeURIComponent(eventData.note || eventData.text || "")}&eventDateTime=${encodeURIComponent(eventData.eventDateTime || "")}&color=${encodeURIComponent(eventData.color || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}&date=${encodeURIComponent(dateKey || "")}`;
+    notificationTag = `event-${eventData.id || dateKey || Date.now()}`;
   }
 
   const body = bodyParts.join(" | ") || "Có cập nhật mới từ thiết bị khác.";
@@ -3427,10 +3437,14 @@ async function initFirebaseMessaging() {
         // Hiển thị thông báo hệ thống của trình duyệt (System Browser Notification)
         if ("Notification" in window && Notification.permission === "granted") {
           let notificationUrl = "./";
-          if (notificationType === "cashflow") {
-            notificationUrl = dateKey ? `./?action=cashflow&date=${dateKey}` : "./?action=cashflow";
+          if (notificationType === "cashflow" && parsedEventData) {
+            notificationUrl = `./?action=cashflow&id=${encodeURIComponent(parsedEventData.id || "")}&date=${encodeURIComponent(dateKey || "")}&amount=${encodeURIComponent(parsedEventData.amount || "")}&category=${encodeURIComponent(parsedEventData.category || "")}&cashflowType=${encodeURIComponent(parsedEventData.cashflowType || "")}&note=${encodeURIComponent(parsedEventData.text || parsedEventData.note || "")}&createdAt=${encodeURIComponent(parsedEventData.createdAt || Date.now())}`;
+          } else if ((notificationType === "fund_allocation" || notificationType === "funds") && parsedEventData) {
+            notificationUrl = `./?action=funds&id=${encodeURIComponent(parsedEventData.id || "")}&fundName=${encodeURIComponent(parsedEventData.fundName || "")}&amount=${encodeURIComponent(parsedEventData.amount || "")}&note=${encodeURIComponent(parsedEventData.text || parsedEventData.note || "")}&createdAt=${encodeURIComponent(parsedEventData.createdAt || Date.now())}`;
           } else if (notificationType === "fund_allocation" || notificationType === "funds") {
             notificationUrl = "./?action=funds";
+          } else if (parsedEventData) {
+            notificationUrl = `./?action=event&id=${encodeURIComponent(parsedEventData.id || "")}&title=${encodeURIComponent(parsedEventData.title || "")}&text=${encodeURIComponent(parsedEventData.text || parsedEventData.note || "")}&note=${encodeURIComponent(parsedEventData.note || parsedEventData.text || "")}&eventDateTime=${encodeURIComponent(parsedEventData.eventDateTime || "")}&color=${encodeURIComponent(parsedEventData.color || "")}&createdAt=${encodeURIComponent(parsedEventData.createdAt || Date.now())}&date=${encodeURIComponent(dateKey || "")}`;
           } else {
             notificationUrl = `./?date=${dateKey}`;
           }
@@ -11081,12 +11095,16 @@ function confirmAllocate() {
 
   // Bắn thông báo đẩy đến tất cả thiết bị cùng tài khoản
   const fund = fundsData.funds.find((f) => f.id === fundId);
+  const fundName = fund ? fund.name : "";
   queueEventNotification({
+    id: allocation.id,
     title: "Phân bổ quỹ mới",
-    text: `Đã phân bổ ${amount.toLocaleString("vi-VN")} đ`,
-    fundName: fund ? fund.name : "",
+    text: `Đã phân bổ ${amount.toLocaleString("vi-VN")} đ vào quỹ ${fundName}`,
+    note: `Đã phân bổ ${amount.toLocaleString("vi-VN")} đ vào quỹ ${fundName}`,
+    fundName: fundName,
     amount: amount,
-    createdAt: Date.now()
+    date: allocation.date,
+    createdAt: allocation.createdAt
   }, "", "fund_allocation");
 
   // Update UI

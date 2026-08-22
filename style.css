@@ -548,7 +548,7 @@ body::before {
   padding: 8px 12px;
   border-radius: 10px;
   background: rgba(91, 156, 246, 0.08);
-  border: 1px solid rgba(91, 156, 246, 0.18);
+  border: 1px solid rgba(91, 156, 246, 0.22);
   border-left: 4px solid var(--event-color, #3b82f6);
   position: relative;
   cursor: pointer;
@@ -557,7 +557,8 @@ body::before {
 
 .today-event-item:hover {
   background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(147, 197, 253, 0.45);
+  border-color: var(--event-color, rgba(147, 197, 253, 0.6));
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
   transform: translateX(2px);
 }
 
@@ -565,31 +566,7 @@ body::before {
   transform: scale(0.99);
 }
 
-/* Sự kiện sắp đến hạn (1-60 phút): viền đỏ phát sáng */
-.today-event-item.is-imminent-alert {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(185, 28, 28, 0.1)) !important;
-  border: 1px solid rgba(239, 68, 68, 0.65) !important;
-  border-left: 4.5px solid #ef4444 !important;
-  animation: imminentGlow 1.6s infinite alternate !important;
-}
-
-.today-event-item.is-imminent-alert:hover {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.24), rgba(185, 28, 28, 0.16)) !important;
-}
-
-/* Sự kiện đang diễn ra: viền xanh lá cây phát sáng */
-.today-event-item.is-ongoing-alert {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(5, 150, 105, 0.1)) !important;
-  border: 1px solid rgba(16, 185, 129, 0.65) !important;
-  border-left: 4.5px solid #10b981 !important;
-  animation: ongoingGlow 1.6s infinite alternate !important;
-}
-
-.today-event-item.is-ongoing-alert:hover {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.24), rgba(5, 150, 105, 0.16)) !important;
-}
-
-/* Tag cảnh báo: áp dụng rung nhẹ và nhịp phát sáng trực tiếp trên tag */
+/* Tag cảnh báo trạng thái: tag sắp diễn ra rung với tần suất dày hơn, tag đang diễn ra đứng im */
 .imminent-badge {
   display: inline-flex;
   align-items: center;
@@ -602,72 +579,40 @@ body::before {
   border-radius: 6px;
   box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
   margin-left: auto;
-  animation: imminentBadgeVibrate 2.6s infinite ease-in-out, badgePulse 1.2s infinite alternate;
+  animation: frequentBadgeVibrate 1.8s infinite ease-in-out;
 }
 
 .imminent-badge.is-live {
   background: linear-gradient(135deg, #10b981, #059669) !important;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.5) !important;
-  animation: imminentBadgeVibrate 3.2s infinite ease-in-out, badgePulse 1.4s infinite alternate;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4) !important;
+  animation: none !important;
+  transform: none !important;
 }
 
-@keyframes imminentBadgeVibrate {
-  0%, 65%, 100% {
+@keyframes frequentBadgeVibrate {
+  0%, 60%, 100% {
     transform: translate(0, 0);
+  }
+  64% {
+    transform: translate(-1.5px, 0.5px) rotate(-1.2deg);
   }
   68% {
-    transform: translate(-1.5px, 1px) rotate(-1deg);
+    transform: translate(1.5px, -0.5px) rotate(1.2deg);
   }
-  71% {
-    transform: translate(1.5px, -1px) rotate(1deg);
+  72% {
+    transform: translate(-1.5px, -0.5px) rotate(-1.2deg);
   }
-  74% {
-    transform: translate(-1.5px, -1px) rotate(-1deg);
-  }
-  77% {
-    transform: translate(1.5px, 1px) rotate(1deg);
+  76% {
+    transform: translate(1.5px, 0.5px) rotate(1.2deg);
   }
   80% {
-    transform: translate(-1px, 1px) rotate(-0.5deg);
+    transform: translate(-1px, 0) rotate(-0.6deg);
   }
-  83% {
-    transform: translate(1px, -1px) rotate(0.5deg);
+  84% {
+    transform: translate(1px, 0) rotate(0.6deg);
   }
-  86% {
+  88% {
     transform: translate(0, 0);
-  }
-}
-
-@keyframes imminentGlow {
-  0% {
-    border-color: rgba(239, 68, 68, 0.5);
-    box-shadow: 0 0 6px rgba(239, 68, 68, 0.3);
-  }
-  100% {
-    border-color: rgba(248, 113, 113, 0.95);
-    box-shadow: 0 0 16px rgba(239, 68, 68, 0.65), inset 0 0 8px rgba(239, 68, 68, 0.15);
-  }
-}
-
-@keyframes ongoingGlow {
-  0% {
-    border-color: rgba(16, 185, 129, 0.5);
-    box-shadow: 0 0 6px rgba(16, 185, 129, 0.3);
-  }
-  100% {
-    border-color: rgba(52, 211, 153, 0.95);
-    box-shadow: 0 0 16px rgba(16, 185, 129, 0.65), inset 0 0 8px rgba(16, 185, 129, 0.15);
-  }
-}
-
-@keyframes badgePulse {
-  0% {
-    transform: scale(0.95);
-    opacity: 0.92;
-  }
-  100% {
-    transform: scale(1.05);
-    opacity: 1;
   }
 }
 

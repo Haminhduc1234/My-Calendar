@@ -815,7 +815,7 @@
     </div>
 
     <!-- Event QuickView Modal - Xem nhanh chi tiết sự kiện -->
-    <div id="eventQuickViewModal" class="cashflow-quickview-modal" style="display: none">
+    <div id="eventQuickViewModal" class="cashflow-quickview-modal" style="display: none" onclick="if (event.target === this) closeEventQuickViewModal()">
       <div class="cashflow-quickview-dialog">
         <button type="button" class="cashflow-quickview-close" onclick="closeEventQuickViewModal()"
           aria-label="Đóng xem nhanh sự kiện">
@@ -1320,7 +1320,7 @@
     </div>
 
     <!-- Cashflow QuickView Modal -->
-    <div id="cashflowQuickViewModal" class="cashflow-quickview-modal" style="display: none">
+    <div id="cashflowQuickViewModal" class="cashflow-quickview-modal" style="display: none" onclick="if (event.target === this) closeCashflowQuickViewModal()">
       <div class="cashflow-quickview-dialog">
         <button type="button" class="cashflow-quickview-close" onclick="closeCashflowQuickViewModal()"
           aria-label="Đóng xem nhanh giao dịch">

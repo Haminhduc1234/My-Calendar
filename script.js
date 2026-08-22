@@ -358,7 +358,6 @@ function renderTodayEvents() {
           : "";
         const evColor = escapeHtml(ev.color || "#3b82f6");
 
-        let alertClass = "";
         let imminentBadge = "";
 
         if (ev.eventDateTime) {
@@ -367,19 +366,17 @@ function renderTodayEvents() {
             if (!Number.isNaN(evTime)) {
               const diffMinutes = Math.round((evTime - nowTime) / (60 * 1000));
               if (diffMinutes > 0 && diffMinutes <= 60) {
-                // Sắp đến hạn (trong 60 phút tới): Viền đỏ phát sáng & rung
-                alertClass = " is-imminent-alert";
+                // Sắp đến hạn (trong 60 phút tới): Tag đỏ thỉnh thoảng rung
                 imminentBadge = `<span class="imminent-badge" title="Sự kiện sắp đến hạn trong ${diffMinutes} phút">🔥 Còn ${diffMinutes}p</span>`;
               } else if (diffMinutes <= 0 && diffMinutes >= -60) {
-                // Đang diễn ra: Viền xanh lá cây phát sáng & nhịp hiệu ứng
-                alertClass = " is-ongoing-alert";
+                // Đang diễn ra: Tag xanh lá cây đứng im
                 imminentBadge = `<span class="imminent-badge is-live" title="Sự kiện đang diễn ra">⚡ Đang diễn ra</span>`;
               }
             }
           } catch (e) { }
         }
 
-        return `<div class="today-event-item${alertClass}" 
+        return `<div class="today-event-item" 
                      style="--event-color: ${evColor}; border-left-color: ${evColor}; cursor: pointer;"
                      onclick="selectedKey='${key}'; openEventQuickViewModal(getEventsForDate('${key}')[${idx}], '${key}', ${idx});"
                      title="Nhấp để xem chi tiết sự kiện">
@@ -4096,6 +4093,15 @@ function closeEventQuickViewModal() {
 }
 window.closeEventQuickViewModal = closeEventQuickViewModal;
 
+(function initEventQuickViewModal() {
+  const modal = document.getElementById("eventQuickViewModal");
+  if (modal) {
+    modal.addEventListener("click", function (e) {
+      if (e.target === this) closeEventQuickViewModal();
+    });
+  }
+})();
+
 function renderEventQuickView(eventObj, dateKey, eventIndex) {
   const quickViewEl = document.getElementById("eventQuickView");
   if (!quickViewEl || !eventObj) return;
@@ -4152,16 +4158,13 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
         <strong>${createdLabel}</strong>
       </div>
     </div>
-    <div class="cashflow-quickview-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
-      ${eventIndex >= 0 ? `
+    ${eventIndex >= 0 ? `
+      <div class="cashflow-quickview-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
         <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeEventQuickViewModal(); openEditEventModal(${eventIndex});">
           ✏️ Chỉnh sửa
         </button>
-      ` : ""}
-      <button type="button" class="cashflow-quickview-btn-secondary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 500; color: #e2e8f0 !important; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeEventQuickViewModal();">
-        Đóng
-      </button>
-    </div>
+      </div>
+    ` : ""}
   `;
 }
 
@@ -9538,9 +9541,6 @@ function renderCashflowQuickView() {
     <div class="cashflow-quickview-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
       <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeCashflowQuickViewModal(); openCashflowAllTransactionsModal();">
         📋 Xem tất cả thu chi
-      </button>
-      <button type="button" class="cashflow-quickview-btn-secondary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 500; color: #e2e8f0 !important; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 10px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeCashflowQuickViewModal();">
-        Đóng
       </button>
     </div>
   `;

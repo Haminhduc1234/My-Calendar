@@ -22,12 +22,16 @@ const FIREBASE_TRANSLATE_HISTORY_PATH =
 const FIREBASE_NOTIFICATION_TOKENS_PATH = "notificationTokens";
 const FIREBASE_EVENT_NOTIFICATION_QUEUE_PATH = "eventNotificationQueue";
 const FIREBASE_EVENT_REMINDERS_PATH = "eventReminders";
+const FIREBASE_USER_NOTIFICATIONS_PATH = "userNotifications";
 const DEVICE_ID_STORAGE_KEY = "calendarDeviceId";
 
 let firebaseDb = null;
 let firebaseDatesRef = null;
 let firebaseQuickNotesRef = null;
 let firebaseTranslateHistoryRef = null;
+let firebaseUserNotificationsRef = null;
+let userNotificationsCache = [];
+let notificationFilterMode = "all";
 let firebaseProfileSettingsRef = null;
 let firebaseMessaging = null;
 let isPushNotificationSubscribed = false;
@@ -1650,10 +1654,14 @@ function applyProfileToUI(settings) {
   if (settings.avatar) {
     avatarEl.src = settings.avatar;
     avatarEl.style.display = "block";
-    avatarPlaceholder.style.display = "none";
+    if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
+    avatarEl.onerror = () => {
+      avatarEl.style.display = "none";
+      if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
+    };
   } else {
     avatarEl.style.display = "none";
-    avatarPlaceholder.style.display = "flex";
+    if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
   }
 
   // Apply cover to today panel
@@ -2776,6 +2784,7 @@ async function initFirebaseRealtime() {
   // Initialize Firebase Cloud Messaging for Push Notifications
   initFirebaseMessaging();
   setupNotificationQueueListener();
+  setupNotificationHistoryListener();
 
   // Realtime database initialized
   console.log("Firebase Realtime Database connected");
@@ -2977,6 +2986,7 @@ async function reloadFirebaseForUser() {
   // Re-sync Push Notification token for the new user profile
   initFirebaseMessaging();
   setupNotificationQueueListener();
+  setupNotificationHistoryListener();
 
   console.log("[Firebase] Reload complete for user:", userProfileKey);
 }
@@ -2998,6 +3008,7 @@ function closeAllModals() {
     "fundsModal",
     "fundModal",
     "allocateModal",
+    "modalNotificationList",
   ];
   modals.forEach((id) => {
     const el = document.getElementById(id);
@@ -3803,7 +3814,19 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
     }
   }
 
-  // 2. Gọi Serverless Endpoint /api/send-push.js (gửi FCM đánh thức các thiết bị đang đóng app)
+  // 2. Lưu vào Lịch sử thông báo (để người dùng xem lại ở quả chuông)
+  let notifTitle = "";
+  if (type === "cashflow") {
+    notifTitle = payload.eventData.cashflowType === "income" ? "Giao dịch Thu mới" : "Giao dịch Chi mới";
+  } else if (type === "funds" || type === "fund_allocation") {
+    notifTitle = `Phân bổ quỹ: ${payload.eventData.fundName || "Quỹ"}`;
+  } else {
+    notifTitle = `Sự kiện: ${payload.eventData.title || "Sự kiện mới"}`;
+  }
+  const notifBody = payload.eventData.text || payload.eventData.note || (payload.eventData.amount ? `${payload.eventData.amount.toLocaleString("vi-VN")} đ` : "");
+  saveNotificationToHistory(type, notifTitle, notifBody, dateKey, payload.eventData);
+
+  // 3. Gọi Serverless Endpoint /api/send-push.js (gửi FCM đánh thức các thiết bị đang đóng app)
   try {
     fetch("/api/send-push.js", {
       method: "POST",
@@ -3819,6 +3842,281 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
       });
   } catch (e) { }
 }
+
+/* ==================== NOTIFICATION HISTORY & LISTENER ==================== */
+
+/**
+ * Lưu lịch sử thông báo vào Firebase Realtime Database
+ */
+async function saveNotificationToHistory(notificationType, title, body, dateKey, eventData) {
+  if (!firebaseDb || !userProfileKey) return;
+  try {
+    const type = notificationType || "event";
+    let defaultTitle = title;
+    if (!defaultTitle) {
+      if (type === "cashflow") defaultTitle = "Giao dịch thu chi mới";
+      else if (type === "funds" || type === "fund_allocation") defaultTitle = "Phân bổ quỹ mới";
+      else if (type === "reminder") defaultTitle = "Nhắc nhở sự kiện";
+      else defaultTitle = "Sự kiện lịch mới";
+    }
+
+    let defaultBody = body || "";
+    if (!defaultBody && eventData) {
+      defaultBody = eventData.title || eventData.text || eventData.note || eventData.fundName || "";
+    }
+
+    const notifRef = firebaseDb.ref(`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}`).push();
+    const payload = {
+      id: notifRef.key,
+      notificationType: type,
+      title: String(defaultTitle).trim(),
+      body: String(defaultBody).trim(),
+      dateKey: String(dateKey || ""),
+      eventData: eventData ? JSON.parse(JSON.stringify(eventData)) : null,
+      createdAt: Date.now(),
+      read: false
+    };
+
+    await notifRef.set(payload);
+    console.log("[NotificationHistory] Đã lưu thông báo vào lịch sử:", payload.id);
+  } catch (err) {
+    console.warn("[NotificationHistory] Lỗi lưu lịch sử thông báo:", err);
+  }
+}
+window.saveNotificationToHistory = saveNotificationToHistory;
+
+/**
+ * Thiết lập listener Realtime lắng nghe danh sách lịch sử thông báo
+ */
+function setupNotificationHistoryListener() {
+  if (!firebaseDb || !userProfileKey) return;
+
+  if (firebaseUserNotificationsRef) {
+    try {
+      firebaseUserNotificationsRef.off();
+    } catch (e) { }
+  }
+
+  firebaseUserNotificationsRef = firebaseDb
+    .ref(`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}`)
+    .orderByChild("createdAt")
+    .limitToLast(100);
+
+  firebaseUserNotificationsRef.on("value", (snapshot) => {
+    const data = snapshot.val() || {};
+    const items = Object.keys(data).map((key) => ({
+      id: key,
+      ...data[key]
+    }));
+
+    // Sắp xếp giảm dần theo thời gian tạo mới nhất lên đầu
+    items.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+    userNotificationsCache = items;
+
+    // Tính số lượng chưa đọc
+    const unreadCount = items.filter((item) => !item.read).length;
+    updateNotificationBadgeUI(unreadCount);
+
+    // Nếu modal đang mở thì re-render
+    const modal = document.getElementById("modalNotificationList");
+    if (modal && modal.style.display !== "none") {
+      renderNotificationList();
+    }
+  });
+}
+window.setupNotificationHistoryListener = setupNotificationHistoryListener;
+
+function updateNotificationBadgeUI(unreadCount) {
+  const badgeEl = document.getElementById("notificationBadge");
+  if (!badgeEl) return;
+
+  if (unreadCount > 0) {
+    badgeEl.textContent = unreadCount > 99 ? "99+" : unreadCount;
+    badgeEl.style.display = "inline-flex";
+  } else {
+    badgeEl.style.display = "none";
+  }
+}
+
+function openNotificationModal() {
+  const modal = document.getElementById("modalNotificationList");
+  if (!modal) return;
+  closeAllModals();
+  modal.style.display = "flex";
+  renderNotificationList();
+}
+window.openNotificationModal = openNotificationModal;
+
+function closeNotificationModal() {
+  const modal = document.getElementById("modalNotificationList");
+  if (modal) modal.style.display = "none";
+}
+window.closeNotificationModal = closeNotificationModal;
+
+function filterNotifications(filterMode, tabBtn) {
+  notificationFilterMode = filterMode;
+  const tabs = document.querySelectorAll(".notif-tab");
+  tabs.forEach((tab) => tab.classList.remove("active"));
+  if (tabBtn) tabBtn.classList.add("active");
+  renderNotificationList();
+}
+window.filterNotifications = filterNotifications;
+
+function renderNotificationList() {
+  const bodyEl = document.getElementById("notificationListBody");
+  if (!bodyEl) return;
+
+  let items = [...userNotificationsCache];
+  if (notificationFilterMode === "unread") {
+    items = items.filter((item) => !item.read);
+  }
+
+  if (items.length === 0) {
+    bodyEl.innerHTML = `
+      <div class="notification-empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <div>${notificationFilterMode === "unread" ? "Không có thông báo chưa đọc" : "Chưa có thông báo nào"}</div>
+      </div>
+    `;
+    return;
+  }
+
+  let html = "";
+  items.forEach((item) => {
+    const isUnread = !item.read;
+    const type = item.notificationType || "event";
+
+    let iconText = "📅";
+    let iconClass = "event";
+    if (type === "cashflow") {
+      iconText = "💸";
+      iconClass = "cashflow";
+    } else if (type === "funds" || type === "fund_allocation") {
+      iconText = "🏦";
+      iconClass = "funds";
+    } else if (type === "reminder") {
+      iconText = "⏰";
+      iconClass = "reminder";
+    }
+
+    const title = escapeHtml(item.title || "Thông báo");
+    const body = escapeHtml(item.body || "");
+    const timeStr = formatRelativeTime(item.createdAt);
+
+    html += `
+      <div class="notification-item ${isUnread ? "unread" : ""}" onclick="handleNotificationItemClick('${item.id}')">
+        <div class="notif-item-icon ${iconClass}">${iconText}</div>
+        <div class="notif-item-content">
+          <div class="notif-item-title">${title}</div>
+          <div class="notif-item-body">${body}</div>
+          <div class="notif-item-time">${timeStr}</div>
+        </div>
+        <button type="button" class="notif-item-delete" title="Xóa thông báo" onclick="deleteNotificationItem('${item.id}', event)">
+          🗑️
+        </button>
+      </div>
+    `;
+  });
+
+  bodyEl.innerHTML = html;
+}
+
+function formatRelativeTime(timestamp) {
+  if (!timestamp) return "";
+  const now = Date.now();
+  const diff = now - Number(timestamp);
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return "Vừa xong";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} phút trước`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} giờ trước`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} ngày trước`;
+  
+  const d = new Date(timestamp);
+  return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+async function handleNotificationItemClick(notifId) {
+  const item = userNotificationsCache.find((i) => i.id === notifId);
+  if (!item) return;
+
+  if (!item.read) {
+    await markNotificationAsRead(notifId);
+  }
+
+  closeNotificationModal();
+
+  handleNotificationNavigation(
+    item.notificationType,
+    item.dateKey,
+    item.eventData
+  );
+}
+window.handleNotificationItemClick = handleNotificationItemClick;
+
+async function markNotificationAsRead(notifId) {
+  if (!firebaseDb || !userProfileKey || !notifId) return;
+  try {
+    await firebaseDb.ref(`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}/${notifId}`).update({ read: true });
+  } catch (e) {
+    console.warn("[NotificationHistory] Lỗi đánh dấu đã đọc:", e);
+  }
+}
+window.markNotificationAsRead = markNotificationAsRead;
+
+async function markAllNotificationsAsRead() {
+  if (!firebaseDb || !userProfileKey) return;
+  const unreadItems = userNotificationsCache.filter((i) => !i.read);
+  if (unreadItems.length === 0) return;
+
+  try {
+    const updates = {};
+    unreadItems.forEach((i) => {
+      updates[`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}/${i.id}/read`] = true;
+    });
+    await firebaseDb.ref().update(updates);
+  } catch (e) {
+    console.warn("[NotificationHistory] Lỗi đánh dấu tất cả đã đọc:", e);
+  }
+}
+window.markAllNotificationsAsRead = markAllNotificationsAsRead;
+
+async function deleteNotificationItem(notifId, event) {
+  if (event) event.stopPropagation();
+  if (!firebaseDb || !userProfileKey || !notifId) return;
+  try {
+    await firebaseDb.ref(`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}/${notifId}`).remove();
+  } catch (e) {
+    console.warn("[NotificationHistory] Lỗi xóa thông báo:", e);
+  }
+}
+window.deleteNotificationItem = deleteNotificationItem;
+
+async function clearAllNotifications() {
+  if (!firebaseDb || !userProfileKey) return;
+  if (userNotificationsCache.length === 0) return;
+
+  showConfirmPopup(
+    "Xóa tất cả thông báo",
+    "Bạn có chắc chắn muốn xóa toàn bộ lịch sử thông báo không?",
+    "Xóa tất cả",
+    async () => {
+      try {
+        await firebaseDb.ref(`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}`).remove();
+      } catch (e) {
+        console.warn("[NotificationHistory] Lỗi dọn lịch sử thông báo:", e);
+      }
+    },
+    undefined,
+    { type: "danger", icon: "🗑️", btnType: "danger" }
+  );
+}
+window.clearAllNotifications = clearAllNotifications;
 
 /* ==================== EVENT REMINDER (60 phút trước sự kiện) ==================== */
 

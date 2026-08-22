@@ -101,6 +101,13 @@
         ".write": "auth != null",
         ".indexOn": ["reminderAtMs"]
       }
+    },
+    "userNotifications": {
+      "$profileKey": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": ["createdAt", "read"]
+      }
     }
   }
 }

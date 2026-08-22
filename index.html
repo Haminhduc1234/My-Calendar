@@ -49,19 +49,22 @@
 
   <div class="app-wrapper">
     <div class="today-panel" id="todayPanel">
-      <div class="today-profile" id="todayProfile" onclick="openProfileSettingsModal()">
-        <div class="today-profile-info">
-          <div class="today-profile-name" id="todayProfileName"></div>
-          <div class="today-profile-bio" id="todayProfileBio"></div>
+      <div class="today-top-bar">
+        <div class="today-profile" id="todayProfile" onclick="openProfileSettingsModal()">
+          <img class="today-profile-avatar" id="todayProfileAvatar" src="" alt="Profile" style="display: none;" />
+          <div class="today-profile-placeholder" id="todayProfilePlaceholder" style="display: none;"></div>
+          <div class="today-profile-info">
+            <div class="today-profile-name" id="todayProfileName"></div>
+            <div class="today-profile-bio" id="todayProfileBio"></div>
+          </div>
         </div>
-        <img class="today-profile-avatar" id="todayProfileAvatar" src="" alt="Profile" />
-        <div class="today-profile-placeholder" id="todayProfilePlaceholder">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path
-              d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"
-              fill="currentColor" />
+        <button type="button" id="btnNotificationBell" class="notification-bell-btn" title="Thông báo" onclick="openNotificationModal()">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
           </svg>
-        </div>
+          <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
+        </button>
       </div>
       <div class="today-date">
         <div class="weekday" id="todayWeekday"></div>
@@ -2642,6 +2645,38 @@
         <button class="crop-modal-apply" onclick="applyCrop()">
           Áp dụng
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification List Modal -->
+  <div id="modalNotificationList" class="modal" style="display: none;">
+    <div class="modal-content notification-modal-content">
+      <div class="notification-modal-header">
+        <div class="notification-modal-title">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span>Thông báo</span>
+        </div>
+        <div class="notification-modal-actions">
+          <button type="button" class="notif-action-btn" title="Đánh dấu tất cả đã đọc" onclick="markAllNotificationsAsRead()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <span>Đã đọc tất cả</span>
+          </button>
+          <button type="button" class="notif-action-btn danger" title="Xóa tất cả thông báo" onclick="clearAllNotifications()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          </button>
+          <button type="button" class="modal-close" onclick="closeNotificationModal()">×</button>
+        </div>
+      </div>
+      <div class="notification-tabs">
+        <button type="button" class="notif-tab active" data-filter="all" onclick="filterNotifications('all', this)">Tất cả</button>
+        <button type="button" class="notif-tab" data-filter="unread" onclick="filterNotifications('unread', this)">Chưa đọc</button>
+      </div>
+      <div id="notificationListBody" class="notification-list-body">
+        <!-- Notification list rendered dynamically -->
       </div>
     </div>
   </div>

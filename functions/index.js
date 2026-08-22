@@ -317,6 +317,22 @@ exports.checkEventReminders = onSchedule("every 1 minutes", async () => {
           delivered: true,
           deliveredAt: now
         });
+        // Lưu vào Lịch sử thông báo để xem lại ở quả chuông
+        try {
+          const notifRef = db.ref(`userNotifications/${profileKey}`).push();
+          await notifRef.set({
+            id: notifRef.key,
+            notificationType: "reminder",
+            title: `⏰ Sắp đến giờ: ${eventTitle}`,
+            body: eventText || `Sự kiện diễn ra sau ${timeLeftStr}`,
+            dateKey: dateKey,
+            eventData: reminderEventData,
+            createdAt: now,
+            read: false
+          });
+        } catch (nErr) {
+          logger.warn("Lỗi ghi userNotifications:", nErr);
+        }
         logger.info("Đã gửi nhắc nhở sự kiện", { profileKey, eventTitle, reminderId });
       }).catch((err) => {
         logger.error("Lỗi gửi nhắc nhở:", { profileKey, reminderId, error: err.message });

@@ -7794,7 +7794,15 @@ async function openCashflowModal() {
   reloadCashflowEntriesFromCache();
   renderCashflowDashboard();
 
-  // 2. Nếu đã đăng nhập Firebase, fetch dữ liệu mới nhất từ server để đồng bộ và cập nhật danh sách
+  // 2. Nếu cache rỗng và có Firebase, hiện skeleton trong lúc tải dữ liệu
+  const isCacheEmpty = cashflowEntries.length === 0;
+  if (isCacheEmpty && firebaseDb && userProfileKey) {
+    showSkeleton('cashflowSkeleton');
+  } else {
+    hideSkeleton('cashflowSkeleton');
+  }
+
+  // 3. Nếu đã đăng nhập Firebase, fetch dữ liệu mới nhất từ server để đồng bộ và cập nhật danh sách
   if (firebaseDb && userProfileKey) {
     try {
       const datesRef = firebaseDatesRef || firebaseDb.ref(`${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`);
@@ -7817,18 +7825,21 @@ async function openCashflowModal() {
         );
         updated = true;
       });
-      if (updated && document.getElementById("cashflowModal") && document.getElementById("cashflowModal").style.display === "flex") {
+      if (document.getElementById("cashflowModal") && document.getElementById("cashflowModal").style.display === "flex") {
         reloadCashflowEntriesFromCache();
         renderCashflowDashboard();
       }
     } catch (e) {
       console.warn("[Cashflow] Lỗi fetch Firebase:", e);
+    } finally {
+      hideSkeleton('cashflowSkeleton');
     }
   }
 }
 
 function closeCashflowModal() {
   resetCashflowForm();
+  hideSkeleton('cashflowSkeleton');
   document.getElementById("cashflowModal").style.display = "none";
 }
 
@@ -11548,13 +11559,8 @@ function loadTodayLunarOnDemand() {
 /* ========================== INIT ========================= */
 // Fast init - no blocking loading screen
 (function initApp() {
-  // Step 1: Show all skeletons initially for loading state
+  // Step 1: Show main page weather skeleton initially for loading state
   showSkeleton('weatherSkeleton');
-  showSkeleton('quicknotesSkeleton');
-  showSkeleton('cashflowSkeleton');
-  showSkeleton('fundsSkeleton');
-  showSkeleton('goldSkeleton');
-  showSkeleton('projectsSkeleton');
   // Note: calendar renders immediately, no skeleton needed
 
   // Step 2: Render UI immediately (no waiting)

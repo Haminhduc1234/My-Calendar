@@ -2565,21 +2565,21 @@
     Cloud synced
   </div>
 
-  <!-- Custom Confirm Popup -->
+  <!-- Custom Unified Confirm Popup -->
   <div id="confirmPopup" class="confirm-popup-overlay" onclick="if (event.target === this) closeConfirmPopup();">
     <div class="confirm-popup">
-      <div class="confirm-popup-icon danger">⚠</div>
+      <div class="confirm-popup-icon danger" id="confirmPopupIcon">🗑️</div>
       <div class="confirm-popup-title" id="confirmPopupTitle">
-        Xác nhận xóa
+        Xác nhận
       </div>
       <div class="confirm-popup-message" id="confirmPopupMessage">
-        Bạn có chắc muốn xóa?
+        Bạn có chắc muốn thực hiện thao tác này?
       </div>
       <div class="confirm-popup-actions">
-        <button class="confirm-popup-btn cancel" onclick="closeConfirmPopup()">
+        <button type="button" class="confirm-popup-btn cancel" id="confirmPopupCancelBtn" onclick="closeConfirmPopup()">
           Hủy
         </button>
-        <button class="confirm-popup-btn danger" id="confirmPopupConfirmBtn" onclick="confirmPopupAction()">
+        <button type="button" class="confirm-popup-btn danger" id="confirmPopupConfirmBtn" onclick="confirmPopupAction()">
           Xóa
         </button>
       </div>

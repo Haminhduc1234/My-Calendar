@@ -737,18 +737,20 @@ function closeAuthModal() {
 }
 
 function logoutAndStartFresh() {
-  const confirmed = window.confirm(
-    "Cảnh báo: Thao tác này sẽ xóa toàn bộ dữ liệu cũ của bạn!\n\nBạn có chắc chắn muốn tiếp tục?",
+  showConfirmPopup(
+    "Cảnh báo xóa dữ liệu",
+    "Thao tác này sẽ xóa toàn bộ dữ liệu cũ của bạn trên thiết bị. Bạn có chắc chắn muốn tiếp tục?",
+    "Tiếp tục",
+    () => {
+      unregisterDeviceNotificationToken();
+      localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
+      localStorage.removeItem("calendarUsername");
+      legacyProfileKey = "";
+      window.location.reload();
+    },
+    undefined,
+    { type: "warning", icon: "⚠️", btnType: "danger" }
   );
-  if (!confirmed) return;
-
-  unregisterDeviceNotificationToken();
-  localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
-  localStorage.removeItem("calendarUsername");
-  legacyProfileKey = "";
-
-  // Reload to start fresh
-  window.location.reload();
 }
 
 window.logoutAndStartFresh = logoutAndStartFresh;
@@ -1169,22 +1171,26 @@ async function ensureProfileKey() {
 }
 
 function logoutProfileSession() {
-  const confirmed = window.confirm(
-    "Đăng xuất tài khoản hiện tại?",
+  showConfirmPopup(
+    "Đăng xuất",
+    "Bạn có chắc chắn muốn đăng xuất tài khoản hiện tại?",
+    "Đăng xuất",
+    () => {
+      localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
+      localStorage.removeItem("calendarUsername");
+      userProfileKey = "";
+      currentUsername = "";
+      dateDataCache = {};
+
+      if (firebaseDatesRef) {
+        firebaseDatesRef.off();
+      }
+
+      window.location.reload();
+    },
+    undefined,
+    { type: "warning", icon: "🚪", btnType: "danger" }
   );
-  if (!confirmed) return;
-
-  localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
-  localStorage.removeItem("calendarUsername");
-  userProfileKey = "";
-  currentUsername = "";
-  dateDataCache = {};
-
-  if (firebaseDatesRef) {
-    firebaseDatesRef.off();
-  }
-
-  window.location.reload();
 }
 
 window.logoutProfileSession = logoutProfileSession;
@@ -3673,11 +3679,17 @@ async function toggleDeviceNotificationPermission() {
   const isManuallyDisabled = localStorage.getItem("calendarDevicePushEnabled") === "0";
 
   if (Notification.permission === "granted" && !isManuallyDisabled) {
-    const ok = confirm("Bạn có muốn tắt nhận thông báo trên thiết bị này?");
-    if (ok) {
-      await unregisterDeviceNotificationToken();
-      showAppPushToast("Đã tắt thông báo", "Thiết bị này sẽ không nhận thông báo cho đến khi bạn bật lại.", "");
-    }
+    showConfirmPopup(
+      "Tắt thông báo",
+      "Bạn có muốn tắt nhận thông báo đẩy trên thiết bị này không?",
+      "Tắt thông báo",
+      async () => {
+        await unregisterDeviceNotificationToken();
+        showAppPushToast("Đã tắt thông báo", "Thiết bị này sẽ không nhận thông báo cho đến khi bạn bật lại.", "");
+      },
+      undefined,
+      { type: "warning", icon: "🔕", btnType: "danger" }
+    );
   } else {
     localStorage.setItem("calendarDevicePushEnabled", "1");
     await requestNotificationPermissionAndRegisterToken(false);
@@ -4124,14 +4136,24 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
     } catch (e) { }
   }
 
-  const parts = (dateKey || "").split("-").map(Number);
+  const dKey = dateKey || selectedKey || getTodayIsoDate();
+  const parts = (dKey || "").split("-").map(Number);
   const formattedDate = parts.length === 3
     ? `${String(parts[2]).padStart(2, "0")}/${String(parts[1]).padStart(2, "0")}/${parts[0]}`
-    : (formatCashflowDate(dateKey) || dateKey);
+    : (formatCashflowDate(dKey) || dKey);
 
   const createdLabel = eventObj.createdAt
     ? (typeof formatTimestampForCsv === "function" ? formatTimestampForCsv(eventObj.createdAt) : new Date(eventObj.createdAt).toLocaleString("vi-VN"))
     : "Chưa rõ";
+
+  let effectiveIndex = eventIndex;
+  if (effectiveIndex < 0 && dKey) {
+    const evList = getEventsForDate(dKey);
+    effectiveIndex = evList.findIndex(
+      (ev) => (ev.id && eventObj.id && ev.id === eventObj.id) ||
+              (ev.title === eventObj.title && (ev.eventDateTime === eventObj.eventDateTime || ev.createdAt === eventObj.createdAt))
+    );
+  }
 
   quickViewEl.innerHTML = `
     <div class="cashflow-quickview-head">
@@ -4160,15 +4182,37 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
         <strong>${createdLabel}</strong>
       </div>
     </div>
-    ${eventIndex >= 0 ? `
+    ${effectiveIndex >= 0 ? `
       <div class="cashflow-quickview-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
-        <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeEventQuickViewModal(); openEditEventModal(${eventIndex});">
+        <button type="button" class="cashflow-quickview-btn-delete" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #ef4444, #dc2626); border: 1px solid rgba(252, 165, 165, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="deleteEventFromQuickView('${dKey}', ${effectiveIndex});">
+          🗑️ Xóa sự kiện
+        </button>
+        <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="selectedKey='${dKey}'; closeEventQuickViewModal(); openEditEventModal(${effectiveIndex});">
           ✏️ Chỉnh sửa
         </button>
       </div>
     ` : ""}
   `;
 }
+
+function deleteEventFromQuickView(dateKey, eventIndex) {
+  const dKey = dateKey || selectedKey;
+  showConfirmPopup(
+    "Xóa sự kiện",
+    "Bạn có chắc chắn muốn xóa sự kiện này không?",
+    "Xóa",
+    () => {
+      deleteEventFromDate(dKey, eventIndex);
+      closeEventQuickViewModal();
+      loadCalendarOnDemand();
+      renderCalendar();
+      renderTodayEvents();
+      renderOvertime();
+      renderOvertimeSalary();
+    }
+  );
+}
+window.deleteEventFromQuickView = deleteEventFromQuickView;
 
 function saveDayOvertime() {
   const hours =
@@ -4179,11 +4223,19 @@ function saveDayOvertime() {
 }
 
 function deleteEventFromDateUI(eventIndex) {
-  deleteEventFromDate(selectedKey, eventIndex);
-  loadCalendarOnDemand();
-  renderCalendar();
-  const [y, m, d] = selectedKey.split("-").map(Number);
-  openDayDetailsModal(selectedKey, d, m, y);
+  showConfirmPopup(
+    "Xóa sự kiện",
+    "Bạn có chắc chắn muốn xóa sự kiện này không?",
+    "Xóa",
+    () => {
+      deleteEventFromDate(selectedKey, eventIndex);
+      loadCalendarOnDemand();
+      renderCalendar();
+      renderTodayEvents();
+      const [y, m, d] = selectedKey.split("-").map(Number);
+      openDayDetailsModal(selectedKey, d, m, y);
+    }
+  );
 }
 
 // Add Event Modal - for creating new event
@@ -4573,47 +4625,76 @@ function closeTaskFormModal() {
   document.getElementById("taskFormModal").style.display = "none";
 }
 
-// Custom Confirm Popup
+// Custom Unified Confirm Popup
 let _confirmPopupCallback = null;
 let _confirmPopupArgs = null;
 
-function showConfirmPopup(title, message, confirmText, callback, args) {
+function showConfirmPopup(title, message, confirmText, callback, args, options = {}) {
   const popup = document.getElementById("confirmPopup");
   const titleEl = document.getElementById("confirmPopupTitle");
   const messageEl = document.getElementById("confirmPopupMessage");
   const confirmBtn = document.getElementById("confirmPopupConfirmBtn");
+  const cancelBtn = document.getElementById("confirmPopupCancelBtn");
+  const iconEl = document.getElementById("confirmPopupIcon");
 
-  titleEl.textContent = title;
-  messageEl.textContent = message;
+  if (!popup || !titleEl || !messageEl || !confirmBtn) {
+    if (typeof callback === "function") {
+      if (args !== undefined && args !== null) {
+        Array.isArray(args) ? callback(...args) : callback(args);
+      } else {
+        callback();
+      }
+    }
+    return;
+  }
+
+  titleEl.textContent = title || "Xác nhận";
+  messageEl.textContent = message || "Bạn có chắc chắn muốn thực hiện thao tác này?";
   confirmBtn.textContent = confirmText || "Xóa";
+  if (cancelBtn) cancelBtn.textContent = options.cancelText || "Hủy";
+
+  const popupType = options.type || "danger";
+  if (iconEl) {
+    iconEl.textContent = options.icon || (popupType === "warning" ? "⚠️" : (popupType === "primary" ? "ℹ️" : "🗑️"));
+    iconEl.className = `confirm-popup-icon ${popupType}`;
+  }
+
+  if (confirmBtn) {
+    confirmBtn.className = `confirm-popup-btn ${options.btnType || popupType}`;
+  }
 
   _confirmPopupCallback = callback;
   _confirmPopupArgs = args;
 
   popup.classList.add("show");
 }
+window.showConfirmPopup = showConfirmPopup;
 
 function closeConfirmPopup() {
   const popup = document.getElementById("confirmPopup");
-  popup.classList.remove("show");
+  if (popup) popup.classList.remove("show");
   _confirmPopupCallback = null;
   _confirmPopupArgs = null;
 }
+window.closeConfirmPopup = closeConfirmPopup;
 
 function confirmPopupAction() {
-  if (_confirmPopupCallback) {
-    if (_confirmPopupArgs) {
-      if (Array.isArray(_confirmPopupArgs)) {
-        _confirmPopupCallback(..._confirmPopupArgs);
+  const cb = _confirmPopupCallback;
+  const args = _confirmPopupArgs;
+  closeConfirmPopup();
+  if (typeof cb === "function") {
+    if (args !== undefined && args !== null) {
+      if (Array.isArray(args)) {
+        cb(...args);
       } else {
-        _confirmPopupCallback(_confirmPopupArgs);
+        cb(args);
       }
     } else {
-      _confirmPopupCallback();
+      cb();
     }
   }
-  closeConfirmPopup();
 }
+window.confirmPopupAction = confirmPopupAction;
 
 function showToast(message, duration = 2500) {
   let toast = document.getElementById("toastNotification");
@@ -8220,51 +8301,48 @@ function syncCashflowFormMode() {
 }
 
 function removeCashflowEntry(id) {
-  pendingDeleteCashflowId = id;
-  openCashflowDeleteConfirmModal();
+  if (!id) return;
+  showConfirmPopup(
+    "Xóa giao dịch",
+    "Bạn có chắc muốn xóa giao dịch này không? Thao tác này không thể hoàn tác.",
+    "Xóa",
+    () => {
+      const located = findCashflowEntryLocation(id);
+      if (!located) return;
+
+      const data = getDateData(located.dateKey);
+      data.cashflowEntries.splice(located.index, 1);
+      saveDateData(located.dateKey, data);
+
+      if (selectedCashflowId === id) {
+        selectedCashflowId = "";
+      }
+
+      reloadCashflowEntriesFromCache();
+
+      if (editingCashflowId === id) {
+        resetCashflowForm();
+      }
+      renderCashflowDashboard();
+    }
+  );
 }
 
 function openCashflowDeleteConfirmModal() {
-  const modal = document.getElementById("cashflowDeleteConfirmModal");
-  if (!modal) return;
-  modal.style.display = "flex";
+  // Legacy fallback
+  if (pendingDeleteCashflowId) removeCashflowEntry(pendingDeleteCashflowId);
 }
 
 function closeCashflowDeleteConfirmModal() {
   const modal = document.getElementById("cashflowDeleteConfirmModal");
-  if (!modal) return;
-  modal.style.display = "none";
+  if (modal) modal.style.display = "none";
   pendingDeleteCashflowId = "";
 }
 
 function confirmRemoveCashflowEntry() {
-  const id = pendingDeleteCashflowId;
-  if (!id) {
-    closeCashflowDeleteConfirmModal();
-    return;
+  if (pendingDeleteCashflowId) {
+    removeCashflowEntry(pendingDeleteCashflowId);
   }
-
-  const located = findCashflowEntryLocation(id);
-  if (!located) {
-    closeCashflowDeleteConfirmModal();
-    return;
-  }
-
-  const data = getDateData(located.dateKey);
-  data.cashflowEntries.splice(located.index, 1);
-  saveDateData(located.dateKey, data);
-
-  if (selectedCashflowId === id) {
-    selectedCashflowId = "";
-  }
-
-  reloadCashflowEntriesFromCache();
-
-  if (editingCashflowId === id) {
-    resetCashflowForm();
-  }
-  closeCashflowDeleteConfirmModal();
-  renderCashflowDashboard();
 }
 
 function renderCashflowDashboard() {
@@ -10060,15 +10138,20 @@ function editCategory(id) {
 }
 
 function deleteCategory(id) {
-  if (!confirm("Bạn có chắc muốn xóa loại này?")) return;
-
-  const type = document.getElementById("cashflowCategoryType").value;
-  cashflowCategories[type] = cashflowCategories[type].filter(
-    (c) => c.id !== id,
+  showConfirmPopup(
+    "Xóa danh mục",
+    "Bạn có chắc muốn xóa danh mục này không?",
+    "Xóa",
+    () => {
+      const type = document.getElementById("cashflowCategoryType").value;
+      cashflowCategories[type] = cashflowCategories[type].filter(
+        (c) => c.id !== id,
+      );
+      saveCashflowCategoriesToStorage();
+      renderCategoryList();
+      updateCashflowCategoryDropdowns();
+    }
   );
-  saveCashflowCategoriesToStorage();
-  renderCategoryList();
-  updateCashflowCategoryDropdowns();
 }
 
 function updateCashflowCategoryDropdowns() {
@@ -10911,17 +10994,16 @@ function confirmDeleteFund(fundId) {
   const fund = fundsData.funds.find((f) => f.id === fundId);
   if (!fund) return;
 
-  if (
-    !confirm(
-      `Bạn có chắc muốn xóa quỹ "${fund.name}"? Các khoản đã phân bổ vào quỹ này sẽ không bị mất.`,
-    )
-  ) {
-    return;
-  }
-
-  fundsData.funds = fundsData.funds.filter((f) => f.id !== fundId);
-  saveFundsToFirebase();
-  renderFundsDashboard();
+  showConfirmPopup(
+    "Xóa quỹ",
+    `Bạn có chắc muốn xóa quỹ "${fund.name}"? Các khoản đã phân bổ vào quỹ này sẽ không bị mất.`,
+    "Xóa",
+    () => {
+      fundsData.funds = fundsData.funds.filter((f) => f.id !== fundId);
+      saveFundsToFirebase();
+      renderFundsDashboard();
+    }
+  );
 }
 
 let topupFundId = "";
@@ -16060,22 +16142,27 @@ async function saveCountdown() {
 }
 
 async function clearCountdown() {
-  if (!confirm("Xóa đếm ngược hiện tại?")) return;
+  showConfirmPopup(
+    "Xóa đếm ngược",
+    "Bạn có chắc muốn xóa đếm ngược hiện tại không?",
+    "Xóa",
+    async () => {
+      countdownData = null;
+      localStorage.removeItem("countdown");
+      renderCountdown();
+      stopCountdownTimer();
 
-  countdownData = null;
-  localStorage.removeItem("countdown");
-  renderCountdown();
-  stopCountdownTimer();
+      if (firebaseCountdownRef) {
+        try {
+          await firebaseCountdownRef.remove();
+        } catch (err) {
+          console.error("[Countdown] Lỗi xóa Firebase:", err);
+        }
+      }
 
-  if (firebaseCountdownRef) {
-    try {
-      await firebaseCountdownRef.remove();
-    } catch (err) {
-      console.error("[Countdown] Lỗi xóa Firebase:", err);
+      closeCountdownModal();
     }
-  }
-
-  closeCountdownModal();
+  );
 }
 
 function loadCountdownFromLocal() {

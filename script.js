@@ -2004,6 +2004,9 @@ function saveDateData(dateKey, data) {
 
   dateDataCache[dateKey] = normalizeDateData(record);
   localStorage.setItem(dateKey, JSON.stringify(record));
+  if (typeof syncCombinedNotifications === "function") {
+    syncCombinedNotifications();
+  }
 
   if (firebaseDatesRef) {
     firebaseDatesRef
@@ -3894,12 +3897,169 @@ window.saveNotificationToHistory = saveNotificationToHistory;
 let firebaseEventRemindersRef = null;
 let eventRemindersCache = [];
 let combinedNotificationsList = [];
+let readNotificationIds = new Set();
+try {
+  readNotificationIds = new Set(JSON.parse(localStorage.getItem("readNotificationIds") || "[]"));
+} catch (e) { }
+
+function markNotificationIdAsReadLocal(id) {
+  if (!id) return;
+  readNotificationIds.add(id);
+  try {
+    localStorage.setItem("readNotificationIds", JSON.stringify(Array.from(readNotificationIds)));
+  } catch (e) { }
+}
+
+/**
+ * Trích xuất danh sách thông báo từ tất cả sự kiện & giao dịch thu chi có trong lịch
+ */
+function getNotificationsFromCalendarEvents() {
+  const items = [];
+  if (!dateDataCache) return items;
+
+  Object.keys(dateDataCache).forEach((dateKey) => {
+    const data = dateDataCache[dateKey];
+    if (!data) return;
+
+    // 1. Sự kiện (events)
+    if (Array.isArray(data.events)) {
+      data.events.forEach((ev) => {
+        if (!ev || (!ev.title && !ev.text && !ev.note)) return;
+        const id = `ev_${ev.id || ev.createdAt || dateKey + '_' + ev.title}`;
+        let timeDesc = "";
+        if (ev.eventDateTime) {
+          try {
+            const dt = new Date(ev.eventDateTime);
+            if (!Number.isNaN(dt.getTime())) {
+              timeDesc = ` Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
+            }
+          } catch (e) { }
+        }
+
+        items.push({
+          id: id,
+          notificationType: "event",
+          title: `📅 ${ev.title || "Sự kiện lịch"}`,
+          body: `Ngày ${dateKey}${timeDesc}${ev.text || ev.note ? " | " + (ev.text || ev.note) : ""}`,
+          dateKey: dateKey,
+          eventData: {
+            id: ev.id,
+            title: ev.title,
+            text: ev.text || ev.note,
+            note: ev.note || ev.text,
+            eventDateTime: ev.eventDateTime,
+            color: ev.color,
+            date: dateKey,
+            createdAt: ev.createdAt
+          },
+          createdAt: Number(ev.createdAt || Date.now()),
+          read: readNotificationIds.has(id)
+        });
+      });
+    }
+
+    // 2. Thu chi (cashflowEntries)
+    if (Array.isArray(data.cashflowEntries)) {
+      data.cashflowEntries.forEach((cf) => {
+        if (!cf) return;
+        const id = `cf_${cf.id || cf.createdAt || dateKey + '_' + cf.amount}`;
+        const isExpense = cf.type === "expense";
+        const titleStr = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
+        const amtStr = cf.amount ? `${Number(cf.amount).toLocaleString("vi-VN")} đ` : "";
+        const catStr = cf.category ? `${cf.category} - ` : "";
+        const noteStr = cf.note ? ` (${cf.note})` : "";
+
+        items.push({
+          id: id,
+          notificationType: "cashflow",
+          title: titleStr,
+          body: `${catStr}${amtStr}${noteStr}`,
+          dateKey: dateKey,
+          eventData: {
+            id: cf.id,
+            date: cf.date || dateKey,
+            type: cf.type,
+            cashflowType: cf.type,
+            amount: cf.amount,
+            category: cf.category,
+            note: cf.note,
+            text: cf.note,
+            createdAt: cf.createdAt
+          },
+          createdAt: Number(cf.createdAt || Date.now()),
+          read: readNotificationIds.has(id)
+        });
+      });
+    }
+  });
+
+  return items;
+}
+
+function syncCombinedNotifications() {
+  const map = new Map();
+
+  // 1. Thêm các sự kiện & thu chi từ dateDataCache
+  const calendarNotifs = getNotificationsFromCalendarEvents();
+  calendarNotifs.forEach((item) => {
+    map.set(item.id, item);
+  });
+
+  // 2. Thêm các bản ghi từ eventReminders đã lưu trong RTDB
+  eventRemindersCache.forEach((rem) => {
+    const id = `rem_${rem.id}`;
+    map.set(id, {
+      id: id,
+      notificationType: "reminder",
+      title: `⏰ Nhắc nhở: ${rem.eventTitle || "Sự kiện"}`,
+      body: rem.eventText || (rem.eventDateTime ? `Lúc ${new Date(rem.eventDateTime).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}` : ""),
+      dateKey: rem.dateKey || "",
+      eventData: {
+        id: rem.eventId,
+        title: rem.eventTitle,
+        text: rem.eventText,
+        note: rem.eventText,
+        eventDateTime: rem.eventDateTime,
+        color: rem.eventColor,
+        date: rem.dateKey
+      },
+      createdAt: Number(rem.reminderAtMs || rem.createdAt || Date.now()),
+      read: readNotificationIds.has(id) || Boolean(rem.delivered)
+    });
+  });
+
+  // 3. Thêm/ghi đè các bản ghi từ userNotifications
+  userNotificationsCache.forEach((item) => {
+    map.set(item.id, {
+      ...item,
+      read: readNotificationIds.has(item.id) || Boolean(item.read)
+    });
+  });
+
+  const list = Array.from(map.values());
+  list.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+  combinedNotificationsList = list;
+
+  // Tính số lượng chưa đọc
+  const unreadCount = list.filter((item) => !item.read).length;
+  updateNotificationBadgeUI(unreadCount);
+
+  // Nếu modal đang mở thì re-render
+  const modal = document.getElementById("modalNotificationList");
+  if (modal && modal.style.display !== "none") {
+    renderNotificationList();
+  }
+}
+window.syncCombinedNotifications = syncCombinedNotifications;
 
 /**
  * Thiết lập listener Realtime lắng nghe danh sách lịch sử thông báo & nhắc nhở
  */
 function setupNotificationHistoryListener() {
-  if (!firebaseDb || !userProfileKey) return;
+  if (!firebaseDb || !userProfileKey) {
+    syncCombinedNotifications();
+    return;
+  }
 
   if (firebaseUserNotificationsRef) {
     try { firebaseUserNotificationsRef.off(); } catch (e) { }
@@ -3916,52 +4076,6 @@ function setupNotificationHistoryListener() {
   firebaseEventRemindersRef = firebaseDb
     .ref(`${FIREBASE_EVENT_REMINDERS_PATH}/${userProfileKey}`)
     .limitToLast(50);
-
-  const syncCombinedNotifications = () => {
-    const map = new Map();
-
-    // 1. Thêm các bản ghi từ eventReminders đã lưu trong RTDB
-    eventRemindersCache.forEach((rem) => {
-      const id = `rem_${rem.id}`;
-      map.set(id, {
-        id: id,
-        notificationType: "reminder",
-        title: `⏰ Nhắc nhở: ${rem.eventTitle || "Sự kiện"}`,
-        body: rem.eventText || (rem.eventDateTime ? `Lúc ${new Date(rem.eventDateTime).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}` : ""),
-        dateKey: rem.dateKey || "",
-        eventData: {
-          id: rem.eventId,
-          title: rem.eventTitle,
-          text: rem.eventText,
-          note: rem.eventText,
-          eventDateTime: rem.eventDateTime,
-          color: rem.eventColor,
-          date: rem.dateKey
-        },
-        createdAt: Number(rem.reminderAtMs || rem.createdAt || Date.now()),
-        read: Boolean(rem.delivered)
-      });
-    });
-
-    // 2. Thêm/ghi đè các bản ghi từ userNotifications
-    userNotificationsCache.forEach((item) => {
-      map.set(item.id, item);
-    });
-
-    const list = Array.from(map.values());
-    list.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-    combinedNotificationsList = list;
-
-    // Tính số lượng chưa đọc
-    const unreadCount = list.filter((item) => !item.read).length;
-    updateNotificationBadgeUI(unreadCount);
-
-    // Nếu modal đang mở thì re-render
-    const modal = document.getElementById("modalNotificationList");
-    if (modal && modal.style.display !== "none") {
-      renderNotificationList();
-    }
-  };
 
   firebaseUserNotificationsRef.on("value", (snapshot) => {
     const data = snapshot.val() || {};
@@ -4104,6 +4218,7 @@ async function handleNotificationItemClick(notifId) {
 
   if (!item.read) {
     item.read = true;
+    markNotificationIdAsReadLocal(notifId);
     markNotificationAsRead(notifId);
   }
 
@@ -4118,6 +4233,7 @@ async function handleNotificationItemClick(notifId) {
 window.handleNotificationItemClick = handleNotificationItemClick;
 
 async function markNotificationAsRead(notifId) {
+  markNotificationIdAsReadLocal(notifId);
   if (!firebaseDb || !userProfileKey || !notifId) return;
   try {
     if (notifId.startsWith("rem_")) {
@@ -4133,22 +4249,32 @@ async function markNotificationAsRead(notifId) {
 window.markNotificationAsRead = markNotificationAsRead;
 
 async function markAllNotificationsAsRead() {
-  if (!firebaseDb || !userProfileKey) return;
   const unreadItems = combinedNotificationsList.filter((i) => !i.read);
   if (unreadItems.length === 0) return;
+
+  unreadItems.forEach((i) => {
+    i.read = true;
+    markNotificationIdAsReadLocal(i.id);
+  });
+
+  if (!firebaseDb || !userProfileKey) {
+    updateNotificationBadgeUI(0);
+    return;
+  }
 
   try {
     const updates = {};
     unreadItems.forEach((i) => {
-      i.read = true;
       if (i.id.startsWith("rem_")) {
         const remId = i.id.replace("rem_", "");
         updates[`${FIREBASE_EVENT_REMINDERS_PATH}/${userProfileKey}/${remId}/delivered`] = true;
-      } else {
+      } else if (!i.id.startsWith("ev_") && !i.id.startsWith("cf_")) {
         updates[`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}/${i.id}/read`] = true;
       }
     });
-    await firebaseDb.ref().update(updates);
+    if (Object.keys(updates).length > 0) {
+      await firebaseDb.ref().update(updates);
+    }
     updateNotificationBadgeUI(0);
   } catch (e) {
     console.warn("[NotificationHistory] Lỗi đánh dấu tất cả đã đọc:", e);

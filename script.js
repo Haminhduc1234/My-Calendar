@@ -3464,7 +3464,10 @@ async function initFirebaseMessaging() {
           parsedEventData = payload.data.eventData;
         }
 
-        const fcmUniqueKey = parsedEventData?.id || payload.data?.id || payload.messageId || `${notificationType}-${title}-${body}-${dateKey}`;
+        const fcmUniqueKey = parsedEventData?.id
+          ? `event-${parsedEventData.id}`
+          : (payload.data?.eventId ? `event-${payload.data.eventId}` : payload.data?.id || payload.messageId || `${notificationType}-${title}-${body}-${dateKey}`);
+
         if (isDuplicateNotification(fcmUniqueKey)) {
           console.log("[FCM] Bỏ qua thông báo FCM trùng lặp:", fcmUniqueKey);
           return;

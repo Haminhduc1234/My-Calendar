@@ -61,13 +61,15 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
                 if (note) bodyParts.push(note);
             }
 
-            if (payload.notification?.body) bodyParts.push(payload.notification.body);
+            const eventId = cleanStr(payload.data?.eventId || payload.data?.id);
+            const notificationTag = payload.data?.tag || (eventId ? `event-${eventId}` : `notify-${type}-${dateStr || Date.now()}`);
 
             return self.registration.showNotification(title, {
                 body: bodyParts.join(" | ") || "Bạn có một thông báo mới",
                 icon: "/public/favicon.png",
                 badge: "/public/favicon.png",
-                tag: `notify-${type}-${dateStr || payload.data?.eventId || Date.now()}`,
+                tag: notificationTag,
+                renotify: false,
                 vibrate: [200, 100, 200],
                 data: {
                     url: targetUrl,

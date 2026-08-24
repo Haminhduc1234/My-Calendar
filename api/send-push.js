@@ -109,34 +109,27 @@ module.exports = async (req, res) => {
     }
 
     const body = bodyParts.join(" | ") || "Có cập nhật mới từ thiết bị khác.";
+    const eventId = String(eventData?.id || "");
+    const notificationTag = eventId ? `event-${eventId}` : `event-${Date.now()}`;
 
     const message = {
       tokens: tokens,
-      notification: {
-        title: title,
-        body: body
-      },
       data: {
         title: title,
         body: body,
         notificationType: type,
         dateKey: String(dateKey || ""),
         url: targetUrl,
+        eventId: eventId,
+        tag: notificationTag,
         eventDataJson: JSON.stringify(eventData || {})
       },
       webpush: {
         fcmOptions: {
           link: targetUrl
         },
-        notification: {
-          icon: "/public/favicon.png",
-          badge: "/public/favicon.png",
-          vibrate: [200, 100, 200]
-        },
-        data: {
-          url: targetUrl,
-          dateKey: String(dateKey || ""),
-          notificationType: type
+        headers: {
+          Urgency: "high"
         }
       }
     };

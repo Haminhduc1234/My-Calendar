@@ -4494,9 +4494,26 @@ function renderDayDetailsModalUI(dateKey, d, m, y, data) {
   if (!eventsList) return;
   eventsList.innerHTML = "";
 
+  // Toggle header "+ Thêm" button depending on whether events exist
+  const headerAddBtn = document.querySelector("#dayDetailsModal .btn-add-event");
+
   if (!data.events || data.events.length === 0) {
-    eventsList.innerHTML = '<div class="no-events">Chưa có sự kiện</div>';
+    if (headerAddBtn) headerAddBtn.style.display = "none";
+    eventsList.innerHTML = `
+      <div class="empty-events-state">
+        <div class="empty-events-text">Chưa có sự kiện nào cho ngày này</div>
+        <button type="button" class="empty-events-add-btn" onclick="openAddEventModalFromDayDetails()" title="Thêm sự kiện mới" aria-label="Thêm sự kiện mới">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 2v4M16 2v4"></path>
+            <rect x="3" y="4" width="18" height="18" rx="3"></rect>
+            <path d="M3 10h18"></path>
+            <path d="M12 14v4M10 16h4"></path>
+          </svg>
+        </button>
+      </div>
+    `;
   } else {
+    if (headerAddBtn) headerAddBtn.style.display = "";
     data.events.forEach((event, idx) => {
       const eventDiv = document.createElement("div");
       eventDiv.className = "event-item";
@@ -10024,12 +10041,40 @@ function getCashflowCategoryLabel(type, categoryValue) {
   const normalizedValue = String(categoryValue || "").trim();
   if (!normalizedValue) return "Chưa phân loại";
 
+  // 1. Search in current type categories
   const categories = cashflowCategories[type] || [];
-  const matchedCategory = categories.find(
+  let matchedCategory = categories.find(
     (category) =>
       String(category?.id || "").trim() === normalizedValue ||
       String(category?.name || "").trim() === normalizedValue,
   );
+
+  // 2. Fallback: Search in all active cashflowCategories (income + expense)
+  if (!matchedCategory) {
+    const allActive = [
+      ...(cashflowCategories.income || []),
+      ...(cashflowCategories.expense || []),
+    ];
+    matchedCategory = allActive.find(
+      (category) =>
+        String(category?.id || "").trim() === normalizedValue ||
+        String(category?.name || "").trim() === normalizedValue,
+    );
+  }
+
+  // 3. Fallback: Search in default categories
+  if (!matchedCategory) {
+    const defaults = getDefaultCategories();
+    const allDefaults = [
+      ...(defaults.income || []),
+      ...(defaults.expense || []),
+    ];
+    matchedCategory = allDefaults.find(
+      (category) =>
+        String(category?.id || "").trim() === normalizedValue ||
+        String(category?.name || "").trim() === normalizedValue,
+    );
+  }
 
   return matchedCategory?.name || normalizedValue;
 }
@@ -10211,10 +10256,7 @@ renderOvertime();
 /* ========================== LOẠI THU CHI ========================== */
 const FIREBASE_CATEGORIES_PATH = "cashflowCategories";
 let firebaseCategoriesRef = null;
-let cashflowCategories = {
-  income: [],
-  expense: [],
-};
+let cashflowCategories = getDefaultCategories();
 
 function getDefaultCategories() {
   return {
@@ -10272,6 +10314,12 @@ function initCategoriesFirebase() {
         saveCashflowCategoriesToFirebase();
       }
       updateCashflowCategoryDropdowns();
+      if (typeof renderCashflowDashboard === "function") {
+        renderCashflowDashboard();
+      }
+      if (typeof renderCashflowAllTransactionsList === "function") {
+        renderCashflowAllTransactionsList();
+      }
       await migrateCashflowCategoryIdsIfNeeded();
     },
     (error) => {

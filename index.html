@@ -58,8 +58,10 @@
             <div class="today-profile-bio" id="todayProfileBio"></div>
           </div>
         </div>
-        <button type="button" id="btnNotificationBell" class="notification-bell-btn" title="Thông báo" onclick="openNotificationModal()">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <button type="button" id="btnNotificationBell" class="notification-bell-btn" title="Thông báo"
+          onclick="openNotificationModal()">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
           </svg>
@@ -715,21 +717,29 @@
           </div>
 
           <!-- Notification Settings Section -->
-          <div class="profile-notification-section" style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line, rgba(255, 255, 255, 0.1));">
+          <div class="profile-notification-section"
+            style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line, rgba(255, 255, 255, 0.1));">
             <h4 class="profile-section-title" style="margin-bottom: 8px;">Thông báo đẩy (Push Notifications)</h4>
             <p style="font-size: 12px; color: var(--muted, #94a3b8); margin-bottom: 12px; line-height: 1.4;">
               Nhận thông báo tức thì trên thiết bị này khi bạn hoặc thiết bị khác thêm sự kiện mới.
             </p>
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255, 255, 255, 0.04); padding: 12px; border-radius: 10px; border: 1px solid var(--line, rgba(255, 255, 255, 0.1));">
+            <div
+              style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255, 255, 255, 0.04); padding: 12px; border-radius: 10px; border: 1px solid var(--line, rgba(255, 255, 255, 0.1));">
               <div>
-                <div id="deviceNotifyStatus" style="font-size: 13px; font-weight: 600; color: var(--text, #fff);">Đang kiểm tra...</div>
-                <div id="deviceNotifyDesc" style="font-size: 11px; color: var(--muted, #94a3b8);">Chạm để bật nhận thông báo</div>
+                <div id="deviceNotifyStatus" style="font-size: 13px; font-weight: 600; color: var(--text, #fff);">Đang
+                  kiểm tra...</div>
+                <div id="deviceNotifyDesc" style="font-size: 11px; color: var(--muted, #94a3b8);">Chạm để bật nhận thông
+                  báo</div>
               </div>
               <div style="display: flex; gap: 8px;">
-                <button type="button" id="btnToggleNotification" class="btn-primary" onclick="toggleDeviceNotificationPermission()" style="padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer;">
+                <button type="button" id="btnToggleNotification" class="btn-primary"
+                  onclick="toggleDeviceNotificationPermission()"
+                  style="padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer;">
                   Bật thông báo
                 </button>
-                <button type="button" id="btnTestNotification" class="btn-secondary" onclick="sendTestPushNotification()" style="padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; display: none;">
+                <button type="button" id="btnTestNotification" class="btn-secondary"
+                  onclick="sendTestPushNotification()"
+                  style="padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; display: none;">
                   Thử nghiệm
                 </button>
               </div>
@@ -808,17 +818,34 @@
           </div>
         </div>
 
-        <div class="modal-actions">
-          <button onclick="exportEventsCsv()" class="btn-export-csv-event">
-            Xuất CSV sự kiện
+        <div class="modal-actions day-details-modal-actions">
+          <button type="button" onclick="exportEventsCsv()" class="btn-day-action btn-day-csv"
+            title="Tải file CSV tất cả sự kiện">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Tải CSV</span>
           </button>
-          <button onclick="closeDayDetailsModal()">Đóng</button>
+
+          <button type="button" onclick="closeDayDetailsModal()" class="btn-day-action btn-day-close"
+            title="Đóng modal">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            <span>Đóng</span>
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Event QuickView Modal - Xem nhanh chi tiết sự kiện -->
-    <div id="eventQuickViewModal" class="cashflow-quickview-modal" style="display: none" onclick="if (event.target === this) closeEventQuickViewModal()">
+    <div id="eventQuickViewModal" class="cashflow-quickview-modal" style="display: none"
+      onclick="if (event.target === this) closeEventQuickViewModal()">
       <div class="cashflow-quickview-dialog">
         <button type="button" class="cashflow-quickview-close" onclick="closeEventQuickViewModal()"
           aria-label="Đóng xem nhanh sự kiện">
@@ -1323,7 +1350,8 @@
     </div>
 
     <!-- Cashflow QuickView Modal -->
-    <div id="cashflowQuickViewModal" class="cashflow-quickview-modal" style="display: none" onclick="if (event.target === this) closeCashflowQuickViewModal()">
+    <div id="cashflowQuickViewModal" class="cashflow-quickview-modal" style="display: none"
+      onclick="if (event.target === this) closeCashflowQuickViewModal()">
       <div class="cashflow-quickview-dialog">
         <button type="button" class="cashflow-quickview-close" onclick="closeCashflowQuickViewModal()"
           aria-label="Đóng xem nhanh giao dịch">
@@ -2582,7 +2610,8 @@
         <button type="button" class="confirm-popup-btn cancel" id="confirmPopupCancelBtn" onclick="closeConfirmPopup()">
           Hủy
         </button>
-        <button type="button" class="confirm-popup-btn danger" id="confirmPopupConfirmBtn" onclick="confirmPopupAction()">
+        <button type="button" class="confirm-popup-btn danger" id="confirmPopupConfirmBtn"
+          onclick="confirmPopupAction()">
           Xóa
         </button>
       </div>
@@ -2654,26 +2683,36 @@
     <div class="modal-content notification-modal-content">
       <div class="notification-modal-header">
         <div class="notification-modal-title">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
           </svg>
           <span>Thông báo</span>
         </div>
         <div class="notification-modal-actions">
-          <button type="button" class="notif-action-btn" title="Đánh dấu tất cả đã đọc" onclick="markAllNotificationsAsRead()">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <button type="button" class="notif-action-btn" title="Đánh dấu tất cả đã đọc"
+            onclick="markAllNotificationsAsRead()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
             <span>Đã đọc tất cả</span>
           </button>
-          <button type="button" class="notif-action-btn danger" title="Xóa tất cả thông báo" onclick="clearAllNotifications()">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <button type="button" class="notif-action-btn danger" title="Xóa tất cả thông báo"
+            onclick="clearAllNotifications()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
           </button>
           <button type="button" class="modal-close" onclick="closeNotificationModal()">×</button>
         </div>
       </div>
       <div class="notification-tabs">
-        <button type="button" class="notif-tab active" data-filter="all" onclick="filterNotifications('all', this)">Tất cả</button>
-        <button type="button" class="notif-tab" data-filter="unread" onclick="filterNotifications('unread', this)">Chưa đọc</button>
+        <button type="button" class="notif-tab active" data-filter="all" onclick="filterNotifications('all', this)">Tất
+          cả</button>
+        <button type="button" class="notif-tab" data-filter="unread" onclick="filterNotifications('unread', this)">Chưa
+          đọc</button>
       </div>
       <div id="notificationListBody" class="notification-list-body">
         <!-- Notification list rendered dynamically -->

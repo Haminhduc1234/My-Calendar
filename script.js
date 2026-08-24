@@ -3783,23 +3783,38 @@ function setupNotificationQueueListener() {
 
   console.log("[NotificationQueue] Đang lắng nghe thông báo cho user:", userProfileKey);
 
+  let isInitialSnapshotLoaded = false;
+
+  // 1. Quét qua một lần tất cả thông báo cũ đang tồn tại trong Queue để bỏ qua không bắn toast trùng khi mở app
+  firebaseNotificationQueueRef.limitToLast(50).once("value", (snapshot) => {
+    const dataMap = snapshot.val() || {};
+    Object.keys(dataMap).forEach((k) => {
+      _processedNotificationKeys.add(k);
+    });
+    isInitialSnapshotLoaded = true;
+  });
+
+  // 2. Lắng nghe các thông báo MỚI THỰC SỰ được thêm vào Queue từ thời điểm hiện tại
   firebaseNotificationQueueRef
     .limitToLast(30)
     .on("child_added", (snapshot) => {
       const key = snapshot.key;
-      if (!key || _processedNotificationKeys.has(key)) return;
+      if (!key) return;
+
+      // Nếu thông báo này đã tồn tại trước đó -> Bỏ qua không phát chuông/toast
+      if (_processedNotificationKeys.has(key)) return;
       _processedNotificationKeys.add(key);
+
+      // Nếu chưa nạp xong snapshot ban đầu -> Bỏ qua
+      if (!isInitialSnapshotLoaded) return;
 
       const data = snapshot.val();
       if (!data || !data.eventData) return;
 
-      // Không phát chuông cho các thông báo quá cũ (trước khi mở app > 5 phút)
-      if (data.timestamp && Number(data.timestamp) < (_appStartTime - 300000)) return;
-
       const mySessionId = getOrCreateTabSessionId();
       // Nếu sự kiện được gửi từ tab khác hoặc thiết bị khác (Session ID khác nhau 100%)
       if (!data.senderSessionId || data.senderSessionId !== mySessionId) {
-        console.log("[NotificationQueue] Nhận thông báo từ thiết bị/tab khác:", data);
+        console.log("[NotificationQueue] Nhận thông báo MỚI từ thiết bị/tab khác:", data);
         notifyNewEventFromRealtime(data.eventData, data.dateKey, data.notificationType);
       }
     });

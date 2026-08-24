@@ -16824,3 +16824,39 @@ if (document.readyState === "loading") {
 } else {
   checkUrlParamsForDateNavigation();
 }
+
+/**
+ * Xóa sạch toàn bộ CacheStorage, hủy Service Workers và buộc tải lại bản mới nhất từ Vercel
+ */
+async function clearCacheAndReloadApp() {
+  try {
+    // 1. Hủy đăng ký tất cả Service Workers
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of registrations) {
+        console.log("[CacheClear] Unregistering SW:", reg.active?.scriptURL);
+        await reg.unregister();
+      }
+    }
+
+    // 2. Xóa sạch tất cả các kho CacheStorage
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      for (const key of keys) {
+        console.log("[CacheClear] Deleting CacheStorage:", key);
+        await caches.delete(key);
+      }
+    }
+
+    // 3. Clear session storage
+    sessionStorage.clear();
+  } catch (err) {
+    console.warn("[CacheClear] Lỗi trong quá trình dọn dẹp cache:", err);
+  } finally {
+    // 4. Force reload trang kèm theo timestamp chống HTTP browser cache
+    const url = new URL(window.location.href);
+    url.searchParams.set("_reload", Date.now().toString());
+    window.location.href = url.toString();
+  }
+}
+window.clearCacheAndReloadApp = clearCacheAndReloadApp;

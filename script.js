@@ -3337,16 +3337,19 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
   if (type === "cashflow") {
     const isExpense = eventData.cashflowType === "expense";
     title = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
-    if (eventData.category) bodyParts.push(eventData.category);
     if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
-    if (eventData.text || eventData.note) bodyParts.push(eventData.text || eventData.note);
+    if (eventData.category) bodyParts.push(eventData.category);
+    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+    const cleanNote = String(eventData.text || eventData.note || "").replace(/^undefined$/i, "").trim();
+    if (cleanNote) bodyParts.push(cleanNote);
     notificationUrl = `./?action=cashflow&id=${encodeURIComponent(eventData.id || "")}&date=${encodeURIComponent(dateKey || "")}&amount=${encodeURIComponent(eventData.amount || "")}&category=${encodeURIComponent(eventData.category || "")}&cashflowType=${encodeURIComponent(eventData.cashflowType || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
     notificationTag = `cashflow-${eventData.id || dateKey || Date.now()}`;
   } else if (type === "fund_allocation" || type === "funds") {
-    title = "📊 Phân bổ quỹ mới";
-    if (eventData.fundName) bodyParts.push(`Quỹ: ${eventData.fundName}`);
+    title = `📊 Phân bổ quỹ: ${eventData.fundName || "Quỹ"}`;
     if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
-    if (eventData.text || eventData.note) bodyParts.push(eventData.text || eventData.note);
+    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+    const cleanNote = String(eventData.text || eventData.note || "").replace(/^undefined$/i, "").trim();
+    if (cleanNote) bodyParts.push(cleanNote);
     notificationUrl = `./?action=funds&id=${encodeURIComponent(eventData.id || "")}&fundName=${encodeURIComponent(eventData.fundName || "")}&amount=${encodeURIComponent(eventData.amount || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
     notificationTag = `fund-${eventData.id || Date.now()}`;
   } else {
@@ -3361,7 +3364,8 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
         }
       } catch { }
     }
-    if (eventData.text || eventData.note) bodyParts.push(eventData.text || eventData.note);
+    const cleanNote = String(eventData.text || eventData.note || "").replace(/^undefined$/i, "").trim();
+    if (cleanNote) bodyParts.push(cleanNote);
     notificationUrl = `./?action=event&id=${encodeURIComponent(eventData.id || "")}&title=${encodeURIComponent(eventData.title || "")}&text=${encodeURIComponent(eventData.text || eventData.note || "")}&note=${encodeURIComponent(eventData.note || eventData.text || "")}&eventDateTime=${encodeURIComponent(eventData.eventDateTime || "")}&color=${encodeURIComponent(eventData.color || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}&date=${encodeURIComponent(dateKey || "")}`;
     notificationTag = `event-${eventData.id || dateKey || Date.now()}`;
   }
@@ -3864,28 +3868,44 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
 
   // 2. Lưu vào Lịch sử thông báo (để người dùng xem lại ở quả chuông)
   let notifTitle = "";
+  const bodyParts = [];
+
   if (type === "cashflow") {
-    notifTitle = payload.eventData.cashflowType === "income" ? "💸 Thu nhập mới" : "💸 Chi tiêu mới";
+    const isExpense = payload.eventData.cashflowType === "expense";
+    notifTitle = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
+    if (payload.eventData.amount) {
+      bodyParts.push(`${Number(payload.eventData.amount).toLocaleString("vi-VN")} đ`);
+    }
+    if (payload.eventData.category) {
+      bodyParts.push(payload.eventData.category);
+    }
+    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+    const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
+    if (cleanText) bodyParts.push(cleanText);
   } else if (type === "funds" || type === "fund_allocation") {
     notifTitle = `📊 Phân bổ quỹ: ${payload.eventData.fundName || "Quỹ"}`;
+    if (payload.eventData.amount) {
+      bodyParts.push(`${Number(payload.eventData.amount).toLocaleString("vi-VN")} đ`);
+    }
+    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+    const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
+    if (cleanText) bodyParts.push(cleanText);
   } else {
     notifTitle = payload.eventData.title ? `🔔 ${payload.eventData.title}` : "🔔 Sự kiện mới";
+    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+    if (payload.eventData.eventDateTime) {
+      try {
+        const dt = new Date(payload.eventData.eventDateTime);
+        if (!Number.isNaN(dt.getTime())) {
+          bodyParts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
+        }
+      } catch { }
+    }
+    const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
+    if (cleanText) bodyParts.push(cleanText);
   }
 
-  const bodyParts = [];
-  if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
-  if (payload.eventData.eventDateTime) {
-    try {
-      const dt = new Date(payload.eventData.eventDateTime);
-      if (!Number.isNaN(dt.getTime())) {
-        bodyParts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
-      }
-    } catch { }
-  }
-  const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
-  if (cleanText) bodyParts.push(cleanText);
-
-  const notifBody = bodyParts.join(" | ") || cleanText || "";
+  const notifBody = bodyParts.join(" | ") || "";
   saveNotificationToHistory(type, notifTitle, notifBody, dateKey, payload.eventData);
 
   // 3. Gọi Serverless Endpoint /api/send-push.js (gửi FCM đánh thức các thiết bị đang đóng app)
@@ -4031,7 +4051,28 @@ function syncCombinedNotifications() {
     if (!cleanTitle) cleanTitle = "Sự kiện mới";
 
     let cleanBody = sanitizeString(item.body);
-    if (!cleanBody && item.eventData) {
+    const type = item.notificationType || "event";
+    if (type === "cashflow" && item.eventData) {
+      const parts = [];
+      const amt = item.eventData.amount;
+      if (amt) parts.push(`${Number(amt).toLocaleString("vi-VN")} đ`);
+      const cat = sanitizeString(item.eventData.category);
+      if (cat) parts.push(cat);
+      const dk = sanitizeString(item.dateKey || item.eventData.date);
+      if (dk) parts.push(`Ngày ${dk}`);
+      const noteStr = sanitizeString(item.eventData.text || item.eventData.note);
+      if (noteStr) parts.push(noteStr);
+      cleanBody = parts.join(" | ");
+    } else if ((type === "funds" || type === "fund_allocation") && item.eventData) {
+      const parts = [];
+      const amt = item.eventData.amount;
+      if (amt) parts.push(`${Number(amt).toLocaleString("vi-VN")} đ`);
+      const dk = sanitizeString(item.dateKey || item.eventData.date);
+      if (dk) parts.push(`Ngày ${dk}`);
+      const noteStr = sanitizeString(item.eventData.text || item.eventData.note);
+      if (noteStr) parts.push(noteStr);
+      cleanBody = parts.join(" | ");
+    } else if (!cleanBody && item.eventData) {
       const parts = [];
       const dk = sanitizeString(item.dateKey || item.eventData.date);
       if (dk) parts.push(`Ngày ${dk}`);

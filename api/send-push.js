@@ -122,6 +122,8 @@ module.exports = async (req, res) => {
         url: targetUrl,
         eventId: eventId,
         tag: notificationTag,
+        text: String(eventData?.text || eventData?.note || ""),
+        note: String(eventData?.note || eventData?.text || ""),
         eventDataJson: JSON.stringify(eventData || {})
       },
       webpush: {

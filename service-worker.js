@@ -25,40 +25,47 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
                 return;
             }
 
+            let parsedEventData = {};
+            if (payload.data?.eventDataJson) {
+                try { parsedEventData = JSON.parse(payload.data.eventDataJson); } catch (e) { }
+            }
+
             const type = payload.data?.notificationType || "event";
-            const dateStr = cleanStr(payload.data?.dateKey || payload.data?.date);
-            let rawTitle = cleanStr(payload.data?.title);
+            const dateStr = cleanStr(payload.data?.dateKey || payload.data?.date || parsedEventData.date);
+            let rawTitle = cleanStr(payload.data?.title || parsedEventData.title);
             let title = rawTitle ? `🔔 ${rawTitle}` : "🔔 Sự kiện mới trên Lịch Việt";
             let targetUrl = payload.data?.url || payload.fcmOptions?.link || "./";
             const bodyParts = [];
 
+            const eventNote = cleanStr(payload.data?.text || payload.data?.note || parsedEventData.text || parsedData?.note || parsedEventData.note);
+
             if (type === "cashflow") {
-                const isExpense = payload.data?.cashflowType === "expense";
+                const isExpense = (payload.data?.cashflowType || parsedEventData.cashflowType) === "expense";
                 title = rawTitle || (isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới");
-                const cat = cleanStr(payload.data?.category);
+                const cat = cleanStr(payload.data?.category || parsedEventData.category);
                 if (cat) bodyParts.push(cat);
-                if (payload.data?.amount) bodyParts.push(`${Number(payload.data.amount).toLocaleString("vi-VN")} đ`);
-                const note = cleanStr(payload.data?.text || payload.data?.note);
-                if (note) bodyParts.push(note);
+                const amt = payload.data?.amount || parsedEventData.amount;
+                if (amt) bodyParts.push(`${Number(amt).toLocaleString("vi-VN")} đ`);
+                if (eventNote) bodyParts.push(eventNote);
             } else if (type === "fund_allocation" || type === "funds") {
                 title = rawTitle || "📊 Phân bổ quỹ mới";
-                const fn = cleanStr(payload.data?.fundName);
+                const fn = cleanStr(payload.data?.fundName || parsedEventData.fundName);
                 if (fn) bodyParts.push(`Quỹ: ${fn}`);
-                if (payload.data?.amount) bodyParts.push(`${Number(payload.data.amount).toLocaleString("vi-VN")} đ`);
-                const note = cleanStr(payload.data?.text || payload.data?.note);
-                if (note) bodyParts.push(note);
+                const amt = payload.data?.amount || parsedEventData.amount;
+                if (amt) bodyParts.push(`${Number(amt).toLocaleString("vi-VN")} đ`);
+                if (eventNote) bodyParts.push(eventNote);
             } else {
                 if (dateStr) bodyParts.push(`Ngày ${dateStr}`);
-                if (payload.data?.eventDateTime) {
+                const dtStr = payload.data?.eventDateTime || parsedEventData.eventDateTime;
+                if (dtStr) {
                     try {
-                        const dt = new Date(payload.data.eventDateTime);
+                        const dt = new Date(dtStr);
                         if (!Number.isNaN(dt.getTime())) {
                             bodyParts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
                         }
                     } catch { }
                 }
-                const note = cleanStr(payload.data?.text || payload.data?.note);
-                if (note) bodyParts.push(note);
+                if (eventNote) bodyParts.push(eventNote);
             }
 
             const eventId = cleanStr(payload.data?.eventId || payload.data?.id);

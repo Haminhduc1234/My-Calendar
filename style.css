@@ -14565,3 +14565,102 @@ html {
   height: 10px;
   margin-top: 4px;
 }
+
+/* Celebration Fireworks Modal */
+.celebration-modal {
+  background: rgba(15, 23, 42, 0.85) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  z-index: 10005 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.celebration-card {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 35px rgba(16, 185, 129, 0.35) !important;
+  border-radius: 24px !important;
+  padding: 32px 24px !important;
+  text-align: center !important;
+  max-width: 380px !important;
+  width: 90% !important;
+  animation: celebrationPopIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+  position: relative !important;
+  margin: auto !important;
+}
+
+@keyframes celebrationPopIn {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.celebration-badge {
+  font-size: 56px !important;
+  margin-bottom: 10px !important;
+  display: inline-block !important;
+  animation: badgeBounce 1.2s infinite ease-in-out alternate !important;
+}
+
+@keyframes badgeBounce {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-8px) scale(1.1); }
+}
+
+.celebration-title {
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  margin-bottom: 6px !important;
+  background: linear-gradient(90deg, #34d399, #60a5fa, #f472b6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.celebration-subtitle {
+  font-size: 13px !important;
+  color: #94a3b8 !important;
+  margin-bottom: 20px !important;
+  line-height: 1.4 !important;
+}
+
+.celebration-summary {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 16px !important;
+  padding: 16px !important;
+  margin-bottom: 24px !important;
+}
+
+.celebration-amount {
+  font-size: 26px !important;
+  font-weight: 800 !important;
+  color: #10b981 !important;
+  letter-spacing: -0.5px !important;
+  margin-bottom: 4px !important;
+}
+
+.celebration-fund-name {
+  font-size: 14px !important;
+  color: #cbd5e1 !important;
+  font-weight: 500 !important;
+}
+
+.celebration-close-btn {
+  width: 100% !important;
+  padding: 14px !important;
+  border-radius: 14px !important;
+  border: none !important;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4) !important;
+  transition: all 0.2s ease !important;
+}
+
+.celebration-close-btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6) !important;
+}

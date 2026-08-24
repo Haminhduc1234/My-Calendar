@@ -54,11 +54,11 @@ module.exports = async (req, res) => {
     const tokenMap = snap.val() || {};
 
     const tokens = [];
-    Object.keys(tokenMap).forEach((devId) => {
+    Object.entries(tokenMap).forEach(([devId, value]) => {
       // Bỏ qua thiết bị hiện tại nếu là người tạo sự kiện
       if (senderDeviceId && devId === senderDeviceId) return;
-      const t = tokenMap[devId]?.token;
-      if (t && typeof t === "string" && !tokens.includes(t)) {
+      const t = typeof value === "string" ? value : value?.token;
+      if (t && typeof t === "string" && t.length > 20 && !tokens.includes(t)) {
         tokens.push(t);
       }
     });

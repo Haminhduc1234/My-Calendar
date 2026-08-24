@@ -3780,8 +3780,7 @@ function setupNotificationQueueListener() {
   console.log("[NotificationQueue] Đang lắng nghe thông báo cho user:", userProfileKey);
 
   firebaseNotificationQueueRef
-    .orderByChild("timestamp")
-    .startAt(_appStartTime)
+    .limitToLast(20)
     .on("child_added", (snapshot) => {
       const key = snapshot.key;
       if (!key || _processedNotificationKeys.has(key)) return;
@@ -3789,6 +3788,9 @@ function setupNotificationQueueListener() {
 
       const data = snapshot.val();
       if (!data || !data.eventData) return;
+
+      // Không phát chuông cho các thông báo quá cũ (trước khi mở app > 15s)
+      if (data.timestamp && Number(data.timestamp) < (_appStartTime - 15000)) return;
 
       const mySessionId = getOrCreateTabSessionId();
       const myDeviceId = getOrCreateDeviceId();
@@ -3845,13 +3847,27 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
   // 2. Lưu vào Lịch sử thông báo (để người dùng xem lại ở quả chuông)
   let notifTitle = "";
   if (type === "cashflow") {
-    notifTitle = payload.eventData.cashflowType === "income" ? "Giao dịch Thu mới" : "Giao dịch Chi mới";
+    notifTitle = payload.eventData.cashflowType === "income" ? "💸 Thu nhập mới" : "💸 Chi tiêu mới";
   } else if (type === "funds" || type === "fund_allocation") {
-    notifTitle = `Phân bổ quỹ: ${payload.eventData.fundName || "Quỹ"}`;
+    notifTitle = `📊 Phân bổ quỹ: ${payload.eventData.fundName || "Quỹ"}`;
   } else {
-    notifTitle = `Sự kiện: ${payload.eventData.title || "Sự kiện mới"}`;
+    notifTitle = payload.eventData.title ? `🔔 ${payload.eventData.title}` : "🔔 Sự kiện mới";
   }
-  const notifBody = payload.eventData.text || payload.eventData.note || (payload.eventData.amount ? `${payload.eventData.amount.toLocaleString("vi-VN")} đ` : "");
+
+  const bodyParts = [];
+  if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+  if (payload.eventData.eventDateTime) {
+    try {
+      const dt = new Date(payload.eventData.eventDateTime);
+      if (!Number.isNaN(dt.getTime())) {
+        bodyParts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
+      }
+    } catch { }
+  }
+  const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
+  if (cleanText) bodyParts.push(cleanText);
+
+  const notifBody = bodyParts.join(" | ") || cleanText || "";
   saveNotificationToHistory(type, notifTitle, notifBody, dateKey, payload.eventData);
 
   // 3. Gọi Serverless Endpoint /api/send-push.js (gửi FCM đánh thức các thiết bị đang đóng app)

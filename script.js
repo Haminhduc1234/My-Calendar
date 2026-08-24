@@ -3946,8 +3946,9 @@ function markNotificationIdAsReadLocal(id) {
 function syncCombinedNotifications() {
   const map = new Map();
 
-  // 1. Thêm các bản ghi từ eventReminders đã lưu trong RTDB
+  // 1. Chỉ thêm các bản ghi từ eventReminders đã ĐƯỢC GỬI (delivered === true)
   eventRemindersCache.forEach((rem) => {
+    if (!rem.delivered) return; // Nhắc nhở chưa đến hạn (pending) sẽ không xuất hiện trong danh sách thông báo
     const id = `rem_${rem.id}`;
     map.set(id, {
       id: id,
@@ -3965,7 +3966,7 @@ function syncCombinedNotifications() {
         date: rem.dateKey
       },
       createdAt: Number(rem.reminderAtMs || rem.createdAt || Date.now()),
-      read: readNotificationIds.has(id) || Boolean(rem.delivered)
+      read: readNotificationIds.has(id)
     });
   });
 

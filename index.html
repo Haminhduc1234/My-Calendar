@@ -1670,6 +1670,25 @@
       </div>
     </div>
 
+    <!-- Celebration Modal (Chúc mừng phân bổ quỹ thành công) -->
+    <div id="congratulationsModal" class="modal celebration-modal" style="display: none;">
+      <div class="modal-content celebration-card">
+        <div class="celebration-badge">🎉</div>
+        <h2 class="celebration-title">Phân Bổ Thành Công!</h2>
+        <p class="celebration-subtitle">Bạn vừa tích lũy thêm một khoản tiền ý nghĩa vào quỹ</p>
+        
+        <div class="celebration-summary">
+          <div class="celebration-amount" id="celebrationAmount">+0 đ</div>
+          <div class="celebration-fund-name" id="celebrationFundName">Quỹ du lịch</div>
+        </div>
+
+        <button type="button" class="celebration-close-btn" onclick="closeCelebrationModal()">
+          ✨ Tuyệt vời!
+        </button>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
     <!-- Topup/Withdraw Fund Modal -->
     <div id="topupFundModal" class="modal">
       <div class="modal-content confirm-modal-content">

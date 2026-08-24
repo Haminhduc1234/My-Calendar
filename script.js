@@ -11087,6 +11087,18 @@ function getFundBalance(fundId) {
   return balance;
 }
 
+/**
+ * Tính số dư khả dụng thực tế chuẩn xác = (Tổng Thu - Tổng Chi) - Tổng đã phân bổ vào quỹ
+ */
+function calculateAvailableFundBalance() {
+  reloadCashflowEntriesFromCache();
+  const totalIncome = calculateTotalIncome();
+  const totalExpense = calculateTotalExpense();
+  const difference = totalIncome - totalExpense;
+  const totalAllocated = calculateTotalAllocated();
+  return difference - totalAllocated;
+}
+
 function openFundsModal() {
   closeAllModals();
   const modal = document.getElementById("fundsModal");
@@ -11139,11 +11151,12 @@ function closeFundsModal() {
 }
 
 function renderFundsDashboard() {
+  reloadCashflowEntriesFromCache();
   const totalIncome = calculateTotalIncome();
   const totalExpense = calculateTotalExpense();
   const difference = totalIncome - totalExpense;
   const totalAllocated = calculateTotalAllocated();
-  const available = difference - totalAllocated;
+  const available = calculateAvailableFundBalance();
 
   document.getElementById("fundsTotalIncome").innerText =
     `${difference.toLocaleString("vi-VN")} đ`;
@@ -11904,9 +11917,7 @@ function confirmTopupFund() {
 }
 
 function openAllocateModal() {
-  const totalIncome = fundsData.totalIncome || calculateTotalIncome();
-  const totalAllocated = calculateTotalAllocated();
-  const available = totalIncome - totalAllocated;
+  const available = calculateAvailableFundBalance();
 
   if (fundsData.funds.length === 0) {
     alert("Bạn cần tạo ít nhất một quỹ trước khi phân bổ.");
@@ -11914,8 +11925,10 @@ function openAllocateModal() {
   }
 
   const availableEl = document.getElementById("allocateAvailableAmount");
-  availableEl.innerText = `${available.toLocaleString("vi-VN")} đ`;
-  availableEl.style.color = available < 0 ? "#ef4444" : "#10b981";
+  if (availableEl) {
+    availableEl.innerText = `${available.toLocaleString("vi-VN")} đ`;
+    availableEl.style.color = available < 0 ? "#ef4444" : "#10b981";
+  }
 
   document.getElementById("allocateAmount").value = "";
 
@@ -11950,14 +11963,17 @@ function confirmAllocate() {
     return;
   }
 
-  if (amount <= 0) {
-    alert("Vui lòng nhập số tiền lớn hơn 0");
+  const available = calculateAvailableFundBalance();
+
+  if (available <= 0) {
+    alert("Số dư khả dụng hiện tại không đủ để phân bổ quỹ (Số dư khả dụng: 0 đ).");
     return;
   }
 
-  const totalIncome = fundsData.totalIncome || calculateTotalIncome();
-  const totalAllocated = calculateTotalAllocated();
-  const available = totalIncome - totalAllocated;
+  if (amount > available) {
+    alert(`Số tiền phân bổ (${amount.toLocaleString("vi-VN")} đ) không được vượt quá số dư khả dụng (${available.toLocaleString("vi-VN")} đ).`);
+    return;
+  }
 
   // Add allocation
   const allocation = {
@@ -11987,11 +12003,71 @@ function confirmAllocate() {
 
   // Update UI
   amountInput.value = "";
+  amountInput.style.borderColor = "";
   renderAllocateHistory();
   renderFundsDashboard();
 
-  alert(`Đã phân bổ ${amount.toLocaleString("vi-VN")} đ vào quỹ thành công!`);
+  closeAllocateModal();
+  openCelebrationModal(amount, fundName);
 }
+
+function triggerFireworksAnimation() {
+  if (typeof confetti === "function") {
+    const duration = 2.2 * 1000;
+    const end = Date.now() + duration;
+
+    (function frame() {
+      confetti({
+        particleCount: 5,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.7 },
+        colors: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6']
+      });
+      confetti({
+        particleCount: 5,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.7 },
+        colors: ['#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6']
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    })();
+
+    setTimeout(() => {
+      confetti({
+        particleCount: 90,
+        spread: 100,
+        origin: { y: 0.5 },
+        colors: ['#10b981', '#3b82f6', '#f59e0b', '#ffffff']
+      });
+    }, 250);
+  }
+}
+window.triggerFireworksAnimation = triggerFireworksAnimation;
+
+function openCelebrationModal(amount, fundName) {
+  const amtEl = document.getElementById("celebrationAmount");
+  const fnEl = document.getElementById("celebrationFundName");
+  if (amtEl) amtEl.innerText = `+${Number(amount || 0).toLocaleString("vi-VN")} đ`;
+  if (fnEl) fnEl.innerText = `vào ${fundName || "quỹ"}`;
+
+  const modal = document.getElementById("congratulationsModal");
+  if (modal) {
+    modal.style.display = "flex";
+    triggerFireworksAnimation();
+  }
+}
+window.openCelebrationModal = openCelebrationModal;
+
+function closeCelebrationModal() {
+  const modal = document.getElementById("congratulationsModal");
+  if (modal) modal.style.display = "none";
+}
+window.closeCelebrationModal = closeCelebrationModal;
 
 function renderAllocateHistory() {
   const listEl = document.getElementById("allocateHistoryList");
@@ -12052,6 +12128,13 @@ function renderAllocateHistory() {
 
   amountInput.addEventListener("input", () => {
     formatCurrencyInput(amountInput);
+    const amount = parseInt(amountInput.value.replace(/\D/g, ""), 10) || 0;
+    const available = calculateAvailableFundBalance();
+    if (amount > available && available > 0) {
+      amountInput.style.borderColor = "#ef4444";
+    } else {
+      amountInput.style.borderColor = "";
+    }
   });
 })();
 

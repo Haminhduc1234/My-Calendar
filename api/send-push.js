@@ -110,24 +110,6 @@ module.exports = async (req, res) => {
 
     const body = bodyParts.join(" | ") || "Có cập nhật mới từ thiết bị khác.";
 
-    // Lưu vết thông báo vào database node userNotifications
-    try {
-      const notifRef = db.ref(`userNotifications/${profileKey}`).push();
-      await notifRef.set({
-        id: notifRef.key,
-        notificationType: type,
-        title: title,
-        body: body,
-        dateKey: String(dateKey || ""),
-        eventData: eventData || null,
-        createdAt: Date.now(),
-        read: false
-      });
-      console.log("[API Push] Đã lưu vào userNotifications:", notifRef.key);
-    } catch (dbErr) {
-      console.warn("[API Push] Lỗi lưu userNotifications:", dbErr);
-    }
-
     const message = {
       tokens: tokens,
       notification: {

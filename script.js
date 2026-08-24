@@ -3368,8 +3368,9 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
 
   const body = bodyParts.join(" | ") || "Có cập nhật mới từ thiết bị khác.";
 
-  // 1. Phát chuông thông báo
+  // 1. Phát chuông thông báo & hiển thị Toast trong ứng dụng
   playNotificationChime();
+  showAppPushToast(title, body, notificationUrl);
 
   // 2. Hiển thị System Notification của trình duyệt qua Service Worker hoặc Notification API
   if ("Notification" in window && Notification.permission === "granted") {
@@ -3780,7 +3781,7 @@ function setupNotificationQueueListener() {
   console.log("[NotificationQueue] Đang lắng nghe thông báo cho user:", userProfileKey);
 
   firebaseNotificationQueueRef
-    .limitToLast(20)
+    .limitToLast(30)
     .on("child_added", (snapshot) => {
       const key = snapshot.key;
       if (!key || _processedNotificationKeys.has(key)) return;
@@ -3789,13 +3790,12 @@ function setupNotificationQueueListener() {
       const data = snapshot.val();
       if (!data || !data.eventData) return;
 
-      // Không phát chuông cho các thông báo quá cũ (trước khi mở app > 15s)
-      if (data.timestamp && Number(data.timestamp) < (_appStartTime - 15000)) return;
+      // Không phát chuông cho các thông báo quá cũ (trước khi mở app > 5 phút)
+      if (data.timestamp && Number(data.timestamp) < (_appStartTime - 300000)) return;
 
       const mySessionId = getOrCreateTabSessionId();
-      const myDeviceId = getOrCreateDeviceId();
-      // Nếu sự kiện được gửi từ tab khác hoặc thiết bị khác
-      if (data.senderSessionId !== mySessionId && data.senderDeviceId !== myDeviceId) {
+      // Nếu sự kiện được gửi từ tab khác hoặc thiết bị khác (Session ID khác nhau 100%)
+      if (!data.senderSessionId || data.senderSessionId !== mySessionId) {
         console.log("[NotificationQueue] Nhận thông báo từ thiết bị/tab khác:", data);
         notifyNewEventFromRealtime(data.eventData, data.dateKey, data.notificationType);
       }

@@ -3959,14 +3959,41 @@ function syncCombinedNotifications() {
 }
 window.syncCombinedNotifications = syncCombinedNotifications;
 
+let isNotificationsLoading = true;
+
 /**
  * Thiết lập listener Realtime lắng nghe danh sách lịch sử thông báo & nhắc nhở
  */
 function setupNotificationHistoryListener() {
+  isNotificationsLoading = true;
+  const modal = document.getElementById("modalNotificationList");
+  if (modal && modal.style.display !== "none") {
+    renderNotificationList();
+  }
+
+  // Safety fallback: Tự động tắt hiệu ứng loading sau 2.5 giây nếu kết nối mạng chậm
+  setTimeout(() => {
+    if (isNotificationsLoading) {
+      isNotificationsLoading = false;
+      if (document.getElementById("modalNotificationList")?.style.display !== "none") {
+        renderNotificationList();
+      }
+    }
+  }, 2500);
+
   if (!firebaseDb || !userProfileKey) {
+    isNotificationsLoading = false;
     syncCombinedNotifications();
     return;
   }
+
+  let userNotifLoaded = false;
+  let eventRemindersLoaded = false;
+  const checkFinishLoading = () => {
+    if (userNotifLoaded && eventRemindersLoaded) {
+      isNotificationsLoading = false;
+    }
+  };
 
   if (firebaseUserNotificationsRef) {
     try { firebaseUserNotificationsRef.off(); } catch (e) { }
@@ -3985,20 +4012,32 @@ function setupNotificationHistoryListener() {
     .limitToLast(50);
 
   firebaseUserNotificationsRef.on("value", (snapshot) => {
+    userNotifLoaded = true;
+    checkFinishLoading();
     const data = snapshot.val() || {};
     userNotificationsCache = Object.keys(data).map((key) => ({
       id: key,
       ...data[key]
     }));
     syncCombinedNotifications();
+  }, (err) => {
+    userNotifLoaded = true;
+    checkFinishLoading();
+    syncCombinedNotifications();
   });
 
   firebaseEventRemindersRef.on("value", (snapshot) => {
+    eventRemindersLoaded = true;
+    checkFinishLoading();
     const data = snapshot.val() || {};
     eventRemindersCache = Object.keys(data).map((key) => ({
       id: key,
       ...data[key]
     }));
+    syncCombinedNotifications();
+  }, (err) => {
+    eventRemindersLoaded = true;
+    checkFinishLoading();
     syncCombinedNotifications();
   });
 }
@@ -4044,6 +4083,38 @@ function renderNotificationList() {
   const bodyEl = document.getElementById("notificationListBody");
   if (!bodyEl) return;
 
+  if (isNotificationsLoading) {
+    bodyEl.innerHTML = `
+      <div class="notification-skeleton-container">
+        <div class="notification-skeleton-item">
+          <div class="skeleton-icon"></div>
+          <div class="skeleton-content">
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line long"></div>
+            <div class="skeleton-line time"></div>
+          </div>
+        </div>
+        <div class="notification-skeleton-item">
+          <div class="skeleton-icon"></div>
+          <div class="skeleton-content">
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line long"></div>
+            <div class="skeleton-line time"></div>
+          </div>
+        </div>
+        <div class="notification-skeleton-item">
+          <div class="skeleton-icon"></div>
+          <div class="skeleton-content">
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line long"></div>
+            <div class="skeleton-line time"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
   let items = combinedNotificationsList.length > 0 ? [...combinedNotificationsList] : [...userNotificationsCache];
   if (notificationFilterMode === "unread") {
     items = items.filter((item) => !item.read);
@@ -4052,48 +4123,67 @@ function renderNotificationList() {
   if (items.length === 0) {
     bodyEl.innerHTML = `
       <div class="notification-empty-state">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-        </svg>
-        <div>${notificationFilterMode === "unread" ? "Không có thông báo chưa đọc" : "Chưa có thông báo nào"}</div>
+        <div class="notification-empty-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+        </div>
+        <div class="notification-empty-text">${notificationFilterMode === "unread" ? "Không có thông báo chưa đọc" : "Chưa có thông báo nào"}</div>
       </div>
     `;
     return;
   }
 
   let html = "";
-  items.forEach((item) => {
+  items.forEach((item, index) => {
     const isUnread = !item.read;
     const type = item.notificationType || "event";
 
     let iconText = "📅";
     let iconClass = "event";
+    let typeLabel = "Sự kiện";
     if (type === "cashflow") {
       iconText = "💸";
       iconClass = "cashflow";
+      typeLabel = "Thu chi";
     } else if (type === "funds" || type === "fund_allocation") {
       iconText = "🏦";
       iconClass = "funds";
+      typeLabel = "Quỹ";
     } else if (type === "reminder") {
       iconText = "⏰";
       iconClass = "reminder";
+      typeLabel = "Nhắc nhở";
     }
 
     const title = escapeHtml(item.title || "Thông báo");
     const body = escapeHtml(item.body || "");
     const timeStr = formatRelativeTime(item.createdAt);
+    const delayStyle = `animation-delay: ${Math.min(index * 0.04, 0.3)}s;`;
 
     html += `
-      <div class="notification-item ${isUnread ? "unread" : ""}" onclick="handleNotificationItemClick('${item.id}')">
+      <div class="notification-item type-${iconClass} ${isUnread ? "unread" : ""}" style="${delayStyle}" onclick="handleNotificationItemClick('${item.id}')">
         <div class="notif-item-icon ${iconClass}">${iconText}</div>
         <div class="notif-item-content">
-          <div class="notif-item-title">${title}</div>
+          <div class="notif-item-title">
+            <span>${title}</span>
+            <span class="notif-badge ${iconClass}">${typeLabel}</span>
+          </div>
           <div class="notif-item-body">${body}</div>
-          <div class="notif-item-time">${timeStr}</div>
+          <div class="notif-item-time">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span>${timeStr}</span>
+          </div>
         </div>
         <button type="button" class="notif-item-delete" title="Xóa thông báo" onclick="deleteNotificationItem('${item.id}', event)">
-          🗑️
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
         </button>
       </div>
     `;

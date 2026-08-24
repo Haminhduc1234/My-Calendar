@@ -3036,6 +3036,7 @@ function closeAllModals() {
     "fundsModal",
     "fundModal",
     "allocateModal",
+    "congratulationsModal",
     "modalNotificationList",
   ];
   modals.forEach((id) => {

@@ -881,7 +881,6 @@ async function migrateLegacyData(oldKey, newKey) {
     `quickNotes/${oldKey}`,
     `projects/${oldKey}`,
     `translateHistory/${oldKey}`,
-    `aiSettings/${oldKey}`,
     `profileSettings/${oldKey}`,
     `categories/${oldKey}`,
     `funds/${oldKey}`,

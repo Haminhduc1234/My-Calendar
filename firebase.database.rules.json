@@ -72,8 +72,8 @@
     },
     "eventNotificationQueue": {
       "$profileKey": {
-        ".read": "auth != null",
-        ".write": "auth != null",
+        ".read": true,
+        ".write": true,
         ".indexOn": ["timestamp"]
       }
     },
@@ -97,15 +97,15 @@
     },
     "eventReminders": {
       "$profileKey": {
-        ".read": "auth != null",
-        ".write": "auth != null",
+        ".read": true,
+        ".write": true,
         ".indexOn": ["reminderAtMs"]
       }
     },
     "userNotifications": {
       "$profileKey": {
-        ".read": "auth != null",
-        ".write": "auth != null",
+        ".read": true,
+        ".write": true,
         ".indexOn": ["createdAt", "read"]
       }
     }

@@ -2753,6 +2753,14 @@ async function initFirebaseRealtime() {
       );
     });
 
+    // Dọn dẹp localStorage cho các dateKey không còn nằm trên Firebase (xoá sự kiện trên thiết bị khác)
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && isDateKey(k) && !incoming[k]) {
+        localStorage.removeItem(k);
+      }
+    }
+
     dateDataCache = nextCache;
 
     // Re-render calendar after Firebase data loads to display events and overtime
@@ -2762,6 +2770,11 @@ async function initFirebaseRealtime() {
 
     if (LAZY_LOAD.cashflow) {
       renderCashflowDashboard();
+    }
+
+    // Nếu modal chi tiết ngày đang mở trên thiết bị này cho ngày vừa được cập nhật/xóa:
+    if (selectedKey && document.getElementById("dayDetailsModal")?.style.display !== "none") {
+      openDayDetails(selectedKey);
     }
   });
 
@@ -2911,6 +2924,14 @@ async function reloadFirebaseForUser() {
       );
     });
 
+    // Dọn dẹp localStorage cho các dateKey không còn nằm trên Firebase (xoá sự kiện trên thiết bị khác)
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && isDateKey(k) && !incoming[k]) {
+        localStorage.removeItem(k);
+      }
+    }
+
     dateDataCache = nextCache;
 
     // Always render calendar after login (user changed)
@@ -2920,6 +2941,11 @@ async function reloadFirebaseForUser() {
 
     if (LAZY_LOAD.cashflow) {
       renderCashflowDashboard();
+    }
+
+    // Nếu modal chi tiết ngày đang mở trên thiết bị này cho ngày vừa được cập nhật/xóa:
+    if (selectedKey && document.getElementById("dayDetailsModal")?.style.display !== "none") {
+      openDayDetails(selectedKey);
     }
   });
 
@@ -3341,9 +3367,6 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
   }
 
   const body = bodyParts.join(" | ") || "Có cập nhật mới từ thiết bị khác.";
-
-  // Save notification into notification history list
-  saveNotificationToHistory(type, title, body, dateKey, eventData);
 
   // 1. Phát chuông thông báo
   playNotificationChime();
@@ -3850,11 +3873,22 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
 
 /* ==================== NOTIFICATION HISTORY & LISTENER ==================== */
 
+const _recentHistoryNotifKeys = new Set();
+
 /**
  * Lưu lịch sử thông báo vào Firebase Realtime Database
  */
 async function saveNotificationToHistory(notificationType, title, body, dateKey, eventData) {
   if (!firebaseDb || !userProfileKey) return;
+
+  const eventIdStr = eventData?.id || `${notificationType}-${title}-${dateKey}`;
+  if (_recentHistoryNotifKeys.has(eventIdStr)) {
+    console.log("[NotificationHistory] Bỏ qua lưu thông báo trùng lặp:", eventIdStr);
+    return;
+  }
+  _recentHistoryNotifKeys.add(eventIdStr);
+  setTimeout(() => _recentHistoryNotifKeys.delete(eventIdStr), 15000);
+
   try {
     const type = notificationType || "event";
     let defaultTitle = title;
@@ -4358,11 +4392,6 @@ async function scheduleEventReminder(eventData, dateKey) {
       .ref(`${FIREBASE_EVENT_REMINDERS_PATH}/${userProfileKey}`)
       .push();
     await reminderRef.set(reminderData);
-
-    // Save reminder notification into userNotifications history
-    const reminderTitle = `⏰ Nhắc nhở: ${eventData.title || "Sự kiện"}`;
-    const reminderBody = eventData.text || eventData.note || `Lên lịch nhắc lúc ${new Date(reminderAtMs).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`;
-    saveNotificationToHistory("reminder", reminderTitle, reminderBody, dateKey, eventData);
 
     console.log(
       `[Reminder] Đã lên lịch nhắc nhở cho "${eventData.title}" lúc`,

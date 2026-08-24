@@ -7,37 +7,46 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
         firebase.initializeApp(self.FIREBASE_WEB_CONFIG);
         const messaging = firebase.messaging();
 
+        function cleanStr(val) {
+            if (!val) return "";
+            const s = String(val).trim();
+            if (s.toLowerCase() === "undefined" || s.toLowerCase() === "null" || s.includes("Promise") || s === "[object Promise]") {
+                return "";
+            }
+            return s;
+        }
+
         messaging.onBackgroundMessage((payload) => {
             console.log("[SW] onBackgroundMessage received:", payload);
 
             // Nếu payload đã chứa block notification, Firebase SDK sẽ tự động hiển thị thông báo.
-            // Tránh gọi showNotification thủ công tại đây để không bị bắn 2 thông báo trùng nhau.
             if (payload.notification) {
                 console.log("[SW] Notification handled automatically by SDK.");
                 return;
             }
 
             const type = payload.data?.notificationType || "event";
-            const dateStr = payload.data?.dateKey || payload.data?.date || "";
-            let title = payload.data?.title || "🔔 Sự kiện mới trên Lịch Việt";
+            const dateStr = cleanStr(payload.data?.dateKey || payload.data?.date);
+            let rawTitle = cleanStr(payload.data?.title);
+            let title = rawTitle ? `🔔 ${rawTitle}` : "🔔 Sự kiện mới trên Lịch Việt";
             let targetUrl = payload.data?.url || payload.fcmOptions?.link || "./";
             const bodyParts = [];
 
             if (type === "cashflow") {
                 const isExpense = payload.data?.cashflowType === "expense";
-                title = payload.data?.title || (isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới");
-                if (payload.data?.category) bodyParts.push(payload.data.category);
+                title = rawTitle || (isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới");
+                const cat = cleanStr(payload.data?.category);
+                if (cat) bodyParts.push(cat);
                 if (payload.data?.amount) bodyParts.push(`${Number(payload.data.amount).toLocaleString("vi-VN")} đ`);
-                if (payload.data?.text || payload.data?.note) bodyParts.push(payload.data.text || payload.data.note);
-                targetUrl = targetUrl !== "./" ? targetUrl : (
-                    `./?action=cashflow&id=${encodeURIComponent(payload.data?.id || "")}&date=${encodeURIComponent(dateStr || "")}&amount=${encodeURIComponent(payload.data?.amount || "")}&category=${encodeURIComponent(payload.data?.category || "")}&cashflowType=${encodeURIComponent(payload.data?.cashflowType || "")}&note=${encodeURIComponent(payload.data?.text || payload.data?.note || "")}&createdAt=${encodeURIComponent(payload.data?.createdAt || Date.now())}`
-                );
+                const note = cleanStr(payload.data?.text || payload.data?.note);
+                if (note) bodyParts.push(note);
             } else if (type === "fund_allocation" || type === "funds") {
-                title = payload.data?.title || "📊 Phân bổ quỹ mới";
-                if (payload.data?.fundName) bodyParts.push(`Quỹ: ${payload.data.fundName}`);
+                title = rawTitle || "📊 Phân bổ quỹ mới";
+                const fn = cleanStr(payload.data?.fundName);
+                if (fn) bodyParts.push(`Quỹ: ${fn}`);
                 if (payload.data?.amount) bodyParts.push(`${Number(payload.data.amount).toLocaleString("vi-VN")} đ`);
-                if (payload.data?.text || payload.data?.note) bodyParts.push(payload.data.text || payload.data.note);
-                targetUrl = targetUrl !== "./" ? targetUrl : `./?action=funds&id=${encodeURIComponent(payload.data?.id || "")}&fundName=${encodeURIComponent(payload.data?.fundName || "")}&amount=${encodeURIComponent(payload.data?.amount || "")}&note=${encodeURIComponent(payload.data?.text || payload.data?.note || "")}&createdAt=${encodeURIComponent(payload.data?.createdAt || Date.now())}`;
+                const note = cleanStr(payload.data?.text || payload.data?.note);
+                if (note) bodyParts.push(note);
             } else {
                 if (dateStr) bodyParts.push(`Ngày ${dateStr}`);
                 if (payload.data?.eventDateTime) {
@@ -48,10 +57,8 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
                         }
                     } catch { }
                 }
-                if (payload.data?.text || payload.data?.note) bodyParts.push(payload.data.text || payload.data.note);
-                targetUrl = targetUrl !== "./" ? targetUrl : (
-                    `./?action=event&id=${encodeURIComponent(payload.data?.id || "")}&title=${encodeURIComponent(payload.data?.title || "")}&text=${encodeURIComponent(payload.data?.text || payload.data?.note || "")}&note=${encodeURIComponent(payload.data?.note || payload.data?.text || "")}&eventDateTime=${encodeURIComponent(payload.data?.eventDateTime || "")}&color=${encodeURIComponent(payload.data?.color || "")}&createdAt=${encodeURIComponent(payload.data?.createdAt || Date.now())}&date=${encodeURIComponent(dateStr || "")}`
-                );
+                const note = cleanStr(payload.data?.text || payload.data?.note);
+                if (note) bodyParts.push(note);
             }
 
             if (payload.notification?.body) bodyParts.push(payload.notification.body);

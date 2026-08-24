@@ -3897,7 +3897,11 @@ const _recentHistoryNotifKeys = new Set();
 async function saveNotificationToHistory(notificationType, title, body, dateKey, eventData) {
   if (!firebaseDb || !userProfileKey) return;
 
-  const eventIdStr = eventData?.id || `${notificationType}-${title}-${dateKey}`;
+  const cleanTitle = sanitizeString(title) || (eventData ? sanitizeString(eventData.title) : "");
+  const cleanBody = sanitizeString(body);
+  const cleanDateKey = sanitizeString(dateKey || eventData?.date);
+
+  const eventIdStr = eventData?.id || `${notificationType}-${cleanTitle}-${cleanDateKey}`;
   if (_recentHistoryNotifKeys.has(eventIdStr)) {
     console.log("[NotificationHistory] Bỏ qua lưu thông báo trùng lặp:", eventIdStr);
     return;
@@ -3907,7 +3911,7 @@ async function saveNotificationToHistory(notificationType, title, body, dateKey,
 
   try {
     const type = notificationType || "event";
-    let defaultTitle = title;
+    let defaultTitle = cleanTitle;
     if (!defaultTitle) {
       if (type === "cashflow") defaultTitle = "Giao dịch thu chi mới";
       else if (type === "funds" || type === "fund_allocation") defaultTitle = "Phân bổ quỹ mới";
@@ -3915,18 +3919,13 @@ async function saveNotificationToHistory(notificationType, title, body, dateKey,
       else defaultTitle = "Sự kiện lịch mới";
     }
 
-    let defaultBody = body || "";
-    if (!defaultBody && eventData) {
-      defaultBody = eventData.title || eventData.text || eventData.note || eventData.fundName || "";
-    }
-
     const notifRef = firebaseDb.ref(`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}`).push();
     const payload = {
       id: notifRef.key,
       notificationType: type,
-      title: String(defaultTitle).trim(),
-      body: String(defaultBody).trim(),
-      dateKey: String(dateKey || ""),
+      title: defaultTitle,
+      body: cleanBody,
+      dateKey: cleanDateKey,
       eventData: eventData ? JSON.parse(JSON.stringify(eventData)) : null,
       createdAt: Date.now(),
       read: false
@@ -3959,24 +3958,43 @@ function markNotificationIdAsReadLocal(id) {
   } catch (e) { }
 }
 
+function sanitizeString(val) {
+  if (!val) return "";
+  if (typeof val === "object" && typeof val.then === "function") {
+    return "";
+  }
+  const str = String(val).trim();
+  if (
+    str === "[object Promise]" ||
+    str.includes("Promise {<pending>}") ||
+    str.toLowerCase() === "undefined" ||
+    str.toLowerCase() === "null"
+  ) {
+    return "";
+  }
+  return str;
+}
+
 function syncCombinedNotifications() {
   const map = new Map();
 
   // 1. Chỉ thêm các bản ghi từ eventReminders đã ĐƯỢC GỬI (delivered === true)
   eventRemindersCache.forEach((rem) => {
-    if (!rem.delivered) return; // Nhắc nhở chưa đến hạn (pending) sẽ không xuất hiện trong danh sách thông báo
+    if (!rem.delivered) return;
     const id = `rem_${rem.id}`;
+    const cleanTitle = sanitizeString(rem.eventTitle) || "Nhắc nhở sự kiện";
+    const cleanBody = sanitizeString(rem.eventText);
     map.set(id, {
       id: id,
       notificationType: "reminder",
-      title: `⏰ Nhắc nhở: ${rem.eventTitle || "Sự kiện"}`,
-      body: rem.eventText || (rem.eventDateTime ? `Lúc ${new Date(rem.eventDateTime).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}` : ""),
-      dateKey: rem.dateKey || "",
+      title: `⏰ Nhắc nhở: ${cleanTitle}`,
+      body: cleanBody || (rem.eventDateTime ? `Lúc ${new Date(rem.eventDateTime).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}` : ""),
+      dateKey: sanitizeString(rem.dateKey),
       eventData: {
         id: rem.eventId,
-        title: rem.eventTitle,
-        text: rem.eventText,
-        note: rem.eventText,
+        title: cleanTitle,
+        text: cleanBody,
+        note: cleanBody,
         eventDateTime: rem.eventDateTime,
         color: rem.eventColor,
         date: rem.dateKey
@@ -3986,20 +4004,61 @@ function syncCombinedNotifications() {
     });
   });
 
-  // 2. Thêm/ghi đè các bản ghi từ userNotifications (thông báo thực tế đã đẩy)
+  // 2. Thêm các bản ghi từ userNotifications (thông báo thực tế đã đẩy)
   userNotificationsCache.forEach((item) => {
+    let cleanTitle = sanitizeString(item.title);
+    if (!cleanTitle && item.eventData) {
+      cleanTitle = sanitizeString(item.eventData.title);
+    }
+    if (!cleanTitle) cleanTitle = "Sự kiện mới";
+
+    let cleanBody = sanitizeString(item.body);
+    if (!cleanBody && item.eventData) {
+      const parts = [];
+      const dk = sanitizeString(item.dateKey || item.eventData.date);
+      if (dk) parts.push(`Ngày ${dk}`);
+      if (item.eventData.eventDateTime) {
+        try {
+          const dt = new Date(item.eventData.eventDateTime);
+          if (!Number.isNaN(dt.getTime())) {
+            parts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
+          }
+        } catch { }
+      }
+      const noteStr = sanitizeString(item.eventData.text || item.eventData.note);
+      if (noteStr) parts.push(noteStr);
+      cleanBody = parts.join(" | ");
+    }
+
     map.set(item.id, {
       ...item,
+      title: cleanTitle.startsWith("🔔") || cleanTitle.startsWith("💸") || cleanTitle.startsWith("📊") || cleanTitle.startsWith("⏰") ? cleanTitle : `🔔 ${cleanTitle}`,
+      body: cleanBody,
       read: readNotificationIds.has(item.id) || Boolean(item.read)
     });
   });
 
+  // 3. Deduplicate (Lọc trùng lặp bản ghi có cùng eventId hoặc cùng nội dung/thời gian)
+  const uniqueItemsMap = new Map();
   const list = Array.from(map.values());
   list.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-  combinedNotificationsList = list;
+
+  list.forEach((item) => {
+    const timeGroup = Math.floor(Number(item.createdAt || 0) / 60000);
+    const eventId = item.eventData?.id;
+    const dedupKey = eventId
+      ? `ev_${eventId}`
+      : `${item.title}_${item.body}_${item.dateKey}_${timeGroup}`;
+
+    if (!uniqueItemsMap.has(dedupKey)) {
+      uniqueItemsMap.set(dedupKey, item);
+    }
+  });
+
+  combinedNotificationsList = Array.from(uniqueItemsMap.values());
 
   // Tính số lượng chưa đọc
-  const unreadCount = list.filter((item) => !item.read).length;
+  const unreadCount = combinedNotificationsList.filter((item) => !item.read).length;
   updateNotificationBadgeUI(unreadCount);
 
   // Nếu modal đang mở thì re-render

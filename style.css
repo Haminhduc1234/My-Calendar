@@ -14116,24 +14116,39 @@ html {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #e2e8f0;
+  background: #0284c7;
+  border: 1px solid #0284c7;
+  color: #ffffff;
   font-size: 12px;
   font-weight: 600;
   padding: 7px 13px;
   border-radius: 10px;
   cursor: pointer;
-  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(8px);
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.notif-action-btn svg {
+  flex-shrink: 0;
+  color: #ffffff;
+}
+
+@media (max-width: 480px) {
+  .notif-action-btn .notif-btn-text {
+    display: none;
+  }
+  .notif-action-btn {
+    padding: 7px 10px;
+  }
 }
 
 .notif-action-btn:hover {
-  background: rgba(59, 130, 246, 0.2);
-  border-color: rgba(59, 130, 246, 0.45);
-  color: #60a5fa;
+  background: #0369a1;
+  border-color: #0369a1;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
   transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
 }
 
 .notif-action-btn:active {
@@ -14141,16 +14156,18 @@ html {
 }
 
 .notif-action-btn.danger {
-  background: rgba(225, 29, 72, 0.15);
-  border: 1px solid rgba(225, 29, 72, 0.3);
-  color: #fda4af;
+  background: #e11d48;
+  border: 1px solid #e11d48;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.25);
 }
 
 .notif-action-btn.danger:hover {
-  background: rgba(225, 29, 72, 0.32);
-  border-color: rgba(225, 29, 72, 0.6);
+  background: #be123c;
+  border-color: #be123c;
   color: #ffffff;
-  box-shadow: 0 4px 16px rgba(225, 29, 72, 0.35);
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.4);
+  transform: translateY(-1px);
 }
 
 .notification-tabs {

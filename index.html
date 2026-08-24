@@ -2695,10 +2695,12 @@
         <div class="notification-modal-actions">
           <button type="button" class="notif-action-btn" title="Đánh dấu tất cả đã đọc"
             onclick="markAllNotificationsAsRead()">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"></polyline>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6L7 17l-5-5"></path>
+              <path d="M22 10l-7.5 7.5L13 16"></path>
             </svg>
-            <span>Đã đọc tất cả</span>
+            <span class="notif-btn-text">Đã đọc tất cả</span>
           </button>
           <button type="button" class="notif-action-btn danger" title="Xóa tất cả thông báo"
             onclick="clearAllNotifications()">
@@ -2706,6 +2708,7 @@
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
+            <span class="notif-btn-text">Xóa tất cả</span>
           </button>
           <button type="button" class="modal-close" onclick="closeNotificationModal()">×</button>
         </div>

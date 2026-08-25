@@ -113,39 +113,6 @@
       </div>
       <div id="todayEvents" class="today-events-panel" style="display: none"></div>
 
-      <div class="today-extra">
-        <div id="quoteText" class="quote"></div>
-        <div class="weather" id="todayWeather">
-          <div class="weather-skeleton" id="weatherSkeleton">
-            <div class="skeleton-content">
-              <div class="skeleton-top">
-                <div class="skeleton-icon-wrap">
-                  <div class="skeleton-icon-circle"></div>
-                </div>
-                <div class="skeleton-temp-block">
-                  <div class="skeleton-temp"></div>
-                  <div class="skeleton-desc"></div>
-                </div>
-              </div>
-              <div class="skeleton-details">
-                <div class="skeleton-detail-item">
-                  <div class="skeleton-detail-icon"></div>
-                  <div class="skeleton-detail-text"></div>
-                </div>
-                <div class="skeleton-detail-item">
-                  <div class="skeleton-detail-icon"></div>
-                  <div class="skeleton-detail-text"></div>
-                </div>
-                <div class="skeleton-detail-item">
-                  <div class="skeleton-detail-icon"></div>
-                  <div class="skeleton-detail-text"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="weather-forecast" id="weatherForecast"></div>
-      </div>
     </div>
     <div class="calendar-container">
       <div class="header">
@@ -717,29 +684,23 @@
           </div>
 
           <!-- Notification Settings Section -->
-          <div class="profile-notification-section"
-            style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line, rgba(255, 255, 255, 0.1));">
-            <h4 class="profile-section-title" style="margin-bottom: 8px;">Thông báo đẩy (Push Notifications)</h4>
-            <p style="font-size: 12px; color: var(--muted, #94a3b8); margin-bottom: 12px; line-height: 1.4;">
+          <div class="profile-notification-section">
+            <h4 class="profile-section-title">Thông báo đẩy (Push Notifications)</h4>
+            <p class="profile-section-desc">
               Nhận thông báo tức thì trên thiết bị này khi bạn hoặc thiết bị khác thêm sự kiện mới.
             </p>
-            <div
-              style="display: flex; align-items: center; justify-content: space-between; gap: 12px; background: rgba(255, 255, 255, 0.04); padding: 12px; border-radius: 10px; border: 1px solid var(--line, rgba(255, 255, 255, 0.1));">
+            <div class="profile-notification-card">
               <div>
-                <div id="deviceNotifyStatus" style="font-size: 13px; font-weight: 600; color: var(--text, #fff);">Đang
-                  kiểm tra...</div>
-                <div id="deviceNotifyDesc" style="font-size: 11px; color: var(--muted, #94a3b8);">Chạm để bật nhận thông
-                  báo</div>
+                <div id="deviceNotifyStatus" class="profile-notify-status">Đang kiểm tra...</div>
+                <div id="deviceNotifyDesc" class="profile-notify-desc">Chạm để bật nhận thông báo</div>
               </div>
-              <div style="display: flex; gap: 8px;">
+              <div class="profile-notify-actions">
                 <button type="button" id="btnToggleNotification" class="btn-primary"
-                  onclick="toggleDeviceNotificationPermission()"
-                  style="padding: 6px 12px; font-size: 12px; border-radius: 6px; cursor: pointer;">
+                  onclick="toggleDeviceNotificationPermission()">
                   Bật thông báo
                 </button>
                 <button type="button" id="btnTestNotification" class="btn-secondary"
-                  onclick="sendTestPushNotification()"
-                  style="padding: 6px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; display: none;">
+                  onclick="sendTestPushNotification()" style="display: none;">
                   Thử nghiệm
                 </button>
               </div>
@@ -747,15 +708,13 @@
           </div>
 
           <!-- App Update & Cache Clearing Section -->
-          <div class="profile-cache-section"
-            style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line, rgba(255, 255, 255, 0.1));">
-            <h4 class="profile-section-title" style="margin-bottom: 8px;">Cập nhật & Xóa Cache Ứng dụng</h4>
-            <p style="font-size: 12px; color: var(--muted, #94a3b8); margin-bottom: 12px; line-height: 1.4;">
+          <div class="profile-cache-section">
+            <h4 class="profile-section-title">Cập nhật & Xóa Cache Ứng dụng</h4>
+            <p class="profile-section-desc">
               Dọn dẹp bộ nhớ đệm (CacheStorage & Service Worker) để lập tức tải phiên bản mới nhất từ Vercel mà không
               cần cài đặt lại WPA/PWA.
             </p>
-            <button type="button" class="btn-primary" onclick="clearCacheAndReloadApp()"
-              style="background: #0284c7; border: 1px solid #0284c7; color: #fff; padding: 8px 16px; font-size: 13px; font-weight: 600; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+            <button type="button" class="btn-primary profile-cache-btn" onclick="clearCacheAndReloadApp()">
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
                 stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="23 4 23 10 17 10"></polyline>
@@ -764,6 +723,7 @@
               <span>Xóa Cache & Cập Nhật Ngay</span>
             </button>
           </div>
+
 
           <div class="profile-skeleton" id="profileSkeleton">
             <div class="skeleton-project">
@@ -1082,33 +1042,36 @@
         <div class="cashflow-modal-body">
           <section class="cashflow-section cashflow-entry-section" id="cashflowEntrySection">
             <div style="margin-top: 0;" class="cashflow-form-grid">
-              <label class="cashflow-input-item">
+              <label class="cashflow-input-item cashflow-date-item">
                 <span>Ngày</span>
                 <input type="date" id="cashflowDate" />
               </label>
 
-              <label class="cashflow-input-item">
-                <span>Loại</span>
-                <select id="cashflowType" onchange="onCashflowTypeChange()">
-                  <option value="income">Thu</option>
-                  <option value="expense" selected>Chi</option>
-                </select>
-              </label>
+              <div class="cashflow-form-row">
+                <label class="cashflow-input-item">
+                  <span>Loại</span>
+                  <select id="cashflowType" onchange="onCashflowTypeChange()">
+                    <option value="income">Thu</option>
+                    <option value="expense" selected>Chi</option>
+                  </select>
+                </label>
 
-              <label class="cashflow-input-item">
-                <span class="cashflow-label-with-action">
-                  <span>Danh mục</span>
-                  <button type="button" class="cashflow-category-manage-btn" onclick="openCashflowCategoryModal()"
-                    title="Quản lý danh mục thu/chi" aria-label="Quản lý danh mục thu chi">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="3" />
-                      <path
-                        d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-                    </svg>
-                  </button>
-                </span>
-                <select id="cashflowCategory"></select>
-              </label>
+                <label class="cashflow-input-item">
+                  <span class="cashflow-label-with-action">
+                    <span>Danh mục</span>
+                    <button type="button" class="cashflow-category-manage-btn" onclick="openCashflowCategoryModal()"
+                      title="Quản lý danh mục thu/chi" aria-label="Quản lý danh mục thu chi">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2">
+                        <circle cx="12" cy="12" r="3" />
+                        <path
+                          d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+                      </svg>
+                    </button>
+                  </span>
+                  <select id="cashflowCategory"></select>
+                </label>
+              </div>
 
               <label class="cashflow-input-item cashflow-amount-item">
                 <span>Số tiền</span>
@@ -2759,6 +2722,61 @@
       </div>
       <div id="notificationListBody" class="notification-list-body">
         <!-- Notification list rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Button for Weather & Quote -->
+  <button type="button" id="floatingTodayExtraBtn" class="floating-today-extra-btn" title="Thời tiết"
+    aria-label="Xem thời tiết và trích dẫn">
+    <span class="floating-btn-icon">⛅</span>
+  </button>
+
+  <!-- Today Extra Modal -->
+  <div id="todayExtraModal" class="modal" onclick="if(event.target===this) closeTodayExtraModal()"
+    style="display: none;">
+    <div class="modal-content event-modal-wrapper today-extra-modal-shell">
+      <div class="event-modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 20px;">⛅</span>
+          <h3 style="margin: 0; font-size: 16px; color: var(--text);">Thời tiết</h3>
+        </div>
+        <button type="button" class="modal-close event-modal-close" onclick="closeTodayExtraModal()">×</button>
+      </div>
+      <div class="today-extra-modal-body" style="padding-top: 10px;">
+        <div class="today-extra">
+          <div id="quoteText" class="quote"></div>
+          <div class="weather" id="todayWeather">
+            <div class="weather-skeleton" id="weatherSkeleton">
+              <div class="skeleton-content">
+                <div class="skeleton-top">
+                  <div class="skeleton-icon-wrap">
+                    <div class="skeleton-icon-circle"></div>
+                  </div>
+                  <div class="skeleton-temp-block">
+                    <div class="skeleton-temp"></div>
+                    <div class="skeleton-desc"></div>
+                  </div>
+                </div>
+                <div class="skeleton-details">
+                  <div class="skeleton-detail-item">
+                    <div class="skeleton-detail-icon"></div>
+                    <div class="skeleton-detail-text"></div>
+                  </div>
+                  <div class="skeleton-detail-item">
+                    <div class="skeleton-detail-icon"></div>
+                    <div class="skeleton-detail-text"></div>
+                  </div>
+                  <div class="skeleton-detail-item">
+                    <div class="skeleton-detail-icon"></div>
+                    <div class="skeleton-detail-text"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="weather-forecast" id="weatherForecast"></div>
+        </div>
       </div>
     </div>
   </div>

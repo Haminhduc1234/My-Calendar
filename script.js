@@ -7051,9 +7051,9 @@ function getAddressFromCoords(lat, lon) {
     .catch(() => "Vị trí hiện tại");
 }
 
-function getWeatherIcon(code) {
-  if (code === 0) return "☀️";
-  if ([1, 2].includes(code)) return "🌤️";
+function getWeatherIcon(code, isDay = 1) {
+  if (code === 0) return isDay ? "☀️" : "🌙";
+  if ([1, 2].includes(code)) return isDay ? "🌤️" : "🌙☁️";
   if (code === 3) return "☁️";
   if ([45, 48].includes(code)) return "🌫️";
   if ([51, 53, 55].includes(code)) return "🌦️";
@@ -7064,7 +7064,7 @@ function getWeatherIcon(code) {
   if ([80, 81, 82].includes(code)) return "🌧️";
   if ([85, 86].includes(code)) return "❄️";
   if ([95, 96, 99].includes(code)) return "⛈️";
-  return "🌤️";
+  return isDay ? "🌤️" : "🌙";
 }
 
 function getWeatherColor(code) {
@@ -7091,7 +7091,8 @@ function handleWeather(lat, lon) {
   ])
     .then(([data, locationName]) => {
       const w = data.current_weather;
-      const icon = getWeatherIcon(w.weathercode);
+      const isDay = w.is_day !== undefined ? w.is_day : 1;
+      const icon = getWeatherIcon(w.weathercode, isDay);
       const color = getWeatherColor(w.weathercode);
 
       const sunrise = data.daily.sunrise[0].slice(11, 16);
@@ -7112,6 +7113,20 @@ function handleWeather(lat, lon) {
                   <img src="public/google-maps.png" alt="icon"> ${locationName}
               </div>
           `;
+
+      // Cập nhật biểu tượng và tooltip của nút nổi theo thời tiết thực tế
+      const floatingIconEl = document.querySelector("#floatingTodayExtraBtn .floating-btn-icon");
+      const floatingBtn = document.getElementById("floatingTodayExtraBtn");
+      if (floatingIconEl) {
+        floatingIconEl.textContent = icon;
+      }
+      if (floatingBtn) {
+        floatingBtn.title = `Thời tiết: ${Math.round(w.temperature)}°C - ${weatherCodeToText(w.weathercode)}`;
+      }
+      try {
+        localStorage.setItem("lastWeatherIcon", icon);
+        localStorage.setItem("lastWeatherText", `Thời tiết: ${Math.round(w.temperature)}°C - ${weatherCodeToText(w.weathercode)}`);
+      } catch {}
 
       renderHourlyForecast(data.hourly, data.current_weather.time);
       renderForecast(data.daily, data.hourly);
@@ -17140,3 +17155,196 @@ async function clearCacheAndReloadApp() {
   }
 }
 window.clearCacheAndReloadApp = clearCacheAndReloadApp;
+
+/* Floating Today Extra (Weather & Quote) Modal & Draggable Edge Snapping */
+function openTodayExtraModal() {
+  const modal = document.getElementById("todayExtraModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeTodayExtraModal() {
+  const modal = document.getElementById("todayExtraModal");
+  if (modal) modal.style.display = "none";
+}
+
+window.openTodayExtraModal = openTodayExtraModal;
+window.closeTodayExtraModal = closeTodayExtraModal;
+
+function initFloatingTodayExtraBtn() {
+  const btn = document.getElementById("floatingTodayExtraBtn");
+  if (!btn) return;
+
+  const STORAGE_KEY = "todayExtraBtnPos_v1";
+  const margin = 8;
+
+  let isDragging = false;
+  let startX = 0, startY = 0;
+  let initialLeft = 0, initialTop = 0;
+  let dragMoved = false;
+
+  // Khôi phục vị trí và icon thời tiết đã lưu
+  const savedIcon = localStorage.getItem("lastWeatherIcon");
+  const savedText = localStorage.getItem("lastWeatherText");
+  const floatingIconEl = btn.querySelector(".floating-btn-icon");
+  if (savedIcon && floatingIconEl) {
+    floatingIconEl.textContent = savedIcon;
+  }
+  if (savedText) {
+    btn.title = savedText;
+  }
+
+  const savedPos = localStorage.getItem(STORAGE_KEY);
+  if (savedPos) {
+    try {
+      const pos = JSON.parse(savedPos);
+      const btnWidth = btn.offsetWidth || 44;
+      const btnHeight = btn.offsetHeight || 44;
+      const maxTop = window.innerHeight - btnHeight - margin;
+      const top = Math.min(Math.max(margin, pos.top), maxTop);
+
+      btn.style.top = top + "px";
+      btn.style.bottom = "auto";
+
+      if (pos.side === "left") {
+        btn.style.left = margin + "px";
+        btn.style.right = "auto";
+        btn.classList.add("snapped-left");
+        btn.classList.remove("snapped-right");
+      } else {
+        btn.style.left = (window.innerWidth - btnWidth - margin) + "px";
+        btn.style.right = "auto";
+        btn.classList.add("snapped-right");
+        btn.classList.remove("snapped-left");
+      }
+    } catch (e) {
+      console.warn("[FloatingBtn] Lỗi khôi phục vị trí nút:", e);
+    }
+  }
+
+  function onPointerDown(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+
+    isDragging = true;
+    dragMoved = false;
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    startX = clientX;
+    startY = clientY;
+
+    const rect = btn.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+
+    btn.style.transition = "none";
+  }
+
+  function onPointerMove(e) {
+    if (!isDragging) return;
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    const dx = clientX - startX;
+    const dy = clientY - startY;
+
+    if (Math.hypot(dx, dy) > 5) {
+      dragMoved = true;
+      btn.classList.add("dragging");
+    }
+
+    if (dragMoved) {
+      if (e.cancelable) e.preventDefault();
+
+      const btnWidth = btn.offsetWidth || 44;
+      const btnHeight = btn.offsetHeight || 44;
+
+      let newLeft = initialLeft + dx;
+      let newTop = initialTop + dy;
+
+      newLeft = Math.min(Math.max(0, newLeft), window.innerWidth - btnWidth);
+      newTop = Math.min(Math.max(margin, newTop), window.innerHeight - btnHeight - margin);
+
+      btn.style.left = newLeft + "px";
+      btn.style.top = newTop + "px";
+      btn.style.right = "auto";
+    }
+  }
+
+  function onPointerUp() {
+    if (!isDragging) return;
+    isDragging = false;
+    btn.classList.remove("dragging");
+
+    if (!dragMoved) {
+      openTodayExtraModal();
+      return;
+    }
+
+    const rect = btn.getBoundingClientRect();
+    const btnWidth = rect.width || 44;
+    const btnHeight = rect.height || 44;
+    const centerX = rect.left + btnWidth / 2;
+
+    btn.style.transition = "left 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.15s ease";
+
+    let targetSide = "right";
+    let targetLeft = window.innerWidth - btnWidth - margin;
+
+    if (centerX < window.innerWidth / 2) {
+      targetSide = "left";
+      targetLeft = margin;
+      btn.classList.add("snapped-left");
+      btn.classList.remove("snapped-right");
+    } else {
+      btn.classList.add("snapped-right");
+      btn.classList.remove("snapped-left");
+    }
+
+    btn.style.left = targetLeft + "px";
+    btn.style.right = "auto";
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        side: targetSide,
+        top: rect.top
+      })
+    );
+  }
+
+  btn.addEventListener("mousedown", onPointerDown);
+  window.addEventListener("mousemove", onPointerMove);
+  window.addEventListener("mouseup", onPointerUp);
+
+  btn.addEventListener("touchstart", onPointerDown, { passive: false });
+  window.addEventListener("touchmove", onPointerMove, { passive: false });
+  window.addEventListener("touchend", onPointerUp);
+
+  window.addEventListener("resize", () => {
+    const rect = btn.getBoundingClientRect();
+    const btnWidth = rect.width || 44;
+    const btnHeight = rect.height || 44;
+
+    let isLeft = rect.left < window.innerWidth / 2;
+    let targetLeft = isLeft ? margin : window.innerWidth - btnWidth - margin;
+    let targetTop = Math.min(Math.max(margin, rect.top), window.innerHeight - btnHeight - margin);
+
+    btn.style.transition = "none";
+    btn.style.left = targetLeft + "px";
+    btn.style.top = targetTop + "px";
+  });
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    closeTodayExtraModal();
+  }
+});
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initFloatingTodayExtraBtn);
+} else {
+  initFloatingTodayExtraBtn();
+}

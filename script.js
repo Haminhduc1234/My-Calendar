@@ -11959,8 +11959,9 @@ function confirmAllocate() {
   const fundId = fundSelect.value;
   const amount = parseInt(amountInput.value.replace(/\D/g, ""), 10) || 0;
 
-  if (!fundId) {
-    alert("Vui lòng chọn một quỹ");
+  const fund = fundsData.funds.find((f) => f.id === fundId);
+  if (!fund) {
+    alert("Vui lòng chọn một quỹ hợp lệ");
     return;
   }
 
@@ -11976,6 +11977,22 @@ function confirmAllocate() {
     return;
   }
 
+  // Kiểm tra không cho phép phân bổ làm vượt quá mục tiêu quỹ
+  const currentFundBalance = getFundBalance(fundId);
+  const fundTarget = Number(fund.target || 0);
+
+  if (fundTarget > 0) {
+    const remainingTargetSpace = fundTarget - currentFundBalance;
+    if (remainingTargetSpace <= 0) {
+      alert(`Quỹ "${fund.name}" đã đạt mục tiêu (${fundTarget.toLocaleString("vi-VN")} đ).\nVui lòng chỉnh sửa và tăng Mục tiêu của quỹ đó lên trước khi thêm vào quỹ.`);
+      return;
+    }
+    if (amount > remainingTargetSpace) {
+      alert(`Số tiền phân bổ (${amount.toLocaleString("vi-VN")} đ) sẽ làm tổng dư quỹ "${fund.name}" (${(currentFundBalance + amount).toLocaleString("vi-VN")} đ) vượt quá Mục tiêu (${fundTarget.toLocaleString("vi-VN")} đ).\nSố tiền tối đa có thể thêm lúc này là ${remainingTargetSpace.toLocaleString("vi-VN")} đ. Vui lòng tăng Mục tiêu của quỹ lên trước khi thêm!`);
+      return;
+    }
+  }
+
   // Add allocation
   const allocation = {
     id: `alloc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -11989,7 +12006,6 @@ function confirmAllocate() {
   saveFundsToFirebase();
 
   // Bắn thông báo đẩy đến tất cả thiết bị cùng tài khoản
-  const fund = fundsData.funds.find((f) => f.id === fundId);
   const fundName = fund ? fund.name : "";
   queueEventNotification({
     id: allocation.id,
@@ -12122,21 +12138,37 @@ function renderAllocateHistory() {
   });
 })();
 
-// Initialize allocate amount input formatting
+// Initialize allocate amount input formatting & target validation
 (function initAllocateInput() {
   const amountInput = document.getElementById("allocateAmount");
+  const fundSelect = document.getElementById("allocateFundSelect");
   if (!amountInput) return;
 
-  amountInput.addEventListener("input", () => {
+  function validateInputState() {
     formatCurrencyInput(amountInput);
     const amount = parseInt(amountInput.value.replace(/\D/g, ""), 10) || 0;
     const available = calculateAvailableFundBalance();
+    const fundId = fundSelect ? fundSelect.value : "";
+    const fund = fundId ? fundsData.funds.find((f) => f.id === fundId) : null;
+
+    let isInvalid = false;
     if (amount > available && available > 0) {
-      amountInput.style.borderColor = "#ef4444";
-    } else {
-      amountInput.style.borderColor = "";
+      isInvalid = true;
     }
-  });
+    if (fund && Number(fund.target || 0) > 0) {
+      const currentBal = getFundBalance(fund.id);
+      if ((currentBal + amount) > Number(fund.target)) {
+        isInvalid = true;
+      }
+    }
+
+    amountInput.style.borderColor = isInvalid ? "#ef4444" : "";
+  }
+
+  amountInput.addEventListener("input", validateInputState);
+  if (fundSelect) {
+    fundSelect.addEventListener("change", validateInputState);
+  }
 })();
 
 // Initialize fund initial amount input formatting

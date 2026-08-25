@@ -1292,6 +1292,27 @@ body::before {
   right: unset !important;
   margin-left: 12px;
   flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  line-height: 1;
+}
+
+.event-modal-close:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  color: #f87171 !important;
+  transform: scale(1.06);
 }
 
 .overtime-modal-content h3 {
@@ -1676,28 +1697,70 @@ body::before {
 
 .modal-actions {
   display: flex;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 12px;
+  margin-top: 18px;
 }
 
 .modal-actions button {
   flex: 1;
   min-width: 0;
-  border: 1px solid #334155;
   border-radius: 12px;
-  padding: 10px 0;
-  color: #ffffff;
-  background: #334155;
+  padding: 11px 0;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
 }
 
-.modal-actions button:hover {
-  background: #475569;
-  border-color: #475569;
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+/* Primary Action Button (Lưu) */
+#saveEventBtn,
+.modal-actions button.btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(147, 197, 253, 0.4) !important;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.38) !important;
+}
+
+#saveEventBtn:hover,
+.modal-actions button.btn-primary:hover {
+  background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%) !important;
+  border-color: rgba(147, 197, 253, 0.65) !important;
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.55) !important;
+  transform: translateY(-1.5px);
+  color: #ffffff !important;
+}
+
+#saveEventBtn:active,
+.modal-actions button.btn-primary:active {
+  transform: scale(0.97) !important;
+}
+
+/* Secondary Action Button (Đóng) */
+#closeEventBtn,
+.modal-actions button.btn-secondary {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+#closeEventBtn:hover,
+.modal-actions button.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #f8fafc !important;
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+}
+
+#closeEventBtn:active,
+.modal-actions button.btn-secondary:active {
+  transform: scale(0.97) !important;
 }
 
 #dayDetailsModal .event-modal-wrapper {

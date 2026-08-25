@@ -8389,7 +8389,7 @@ input[type="datetime-local"] {
   border: none;
   border-radius: 28px;
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
   z-index: 1000;
   padding: 0 8px env(safe-area-inset-bottom) 8px;

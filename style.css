@@ -483,6 +483,57 @@ body::before {
   animation: panelIn 0.5s ease both;
 }
 
+/* Notification Bell Button with Translucent Blurred Background */
+.notification-bell-btn {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border: none !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 10px;
+  color: #64B5F6 !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+  box-shadow: none !important;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, filter 0.2s ease;
+}
+
+.notification-bell-btn:hover {
+  background: rgba(100, 181, 246, 0.2) !important;
+  color: #90CAF9 !important;
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 8px rgba(100, 181, 246, 0.6));
+}
+
+.notification-bell-btn:active {
+  transform: scale(0.95);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 99px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  border: 1.5px solid #0f172a;
+}
+
 .calendar-container {
   padding: 18px;
   margin-bottom: 12px;

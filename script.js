@@ -3225,7 +3225,7 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
       const currentData = getDateData(targetKey);
       const existsIdx = (currentData.events || []).findIndex(
         (ev) => (ev.id && eventData.id && ev.id === eventData.id) ||
-                (ev.title === eventData.title && (ev.eventDateTime === eventData.eventDateTime || Math.abs((ev.createdAt || 0) - (eventData.createdAt || 0)) < 10000))
+          (ev.title === eventData.title && (ev.eventDateTime === eventData.eventDateTime || Math.abs((ev.createdAt || 0) - (eventData.createdAt || 0)) < 10000))
       );
       if (existsIdx === -1) {
         const newEv = {
@@ -3282,7 +3282,7 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
           openEventQuickViewModal(remoteEvents[remoteEvents.length - 1], targetKey, remoteEvents.length - 1);
         }
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }
   if (parts.length === 3) {
     selectedKey = targetKey;
@@ -3689,7 +3689,7 @@ function updateNotificationUIState() {
   const isManuallyDisabled = localStorage.getItem("calendarDevicePushEnabled") === "0";
 
   if (permission === "denied") {
-    statusEl.textContent = "Bị chặn (Blocked)";
+    statusEl.textContent = "Bị chặn";
     statusEl.style.color = "#ef4444";
     descEl.textContent = "Bạn đã chặn quyền thông báo trong cài đặt trình duyệt";
     btnToggle.textContent = "Bị chặn";
@@ -3697,16 +3697,16 @@ function updateNotificationUIState() {
     btnToggle.style.opacity = "0.6";
     if (btnTest) btnTest.style.display = "none";
   } else if (permission === "granted" && !isManuallyDisabled) {
-    statusEl.textContent = "Đang hoạt động (Active)";
+    statusEl.textContent = "Đang hoạt động";
     statusEl.style.color = "#10b981";
-    descEl.textContent = "Thiết bị này đang nhận thông báo cho tài khoản hiện tại";
+    descEl.textContent = "";
     btnToggle.textContent = "Tắt thông báo";
     btnToggle.disabled = false;
     btnToggle.style.opacity = "1";
     btnToggle.className = "btn-secondary";
     if (btnTest) btnTest.style.display = "inline-flex";
   } else if (permission === "granted" && isManuallyDisabled) {
-    statusEl.textContent = "Đã tắt (Tạm dừng)";
+    statusEl.textContent = "Đã tắt";
     statusEl.style.color = "#f59e0b";
     descEl.textContent = "Thông báo đang tạm tắt trên thiết bị này";
     btnToggle.textContent = "Bật lại thông báo";
@@ -4374,7 +4374,7 @@ function formatRelativeTime(timestamp) {
   if (hours < 24) return `${hours} giờ trước`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days} ngày trước`;
-  
+
   const d = new Date(timestamp);
   return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
@@ -4925,7 +4925,7 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
     const evList = getEventsForDate(dKey);
     effectiveIndex = evList.findIndex(
       (ev) => (ev.id && eventObj.id && ev.id === eventObj.id) ||
-              (ev.title === eventObj.title && (ev.eventDateTime === eventObj.eventDateTime || ev.createdAt === eventObj.createdAt))
+        (ev.title === eventObj.title && (ev.eventDateTime === eventObj.eventDateTime || ev.createdAt === eventObj.createdAt))
     );
   }
 
@@ -7126,7 +7126,7 @@ function handleWeather(lat, lon) {
       try {
         localStorage.setItem("lastWeatherIcon", icon);
         localStorage.setItem("lastWeatherText", `Thời tiết: ${Math.round(w.temperature)}°C - ${weatherCodeToText(w.weathercode)}`);
-      } catch {}
+      } catch { }
 
       renderHourlyForecast(data.hourly, data.current_weather.time);
       renderForecast(data.daily, data.hourly);

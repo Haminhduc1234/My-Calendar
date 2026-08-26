@@ -5148,7 +5148,6 @@ function renderProjectsList() {
       <div class="app-empty-state">
         <div class="app-empty-icon">📋</div>
         <div class="app-empty-title">Chưa có dự án nào</div>
-        <div class="app-empty-desc">Nhấn "+ Thêm dự án mới" để bắt đầu quản lý công việc.</div>
       </div>
     `;
     return;
@@ -5331,7 +5330,6 @@ function renderProjectTasksList(projectId) {
       <div class="app-empty-state">
         <div class="app-empty-icon">📌</div>
         <div class="app-empty-title">Chưa có công việc nào</div>
-        <div class="app-empty-desc">Nhấn "+ Thêm công việc" để tạo nhiệm vụ cho dự án này.</div>
       </div>
     `;
     return;
@@ -6082,7 +6080,6 @@ function renderQuickNotes() {
       <div class="app-empty-state">
         <div class="app-empty-icon">📝</div>
         <div class="app-empty-title">Chưa có ghi chú nào</div>
-        <div class="app-empty-desc">Nhập việc cần làm ở trên và nhấn "+ Thêm" để lưu lại.</div>
       </div>
     `;
     return;
@@ -9729,7 +9726,6 @@ function renderCashflowRecentList() {
     empty.innerHTML = `
       <div class="app-empty-icon">💰</div>
       <div class="app-empty-title">Chưa có giao dịch nào</div>
-      <div class="app-empty-desc">Hãy thêm khoản thu hoặc chi đầu tiên của bạn.</div>
     `;
     listEl.appendChild(empty);
     renderCashflowQuickView();
@@ -9929,7 +9925,6 @@ function renderCashflowAllTransactionsList() {
     empty.innerHTML = `
       <div class="app-empty-icon">📊</div>
       <div class="app-empty-title">Chưa có giao dịch nào</div>
-      <div class="app-empty-desc">Tất cả các khoản thu chi của bạn sẽ xuất hiện tại đây.</div>
     `;
     listEl.appendChild(empty);
     return;
@@ -10770,7 +10765,6 @@ function renderCategoryList() {
       <div class="app-empty-state">
         <div class="app-empty-icon">🏷️</div>
         <div class="app-empty-title">Chưa có danh mục ${typeLabel} nào</div>
-        <div class="app-empty-desc">Nhấn "Thêm loại ${typeLabel.toLowerCase()}" để tạo danh mục mới.</div>
       </div>
     `;
     return;
@@ -11332,7 +11326,6 @@ function renderFundsList() {
     empty.innerHTML = `
       <div class="app-empty-icon">🏺</div>
       <div class="app-empty-title">Chưa có quỹ nào</div>
-      <div class="app-empty-desc">Nhấn "Thêm Quỹ" để tạo hũ tiết kiệm hoặc chi tiêu đầu tiên.</div>
     `;
     listEl.appendChild(empty);
     return;
@@ -12233,7 +12226,6 @@ function renderAllocateHistory() {
     empty.innerHTML = `
       <div class="app-empty-icon">📜</div>
       <div class="app-empty-title">Chưa có phân bổ nào</div>
-      <div class="app-empty-desc">Lịch sử nạp và rút tiền từ các quỹ sẽ hiển thị tại đây.</div>
     `;
     listEl.appendChild(empty);
     return;
@@ -15402,7 +15394,6 @@ function renderTranslateHistory() {
       <div class="app-empty-state">
         <div class="app-empty-icon">🌐</div>
         <div class="app-empty-title">Chưa có lịch sử dịch</div>
-        <div class="app-empty-desc">Các đoạn văn bản đã dịch sẽ được tự động lưu lại tại đây.</div>
       </div>
     `;
     return;

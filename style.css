@@ -15106,7 +15106,9 @@ html {
   color: var(--text, #ffffff);
   font-family: inherit;
   font-size: 14px;
-  resize: none;
+  resize: vertical;
+  min-height: 60px;
+  max-height: 350px;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -15277,14 +15279,14 @@ html {
   align-items: center !important;
   justify-content: center !important;
   text-align: center !important;
-  padding: 32px 18px !important;
-  margin: 14px auto !important;
+  padding: 24px 16px !important;
+  margin: 12px auto !important;
   width: 100% !important;
-  max-width: 380px !important;
+  max-width: 360px !important;
   box-sizing: border-box !important;
-  background: rgba(255, 255, 255, 0.02) !important;
-  border: 1.5px dashed rgba(255, 255, 255, 0.12) !important;
-  border-radius: 18px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
   animation: emptyStateFadeIn 0.35s ease both !important;
 }
 
@@ -15301,16 +15303,16 @@ html {
 
 .app-empty-icon,
 .notification-empty-icon {
-  width: 62px !important;
-  height: 62px !important;
+  width: 58px !important;
+  height: 58px !important;
   border-radius: 18px !important;
   background: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(99, 102, 241, 0.12) 100%) !important;
   border: 1px solid rgba(56, 189, 248, 0.22) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 28px !important;
-  margin-bottom: 12px !important;
+  font-size: 26px !important;
+  margin-bottom: 10px !important;
   color: #38bdf8 !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
   animation: emptyIconFloat 3s ease-in-out infinite alternate !important;
@@ -15328,19 +15330,11 @@ html {
 .app-empty-title,
 .notification-empty-text,
 .empty-events-text {
-  font-size: 15px !important;
-  font-weight: 700 !important;
-  color: #f1f5f9 !important;
-  margin-bottom: 4px !important;
-  letter-spacing: 0.2px !important;
-}
-
-.app-empty-desc {
-  font-size: 13px !important;
-  color: #94a3b8 !important;
-  line-height: 1.5 !important;
+  font-size: 14.5px !important;
+  font-weight: 600 !important;
+  color: #e2e8f0 !important;
   margin: 0 !important;
-  max-width: 290px !important;
+  letter-spacing: 0.2px !important;
 }
 
 /* ==================== QUICK NOTE DRAFT CONFIRMATION POPUP ==================== */

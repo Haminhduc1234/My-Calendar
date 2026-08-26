@@ -5154,25 +5154,49 @@ function renderProjectsList() {
   }
 
   container.innerHTML = projects
-    .map(
-      (project) => `
-    <div class="project-item" data-project-id="${project.id}" onclick="if(!event.target.closest('.item-actions')) openProjectTasksModal('${project.id}', '${escapeHtml(project.title || "")}')">
-      <div class="project-item-header">
-        <div class="project-item-title">
-          ${escapeHtml(project.title || "Dự án không tên")}
+    .map((project) => {
+      const tasks = projectTasksCache[project.id] || {};
+      const totalTasks = Object.keys(tasks).length;
+      const completedTasks = Object.values(tasks).filter((t) => t.completed).length;
+      const percent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+      return `
+      <div class="project-item" data-project-id="${project.id}" onclick="if(!event.target.closest('.item-actions')) openProjectTasksModal('${project.id}', '${escapeHtml(project.title || "")}')">
+        <div class="project-item-header">
+          <div class="project-item-icon">📁</div>
+          <div class="project-item-title-wrap">
+            <div class="project-item-title">${escapeHtml(project.title || "Dự án không tên")}</div>
+            ${project.description ? `<div class="project-item-text">${escapeHtml(project.description)}</div>` : ""}
+          </div>
+          <div class="item-actions">
+            <button type="button" class="item-btn edit-btn" onclick="event.stopPropagation(); editProject('${project.id}')" title="Sửa dự án">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </button>
+            <button type="button" class="item-btn delete-btn" onclick="event.stopPropagation(); deleteProject('${project.id}')" title="Xóa dự án">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
         </div>
-        <div class="item-actions">
-          <button class="item-btn" onclick="event.stopPropagation(); editProject('${project.id}')" title="Sửa">✎</button>
-          <button class="item-btn delete" onclick="event.stopPropagation(); deleteProject('${project.id}')" title="Xóa">✕</button>
+        <div class="project-item-footer">
+          <div class="project-progress-wrap">
+            <div class="project-progress-bar">
+              <div class="project-progress-fill" style="width: ${percent}%;"></div>
+            </div>
+            <div class="project-progress-labels">
+              <span>${totalTasks} công việc</span>
+              <span class="project-percent-badge ${percent === 100 ? "done" : ""}">${completedTasks}/${totalTasks} (${percent}%)</span>
+            </div>
+          </div>
         </div>
       </div>
-      ${project.description ? `<div class="project-item-text">${escapeHtml(project.description)}</div>` : ""}
-      <div class="project-item-meta">
-        <span>${countTasksInProject(project.id)} công việc</span>
-      </div>
-    </div>
-  `,
-    )
+    `;
+    })
     .join("");
 }
 
@@ -5325,6 +5349,17 @@ function renderProjectTasksList(projectId) {
     .map(([id, data]) => ({ id, ...data }))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
+  const totalTasks = tasks.length;
+  const completedTasks = tasks.filter((t) => t.completed).length;
+  const percent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  const headerDateLabel = document.querySelector("#projectTasksModal .date-label");
+  if (headerDateLabel) {
+    headerDateLabel.innerHTML = totalTasks > 0
+      ? `<span>${completedTasks}/${totalTasks} hoàn thành (${percent}%)</span> • <span>Nhấn để xem chi tiết</span>`
+      : `<span>Chưa có công việc</span> • <span>Nhấn "+ Thêm công việc" để tạo mới</span>`;
+  }
+
   if (tasks.length === 0) {
     container.innerHTML = `
       <div class="app-empty-state">
@@ -5338,27 +5373,138 @@ function renderProjectTasksList(projectId) {
   container.innerHTML = tasks
     .map(
       (task, idx) => `
-    <div class="task-item draggable" draggable="true" data-task-id="${task.id}" data-project-id="${projectId}" data-task-order="${task.order || idx}" onclick="event.stopPropagation();">
+    <div class="task-item draggable ${task.completed ? "is-completed" : ""}" draggable="true" data-task-id="${task.id}" data-project-id="${projectId}" data-task-order="${task.order || idx}" onclick="openTaskDetailModal('${projectId}', '${task.id}')">
       <div class="task-item-header">
-        <div class="drag-controls">
-          <button class="task-drag-handle" onclick="event.stopPropagation();" title="Kéo để sắp xếp">☰</button>
+        <div class="drag-controls" onclick="event.stopPropagation();">
+          <button type="button" class="task-drag-handle" title="Kéo để sắp xếp">☰</button>
         </div>
-        <div class="task-item-title" onclick="event.stopPropagation(); toggleTaskComplete('${projectId}', '${task.id}')">
-          <span class="task-checkbox ${task.completed ? "completed" : ""}">${task.completed ? "☑" : "☐"}</span>
-          <span class="task-name ${task.completed ? "done" : ""}">${escapeHtml(task.title || "")}</span>
+        <button type="button" class="task-checkbox-btn ${task.completed ? "checked" : ""}" onclick="event.stopPropagation(); toggleTaskComplete('${projectId}', '${task.id}')" title="${task.completed ? "Đánh dấu chưa hoàn thành" : "Đánh dấu hoàn thành"}">
+          <span class="task-checkbox-icon">${task.completed ? "✓" : ""}</span>
+        </button>
+        <div class="task-item-content">
+          <div class="task-name ${task.completed ? "done" : ""}">${escapeHtml(task.title || "")}</div>
+          ${task.description ? `<div class="task-item-text">${escapeHtml(task.description)}</div>` : ""}
         </div>
-        <div class="item-actions">
-          <button class="item-btn" onclick="event.stopPropagation(); editTask('${projectId}', '${task.id}')" title="Sửa">✎</button>
-          <button class="item-btn delete" onclick="event.stopPropagation(); deleteTask('${projectId}', '${task.id}')" title="Xóa">✕</button>
+        <div class="item-actions" onclick="event.stopPropagation();">
+          <button type="button" class="item-btn edit-btn" onclick="event.stopPropagation(); editTask('${projectId}', '${task.id}')" title="Sửa công việc">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </button>
+          <button type="button" class="item-btn delete-btn" onclick="event.stopPropagation(); deleteTask('${projectId}', '${task.id}')" title="Xóa công việc">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
         </div>
       </div>
-      ${task.description ? `<div class="task-item-text">${escapeHtml(task.description)}</div>` : ""}
     </div>
   `,
     )
     .join("");
 
   bindTaskDragDrop(projectId);
+}
+
+let _currentDetailProjectId = null;
+let _currentDetailTaskId = null;
+
+function formatDateTimeVN(timestamp) {
+  if (!timestamp) return "--";
+  const d = new Date(timestamp);
+  if (isNaN(d.getTime())) return "--";
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${hours}:${minutes} ${day}/${month}/${year}`;
+}
+
+function openTaskDetailModal(projectId, taskId) {
+  _currentDetailProjectId = projectId;
+  _currentDetailTaskId = taskId;
+
+  const project = (projectsDataCache || {})[projectId];
+  const task = ((projectTasksCache || {})[projectId] || {})[taskId];
+  if (!task) return;
+
+  const modal = document.getElementById("taskDetailModal");
+  const projectBadge = document.getElementById("taskDetailProjectBadge");
+  const statusBadge = document.getElementById("taskDetailStatusBadge");
+  const titleEl = document.getElementById("taskDetailTitle");
+  const descEl = document.getElementById("taskDetailDesc");
+  const createdEl = document.getElementById("taskDetailCreatedAt");
+  const updatedEl = document.getElementById("taskDetailUpdatedAt");
+
+  if (projectBadge) {
+    projectBadge.textContent = project && project.title ? project.title : "Dự án";
+  }
+
+  if (statusBadge) {
+    if (task.completed) {
+      statusBadge.textContent = "Đã hoàn thành ✓";
+      statusBadge.className = "task-detail-status-badge completed";
+    } else {
+      statusBadge.textContent = "Đang thực hiện ⏳";
+      statusBadge.className = "task-detail-status-badge pending";
+    }
+  }
+
+  if (titleEl) titleEl.textContent = task.title || "Công việc không tên";
+  if (descEl) {
+    if (task.description && task.description.trim()) {
+      descEl.textContent = task.description;
+      descEl.classList.remove("is-empty");
+    } else {
+      descEl.textContent = "Chưa có mô tả chi tiết cho công việc này.";
+      descEl.classList.add("is-empty");
+    }
+  }
+
+  if (createdEl) createdEl.textContent = formatDateTimeVN(task.createdAt);
+  if (updatedEl) updatedEl.textContent = formatDateTimeVN(task.updatedAt || task.createdAt);
+
+  if (modal) modal.style.display = "flex";
+}
+
+function closeTaskDetailModal() {
+  const modal = document.getElementById("taskDetailModal");
+  if (modal) modal.style.display = "none";
+  _currentDetailProjectId = null;
+  _currentDetailTaskId = null;
+}
+
+function toggleTaskDetailStatus() {
+  if (!_currentDetailProjectId || !_currentDetailTaskId) return;
+  toggleTaskComplete(_currentDetailProjectId, _currentDetailTaskId);
+  openTaskDetailModal(_currentDetailProjectId, _currentDetailTaskId);
+}
+
+function editTaskFromDetail() {
+  const pid = _currentDetailProjectId;
+  const tid = _currentDetailTaskId;
+  closeTaskDetailModal();
+  if (pid && tid) {
+    editTask(pid, tid);
+  }
+}
+
+function deleteTaskFromDetail() {
+  const pid = _currentDetailProjectId;
+  const tid = _currentDetailTaskId;
+  if (!pid || !tid) return;
+  showConfirmPopup(
+    "Xóa công việc",
+    "Bạn có chắc muốn xóa công việc này?",
+    "Xóa",
+    () => {
+      closeTaskDetailModal();
+      doDeleteTask({ projectId: pid, taskId: tid });
+    }
+  );
 }
 
 // Task Form Modal

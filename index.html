@@ -1792,6 +1792,7 @@
         </div>
         <form id="taskForm" onsubmit="handleTaskFormSubmit(event)" class="project-form-body">
           <input type="hidden" id="taskFormId" />
+          <input type="hidden" id="taskFormProjectId" />
           <div class="project-form-fields">
             <div class="project-form-group">
               <label for="taskFormName">Tên công việc <span style="color:#f87171;">*</span></label>
@@ -1817,21 +1818,6 @@
                     </button>
                     <button type="button" class="toolbar-btn" data-cmd="strikeThrough" title="Gạch ngang">
                       <s>S</s>
-                    </button>
-                  </div>
-
-                  <div class="toolbar-divider"></div>
-
-                  <!-- Heading Group -->
-                  <div class="toolbar-group">
-                    <button type="button" class="toolbar-btn" data-cmd="formatBlock" data-val="h3" title="Tiêu đề H1">
-                      H1
-                    </button>
-                    <button type="button" class="toolbar-btn" data-cmd="formatBlock" data-val="h4" title="Tiêu đề H2">
-                      H2
-                    </button>
-                    <button type="button" class="toolbar-btn" data-cmd="formatBlock" data-val="p" title="Đoạn văn">
-                      ¶
                     </button>
                   </div>
 

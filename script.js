@@ -5886,38 +5886,43 @@ function openTaskFormModal(isEdit, projectId, taskId) {
   const modal = document.getElementById("taskFormModal");
   const titleEl = document.getElementById("taskFormTitle");
   const idInput = document.getElementById("taskFormId");
-  const projectIdInput = document.getElementById("taskFormProjectId");
+  let projectIdInput = document.getElementById("taskFormProjectId");
   const nameInput = document.getElementById("taskFormName");
 
-  if (!document.getElementById("taskFormProjectId")) {
-    const hiddenInput = document.createElement("input");
-    hiddenInput.type = "hidden";
-    hiddenInput.id = "taskFormProjectId";
-    document.getElementById("taskForm").appendChild(hiddenInput);
+  if (!projectIdInput) {
+    projectIdInput = document.createElement("input");
+    projectIdInput.type = "hidden";
+    projectIdInput.id = "taskFormProjectId";
+    const form = document.getElementById("taskForm");
+    if (form) form.appendChild(projectIdInput);
   }
 
   if (isEdit && taskId && projectId) {
-    const task = (projectTasksCache[projectId] || {})[taskId];
-    if (!task) return;
-    titleEl.textContent = "Sửa công việc";
-    idInput.value = taskId;
-    projectIdInput.value = projectId;
-    nameInput.value = task.title || "";
-    setTaskEditorContent(task.description || "");
+    const task = ((projectTasksCache || {})[projectId] || {})[taskId];
+    if (titleEl) titleEl.textContent = "Sửa công việc";
+    if (idInput) idInput.value = taskId;
+    if (projectIdInput) projectIdInput.value = projectId;
+    if (nameInput) nameInput.value = task ? (task.title || "") : "";
+    setTaskEditorContent(task ? (task.description || "") : "");
   } else {
-    titleEl.textContent = "Thêm công việc";
-    idInput.value = "";
-    projectIdInput.value = projectId || currentOpenedProjectId;
-    nameInput.value = "";
+    if (titleEl) titleEl.textContent = "Thêm công việc";
+    if (idInput) idInput.value = "";
+    if (projectIdInput) projectIdInput.value = projectId || currentOpenedProjectId || "";
+    if (nameInput) nameInput.value = "";
     setTaskEditorContent("");
   }
 
-  modal.style.display = "flex";
-  nameInput.focus();
+  if (modal) {
+    modal.style.display = "flex";
+  }
+  if (nameInput) {
+    setTimeout(() => nameInput.focus(), 50);
+  }
 }
 
 function closeTaskFormModal() {
-  document.getElementById("taskFormModal").style.display = "none";
+  const modal = document.getElementById("taskFormModal");
+  if (modal) modal.style.display = "none";
 }
 
 // Custom Unified Confirm Popup

@@ -1783,7 +1783,7 @@
 
     <!-- Task Form Modal -->
     <div id="taskFormModal" class="modal" onclick="if(event.target===this) closeTaskFormModal()">
-      <div class="project-form-modal-content">
+      <div class="project-form-modal-content task-editor-modal-content">
         <div class="project-form-header">
           <h3 id="taskFormTitle">Thêm công việc</h3>
           <button class="modal-close" onclick="closeTaskFormModal()">
@@ -1794,12 +1794,138 @@
           <input type="hidden" id="taskFormId" />
           <div class="project-form-fields">
             <div class="project-form-group">
-              <label for="taskFormName">Tên công việc</label>
+              <label for="taskFormName">Tên công việc <span style="color:#f87171;">*</span></label>
               <input type="text" id="taskFormName" placeholder="Nhập tên công việc..." maxlength="200" required />
             </div>
-            <div class="project-form-group">
-              <label for="taskFormDesc">Mô tả</label>
-              <textarea id="taskFormDesc" placeholder="Nhập mô tả (tùy chọn)..." rows="3" maxlength="1000"></textarea>
+            <div class="project-form-group task-editor-group">
+              <label for="taskFormEditor" style="margin-bottom: 8px; display: block;">Mô tả chi tiết</label>
+
+              <!-- Rich Text Editor Container -->
+              <div class="task-rich-editor-wrap" id="taskRichEditorWrap">
+                <!-- Toolbar -->
+                <div class="task-editor-toolbar" id="taskEditorToolbar">
+                  <!-- Formatting Group -->
+                  <div class="toolbar-group">
+                    <button type="button" class="toolbar-btn" data-cmd="bold" title="In đậm (Ctrl+B)">
+                      <strong>B</strong>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-cmd="italic" title="In nghiêng (Ctrl+I)">
+                      <em>I</em>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-cmd="underline" title="Gạch chân (Ctrl+U)">
+                      <u>U</u>
+                    </button>
+                    <button type="button" class="toolbar-btn" data-cmd="strikeThrough" title="Gạch ngang">
+                      <s>S</s>
+                    </button>
+                  </div>
+
+                  <div class="toolbar-divider"></div>
+
+                  <!-- Heading Group -->
+                  <div class="toolbar-group">
+                    <button type="button" class="toolbar-btn" data-cmd="formatBlock" data-val="h3" title="Tiêu đề H1">
+                      H1
+                    </button>
+                    <button type="button" class="toolbar-btn" data-cmd="formatBlock" data-val="h4" title="Tiêu đề H2">
+                      H2
+                    </button>
+                    <button type="button" class="toolbar-btn" data-cmd="formatBlock" data-val="p" title="Đoạn văn">
+                      ¶
+                    </button>
+                  </div>
+
+                  <div class="toolbar-divider"></div>
+
+                  <!-- Color Palette -->
+                  <div class="toolbar-group color-picker-group">
+                    <div class="color-dropdown-trigger" id="textColorTrigger" onclick="toggleColorMenu(event, 'textColorMenu')" title="Đổi màu chữ">
+                      <span class="color-icon-letter">A</span>
+                      <span class="color-preview-bar" id="textColorPreviewBar" style="background:#38bdf8;"></span>
+                    </div>
+                    <div class="color-dropdown-menu" id="textColorMenu" style="display:none;">
+                      <div class="color-palette-title">Màu chữ</div>
+                      <div class="color-grid">
+                        <button type="button" class="color-swatch" data-color="#ffffff" style="background:#ffffff;" title="Trắng"></button>
+                        <button type="button" class="color-swatch" data-color="#94a3b8" style="background:#94a3b8;" title="Xám"></button>
+                        <button type="button" class="color-swatch" data-color="#38bdf8" style="background:#38bdf8;" title="Xanh dương"></button>
+                        <button type="button" class="color-swatch" data-color="#4ade80" style="background:#4ade80;" title="Xanh lá"></button>
+                        <button type="button" class="color-swatch" data-color="#facc15" style="background:#facc15;" title="Vàng"></button>
+                        <button type="button" class="color-swatch" data-color="#fb923c" style="background:#fb923c;" title="Cam"></button>
+                        <button type="button" class="color-swatch" data-color="#f87171" style="background:#f87171;" title="Đỏ"></button>
+                        <button type="button" class="color-swatch" data-color="#c084fc" style="background:#c084fc;" title="Tím"></button>
+                        <button type="button" class="color-swatch" data-color="#f472b6" style="background:#f472b6;" title="Hồng"></button>
+                      </div>
+                      <div class="custom-color-row">
+                        <label for="customTextColorPicker">Tùy chọn:</label>
+                        <input type="color" id="customTextColorPicker" value="#38bdf8" onchange="applyCustomTextColor(this.value)" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Highlight Palette -->
+                  <div class="toolbar-group color-picker-group">
+                    <div class="color-dropdown-trigger highlight-trigger" id="highlightTrigger" onclick="toggleColorMenu(event, 'highlightColorMenu')" title="Highlight (Đổi màu nền chữ)">
+                      <span class="highlight-icon">🖍️</span>
+                      <span class="color-preview-bar" id="highlightPreviewBar" style="background:#facc15;"></span>
+                    </div>
+                    <div class="color-dropdown-menu" id="highlightColorMenu" style="display:none;">
+                      <div class="color-palette-title">Màu Highlight</div>
+                      <div class="color-grid">
+                        <button type="button" class="color-swatch-hl" data-bg="transparent" title="Xóa highlight" style="background:transparent;border:1px dashed #64748b;">🚫</button>
+                        <button type="button" class="color-swatch-hl" data-bg="rgba(250, 204, 21, 0.35)" style="background:rgba(250, 204, 21, 0.85);" title="Highlight Vàng"></button>
+                        <button type="button" class="color-swatch-hl" data-bg="rgba(74, 222, 128, 0.35)" style="background:rgba(74, 222, 128, 0.85);" title="Highlight Xanh lá"></button>
+                        <button type="button" class="color-swatch-hl" data-bg="rgba(56, 189, 248, 0.35)" style="background:rgba(56, 189, 248, 0.85);" title="Highlight Xanh lam"></button>
+                        <button type="button" class="color-swatch-hl" data-bg="rgba(251, 113, 133, 0.35)" style="background:rgba(251, 113, 133, 0.85);" title="Highlight Đỏ hồng"></button>
+                        <button type="button" class="color-swatch-hl" data-bg="rgba(192, 132, 252, 0.35)" style="background:rgba(192, 132, 252, 0.85);" title="Highlight Tím"></button>
+                        <button type="button" class="color-swatch-hl" data-bg="rgba(251, 146, 60, 0.35)" style="background:rgba(251, 146, 60, 0.85);" title="Highlight Cam"></button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="toolbar-divider"></div>
+
+                  <!-- List & Checklist Group -->
+                  <div class="toolbar-group">
+                    <button type="button" class="toolbar-btn" data-cmd="insertUnorderedList" title="Danh sách chấm">
+                      •≡
+                    </button>
+                    <button type="button" class="toolbar-btn" data-cmd="insertOrderedList" title="Danh sách số">
+                      1.≡
+                    </button>
+                    <button type="button" class="toolbar-btn" onclick="insertTaskCheckboxItem()" title="Chèn mục Checklist (☐)">
+                      ☑
+                    </button>
+                    <button type="button" class="toolbar-btn" onclick="insertTaskQuote()" title="Trích dẫn">
+                      ❝
+                    </button>
+                    <button type="button" class="toolbar-btn" onclick="insertTaskDivider()" title="Đường kẻ phân cách">
+                      ―
+                    </button>
+                  </div>
+
+                  <div class="toolbar-divider"></div>
+
+                  <!-- Undo / Redo / Clear -->
+                  <div class="toolbar-group">
+                    <button type="button" class="toolbar-btn" data-cmd="undo" title="Hoàn tác (Ctrl+Z)">
+                      ↺
+                    </button>
+                    <button type="button" class="toolbar-btn" data-cmd="redo" title="Làm lại (Ctrl+Y)">
+                      ↻
+                    </button>
+                    <button type="button" class="toolbar-btn" data-cmd="removeFormat" title="Xóa định dạng">
+                      🧹
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Editable Content -->
+                <div id="taskFormEditor" class="task-rich-editor-content" contenteditable="true" data-placeholder="Nhập mô tả, ghi chú chi tiết hoặc kế hoạch công việc..."></div>
+                
+                <!-- Hidden textarea for backward compatibility -->
+                <textarea id="taskFormDesc" style="display: none;" rows="3" maxlength="5000"></textarea>
+              </div>
             </div>
           </div>
           <div class="project-form-actions">
@@ -1830,7 +1956,7 @@
         <h3 id="taskDetailTitle" class="task-detail-title">Tiêu đề công việc</h3>
         <div class="task-detail-desc-wrap">
           <div class="task-detail-label">Mô tả công việc</div>
-          <div id="taskDetailDesc" class="task-detail-desc">Chưa có mô tả chi tiết.</div>
+          <div id="taskDetailDesc" class="task-detail-desc rich-content">Chưa có mô tả chi tiết.</div>
         </div>
         <div class="task-detail-meta-grid">
           <div class="task-detail-meta-item">

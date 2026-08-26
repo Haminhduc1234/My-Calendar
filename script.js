@@ -5168,15 +5168,15 @@ function renderProjectsList() {
             <div class="project-item-title">${escapeHtml(project.title || "Dự án không tên")}</div>
             ${project.description ? `<div class="project-item-text">${escapeHtml(project.description)}</div>` : ""}
           </div>
-          <div class="item-actions">
-            <button type="button" class="item-btn edit-btn" onclick="event.stopPropagation(); editProject('${project.id}')" title="Sửa dự án">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div class="item-actions" onclick="event.stopPropagation();" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+            <button type="button" class="item-btn edit-btn" draggable="false" onclick="event.stopPropagation(); event.preventDefault(); editProject('${project.id}');" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="Sửa dự án">
+              <svg style="pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
               </svg>
             </button>
-            <button type="button" class="item-btn delete-btn" onclick="event.stopPropagation(); deleteProject('${project.id}')" title="Xóa dự án">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button type="button" class="item-btn delete-btn" draggable="false" onclick="event.stopPropagation(); event.preventDefault(); deleteProject('${project.id}');" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="Xóa dự án">
+              <svg style="pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
               </svg>
@@ -5373,27 +5373,27 @@ function renderProjectTasksList(projectId) {
   container.innerHTML = tasks
     .map(
       (task, idx) => `
-    <div class="task-item draggable ${task.completed ? "is-completed" : ""}" draggable="true" data-task-id="${task.id}" data-project-id="${projectId}" data-task-order="${task.order || idx}" onclick="openTaskDetailModal('${projectId}', '${task.id}')">
-      <div class="task-item-header">
+    <div class="task-item draggable ${task.completed ? "is-completed" : ""}" data-task-id="${task.id}" data-project-id="${projectId}" data-task-order="${task.order || idx}">
+      <div class="task-item-header" onclick="openTaskDetailModal('${projectId}', '${task.id}')">
         <div class="drag-controls" onclick="event.stopPropagation();">
-          <button type="button" class="task-drag-handle" title="Kéo để sắp xếp">☰</button>
+          <button type="button" class="task-drag-handle" title="Kéo để sắp xếp" draggable="true">☰</button>
         </div>
-        <button type="button" class="task-checkbox-btn ${task.completed ? "checked" : ""}" onclick="event.stopPropagation(); toggleTaskComplete('${projectId}', '${task.id}')" title="${task.completed ? "Đánh dấu chưa hoàn thành" : "Đánh dấu hoàn thành"}">
+        <button type="button" class="task-checkbox-btn ${task.completed ? "checked" : ""}" onclick="event.stopPropagation(); toggleTaskComplete('${projectId}', '${task.id}')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="${task.completed ? "Đánh dấu chưa hoàn thành" : "Đánh dấu hoàn thành"}">
           <span class="task-checkbox-icon">${task.completed ? "✓" : ""}</span>
         </button>
         <div class="task-item-content">
           <div class="task-name ${task.completed ? "done" : ""}">${escapeHtml(task.title || "")}</div>
-          ${task.description ? `<div class="task-item-text">${escapeHtml(task.description)}</div>` : ""}
+          ${task.description ? `<div class="task-item-text">${escapeHtml(stripHtml(task.description).substring(0, 80))}${stripHtml(task.description).length > 80 ? "..." : ""}</div>` : ""}
         </div>
-        <div class="item-actions" onclick="event.stopPropagation();">
-          <button type="button" class="item-btn edit-btn" onclick="event.stopPropagation(); editTask('${projectId}', '${task.id}')" title="Sửa công việc">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div class="item-actions" onclick="event.stopPropagation();" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+          <button type="button" class="item-btn edit-btn" draggable="false" onclick="event.stopPropagation(); event.preventDefault(); editTask('${projectId}', '${task.id}');" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="Sửa công việc">
+            <svg style="pointer-events: none;" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
           </button>
-          <button type="button" class="item-btn delete-btn" onclick="event.stopPropagation(); deleteTask('${projectId}', '${task.id}')" title="Xóa công việc">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button type="button" class="item-btn delete-btn" draggable="false" onclick="event.stopPropagation(); event.preventDefault(); deleteTask('${projectId}', '${task.id}');" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="Xóa công việc">
+            <svg style="pointer-events: none;" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
@@ -5421,6 +5421,21 @@ function formatDateTimeVN(timestamp) {
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const year = d.getFullYear();
   return `${hours}:${minutes} ${day}/${month}/${year}`;
+}
+
+// Rich Text Sanitizer
+function sanitizeRichText(html) {
+  if (!html || typeof html !== "string") return "";
+  
+  // Basic security sanitize while allowing rich formatting
+  let clean = html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
+    .replace(/on\w+="[^"]*"/gi, "")
+    .replace(/on\w+='[^']*'/gi, "")
+    .replace(/javascript:/gi, "");
+  
+  return clean;
 }
 
 function openTaskDetailModal(projectId, taskId) {
@@ -5456,8 +5471,28 @@ function openTaskDetailModal(projectId, taskId) {
   if (titleEl) titleEl.textContent = task.title || "Công việc không tên";
   if (descEl) {
     if (task.description && task.description.trim()) {
-      descEl.textContent = task.description;
+      descEl.innerHTML = sanitizeRichText(task.description);
       descEl.classList.remove("is-empty");
+      
+      // Wire detail checkbox clicks to update state if clicked
+      const checkboxes = descEl.querySelectorAll('input[type="checkbox"]');
+      checkboxes.forEach((cb, idx) => {
+        cb.onchange = () => {
+          if (cb.checked) {
+            cb.setAttribute("checked", "checked");
+          } else {
+            cb.removeAttribute("checked");
+          }
+          if (_currentDetailProjectId && _currentDetailTaskId) {
+            const currentT = ((projectTasksCache || {})[_currentDetailProjectId] || {})[_currentDetailTaskId];
+            if (currentT) {
+              currentT.description = descEl.innerHTML;
+              currentT.updatedAt = Date.now();
+              saveProjectTasksToFirebase(_currentDetailProjectId);
+            }
+          }
+        };
+      });
     } else {
       descEl.textContent = "Chưa có mô tả chi tiết cho công việc này.";
       descEl.classList.add("is-empty");
@@ -5507,6 +5542,345 @@ function deleteTaskFromDetail() {
   );
 }
 
+// ==================== TASK RICH TEXT EDITOR & PLAN EXPORT ====================
+
+function getTaskEditorContent() {
+  const editor = document.getElementById("taskFormEditor");
+  if (!editor) {
+    const descInput = document.getElementById("taskFormDesc");
+    return descInput ? descInput.value.trim() : "";
+  }
+  
+  // Check if actually empty or just whitespace/empty tags
+  const rawText = editor.innerText.trim();
+  const rawHtml = editor.innerHTML.trim();
+  if (!rawText && (!rawHtml || rawHtml === "<br>" || rawHtml === "<p><br></p>" || rawHtml === "<div><br></div>")) {
+    return "";
+  }
+  return rawHtml;
+}
+
+function setTaskEditorContent(content) {
+  const editor = document.getElementById("taskFormEditor");
+  const descInput = document.getElementById("taskFormDesc");
+  const str = content || "";
+  
+  if (descInput) {
+    descInput.value = str;
+  }
+  
+  if (editor) {
+    if (!str.trim()) {
+      editor.innerHTML = "";
+    } else if (!/<[a-z][\s\S]*>/i.test(str)) {
+      // Plain text with linebreaks -> convert to HTML
+      editor.innerHTML = str.replace(/\n/g, "<br>");
+    } else {
+      editor.innerHTML = sanitizeRichText(str);
+    }
+  }
+}
+
+function execTaskEditorCmd(cmd, val = null) {
+  const editor = document.getElementById("taskFormEditor");
+  if (!editor) return;
+  editor.focus();
+
+  if (cmd === "formatBlock" && val) {
+    const sel = window.getSelection();
+    let currentTag = "";
+    if (sel && sel.rangeCount) {
+      let node = sel.anchorNode;
+      if (node && node.nodeType === 3) node = node.parentElement;
+      while (node && node !== editor) {
+        const tag = node.tagName ? node.tagName.toLowerCase() : "";
+        if (["h1", "h2", "h3", "h4", "h5", "h6", "p", "blockquote"].includes(tag)) {
+          currentTag = tag;
+          break;
+        }
+        node = node.parentElement;
+      }
+    }
+
+    // Toggle off if already active
+    if (currentTag === val.toLowerCase()) {
+      document.execCommand("formatBlock", false, "<p>");
+    } else {
+      document.execCommand("formatBlock", false, `<${val}>`);
+    }
+  } else {
+    document.execCommand(cmd, false, val);
+  }
+
+  syncTaskEditorToHidden();
+  updateTaskEditorToolbarStates();
+}
+
+function updateTaskEditorToolbarStates() {
+  const editor = document.getElementById("taskFormEditor");
+  const toolbar = document.getElementById("taskEditorToolbar");
+  if (!editor || !toolbar) return;
+
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount) {
+    toolbar.querySelectorAll(".toolbar-btn.active, .color-dropdown-trigger.active").forEach((el) => {
+      el.classList.remove("active");
+    });
+    return;
+  }
+
+  const anchorNode = sel.anchorNode;
+  if (!anchorNode || (!editor.contains(anchorNode) && anchorNode !== editor)) {
+    return;
+  }
+
+  // 1. Inline formatting commands (bold, italic, underline, strikeThrough, lists)
+  const commands = ["bold", "italic", "underline", "strikeThrough", "insertUnorderedList", "insertOrderedList"];
+  commands.forEach((cmd) => {
+    const btn = toolbar.querySelector(`.toolbar-btn[data-cmd="${cmd}"]`);
+    if (btn) {
+      let isActive = false;
+      try {
+        isActive = document.queryCommandState(cmd);
+      } catch (e) {}
+      btn.classList.toggle("active", !!isActive);
+    }
+  });
+
+  // 2. Block format check (h3 / h4 / p)
+  let currentBlockTag = "";
+  let node = anchorNode.nodeType === 3 ? anchorNode.parentElement : anchorNode;
+  while (node && node !== editor) {
+    const tag = node.tagName ? node.tagName.toLowerCase() : "";
+    if (["h1", "h2", "h3", "h4", "h5", "h6", "p", "blockquote"].includes(tag)) {
+      currentBlockTag = tag;
+      break;
+    }
+    node = node.parentElement;
+  }
+
+  toolbar.querySelectorAll('.toolbar-btn[data-cmd="formatBlock"]').forEach((btn) => {
+    const val = (btn.getAttribute("data-val") || "").toLowerCase();
+    btn.classList.toggle("active", currentBlockTag === val);
+  });
+
+  // 3. Highlight detection (mark or background-color)
+  let hasHighlight = false;
+  let highlightColor = "";
+  let hlNode = anchorNode.nodeType === 3 ? anchorNode.parentElement : anchorNode;
+  while (hlNode && hlNode !== editor) {
+    if (hlNode.tagName === "MARK" || (hlNode.style && hlNode.style.backgroundColor && hlNode.style.backgroundColor !== "transparent" && hlNode.style.backgroundColor !== "rgba(0, 0, 0, 0)")) {
+      hasHighlight = true;
+      highlightColor = hlNode.style.backgroundColor;
+      break;
+    }
+    hlNode = hlNode.parentElement;
+  }
+  const hlTrigger = document.getElementById("highlightTrigger");
+  if (hlTrigger) {
+    hlTrigger.classList.toggle("active", hasHighlight);
+    const hlBar = document.getElementById("highlightPreviewBar");
+    if (hlBar && hasHighlight && highlightColor) {
+      hlBar.style.background = highlightColor;
+    }
+  }
+
+  // 4. Text Color detection
+  let textColor = "";
+  let colNode = anchorNode.nodeType === 3 ? anchorNode.parentElement : anchorNode;
+  while (colNode && colNode !== editor) {
+    if (colNode.style && colNode.style.color) {
+      textColor = colNode.style.color;
+      break;
+    }
+    colNode = colNode.parentElement;
+  }
+  const textTrigger = document.getElementById("textColorTrigger");
+  if (textTrigger) {
+    textTrigger.classList.toggle("active", !!textColor);
+    const textBar = document.getElementById("textColorPreviewBar");
+    if (textBar && textColor) {
+      textBar.style.background = textColor;
+    }
+  }
+}
+
+function syncTaskEditorToHidden() {
+  const editor = document.getElementById("taskFormEditor");
+  const descInput = document.getElementById("taskFormDesc");
+  if (editor && descInput) {
+    descInput.value = getTaskEditorContent();
+  }
+}
+
+function toggleColorMenu(event, menuId) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  const targetMenu = document.getElementById(menuId);
+  const allMenus = document.querySelectorAll(".color-dropdown-menu");
+  
+  allMenus.forEach((m) => {
+    if (m !== targetMenu) m.style.display = "none";
+  });
+  
+  if (targetMenu) {
+    targetMenu.style.display = targetMenu.style.display === "block" ? "none" : "block";
+  }
+}
+
+function applyTextColor(color) {
+  execTaskEditorCmd("foreColor", color);
+  const bar = document.getElementById("textColorPreviewBar");
+  if (bar) bar.style.background = color;
+  const menu = document.getElementById("textColorMenu");
+  if (menu) menu.style.display = "none";
+  updateTaskEditorToolbarStates();
+}
+
+function applyCustomTextColor(color) {
+  applyTextColor(color);
+}
+
+function applyHighlightColor(bg) {
+  const editor = document.getElementById("taskFormEditor");
+  if (!editor) return;
+  editor.focus();
+  
+  if (bg === "transparent" || !bg) {
+    document.execCommand("removeFormat", false, null);
+  } else {
+    // Standard backColor / hiliteColor
+    if (!document.execCommand("hiliteColor", false, bg)) {
+      document.execCommand("backColor", false, bg);
+    }
+  }
+  
+  const bar = document.getElementById("highlightPreviewBar");
+  if (bar) bar.style.background = bg === "transparent" ? "#64748b" : bg;
+  const menu = document.getElementById("highlightColorMenu");
+  if (menu) menu.style.display = "none";
+  syncTaskEditorToHidden();
+  updateTaskEditorToolbarStates();
+}
+
+function insertTaskCheckboxItem() {
+  const editor = document.getElementById("taskFormEditor");
+  if (!editor) return;
+  editor.focus();
+  const html = `<div class="task-editor-todo-item"><input type="checkbox" /> <span>Nhiệm vụ mới...</span></div>`;
+  document.execCommand("insertHTML", false, html);
+  syncTaskEditorToHidden();
+  updateTaskEditorToolbarStates();
+}
+
+function insertTaskQuote() {
+  const editor = document.getElementById("taskFormEditor");
+  if (!editor) return;
+  editor.focus();
+  const html = `<blockquote>💡 Ghi chú quan trọng hoặc mục tiêu cần lưu ý...</blockquote>`;
+  document.execCommand("insertHTML", false, html);
+  syncTaskEditorToHidden();
+  updateTaskEditorToolbarStates();
+}
+
+function insertTaskDivider() {
+  const editor = document.getElementById("taskFormEditor");
+  if (!editor) return;
+  editor.focus();
+  document.execCommand("insertHorizontalRule", false, null);
+  syncTaskEditorToHidden();
+  updateTaskEditorToolbarStates();
+}
+
+function initTaskRichEditor() {
+  const editor = document.getElementById("taskFormEditor");
+  const toolbar = document.getElementById("taskEditorToolbar");
+  if (!editor || !toolbar) return;
+
+  // Toolbar button commands
+  toolbar.querySelectorAll(".toolbar-btn[data-cmd]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const cmd = btn.getAttribute("data-cmd");
+      const val = btn.getAttribute("data-val") || null;
+      execTaskEditorCmd(cmd, val);
+    });
+  });
+
+  // Color Swatches
+  document.querySelectorAll(".color-swatch[data-color]").forEach((swatch) => {
+    swatch.addEventListener("click", (e) => {
+      e.preventDefault();
+      const color = swatch.getAttribute("data-color");
+      applyTextColor(color);
+    });
+  });
+
+  // Highlight Swatches
+  document.querySelectorAll(".color-swatch-hl[data-bg]").forEach((swatch) => {
+    swatch.addEventListener("click", (e) => {
+      e.preventDefault();
+      const bg = swatch.getAttribute("data-bg");
+      applyHighlightColor(bg);
+    });
+  });
+
+  // Keyboard shortcuts inside editor
+  editor.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === "b" || e.key === "B") {
+        e.preventDefault();
+        execTaskEditorCmd("bold");
+      } else if (e.key === "i" || e.key === "I") {
+        e.preventDefault();
+        execTaskEditorCmd("italic");
+      } else if (e.key === "u" || e.key === "U") {
+        e.preventDefault();
+        execTaskEditorCmd("underline");
+      }
+    }
+  });
+
+  // Selection & caret movement listeners for active states
+  editor.addEventListener("keyup", updateTaskEditorToolbarStates);
+  editor.addEventListener("mouseup", updateTaskEditorToolbarStates);
+  editor.addEventListener("click", updateTaskEditorToolbarStates);
+  editor.addEventListener("focus", updateTaskEditorToolbarStates);
+
+  // Sync content on input
+  editor.addEventListener("input", () => {
+    syncTaskEditorToHidden();
+    updateTaskEditorToolbarStates();
+  });
+  editor.addEventListener("blur", syncTaskEditorToHidden);
+
+  // Document selection change
+  document.addEventListener("selectionchange", () => {
+    const sel = window.getSelection();
+    if (sel && sel.anchorNode && (editor.contains(sel.anchorNode) || sel.anchorNode === editor)) {
+      updateTaskEditorToolbarStates();
+    }
+  });
+
+  // Close dropdown menus when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".color-picker-group")) {
+      document.querySelectorAll(".color-dropdown-menu").forEach((menu) => {
+        menu.style.display = "none";
+      });
+    }
+  });
+}
+
+// Ensure init is run when DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initTaskRichEditor);
+} else {
+  initTaskRichEditor();
+}
+
 // Task Form Modal
 function openTaskFormModal(isEdit, projectId, taskId) {
   const modal = document.getElementById("taskFormModal");
@@ -5514,7 +5888,6 @@ function openTaskFormModal(isEdit, projectId, taskId) {
   const idInput = document.getElementById("taskFormId");
   const projectIdInput = document.getElementById("taskFormProjectId");
   const nameInput = document.getElementById("taskFormName");
-  const descInput = document.getElementById("taskFormDesc");
 
   if (!document.getElementById("taskFormProjectId")) {
     const hiddenInput = document.createElement("input");
@@ -5530,13 +5903,13 @@ function openTaskFormModal(isEdit, projectId, taskId) {
     idInput.value = taskId;
     projectIdInput.value = projectId;
     nameInput.value = task.title || "";
-    descInput.value = task.description || "";
+    setTaskEditorContent(task.description || "");
   } else {
     titleEl.textContent = "Thêm công việc";
     idInput.value = "";
     projectIdInput.value = projectId || currentOpenedProjectId;
     nameInput.value = "";
-    descInput.value = "";
+    setTaskEditorContent("");
   }
 
   modal.style.display = "flex";
@@ -5662,19 +6035,20 @@ function showToast(message, duration = 2500) {
 }
 
 function handleTaskFormSubmit(e) {
-  e.preventDefault();
+  if (e && typeof e.preventDefault === "function") {
+    e.preventDefault();
+  }
   const idInput = document.getElementById("taskFormId");
   const projectIdInput = document.getElementById("taskFormProjectId");
   const nameInput = document.getElementById("taskFormName");
-  const descInput = document.getElementById("taskFormDesc");
 
-  const title = nameInput.value.trim();
-  const description = descInput.value.trim();
-  const projectId = projectIdInput.value;
+  const title = nameInput ? nameInput.value.trim() : "";
+  const description = getTaskEditorContent();
+  const projectId = projectIdInput ? projectIdInput.value : "";
 
   if (!title || !projectId) return;
 
-  const taskId = idInput.value;
+  const taskId = idInput ? idInput.value : "";
 
   if (taskId) {
     // Edit existing task

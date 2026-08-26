@@ -770,7 +770,12 @@ function createTaskFromAI(projectId, title, description) {
     const descInput = document.getElementById("taskFormDesc");
     
     if (nameInput) nameInput.value = title;
-    if (descInput) descInput.value = description || "";
+    if (descInput) {
+      descInput.value = description || "";
+      if (typeof setTaskEditorContent === "function") {
+        setTaskEditorContent(description || "");
+      }
+    }
     
     // Auto submit
     if (nameInput && title) {

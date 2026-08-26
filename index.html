@@ -26,6 +26,10 @@
   <!-- Cropper.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+  <!-- KaTeX for Math formula rendering -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 </head>
 
 <body>
@@ -1892,8 +1896,11 @@
 
                   <div class="toolbar-divider"></div>
 
-                  <!-- Undo / Redo / Clear -->
+                  <!-- Undo / Redo / Clear / Math -->
                   <div class="toolbar-group">
+                    <button type="button" class="toolbar-btn" onclick="renderTaskEditorMath()" title="Chuyển đổi công thức Toán học (Render Math)">
+                      <strong style="font-size:14px;">∑</strong>
+                    </button>
                     <button type="button" class="toolbar-btn" data-cmd="undo" title="Hoàn tác (Ctrl+Z)">
                       ↺
                     </button>

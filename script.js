@@ -5438,6 +5438,74 @@ function sanitizeRichText(html) {
   return clean;
 }
 
+// KaTeX Math Formula Renderer
+function renderMathInContainer(container) {
+  if (!container) return;
+
+  const tryRender = () => {
+    if (typeof renderMathInElement === "function") {
+      try {
+        renderMathInElement(container, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "$", right: "$", display: false },
+            { left: "\\[", right: "\\]", display: true },
+            { left: "\\(", right: "\\)", display: false }
+          ],
+          throwOnError: false,
+          errorColor: "#f87171"
+        });
+        return true;
+      } catch (e) {
+        console.warn("renderMathInElement error:", e);
+      }
+    }
+
+    if (typeof katex !== "undefined") {
+      try {
+        let html = container.innerHTML;
+        // Block formulas $$...$$
+        html = html.replace(/\$\$([\s\S]+?)\$\$/g, (match, expr) => {
+          try {
+            const raw = expr.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+            return katex.renderToString(raw, { displayMode: true, throwOnError: false });
+          } catch (e) {
+            return match;
+          }
+        });
+        // Inline formulas $...$
+        html = html.replace(/\$([^\$\n\r]+?)\$/g, (match, expr) => {
+          try {
+            const raw = expr.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+            return katex.renderToString(raw, { displayMode: false, throwOnError: false });
+          } catch (e) {
+            return match;
+          }
+        });
+        container.innerHTML = html;
+        return true;
+      } catch (e) {
+        console.warn("KaTeX fallback render error:", e);
+      }
+    }
+    return false;
+  };
+
+  if (!tryRender()) {
+    setTimeout(tryRender, 300);
+    setTimeout(tryRender, 1000);
+  }
+}
+window.renderMathInContainer = renderMathInContainer;
+
+function renderTaskEditorMath() {
+  const editor = document.getElementById("taskFormEditor");
+  if (!editor) return;
+  renderMathInContainer(editor);
+  syncTaskEditorToHidden();
+}
+window.renderTaskEditorMath = renderTaskEditorMath;
+
 function openTaskDetailModal(projectId, taskId) {
   _currentDetailProjectId = projectId;
   _currentDetailTaskId = taskId;
@@ -5473,6 +5541,7 @@ function openTaskDetailModal(projectId, taskId) {
     if (task.description && task.description.trim()) {
       descEl.innerHTML = sanitizeRichText(task.description);
       descEl.classList.remove("is-empty");
+      renderMathInContainer(descEl);
       
       // Wire detail checkbox clicks to update state if clicked
       const checkboxes = descEl.querySelectorAll('input[type="checkbox"]');
@@ -5577,6 +5646,9 @@ function setTaskEditorContent(content) {
       editor.innerHTML = str.replace(/\n/g, "<br>");
     } else {
       editor.innerHTML = sanitizeRichText(str);
+    }
+    if (str.includes("$")) {
+      renderMathInContainer(editor);
     }
   }
 }
@@ -5855,6 +5927,17 @@ function initTaskRichEditor() {
     updateTaskEditorToolbarStates();
   });
   editor.addEventListener("blur", syncTaskEditorToHidden);
+
+  // Auto-render math when pasting math text containing $
+  editor.addEventListener("paste", () => {
+    setTimeout(() => {
+      const content = editor.innerHTML;
+      if (content.includes("$")) {
+        renderMathInContainer(editor);
+        syncTaskEditorToHidden();
+      }
+    }, 60);
+  });
 
   // Document selection change
   document.addEventListener("selectionchange", () => {

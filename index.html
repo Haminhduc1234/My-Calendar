@@ -1836,15 +1836,6 @@
 
       <div class="quick-note-form">
         <textarea id="quickNoteInput" maxlength="500" placeholder="Nhập việc cần làm..." rows="3"></textarea>
-        <div class="quick-note-buttons">
-          <button type="button" id="quickNoteCancelBtn" class="quick-note-cancel-btn" onclick="cancelEditQuickNote()"
-            style="display: none">
-            Hủy
-          </button>
-          <button type="button" id="quickNoteSubmitBtn" class="quick-note-add-btn" onclick="submitQuickNote()">
-            + Thêm
-          </button>
-        </div>
       </div>
 
       <div class="quicknotes-skeleton" id="quicknotesSkeleton">
@@ -1862,6 +1853,34 @@
       </div>
 
       <div id="quickNoteList" class="quick-note-list"></div>
+
+      <div class="quick-note-buttons">
+        <button type="button" id="quickNoteCancelBtn" class="quick-note-cancel-btn" onclick="closeQuickNoteModal()">
+          Hủy
+        </button>
+        <button type="button" id="quickNoteSubmitBtn" class="quick-note-add-btn" onclick="submitQuickNote()">
+          + Thêm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Note Unsaved Changes Confirmation Popup Modal -->
+  <div id="quickNoteDraftModal" class="modal" onclick="if(event.target===this) closeQuickNoteDraftModal()" style="display: none;">
+    <div class="quick-note-draft-card">
+      <div style="font-size: 34px; margin-bottom: 8px; line-height: 1;">📝</div>
+      <h3 style="margin: 0 0 8px 0; color: #60a5fa; font-size: 16.5px; font-weight: 700;">Ghi chú chưa được lưu</h3>
+      <p style="color: #cbd5e1; font-size: 13.5px; line-height: 1.5; margin: 0 0 20px 0;">
+        Bạn có nội dung đang nhập dở. Bạn muốn <strong>Hủy</strong> thay đổi hay <strong>Lưu nháp</strong> để tiếp tục sau?
+      </p>
+      <div style="display: flex; gap: 10px; justify-content: center; width: 100%;">
+        <button type="button" class="btn-secondary" onclick="discardQuickNoteDraft()" style="flex: 1; min-height: 42px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: rgba(239, 68, 68, 0.15) !important; color: #f87171 !important; border: 1px solid rgba(239, 68, 68, 0.3) !important;">
+          Hủy
+        </button>
+        <button type="button" class="btn-primary" onclick="saveQuickNoteDraftAndClose()" style="flex: 1; min-height: 42px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important; color: #ffffff !important; border: 1px solid rgba(147, 197, 253, 0.35) !important; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;">
+          Lưu nháp
+        </button>
+      </div>
     </div>
   </div>
 
@@ -2160,7 +2179,11 @@
         </button>
       </div>
       <div id="translateHistoryModalList" class="translate-history-modal-list">
-        <div class="translate-history-empty">Chưa có lịch sử</div>
+        <div class="app-empty-state">
+          <div class="app-empty-icon">🌐</div>
+          <div class="app-empty-title">Chưa có lịch sử</div>
+          <div class="app-empty-desc">Các đoạn văn bản đã dịch sẽ xuất hiện tại đây.</div>
+        </div>
       </div>
     </div>
   </div>

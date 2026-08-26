@@ -5145,9 +5145,10 @@ function renderProjectsList() {
 
   if (projects.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 40px 20px; color: var(--muted);">
-        <p>Chưa có dự án nào.</p>
-        <p>Nhấn "+ Thêm dự án mới" để bắt đầu.</p>
+      <div class="app-empty-state">
+        <div class="app-empty-icon">📋</div>
+        <div class="app-empty-title">Chưa có dự án nào</div>
+        <div class="app-empty-desc">Nhấn "+ Thêm dự án mới" để bắt đầu quản lý công việc.</div>
       </div>
     `;
     return;
@@ -5327,9 +5328,10 @@ function renderProjectTasksList(projectId) {
 
   if (tasks.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 40px 20px; color: var(--muted);">
-        <p>Chưa có công việc nào.</p>
-        <p>Nhấn "+ Thêm công việc" để bắt đầu.</p>
+      <div class="app-empty-state">
+        <div class="app-empty-icon">📌</div>
+        <div class="app-empty-title">Chưa có công việc nào</div>
+        <div class="app-empty-desc">Nhấn "+ Thêm công việc" để tạo nhiệm vụ cho dự án này.</div>
       </div>
     `;
     return;
@@ -6076,8 +6078,13 @@ function renderQuickNotes() {
   listEl.innerHTML = "";
 
   if (notes.length === 0) {
-    listEl.innerHTML =
-      '<div class="quick-note-empty">Chưa có ghi chú nào. Hãy thêm việc cần làm.</div>';
+    listEl.innerHTML = `
+      <div class="app-empty-state">
+        <div class="app-empty-icon">📝</div>
+        <div class="app-empty-title">Chưa có ghi chú nào</div>
+        <div class="app-empty-desc">Nhập việc cần làm ở trên và nhấn "+ Thêm" để lưu lại.</div>
+      </div>
+    `;
     return;
   }
 
@@ -6164,6 +6171,7 @@ function handleNoteDragEnd(e) {
 }
 
 let _editingQuickNoteId = null;
+const QUICK_NOTE_DRAFT_KEY = "quickNoteDraft_v1";
 
 function editQuickNote(noteId) {
   const notes = loadQuickNotes();
@@ -6180,18 +6188,62 @@ function editQuickNote(noteId) {
     input.focus({ preventScroll: true });
   }
   if (submitBtn) submitBtn.innerText = "Lưu";
-  if (cancelBtn) cancelBtn.style.display = "block";
 }
 
 function cancelEditQuickNote() {
   _editingQuickNoteId = null;
   const input = document.getElementById("quickNoteInput");
   const submitBtn = document.getElementById("quickNoteSubmitBtn");
-  const cancelBtn = document.getElementById("quickNoteCancelBtn");
 
   if (input) input.value = "";
   if (submitBtn) submitBtn.innerText = "+ Thêm";
-  if (cancelBtn) cancelBtn.style.display = "none";
+  try {
+    localStorage.removeItem(QUICK_NOTE_DRAFT_KEY);
+  } catch (e) {}
+}
+
+function openQuickNoteDraftModal() {
+  const modal = document.getElementById("quickNoteDraftModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeQuickNoteDraftModal() {
+  const modal = document.getElementById("quickNoteDraftModal");
+  if (modal) modal.style.display = "none";
+}
+
+function saveQuickNoteDraftAndClose() {
+  const input = document.getElementById("quickNoteInput");
+  const text = input ? input.value : "";
+  if (text && text.trim()) {
+    try {
+      localStorage.setItem(
+        QUICK_NOTE_DRAFT_KEY,
+        JSON.stringify({
+          text: text,
+          editingId: _editingQuickNoteId || null,
+          savedAt: Date.now(),
+        })
+      );
+      showToast("Đã lưu bản nháp ghi chú");
+    } catch (e) {}
+  }
+  closeQuickNoteDraftModal();
+  forceCloseQuickNoteModal();
+}
+
+function discardQuickNoteDraft() {
+  try {
+    localStorage.removeItem(QUICK_NOTE_DRAFT_KEY);
+  } catch (e) {}
+  closeQuickNoteDraftModal();
+  cancelEditQuickNote();
+  forceCloseQuickNoteModal();
+}
+
+function forceCloseQuickNoteModal() {
+  const modal = document.getElementById("quickNoteModal");
+  if (modal) modal.style.display = "none";
 }
 
 function openQuickNoteModal() {
@@ -6201,6 +6253,27 @@ function openQuickNoteModal() {
 
   const input = document.getElementById("quickNoteInput");
   if (input) {
+    // Restore draft if present and input is empty
+    try {
+      const savedDraft = localStorage.getItem(QUICK_NOTE_DRAFT_KEY);
+      if (savedDraft && (!input.value || !input.value.trim())) {
+        const draftObj = JSON.parse(savedDraft);
+        if (draftObj && draftObj.text) {
+          input.value = draftObj.text;
+          if (draftObj.editingId) {
+            _editingQuickNoteId = draftObj.editingId;
+            const submitBtn = document.getElementById("quickNoteSubmitBtn");
+            const cancelBtn = document.getElementById("quickNoteCancelBtn");
+            if (submitBtn) submitBtn.innerText = "Lưu";
+            if (cancelBtn) cancelBtn.style.display = "block";
+          }
+          showToast("Đã khôi phục bản nháp chưa lưu", 2000);
+        }
+      }
+    } catch (e) {
+      localStorage.removeItem(QUICK_NOTE_DRAFT_KEY);
+    }
+
     input.focus({ preventScroll: true });
     input.removeEventListener("keydown", handleQuickNoteKeydown);
     input.addEventListener("keydown", handleQuickNoteKeydown);
@@ -6215,7 +6288,28 @@ function handleQuickNoteKeydown(e) {
 }
 
 function closeQuickNoteModal() {
-  document.getElementById("quickNoteModal").style.display = "none";
+  const input = document.getElementById("quickNoteInput");
+  const text = input ? input.value.trim() : "";
+
+  let hasUnsaved = false;
+  if (_editingQuickNoteId) {
+    const notes = loadQuickNotes();
+    const note = notes.find((n) => n.id === _editingQuickNoteId);
+    if (note && text !== note.text.trim()) {
+      hasUnsaved = true;
+    }
+  } else {
+    if (text.length > 0) {
+      hasUnsaved = true;
+    }
+  }
+
+  if (hasUnsaved) {
+    openQuickNoteDraftModal();
+    return;
+  }
+
+  forceCloseQuickNoteModal();
   cancelEditQuickNote();
 }
 
@@ -6243,6 +6337,9 @@ function submitQuickNote() {
   }
 
   saveQuickNotes(notes);
+  try {
+    localStorage.removeItem(QUICK_NOTE_DRAFT_KEY);
+  } catch (e) {}
   cancelEditQuickNote();
   renderQuickNotes();
   input.focus({ preventScroll: true });
@@ -6270,6 +6367,13 @@ function initQuickNoteModal() {
   if (modal) {
     modal.addEventListener("click", function (e) {
       if (e.target === this) closeQuickNoteModal();
+    });
+  }
+
+  const draftModal = document.getElementById("quickNoteDraftModal");
+  if (draftModal) {
+    draftModal.addEventListener("click", function (e) {
+      if (e.target === this) closeQuickNoteDraftModal();
     });
   }
 }
@@ -9621,8 +9725,12 @@ function renderCashflowRecentList() {
     closeCashflowQuickViewModal();
     if (viewAllBtn) viewAllBtn.style.display = "none";
     const empty = document.createElement("div");
-    empty.className = "cashflow-recent-empty";
-    empty.innerText = "Chưa có giao dịch nào. Hãy thêm khoản thu/chi đầu tiên.";
+    empty.className = "app-empty-state";
+    empty.innerHTML = `
+      <div class="app-empty-icon">💰</div>
+      <div class="app-empty-title">Chưa có giao dịch nào</div>
+      <div class="app-empty-desc">Hãy thêm khoản thu hoặc chi đầu tiên của bạn.</div>
+    `;
     listEl.appendChild(empty);
     renderCashflowQuickView();
     return;
@@ -9817,8 +9925,12 @@ function renderCashflowAllTransactionsList() {
 
   if (cashflowEntries.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "cashflow-all-empty";
-    empty.innerText = "Chưa có giao dịch nào.";
+    empty.className = "app-empty-state";
+    empty.innerHTML = `
+      <div class="app-empty-icon">📊</div>
+      <div class="app-empty-title">Chưa có giao dịch nào</div>
+      <div class="app-empty-desc">Tất cả các khoản thu chi của bạn sẽ xuất hiện tại đây.</div>
+    `;
     listEl.appendChild(empty);
     return;
   }
@@ -10654,7 +10766,13 @@ function renderCategoryList() {
   const typeLabel = type === "income" ? "Thu" : "Chi";
 
   if (categories.length === 0) {
-    list.innerHTML = `<div style="text-align: center; color: #999; padding: 40px 20px;">Chưa có danh mục ${typeLabel} nào</div>`;
+    list.innerHTML = `
+      <div class="app-empty-state">
+        <div class="app-empty-icon">🏷️</div>
+        <div class="app-empty-title">Chưa có danh mục ${typeLabel} nào</div>
+        <div class="app-empty-desc">Nhấn "Thêm loại ${typeLabel.toLowerCase()}" để tạo danh mục mới.</div>
+      </div>
+    `;
     return;
   }
 
@@ -11210,8 +11328,12 @@ function renderFundsList() {
 
   if (fundsData.funds.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "funds-empty";
-    empty.innerText = "Chưa có quỹ nào. Nhấn 'Thêm Quỹ' để tạo quỹ đầu tiên.";
+    empty.className = "app-empty-state";
+    empty.innerHTML = `
+      <div class="app-empty-icon">🏺</div>
+      <div class="app-empty-title">Chưa có quỹ nào</div>
+      <div class="app-empty-desc">Nhấn "Thêm Quỹ" để tạo hũ tiết kiệm hoặc chi tiêu đầu tiên.</div>
+    `;
     listEl.appendChild(empty);
     return;
   }
@@ -12107,8 +12229,12 @@ function renderAllocateHistory() {
 
   if (fundsData.allocations.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "allocate-empty";
-    empty.innerText = "Chưa có phân bổ nào";
+    empty.className = "app-empty-state";
+    empty.innerHTML = `
+      <div class="app-empty-icon">📜</div>
+      <div class="app-empty-title">Chưa có phân bổ nào</div>
+      <div class="app-empty-desc">Lịch sử nạp và rút tiền từ các quỹ sẽ hiển thị tại đây.</div>
+    `;
     listEl.appendChild(empty);
     return;
   }
@@ -15272,8 +15398,13 @@ function renderTranslateHistory() {
   if (!container) return;
 
   if (translateHistoryCache.length === 0) {
-    container.innerHTML =
-      '<div class="translate-history-empty">Chưa có lịch sử dịch</div>';
+    container.innerHTML = `
+      <div class="app-empty-state">
+        <div class="app-empty-icon">🌐</div>
+        <div class="app-empty-title">Chưa có lịch sử dịch</div>
+        <div class="app-empty-desc">Các đoạn văn bản đã dịch sẽ được tự động lưu lại tại đây.</div>
+      </div>
+    `;
     return;
   }
 
@@ -17339,6 +17470,13 @@ function initFloatingTodayExtraBtn() {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
+    closeTodayExtraModal();
+  }
+});
+
+document.addEventListener("click", (e) => {
+  const modal = document.getElementById("todayExtraModal");
+  if (modal && modal.style.display === "flex" && e.target === modal) {
     closeTodayExtraModal();
   }
 });

@@ -2584,17 +2584,21 @@ async function initFirebaseRealtime() {
     Object.keys(remoteData).forEach((key) => {
       const val = remoteData[key];
       if (val && typeof val === "object") {
-        if (val.tasks) {
+        if (val.tasks && typeof val.tasks === "object") {
           newTasksCache[key] = val.tasks;
+          saveProjectTasksToLocalStorage(key);
           const { tasks, ...projectData } = val;
           projectsDataCache[key] = projectData;
         } else if (val.id || val.title) {
           projectsDataCache[key] = val;
+          newTasksCache[key] = {};
+          saveProjectTasksToLocalStorage(key);
         }
       }
     });
 
-    projectTasksCache = { ...projectTasksCache, ...newTasksCache };
+    projectTasksCache = newTasksCache;
+    saveProjectsToLocalStorage();
     renderProjectsList();
     if (currentOpenedProjectId) {
       renderProjectTasksList(currentOpenedProjectId);
@@ -2978,17 +2982,21 @@ async function reloadFirebaseForUser() {
     Object.keys(remoteData).forEach((key) => {
       const val = remoteData[key];
       if (val && typeof val === "object") {
-        if (val.tasks) {
+        if (val.tasks && typeof val.tasks === "object") {
           newTasksCache[key] = val.tasks;
+          saveProjectTasksToLocalStorage(key);
           const { tasks, ...projectData } = val;
           projectsDataCache[key] = projectData;
         } else if (val.id || val.title) {
           projectsDataCache[key] = val;
+          newTasksCache[key] = {};
+          saveProjectTasksToLocalStorage(key);
         }
       }
     });
 
-    projectTasksCache = { ...projectTasksCache, ...newTasksCache };
+    projectTasksCache = newTasksCache;
+    saveProjectsToLocalStorage();
     renderProjectsList();
     if (currentOpenedProjectId) {
       renderProjectTasksList(currentOpenedProjectId);
@@ -5107,6 +5115,41 @@ function openProjectsModal() {
   closeAllModals();
   document.getElementById("projectsModal").style.display = "flex";
   loadProjectsOnDemand();
+
+  // Always refresh latest projects and tasks directly from Firebase
+  if (firebaseProjectsRef) {
+    firebaseProjectsRef
+      .once("value")
+      .then((snapshot) => {
+        const remoteData = snapshot.val() || {};
+        const newProjects = {};
+        const newTasks = {};
+
+        Object.keys(remoteData).forEach((key) => {
+          const val = remoteData[key];
+          if (val && typeof val === "object") {
+            if (val.tasks && typeof val.tasks === "object") {
+              newTasks[key] = val.tasks;
+              saveProjectTasksToLocalStorage(key);
+              const { tasks, ...projectData } = val;
+              newProjects[key] = projectData;
+            } else if (val.id || val.title) {
+              newProjects[key] = val;
+              newTasks[key] = {};
+              saveProjectTasksToLocalStorage(key);
+            }
+          }
+        });
+
+        projectsDataCache = newProjects;
+        projectTasksCache = newTasks;
+        saveProjectsToLocalStorage();
+        renderProjectsList();
+      })
+      .catch((err) => {
+        console.warn("[Projects] Error fetching latest from Firebase:", err);
+      });
+  }
 }
 
 function closeProjectsModal() {
@@ -5120,7 +5163,37 @@ function openProjectTasksModal(projectId, projectTitle) {
     projectTitle || "Dự án";
   document.getElementById("projectsModal").style.display = "none";
   document.getElementById("projectTasksModal").style.display = "flex";
+
+  if (!projectTasksCache[projectId] || Object.keys(projectTasksCache[projectId]).length === 0) {
+    const localTasks = loadProjectTasksFromLocalStorage(projectId);
+    if (localTasks && Object.keys(localTasks).length > 0) {
+      projectTasksCache[projectId] = localTasks;
+    }
+  }
+
   renderProjectTasksList(projectId);
+
+  // Always fetch latest tasks for this project directly from Firebase
+  if (firebaseProjectsRef) {
+    firebaseProjectsRef
+      .child(projectId)
+      .child("tasks")
+      .once("value")
+      .then((snapshot) => {
+        const remoteTasks = snapshot.val();
+        if (remoteTasks && typeof remoteTasks === "object") {
+          projectTasksCache[projectId] = remoteTasks;
+          saveProjectTasksToLocalStorage(projectId);
+          if (currentOpenedProjectId === projectId) {
+            renderProjectTasksList(projectId);
+          }
+          renderProjectsList();
+        }
+      })
+      .catch((err) => {
+        console.warn(`[ProjectTasks] Error fetching tasks from Firebase for ${projectId}:`, err);
+      });
+  }
 }
 
 function closeProjectTasksModal() {
@@ -5155,7 +5228,13 @@ function renderProjectsList() {
 
   container.innerHTML = projects
     .map((project) => {
-      const tasks = projectTasksCache[project.id] || {};
+      let tasks = projectTasksCache[project.id];
+      if (!tasks || Object.keys(tasks).length === 0) {
+        tasks = loadProjectTasksFromLocalStorage(project.id) || {};
+        if (Object.keys(tasks).length > 0) {
+          projectTasksCache[project.id] = tasks;
+        }
+      }
       const totalTasks = Object.keys(tasks).length;
       const completedTasks = Object.values(tasks).filter((t) => t.completed).length;
       const percent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
@@ -5201,7 +5280,7 @@ function renderProjectsList() {
 }
 
 function countTasksInProject(projectId) {
-  const tasks = projectTasksCache[projectId] || {};
+  const tasks = projectTasksCache[projectId] || loadProjectTasksFromLocalStorage(projectId) || {};
   return Object.keys(tasks).length;
 }
 
@@ -5309,19 +5388,33 @@ function doDeleteProject(projectId) {
 
   // Also delete tasks for this project
   delete projectTasksCache[projectId];
+  if (userProfileKey) {
+    localStorage.removeItem(`projectTasks:${userProfileKey}:${projectId}`);
+  }
 
   saveProjectsToFirebase();
-  saveProjectTasksToFirebase(projectId);
   renderProjectsList();
 }
 
 function saveProjectsToFirebase() {
+  saveProjectsToLocalStorage();
   if (!firebaseProjectsRef) {
-    saveProjectsToLocalStorage();
     return;
   }
 
-  firebaseProjectsRef.set(projectsDataCache).catch(() => {
+  // Combine projects with their tasks so saving projects never deletes tasks
+  const combined = {};
+  Object.keys(projectsDataCache || {}).forEach((projectId) => {
+    const proj = projectsDataCache[projectId];
+    const tasks = projectTasksCache[projectId] || loadProjectTasksFromLocalStorage(projectId) || {};
+    combined[projectId] = {
+      ...proj,
+      ...(Object.keys(tasks).length > 0 ? { tasks } : {}),
+    };
+  });
+
+  firebaseProjectsRef.set(combined).catch((err) => {
+    console.error("[Projects] Lỗi lưu projects lên Firebase:", err);
     saveProjectsToLocalStorage();
   });
 }
@@ -5344,6 +5437,13 @@ function loadProjectsFromLocalStorage() {
 function renderProjectTasksList(projectId) {
   const container = document.getElementById("projectTasksList");
   if (!container) return;
+
+  if (!projectTasksCache[projectId] || Object.keys(projectTasksCache[projectId]).length === 0) {
+    const localTasks = loadProjectTasksFromLocalStorage(projectId);
+    if (localTasks && Object.keys(localTasks).length > 0) {
+      projectTasksCache[projectId] = localTasks;
+    }
+  }
 
   const tasks = Object.entries(projectTasksCache[projectId] || {})
     .map(([id, data]) => ({ id, ...data }))
@@ -6195,13 +6295,37 @@ function deleteTask(projectId, taskId) {
   );
 }
 
-function doDeleteTask(args) {
-  const { projectId, taskId } = args;
-  const tasks = projectTasksCache[projectId] || {};
-  delete tasks[taskId];
-  projectTasksCache[projectId] = tasks;
+function doDeleteTask(args, maybeTaskId) {
+  let projectId, taskId;
+  if (args && typeof args === "object") {
+    projectId = args.projectId;
+    taskId = args.taskId;
+  } else {
+    projectId = args;
+    taskId = maybeTaskId;
+  }
+  if (!projectId || !taskId) return;
 
-  saveProjectTasksToFirebase(projectId);
+  const tasks = projectTasksCache[projectId] || loadProjectTasksFromLocalStorage(projectId) || {};
+  delete tasks[taskId];
+  projectTasksCache[projectId] = { ...tasks };
+
+  // 1. Save to LocalStorage immediately
+  saveProjectTasksToLocalStorage(projectId);
+
+  // 2. Remove task directly from Firebase
+  if (firebaseProjectsRef) {
+    firebaseProjectsRef
+      .child(projectId)
+      .child("tasks")
+      .child(taskId)
+      .remove()
+      .catch((err) => {
+        console.error("[ProjectTasks] Lỗi xóa task trên Firebase:", err);
+      });
+  }
+
+  // 3. Re-render UI immediately
   renderProjectTasksList(projectId);
   renderProjectsList();
 }
@@ -13341,6 +13465,23 @@ function loadProjectsOnDemand() {
   if (!isUserLoggedIn()) return;
   showSkeleton('projectsSkeleton');
   LAZY_LOAD.projects = true;
+
+  if (!projectsDataCache || Object.keys(projectsDataCache).length === 0) {
+    const localProjects = loadProjectsFromLocalStorage();
+    if (localProjects) {
+      projectsDataCache = localProjects;
+    }
+  }
+
+  Object.keys(projectsDataCache || {}).forEach((projectId) => {
+    if (!projectTasksCache[projectId] || Object.keys(projectTasksCache[projectId]).length === 0) {
+      const localTasks = loadProjectTasksFromLocalStorage(projectId);
+      if (localTasks && Object.keys(localTasks).length > 0) {
+        projectTasksCache[projectId] = localTasks;
+      }
+    }
+  });
+
   renderProjectsList();
   hideSkeleton('projectsSkeleton');
 }

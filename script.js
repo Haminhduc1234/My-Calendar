@@ -7967,7 +7967,10 @@ function handleWeather(lat, lon) {
     .catch(() => {
       document.getElementById("todayWeather").innerText =
         "Không lấy được dữ liệu thời tiết";
-      document.getElementById("hourlyForecastContainer").style.display = "none";
+      const hfc = document.getElementById("hourlyForecastContainer");
+      if (hfc) hfc.style.display = "none";
+      const wft = document.getElementById("weatherForecastTitle");
+      if (wft) wft.style.display = "none";
     });
 }
 
@@ -7986,87 +7989,200 @@ function getDailyHumidity(hourly, dateStr) {
   return count ? Math.round(sum / count) : "--";
 }
 
+function scrollToHourlyItem(hour, smooth = true) {
+  const item = document.getElementById(`hourly-item-${hour}`);
+  if (item) {
+    item.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+      inline: "center",
+      block: "nearest",
+    });
+  }
+}
+window.scrollToHourlyItem = scrollToHourlyItem;
+
 function renderHourlyForecast(hourly, currentTime) {
   const container = document.getElementById("hourlyForecastContainer");
-  if (!container) return;
+  if (!container || !hourly || !hourly.time) return;
 
-  const now = new Date(currentTime);
-  const todayStr = now.toISOString().slice(0, 10);
-  const currentHour = now.getHours();
-
-  // Find the index for today's data that matches current hour
-  let currentHourIndex = -1;
-  for (let i = 0; i < hourly.time.length; i++) {
-    const timeHour = new Date(hourly.time[i]).getHours();
-    const timeDay = hourly.time[i].slice(0, 10);
-    if (timeDay === todayStr && timeHour === currentHour) {
-      currentHourIndex = i;
-      break;
-    }
+  let todayStr = "";
+  let currentHour = 0;
+  if (typeof currentTime === "string" && currentTime.includes("T")) {
+    const parts = currentTime.split("T");
+    todayStr = parts[0];
+    currentHour = parseInt(parts[1].slice(0, 2), 10) || 0;
+  } else {
+    const now = new Date();
+    todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    currentHour = now.getHours();
   }
 
-  // Fallback: find first entry of today
-  if (currentHourIndex === -1) {
-    currentHourIndex = hourly.time.findIndex((t) => t.startsWith(todayStr));
+  // Find index for today's first hour in hourly.time
+  let startIndex = hourly.time.findIndex((t) => t.startsWith(todayStr));
+  if (startIndex === -1 && hourly.time.length) {
+    const fallbackDate = new Date().toISOString().slice(0, 10);
+    startIndex = hourly.time.findIndex((t) => t.startsWith(fallbackDate));
+    if (startIndex === -1) startIndex = 0;
   }
+  if (startIndex === -1) return;
 
-  if (currentHourIndex === -1) return;
+  const endIndex = Math.min(startIndex + 24, hourly.time.length);
 
-  // Start from 0h of today, show 24 hours
-  const startIndex = hourly.time.findIndex((t) => t.startsWith(todayStr));
-  const endIndex = startIndex + 24;
+  // 1. Calculate the 4 main periods/intervals of the day (Khoảng thời gian trong ngày)
+  const intervalsConfig = [
+    {
+      id: "night",
+      name: "Đêm",
+      timeRange: "00:00 - 06:00",
+      hours: [0, 1, 2, 3, 4, 5],
+      repHour: 3,
+      isDay: 0,
+    },
+    {
+      id: "morning",
+      name: "Sáng",
+      timeRange: "06:00 - 12:00",
+      hours: [6, 7, 8, 9, 10, 11],
+      repHour: 9,
+      isDay: 1,
+    },
+    {
+      id: "afternoon",
+      name: "Chiều",
+      timeRange: "12:00 - 18:00",
+      hours: [12, 13, 14, 15, 16, 17],
+      repHour: 14,
+      isDay: 1,
+    },
+    {
+      id: "evening",
+      name: "Tối",
+      timeRange: "18:00 - 24:00",
+      hours: [18, 19, 20, 21, 22, 23],
+      repHour: 20,
+      isDay: 0,
+    },
+  ];
 
-  // Highlight next hour after current
-  const nextHourIndex = currentHourIndex + 1;
+  const intervalsData = intervalsConfig.map((cfg) => {
+    let temps = [];
+    let rains = [];
+    let codes = [];
 
-  let html = `<div class="hourly-scroll">`;
+    cfg.hours.forEach((h) => {
+      const idx = startIndex + h;
+      if (idx < hourly.time.length) {
+        if (hourly.temperature_2m && hourly.temperature_2m[idx] !== undefined) {
+          temps.push(hourly.temperature_2m[idx]);
+        }
+        if (hourly.precipitation_probability && hourly.precipitation_probability[idx] !== undefined) {
+          rains.push(hourly.precipitation_probability[idx]);
+        }
+        if (hourly.weathercode && hourly.weathercode[idx] !== undefined) {
+          codes.push(hourly.weathercode[idx]);
+        }
+      }
+    });
+
+    const avgTemp = temps.length ? Math.round(temps.reduce((a, b) => a + b, 0) / temps.length) : "--";
+    const maxRain = rains.length ? Math.max(...rains) : 0;
+    const repIdx = startIndex + cfg.repHour;
+    const repCode = repIdx < hourly.time.length && hourly.weathercode ? hourly.weathercode[repIdx] : (codes[0] ?? 0);
+    const icon = getWeatherIcon(repCode, cfg.isDay);
+    const isCurrent = currentHour >= cfg.hours[0] && currentHour <= cfg.hours[cfg.hours.length - 1];
+
+    return {
+      ...cfg,
+      avgTemp,
+      maxRain,
+      icon,
+      isCurrent,
+      targetHour: cfg.hours[0],
+    };
+  });
+
+  // Build HTML: Intervals Grid + 24-hour detailed timeline
+  let html = `
+    <div class="hourly-forecast-title">
+      <span>⏰ Các khoảng thời gian hôm nay</span>
+    </div>
+    <div class="weather-intervals-grid">
+  `;
+
+  intervalsData.forEach((item) => {
+    html += `
+      <div class="interval-card ${item.isCurrent ? "is-current" : ""}" 
+           onclick="scrollToHourlyItem(${item.targetHour})" 
+           title="Bấm để xem chi tiết khung giờ ${item.name} (${item.timeRange})">
+        <div class="interval-header">
+          <span class="interval-name">${item.name}</span>
+          ${item.isCurrent ? '<span class="interval-current-badge">Hiện tại</span>' : ""}
+        </div>
+        <div class="interval-time">${item.timeRange.replace(" - ", "-")}</div>
+        <div class="interval-icon">${item.icon}</div>
+        <div class="interval-temp">${item.avgTemp}°C</div>
+        <div class="interval-rain">🌧️ ${item.maxRain}%</div>
+      </div>
+    `;
+  });
+
+  html += `
+    </div>
+    <div class="hourly-sub-header">
+      <span class="hourly-sub-title">Chi tiết 24 giờ hôm nay</span>
+      <span class="hourly-hint">← Cuộn ngang →</span>
+    </div>
+    <div class="hourly-scroll" id="hourlyScrollContainer">
+  `;
 
   for (let i = startIndex; i < endIndex && i < hourly.time.length; i++) {
     const timeStr = hourly.time[i];
-    const hour = new Date(timeStr).getHours();
+    const hour = parseInt(timeStr.split("T")[1].slice(0, 2), 10);
     const hourLabel = hour.toString().padStart(2, "0") + ":00";
     const temp = Math.round(hourly.temperature_2m[i]);
-    const icon = getWeatherIcon(hourly.weathercode[i]);
-    const humidity = hourly.relativehumidity_2m[i];
-    const rain = hourly.precipitation_probability[i] ?? 0;
+    const isDay = hour >= 6 && hour < 18 ? 1 : 0;
+    const icon = getWeatherIcon(hourly.weathercode[i], isDay);
+    const humidity = hourly.relativehumidity_2m ? hourly.relativehumidity_2m[i] : "--";
+    const rain = hourly.precipitation_probability && hourly.precipitation_probability[i] !== undefined
+      ? hourly.precipitation_probability[i]
+      : 0;
 
-    // Highlight next hour
-    const isNextHour = i === nextHourIndex;
-    const itemClass = isNextHour ? "hourly-item next-hour" : "hourly-item";
+    const isCurrent = hour === currentHour;
+    const itemClass = isCurrent ? "hourly-item is-now" : "hourly-item";
 
     html += `
-      <div class="${itemClass}">
-        <div class="hourly-time">${hourLabel}</div>
+      <div class="${itemClass}" id="hourly-item-${hour}" data-hour="${hour}">
+        <div class="hourly-time">
+          ${isCurrent ? '<span class="hourly-now-badge">Bây giờ</span>' : hourLabel}
+        </div>
         <div class="hourly-icon">${icon}</div>
         <div class="hourly-temp">${temp}°</div>
         <div class="hourly-extra">
-          <div>💧 ${humidity}%</div>
-          <div>🌧 ${rain}%</div>
+          <div title="Xác suất mưa">🌧 ${rain}%</div>
+          <div title="Độ ẩm">💧 ${humidity}%</div>
         </div>
       </div>
     `;
   }
 
   html += `</div>`;
+
   container.innerHTML = html;
   container.style.display = "block";
 
-  // Scroll to next hour after render
+  // Auto scroll to current hour
   requestAnimationFrame(() => {
-    const nextHourEl = container.querySelector(".hourly-item.next-hour");
-    if (nextHourEl) {
-      nextHourEl.scrollIntoView({
-        behavior: "smooth",
-        inline: "center",
-        block: "nearest",
-      });
-    }
+    scrollToHourlyItem(currentHour, false);
   });
 }
 
 function renderForecast(daily, hourly) {
   const forecastEl = document.getElementById("weatherForecast");
+  if (!forecastEl) return;
   forecastEl.innerHTML = "";
+  const titleEl = document.getElementById("weatherForecastTitle");
+  if (titleEl) titleEl.style.display = "flex";
+
   const today = new Date().toISOString().slice(0, 10);
 
   for (let i = 0; i < daily.time.length; i++) {
@@ -8125,14 +8241,20 @@ async function fetchWeatherByLocation() {
   if (!navigator.geolocation) {
     document.getElementById("todayWeather").innerText =
       "Thiết bị không hỗ trợ định vị";
-    document.getElementById("hourlyForecastContainer").style.display = "none";
+    const hfc = document.getElementById("hourlyForecastContainer");
+    if (hfc) hfc.style.display = "none";
+    const wft = document.getElementById("weatherForecastTitle");
+    if (wft) wft.style.display = "none";
     return;
   }
 
   if (!window.isSecureContext) {
     document.getElementById("todayWeather").innerText =
       "📍 Cần mở bằng HTTPS hoặc localhost để dùng định vị";
-    document.getElementById("hourlyForecastContainer").style.display = "none";
+    const hfc = document.getElementById("hourlyForecastContainer");
+    if (hfc) hfc.style.display = "none";
+    const wft = document.getElementById("weatherForecastTitle");
+    if (wft) wft.style.display = "none";
     return;
   }
 
@@ -18030,7 +18152,16 @@ window.clearCacheAndReloadApp = clearCacheAndReloadApp;
 /* Floating Today Extra (Weather & Quote) Modal & Draggable Edge Snapping */
 function openTodayExtraModal() {
   const modal = document.getElementById("todayExtraModal");
-  if (modal) modal.style.display = "flex";
+  if (modal) {
+    modal.style.display = "flex";
+    setTimeout(() => {
+      const activeEl = document.querySelector("#hourlyForecastContainer .hourly-item.is-now") ||
+                       document.querySelector("#hourlyForecastContainer .hourly-item.next-hour");
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
+    }, 150);
+  }
 }
 
 function closeTodayExtraModal() {

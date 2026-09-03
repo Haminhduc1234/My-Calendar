@@ -2488,10 +2488,12 @@ body::before {
 /* Hourly Forecast Styles */
 #hourlyForecastContainer {
   margin-top: 14px;
-  background: rgba(30, 60, 120, 0.15);
-  border: 1px solid rgba(150, 200, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   padding: 12px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .hourly-forecast-title {
@@ -2504,73 +2506,201 @@ body::before {
   gap: 6px;
 }
 
-.hourly-forecast-title::before {
-  content: "⏰";
-  font-size: 14px;
+/* Weather Intervals Grid (Khoảng thời gian trong ngày) */
+.weather-intervals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.interval-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 11px;
+  padding: 7px 4px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.interval-card:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(147, 197, 253, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.interval-card.is-current {
+  background: linear-gradient(145deg, rgba(37, 99, 235, 0.25), rgba(139, 92, 246, 0.2));
+  border-color: rgba(96, 165, 250, 0.7);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.28);
+}
+
+.interval-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.interval-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.interval-current-badge {
+  font-size: 8.5px;
+  padding: 1px 3px;
+  border-radius: 4px;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.interval-time {
+  font-size: 9px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.interval-icon {
+  font-size: 20px;
+  margin: 4px 0 2px;
+  line-height: 1;
+}
+
+.interval-temp {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.interval-rain {
+  font-size: 9.5px;
+  color: #7dd3fc;
+  margin-top: 2px;
+}
+
+/* Sub-header for 24-hour detailed scroll */
+.hourly-sub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 0 2px;
+}
+
+.hourly-sub-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.hourly-hint {
+  font-size: 10px;
+  color: #64748b;
 }
 
 .hourly-scroll {
   display: flex;
   gap: 8px;
   overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.hourly-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.hourly-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.hourly-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .hourly-item {
-  min-width: 75px;
+  min-width: 72px;
   text-align: center;
-  padding: 10px 6px;
+  padding: 8px 6px;
   border-radius: 10px;
-  background: rgba(40, 80, 160, 0.12);
-  border: 1px solid rgba(150, 200, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
 .hourly-item:hover {
   transform: translateY(-2px);
-  background: rgba(60, 100, 180, 0.2);
+  background: rgba(255, 255, 255, 0.08);
   border-color: rgba(200, 150, 255, 0.35);
 }
 
+.hourly-item.is-now,
 .hourly-item.next-hour {
-  background: rgba(255, 140, 0, 0.25);
-  border-color: rgba(255, 180, 50, 0.6);
-  box-shadow: 0 0 15px rgba(255, 150, 50, 0.2);
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.22), rgba(239, 68, 68, 0.15));
+  border-color: rgba(251, 191, 36, 0.7);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
 }
 
-.hourly-item.next-hour .hourly-time {
-  color: #ffcc66;
-}
-
-.hourly-item.next-hour .hourly-temp {
-  color: #ffdd88;
+.hourly-now-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fbbf24;
+  letter-spacing: -0.2px;
 }
 
 .hourly-time {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #c4d4f5;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .hourly-icon {
-  font-size: 22px;
-  margin-bottom: 6px;
+  font-size: 20px;
+  margin-bottom: 5px;
 }
 
 .hourly-temp {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   color: #f0f5ff;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .hourly-extra {
-  font-size: 11px;
+  font-size: 10.5px;
   color: #a8bde8;
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+.weather-forecast-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #bcd0f1;
+  margin-top: 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .overtime-box {

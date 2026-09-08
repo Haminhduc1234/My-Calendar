@@ -9081,6 +9081,7 @@ input[type="datetime-local"] {
 }
 
 @media (max-width: 540px) {
+
   #projectsModal .modal-content,
   #projectTasksModal .modal-content {
     height: 100% !important;
@@ -15441,6 +15442,7 @@ html {
     opacity: 0;
     transform: scale(0.9) translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -15682,6 +15684,7 @@ html {
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -15709,6 +15712,7 @@ html {
   0% {
     transform: translateY(0);
   }
+
   100% {
     transform: translateY(-4px);
   }
@@ -16333,7 +16337,7 @@ html {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.katex-display > .katex {
+.katex-display>.katex {
   display: inline-block;
   white-space: nowrap;
 }
@@ -16579,5 +16583,1224 @@ html {
     min-height: 46px !important;
     font-size: 15px !important;
     border-radius: 12px !important;
+  }
+}
+
+/* ==========================================================================
+   RECURRING EVENTS (SỰ KIỆN LẶP LẠI) STYLES
+   ========================================================================== */
+
+/* Toggle box in Add/Edit Event Modal */
+.event-recurrence-toggle-box {
+  margin: 12px 0 6px 0;
+  padding: 10px 14px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 12px;
+  transition: all 0.25s ease;
+}
+
+.event-recurrence-toggle-box:hover {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.recurrence-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.recurrence-checkbox-label input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.recurrence-checkbox-custom {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid rgba(147, 197, 253, 0.5);
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.recurrence-checkbox-label input[type="checkbox"]:checked~.recurrence-checkbox-custom {
+  background: #3b82f6;
+  border-color: #60a5fa;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.recurrence-checkbox-custom::after {
+  content: "";
+  display: none;
+  width: 5px;
+  height: 9px;
+  border: solid #ffffff;
+  border-width: 0 2.2px 2.2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.recurrence-checkbox-label input[type="checkbox"]:checked~.recurrence-checkbox-custom::after {
+  display: block;
+}
+
+.recurrence-toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recurrence-toggle-text strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.recurrence-toggle-text small {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+/* Recurrence options container in Add Modal */
+.event-recurrence-options {
+  margin-top: 10px;
+  padding: 14px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recurrence-preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rec-preset-chip {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.rec-preset-chip:hover {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: #3b82f6;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.rec-preset-chip.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-color: #60a5fa;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.rec-form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.rec-form-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rec-select,
+.rec-select-styled,
+.rec-input,
+.rec-input-styled,
+.rec-textarea-styled {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  color: #f1f5f9;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.rec-select:focus,
+.rec-select-styled:focus,
+.rec-input:focus,
+.rec-input-styled:focus,
+.rec-textarea-styled:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.recurrence-preview-badge,
+.rec-occurrence-preview {
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.75);
+  border-left: 3.5px solid #3b82f6;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   FULL-SCREEN RECURRING EVENTS (SỰ KIỆN LẶP LẠI) MODALS - REFINED & CLEAN
+   ========================================================================== */
+
+#recurringEventsModal,
+#recurringEventFormModal {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: #0b1120 !important;
+  z-index: 2500 !important;
+  display: none;
+  flex-direction: column !important;
+  border-radius: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+
+#recurringEventsModal .recurring-events-modal-wrapper,
+#recurringEventFormModal .recurring-form-modal-wrapper {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #0b1120 !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+}
+
+/* --- Sticky Top Header --- */
+.recurring-events-header,
+.recurring-form-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 30;
+  gap: 16px;
+}
+
+.recurring-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.recurring-header-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rec-header-back-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.rec-header-back-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.recurring-events-header h3,
+.recurring-form-header h3 {
+  margin: 0 !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
+  letter-spacing: -0.2px;
+  line-height: 1.25;
+}
+
+.recurring-header-sub {
+  margin: 3px 0 0 0;
+  font-size: 12.5px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recurring-modal-close {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  margin-left: auto !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 9px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #94a3b8 !important;
+  font-size: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  flex-shrink: 0 !important;
+}
+
+.recurring-modal-close:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #f87171 !important;
+}
+
+/* --- Filter Tabs & Add Button Toolbar --- */
+.recurring-toolbar {
+  flex-shrink: 0;
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 12px 20px 6px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-sizing: border-box;
+}
+
+.rec-list-footer-add {
+  display: flex;
+  justify-content: center;
+  margin-top: 18px;
+  padding-bottom: 24px;
+}
+
+.btn-rec-list-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 20px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: 1px solid rgba(147, 197, 253, 0.35);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+
+.btn-rec-list-add:hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+}
+
+
+
+.recurring-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0 6px 0;
+  scrollbar-width: none;
+}
+
+.recurring-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.rec-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+
+.rec-tab:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #e2e8f0;
+}
+
+.rec-tab.active {
+  background: #2563eb;
+  border-color: #3b82f6;
+  color: #ffffff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.rec-tab-count {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.rec-tab.active .rec-tab-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+
+/* --- Events List Container --- */
+.recurring-list-container {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 12px 20px 48px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Custom scrollbar for list and form */
+.recurring-list-container::-webkit-scrollbar,
+.recurring-form-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.recurring-list-container::-webkit-scrollbar-track,
+.recurring-form-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.recurring-list-container::-webkit-scrollbar-thumb,
+.recurring-form-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+.recurring-list-container::-webkit-scrollbar-thumb:hover,
+.recurring-form-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* --- Clean, Simple Event Cards --- */
+.recurring-event-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  background: rgba(18, 27, 47, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-left: 4.5px solid var(--rec-card-color, #3b82f6);
+  border-radius: 12px;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.recurring-event-card:hover {
+  background: rgba(24, 36, 62, 0.95);
+  border-color: rgba(255, 255, 255, 0.14);
+  border-left-color: var(--rec-card-color, #3b82f6);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+
+.rec-card-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Dedicated Date Badge on Card */
+.rec-date-badge {
+  width: 58px;
+  min-width: 58px;
+  padding: 6px 4px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.rec-date-badge.lunar {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.rec-date-badge.solar {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.rec-date-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.rec-date-main {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.15;
+}
+
+.rec-date-sub {
+  font-size: 5.5px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 1.5px 4px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+}
+
+.rec-date-badge.lunar .rec-date-sub {
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.rec-date-badge.solar .rec-date-sub {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.2);
+}
+
+/* Card Main Info */
+.rec-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.rec-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rec-card-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.3;
+}
+
+.rec-cat-chip {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.rec-freq-chip {
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+}
+
+.rec-card-note {
+  font-size: 12.5px;
+  color: #94a3b8;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.rec-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  color: #64748b;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.rec-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #94a3b8;
+}
+
+.rec-meta-item.rec-next-date {
+  color: #cbd5e1;
+}
+
+.rec-meta-item.rec-next-date strong {
+  color: #60a5fa;
+  font-weight: 600;
+}
+
+.rec-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 6px;
+  background: rgba(236, 72, 153, 0.12);
+  color: #f472b6;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Card Right Controls */
+.rec-card-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.rec-countdown-badge {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.rec-countdown-badge.today {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
+}
+
+.rec-countdown-badge.imminent {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fdba74;
+  border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+.rec-countdown-badge.normal {
+  background: rgba(59, 130, 246, 0.14);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.rec-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-rec-action {
+  height: 32px;
+  padding: 0 10px 0 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.btn-rec-action svg {
+  width: 13.5px;
+  height: 13.5px;
+  flex-shrink: 0;
+}
+
+.btn-rec-action.edit {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.28);
+  color: #93c5fd;
+}
+
+.btn-rec-action.edit:hover {
+  background: #2563eb;
+  border-color: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.btn-rec-action.delete {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+}
+
+.btn-rec-action.delete:hover {
+  background: #dc2626;
+  border-color: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+}
+
+/* Calendar Day Recurring Chip */
+.day-recurring-chip {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 3.5px;
+  padding: 1.5px 5px;
+  border-radius: 5px;
+  background: rgba(15, 23, 42, 0.88);
+  border-left: 2.5px solid var(--rec-chip-color, #3b82f6);
+  font-size: 10px;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  pointer-events: none;
+  line-height: 1.25;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+}
+
+.day-rec-icon {
+  font-size: 10px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.day-rec-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.day.has-recurring-event {
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+
+/* --- Empty State (Optimized & Compact) --- */
+.recurring-empty-state.compact {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.55);
+  margin: 10px auto 0 auto;
+  max-width: 860px;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.rec-empty-compact-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rec-empty-compact-icon {
+  font-size: 24px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.rec-empty-compact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rec-empty-compact-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.25;
+}
+
+.rec-empty-compact-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+.rec-empty-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rec-empty-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.rec-empty-chip-btn:hover {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #93c5fd;
+  transform: translateY(-1px);
+}
+
+.rec-empty-chip-btn.primary {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.35);
+  color: #93c5fd;
+  margin-left: auto;
+}
+
+.rec-empty-chip-btn.primary:hover {
+  background: #2563eb;
+  border-color: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.rec-empty-compact-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ==========================================================================
+   FORM MODAL - FULL SCREEN CLEAN FORM
+   ========================================================================== */
+
+.recurring-form-body {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 18px 20px 28px 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rec-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Form Section / Cards */
+.rec-form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rec-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rec-section-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.rec-section-hint {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.rec-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+  gap: 10px;
+}
+
+.rec-preset-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: left;
+}
+
+.rec-preset-btn:hover {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.rec-preset-btn.active {
+  background: rgba(59, 130, 246, 0.22);
+  border-color: #60a5fa;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.rec-preset-btn .preset-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.rec-preset-btn .preset-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+  display: block;
+}
+
+.rec-preset-btn .preset-desc {
+  font-size: 10.5px;
+  color: #94a3b8;
+  display: block;
+  margin-top: 1px;
+}
+
+/* Card Sections */
+.rec-form-card {
+  background: rgba(18, 27, 47, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rec-card-title-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #f1f5f9;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.rec-card-step {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rec-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rec-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rec-form-group .field-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+/* Form inputs & selects */
+.rec-select-styled,
+.rec-input-styled,
+.rec-textarea-styled {
+  width: 100%;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  color: #f1f5f9;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  outline: none;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.rec-select-styled:focus,
+.rec-input-styled:focus,
+.rec-textarea-styled:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
+  background: rgba(15, 23, 42, 0.98);
+}
+
+/* Live Occurrence Preview Box */
+.rec-occurrence-preview {
+  padding: 12px 14px;
+  background: rgba(30, 41, 59, 0.65);
+  border-left: 3.5px solid #3b82f6;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rec-preview-rule {
+  font-size: 13px;
+  color: #e2e8f0;
+}
+
+.rec-preview-rule strong {
+  color: #60a5fa;
+}
+
+.rec-preview-age {
+  font-size: 12.5px;
+  color: #f472b6;
+  font-weight: 600;
+}
+
+.rec-preview-next-box {
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.rec-preview-next-label {
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.rec-preview-next-val {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rec-preview-next-val strong {
+  font-size: 13.5px;
+  color: #ffffff;
+}
+
+.rec-preview-diff-badge {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+/* Form Footer (Action Bar at bottom of modal wrapper) */
+.rec-form-footer {
+  flex-shrink: 0 !important;
+  position: relative !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 12px 24px calc(12px + env(safe-area-inset-bottom, 0px)) 24px !important;
+  background: rgba(10, 15, 30, 0.98) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  z-index: 35 !important;
+}
+
+.rec-form-footer button {
+  min-height: 40px;
+  padding: 8px 22px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 10px;
+}
+
+/* Event Item Recurring Badge on Day Details Modal */
+.event-recurring-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.16);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  margin-top: 4px;
+}
+
+.event-recurring-tag.lunar {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fcd34d;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+
+  .recurring-events-header,
+  .recurring-form-header {
+    padding: 12px 16px;
+  }
+
+  .recurring-toolbar {
+    padding: 10px 14px 4px 14px;
+  }
+
+  .recurring-list-container {
+    padding: 10px 14px 40px 14px;
+  }
+
+  .recurring-form-body {
+    padding: 14px 14px 24px 14px;
+  }
+
+  .rec-form-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .rec-preset-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .recurring-event-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .rec-card-right {
+    width: 100%;
+    justify-content: space-between;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .day-recurring-chip {
+    padding: 1px 3px;
+    font-size: 8.5px;
+    margin-top: 2px;
+  }
+
+  .rec-empty-chip-btn.primary {
+    margin-left: 0;
   }
 }

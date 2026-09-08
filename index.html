@@ -235,6 +235,12 @@
             </svg>
             <span>Thêm Sự Kiện</span>
           </button>
+          <button class="dropdown-item" onclick="openRecurringEventsModal(); closeMoreMenu();" role="menuitem">
+            <svg viewBox="0 0 24 24">
+              <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM12 10c-2.21 0-4 1.79-4 4s1.79 4 4 4c1.86 0 3.41-1.28 3.86-3H14.1c-.37.83-1.2 1.4-2.1 1.4-1.33 0-2.4-1.07-2.4-2.4s1.07-2.4 2.4-2.4c.66 0 1.26.27 1.7.7l-1.7 1.7H18v-4l-1.59 1.59C15.35 10.62 13.78 10 12 10z" />
+            </svg>
+            <span>Sự Kiện Lặp Lại</span>
+          </button>
           <button class="dropdown-item" onclick="openCurrencyModal(); closeMoreMenu();" role="menuitem">
             <svg viewBox="0 0 24 24">
               <path d="M6.99 11 3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z" />
@@ -895,6 +901,66 @@
             </div>
             <input type="hidden" id="newEventColor" value="#3b82f6" />
           </div>
+
+          <!-- Lặp lại sự kiện toggle & fields -->
+          <div class="event-recurrence-toggle-box">
+            <label class="recurrence-checkbox-label">
+              <input type="checkbox" id="newEventIsRecurring" onchange="toggleEventModalRecurrence(this.checked)" />
+              <span class="recurrence-checkbox-custom"></span>
+              <span class="recurrence-toggle-text">
+                <strong>Lặp lại sự kiện này</strong>
+                <small>Giỗ chạp, sinh nhật, tiền điện nước, bảo hiểm...</small>
+              </span>
+            </label>
+          </div>
+
+          <div id="newEventRecurrenceOptions" class="event-recurrence-options" style="display: none;">
+            <label class="field-label">Mẫu gợi ý nhanh</label>
+            <div class="recurrence-preset-chips">
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('death_anniversary')">🕯️ Giỗ chạp</button>
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('birthday')">🎂 Sinh nhật</button>
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('bill')">⚡ Tiền điện nước</button>
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('insurance')">🛡️ Gia hạn bảo hiểm</button>
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('custom')">🔄 Tùy chỉnh</button>
+            </div>
+
+            <div class="rec-form-row">
+              <div class="rec-form-col">
+                <label class="field-label" for="newEventRecFreq">Chu kỳ lặp</label>
+                <select id="newEventRecFreq" class="rec-select" onchange="updateAddModalRecurrenceFields()">
+                  <option value="yearly">Hàng năm (Mỗi năm 1 lần)</option>
+                  <option value="monthly">Hàng tháng (Mỗi tháng 1 lần)</option>
+                </select>
+              </div>
+              <div class="rec-form-col">
+                <label class="field-label" for="newEventRecCalendar">Hệ lịch</label>
+                <select id="newEventRecCalendar" class="rec-select" onchange="updateAddModalRecurrenceFields()">
+                  <option value="solar">☀️ Dương lịch</option>
+                  <option value="lunar">🌙 Âm lịch (Giỗ chạp, rằm)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="rec-form-row">
+              <div class="rec-form-col" id="newEventRecMonthCol">
+                <label class="field-label" for="newEventRecMonth" id="newEventRecMonthLabel">Tháng</label>
+                <select id="newEventRecMonth" class="rec-select" onchange="updateAddModalRecurrencePreview()"></select>
+              </div>
+              <div class="rec-form-col">
+                <label class="field-label" for="newEventRecDay" id="newEventRecDayLabel">Ngày</label>
+                <select id="newEventRecDay" class="rec-select" onchange="updateAddModalRecurrencePreview()"></select>
+              </div>
+            </div>
+
+            <div class="rec-form-row" id="newEventBirthYearRow" style="display: none;">
+              <div class="rec-form-col">
+                <label class="field-label" for="newEventBirthYear">Năm sinh (để tính số tuổi)</label>
+                <input type="number" id="newEventBirthYear" class="rec-input" placeholder="VD: 1990" min="1900" max="2100" onchange="updateAddModalRecurrencePreview()" />
+              </div>
+            </div>
+
+            <div id="newEventRecurrencePreview" class="recurrence-preview-badge"></div>
+          </div>
         </div>
 
         <div class="modal-actions">
@@ -902,6 +968,218 @@
           <button id="closeEventBtn" class="btn-secondary" onclick="closeAddEventModal()">
             Đóng
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Quản Lý Sự Kiện Lặp Lại (Recurring Events Manager) -->
+    <div id="recurringEventsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="recurringEventsModalTitle">
+      <div class="modal-content recurring-events-modal-wrapper">
+        <!-- Header -->
+        <div class="recurring-events-header">
+          <div class="recurring-header-left">
+            <div class="recurring-header-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM12 10c-2.21 0-4 1.79-4 4s1.79 4 4 4c1.86 0 3.41-1.28 3.86-3H14.1c-.37.83-1.2 1.4-2.1 1.4-1.33 0-2.4-1.07-2.4-2.4s1.07-2.4 2.4-2.4c.66 0 1.26.27 1.7.7l-1.7 1.7H18v-4l-1.59 1.59C15.35 10.62 13.78 10 12 10z" />
+              </svg>
+            </div>
+            <div>
+              <h3 id="recurringEventsModalTitle">Sự Kiện Lặp Lại</h3>
+              <p class="recurring-header-sub">Quản lý giỗ chạp, sinh nhật, tiền điện nước, bảo hiểm...</p>
+            </div>
+          </div>
+          <button class="modal-close recurring-modal-close" onclick="closeRecurringEventsModal()" aria-label="Đóng">×</button>
+        </div>
+
+        <!-- Controls Toolbar: Tabs -->
+        <div class="recurring-toolbar">
+          <div class="recurring-tabs" role="tablist">
+            <button type="button" class="rec-tab active" data-tab="all" onclick="filterRecurringEventsTab('all')">Tất cả <span class="rec-tab-count" id="recCountAll">0</span></button>
+            <button type="button" class="rec-tab" data-tab="death_anniversary" onclick="filterRecurringEventsTab('death_anniversary')">🕯️ Giỗ chạp <span class="rec-tab-count" id="recCountDeath">0</span></button>
+            <button type="button" class="rec-tab" data-tab="birthday" onclick="filterRecurringEventsTab('birthday')">🎂 Sinh nhật <span class="rec-tab-count" id="recCountBirthday">0</span></button>
+            <button type="button" class="rec-tab" data-tab="bill" onclick="filterRecurringEventsTab('bill')">⚡ Điện nước <span class="rec-tab-count" id="recCountBill">0</span></button>
+            <button type="button" class="rec-tab" data-tab="insurance" onclick="filterRecurringEventsTab('insurance')">🛡️ Bảo hiểm <span class="rec-tab-count" id="recCountInsurance">0</span></button>
+            <button type="button" class="rec-tab" data-tab="custom" onclick="filterRecurringEventsTab('custom')">🔄 Khác <span class="rec-tab-count" id="recCountCustom">0</span></button>
+          </div>
+        </div>
+
+        <!-- Events List Container -->
+        <div class="recurring-list-container" id="recurringEventsList">
+          <!-- Dynamic cards or empty state -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Thêm / Chỉnh Sửa Sự Kiện Lặp Lại (Form Modal) -->
+    <div id="recurringEventFormModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="recurringFormModalTitle">
+      <div class="modal-content recurring-form-modal-wrapper">
+        <div class="recurring-form-header">
+          <div class="recurring-header-left">
+            <button type="button" class="rec-header-back-btn" onclick="closeRecurringEventFormModal()" title="Quay lại danh sách">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+            </button>
+            <div>
+              <h3 id="recurringFormModalTitle">Thêm Sự Kiện Lặp Lại</h3>
+              <p class="recurring-header-sub">Tự động nhắc nhở hàng tháng hoặc hàng năm trên lịch</p>
+            </div>
+          </div>
+          <button class="modal-close recurring-modal-close" onclick="closeRecurringEventFormModal()" aria-label="Đóng">×</button>
+        </div>
+
+        <div class="recurring-form-body">
+          <!-- Preset buttons for quick setup -->
+          <div class="rec-form-section">
+            <div class="rec-section-header">
+              <span class="rec-section-title">Chọn mẫu nhanh</span>
+              <span class="rec-section-hint">Tự động điền chu kỳ và thiết lập phù hợp</span>
+            </div>
+            <div class="rec-preset-grid">
+              <button type="button" class="rec-preset-btn" onclick="applyRecurringEventPreset('death_anniversary')">
+                <span class="preset-icon">🕯️</span>
+                <div class="preset-info">
+                  <span class="preset-title">Ngày giỗ chạp</span>
+                  <span class="preset-desc">Lịch Âm • Hàng năm</span>
+                </div>
+              </button>
+              <button type="button" class="rec-preset-btn" onclick="applyRecurringEventPreset('birthday')">
+                <span class="preset-icon">🎂</span>
+                <div class="preset-info">
+                  <span class="preset-title">Sinh nhật</span>
+                  <span class="preset-desc">Lịch Dương • Tính tuổi</span>
+                </div>
+              </button>
+              <button type="button" class="rec-preset-btn" onclick="applyRecurringEventPreset('bill')">
+                <span class="preset-icon">⚡</span>
+                <div class="preset-info">
+                  <span class="preset-title">Hạn nộp điện nước</span>
+                  <span class="preset-desc">Lịch Dương • Hàng tháng</span>
+                </div>
+              </button>
+              <button type="button" class="rec-preset-btn" onclick="applyRecurringEventPreset('insurance')">
+                <span class="preset-icon">🛡️</span>
+                <div class="preset-info">
+                  <span class="preset-title">Gia hạn bảo hiểm</span>
+                  <span class="preset-desc">Lịch Dương • Hàng năm</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="rec-form-fields">
+            <input type="hidden" id="recFormEditId" value="" />
+            <input type="hidden" id="recFormCategory" value="custom" />
+
+            <!-- Card 1: Thông tin cơ bản -->
+            <div class="rec-form-card">
+              <div class="rec-card-title-bar">
+                <span class="rec-card-step">1</span>
+                <span>Thông tin sự kiện</span>
+              </div>
+              <div class="rec-form-group">
+                <label class="field-label" for="recFormTitle">Tiêu đề sự kiện <span class="required" style="color: #ef4444;">*</span></label>
+                <input type="text" id="recFormTitle" class="rec-input-styled" maxlength="80" placeholder="VD: Giỗ Cụ Nội, Sinh nhật Bố, Tiền điện nước..." />
+              </div>
+
+              <div class="rec-form-group">
+                <label class="field-label" for="recFormNote">Ghi chú (tùy chọn)</label>
+                <textarea id="recFormNote" class="rec-textarea-styled" rows="2" placeholder="VD: Chuẩn bị 3 mâm cúng, số hợp đồng bảo hiểm, mã khách hàng..."></textarea>
+              </div>
+            </div>
+
+            <!-- Card 2: Chu kỳ & Thời gian -->
+            <div class="rec-form-card">
+              <div class="rec-card-title-bar">
+                <span class="rec-card-step">2</span>
+                <span>Thời gian lặp lại</span>
+              </div>
+
+              <div class="rec-form-row">
+                <div class="rec-form-col">
+                  <label class="field-label" for="recFormFrequency">Chu kỳ</label>
+                  <select id="recFormFrequency" class="rec-select-styled" onchange="onRecFormFrequencyChange()">
+                    <option value="yearly">Hàng năm (Mỗi năm 1 lần)</option>
+                    <option value="monthly">Hàng tháng (Mỗi tháng 1 lần)</option>
+                  </select>
+                </div>
+                <div class="rec-form-col">
+                  <label class="field-label" for="recFormCalendar">Hệ lịch</label>
+                  <select id="recFormCalendar" class="rec-select-styled" onchange="onRecFormCalendarChange()">
+                    <option value="solar">☀️ Dương lịch</option>
+                    <option value="lunar">🌙 Âm lịch (Giỗ chạp, ngày rằm)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="rec-form-row">
+                <div class="rec-form-col" id="recFormMonthCol">
+                  <label class="field-label" for="recFormMonth" id="recFormMonthLabel">Tháng</label>
+                  <select id="recFormMonth" class="rec-select-styled" onchange="updateRecFormPreview()"></select>
+                </div>
+                <div class="rec-form-col">
+                  <label class="field-label" for="recFormDay" id="recFormDayLabel">Ngày</label>
+                  <select id="recFormDay" class="rec-select-styled" onchange="updateRecFormPreview()"></select>
+                </div>
+                <div class="rec-form-col">
+                  <label class="field-label" for="recFormTime">Giờ thông báo</label>
+                  <input type="time" id="recFormTime" class="rec-input-styled" value="08:00" />
+                </div>
+              </div>
+
+              <!-- Optional Birth Year row for birthday category -->
+              <div class="rec-form-row" id="recFormBirthYearRow" style="display: none;">
+                <div class="rec-form-col">
+                  <label class="field-label" for="recFormBirthYear">Năm sinh (tính số tuổi)</label>
+                  <input type="number" id="recFormBirthYear" class="rec-input-styled" placeholder="VD: 1990" min="1900" max="2100" onchange="updateRecFormPreview()" />
+                </div>
+                <div class="rec-form-col">
+                  <label class="field-label" for="recFormReminderDays">Nhắc nhở trước</label>
+                  <select id="recFormReminderDays" class="rec-select-styled">
+                    <option value="0">Đúng ngày diễn ra</option>
+                    <option value="1" selected>Trước 1 ngày</option>
+                    <option value="2">Trước 2 ngày</option>
+                    <option value="3">Trước 3 ngày</option>
+                    <option value="7">Trước 1 tuần</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Màu sắc & Xem trước -->
+            <div class="rec-form-card">
+              <div class="rec-card-title-bar">
+                <span class="rec-card-step">3</span>
+                <span>Màu sắc & Xem trước</span>
+              </div>
+
+              <div class="rec-form-group">
+                <label class="field-label">Màu sắc đánh dấu</label>
+                <div class="event-color-picker-group">
+                  <div class="event-color-palette" id="recFormColorPalette">
+                    <button type="button" class="event-color-swatch active" data-color="#f59e0b" style="--swatch-color: #f59e0b;" title="Vàng hổ phách"></button>
+                    <button type="button" class="event-color-swatch" data-color="#ec4899" style="--swatch-color: #ec4899;" title="Hồng"></button>
+                    <button type="button" class="event-color-swatch" data-color="#f97316" style="--swatch-color: #f97316;" title="Cam"></button>
+                    <button type="button" class="event-color-swatch" data-color="#10b981" style="--swatch-color: #10b981;" title="Xanh lá"></button>
+                    <button type="button" class="event-color-swatch" data-color="#3b82f6" style="--swatch-color: #3b82f6;" title="Xanh dương"></button>
+                    <button type="button" class="event-color-swatch" data-color="#8b5cf6" style="--swatch-color: #8b5cf6;" title="Tím"></button>
+                    <button type="button" class="event-color-swatch" data-color="#06b6d4" style="--swatch-color: #06b6d4;" title="Xanh lơ"></button>
+                    <button type="button" class="event-color-swatch" data-color="#ef4444" style="--swatch-color: #ef4444;" title="Đỏ"></button>
+                  </div>
+                  <input type="hidden" id="recFormColor" value="#f59e0b" />
+                </div>
+              </div>
+
+              <!-- Live occurrence preview -->
+              <div id="recFormOccurrencePreview" class="rec-occurrence-preview"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky bottom actions -->
+        <div class="modal-actions rec-form-footer">
+          <button type="button" class="btn-secondary" onclick="closeRecurringEventFormModal()">Hủy</button>
+          <button type="button" class="btn-primary" onclick="saveRecurringEventForm()">Lưu sự kiện</button>
         </div>
       </div>
     </div>

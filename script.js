@@ -336,6 +336,45 @@ function convertSolarToLunar(dd, mm, yy) {
   return { lunarDay, lunarMonth, lunarYear, lunarLeap };
 }
 
+/* Chuyển âm -> dương (Thuật toán thiên văn Hồ Ngọc Đức) */
+function convertLunarToSolar(lunarDay, lunarMonth, lunarYear, lunarLeap = false) {
+  try {
+    let a11;
+    if (lunarMonth < 11) {
+      a11 = LunarMonth11(lunarYear - 1);
+    } else {
+      a11 = LunarMonth11(lunarYear);
+    }
+    let b11 = LunarMonth11(lunarYear);
+    let off;
+    if (lunarMonth < 11) {
+      if (b11 - a11 > 365) {
+        let leapOff = LeapMonthOffset(a11);
+        let leapMonth = leapOff - 2;
+        if (leapMonth <= 0) leapMonth += 12;
+        if (lunarLeap && (lunarMonth !== leapMonth)) {
+          return null;
+        }
+        if (lunarLeap || (lunarMonth > leapMonth)) {
+          off = lunarMonth + 2;
+        } else {
+          off = lunarMonth + 1;
+        }
+      } else {
+        off = lunarMonth + 1;
+      }
+    } else {
+      off = lunarMonth - 11;
+    }
+    let k = INT((a11 - 2415021.076998695) / 29.530588853 + 0.5);
+    let monthStart = NewMoon(k + off);
+    return jdToDate(monthStart + lunarDay - 1);
+  } catch (e) {
+    console.error("[LunarToSolar] Error converting:", e);
+    return null;
+  }
+}
+
 /* ========================== RENDER CALENDAR ========================== */
 function renderTodayEvents() {
   const today = new Date();
@@ -381,12 +420,17 @@ function renderTodayEvents() {
           } catch (e) { }
         }
 
+        const recBadge = ev.isRecurring
+          ? `<span class="event-recurring-tag ${ev.calendarType === 'lunar' ? 'lunar' : ''}" style="margin-left: 6px; font-size: 10.5px; padding: 1px 6px;">🔄 ${escapeHtml(ev.recurrenceLabel || 'Lặp lại')}</span>`
+          : "";
+
         return `<div class="today-event-item" 
                      style="--event-color: ${evColor}; border-left-color: ${evColor}; cursor: pointer;"
                      onclick="selectedKey='${key}'; openEventQuickViewModal(getEventsForDate('${key}')[${idx}], '${key}', ${idx});"
                      title="Nhấp để xem chi tiết sự kiện">
           ${timeStr ? `<span class="today-event-time" style="color: ${evColor};">${timeStr}</span>` : ""}
           <span class="today-event-title">${escapeHtml(ev.title || "(Không có tiêu đề)")}</span>
+          ${recBadge}
           ${imminentBadge}
           ${ev.text ? `<span class="today-event-text">${escapeHtml(ev.text)}</span>` : ""}
         </div>`;
@@ -429,9 +473,11 @@ function renderCalendar() {
     const lunar = convertSolarToLunar(d, m, y);
     const key = `${y}-${m}-${d}`;
     const dayEvents = getEventsForDate(key);
+    const recurringOnDay = dayEvents.filter(ev => ev.isRecurring);
 
     if (cellDate.getTime() === today.getTime()) div.classList.add("today");
     if (dayEvents.length > 0) div.classList.add("has-event");
+    if (recurringOnDay.length > 0) div.classList.add("has-recurring-event");
     if (getOvertimeHoursForDateKey(key) > 0) div.classList.add("has-overtime");
 
     const isCustomHoliday = !!getDateData(key).isHoliday;
@@ -456,6 +502,20 @@ function renderCalendar() {
 
     if (isCustomHoliday && !holidayName) {
       holidayName = "Ngày nghỉ lễ";
+    }
+
+    let recurringChipHtml = "";
+    if (recurringOnDay.length > 0) {
+      const firstRec = recurringOnDay[0];
+      const catMeta = getCategoryMeta(firstRec.category);
+      const recColor = escapeHtml(firstRec.color || catMeta.defaultColor || "#3b82f6");
+      const moreSuffix = recurringOnDay.length > 1 ? ` (+${recurringOnDay.length - 1})` : "";
+      recurringChipHtml = `
+        <div class="day-recurring-chip" style="--rec-chip-color: ${recColor};" title="${escapeHtml(firstRec.title || 'Sự kiện lặp')}${moreSuffix}">
+          <span class="day-rec-icon">${catMeta.icon}</span>
+          <span class="day-rec-title">${escapeHtml(firstRec.title || "Lặp lại")}${moreSuffix}</span>
+        </div>
+      `;
     }
 
     const hasOvertime = getOvertimeHoursForDateKey(key) > 0;
@@ -483,6 +543,7 @@ function renderCalendar() {
     div.innerHTML = `
   <div class="solar">${d}</div>
   <div class="lunar">${lunar.lunarDay}/${lunar.lunarMonth}${lunar.lunarLeap ? "N" : ""}</div>
+  ${recurringChipHtml}
   ${dotsHtml}
 `;
 
@@ -2391,9 +2452,339 @@ function updateOvertimeForDate(dateKey, hours) {
   saveDateData(dateKey, data);
 }
 
+/* ========================== RECURRING EVENTS (SỰ KIỆN LẶP LẠI) DATA LAYER ========================== */
+const FIREBASE_RECURRING_EVENTS_PATH = "recurringEvents";
+let firebaseRecurringRef = null;
+let recurringEventsCache = null;
+let currentRecurringFilterTab = "all";
+let currentRecurringSearchQuery = "";
+
+let currentRecurringCacheKey = null;
+
+function getRecurringEventsStorageKey() {
+  const pKey = userProfileKey || localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE);
+  return pKey ? `recurring_events_${pKey}` : "recurring_events_guest";
+}
+
+function getRecurringEvents() {
+  const storageKey = getRecurringEventsStorageKey();
+  if (recurringEventsCache !== null && currentRecurringCacheKey === storageKey) {
+    return recurringEventsCache;
+  }
+  currentRecurringCacheKey = storageKey;
+  try {
+    let raw = localStorage.getItem(storageKey);
+    if (!raw && storageKey !== "recurring_events_guest") {
+      const guestRaw = localStorage.getItem("recurring_events_guest");
+      if (guestRaw) {
+        raw = guestRaw;
+        localStorage.setItem(storageKey, guestRaw);
+      }
+    }
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        recurringEventsCache = parsed;
+        return recurringEventsCache;
+      }
+    }
+  } catch (e) {
+    console.warn("[RecurringEvents] Lỗi đọc local storage:", e);
+  }
+  recurringEventsCache = [];
+  return recurringEventsCache;
+}
+
+function saveRecurringEvents(list, shouldSyncToFirebase = true) {
+  if (!Array.isArray(list)) return;
+  recurringEventsCache = list;
+  const key = getRecurringEventsStorageKey();
+  currentRecurringCacheKey = key;
+  try {
+    localStorage.setItem(key, JSON.stringify(list));
+  } catch (e) {
+    console.error("[RecurringEvents] Lỗi ghi local storage:", e);
+  }
+
+  if (shouldSyncToFirebase && firebaseRecurringRef) {
+    firebaseRecurringRef.set(list).then(() => {
+      showCloudSyncedBadge();
+    }).catch(err => {
+      console.warn("[RecurringEvents] Lỗi đồng bộ Firebase:", err);
+    });
+  }
+
+  // Cập nhật lại lịch và danh sách hiển thị
+  loadCalendarOnDemand();
+  renderCalendar();
+  renderTodayEvents();
+  if (typeof renderRecurringEventsList === "function") {
+    renderRecurringEventsList();
+  }
+}
+
+function initRecurringEventsFirebase() {
+  recurringEventsCache = null;
+  currentRecurringCacheKey = null;
+  if (!firebaseDb || !userProfileKey) return;
+  try {
+    firebaseRecurringRef = firebaseDb.ref(`${FIREBASE_RECURRING_EVENTS_PATH}/${userProfileKey}`);
+    firebaseRecurringRef.on("value", (snapshot) => {
+      const remoteData = snapshot.val();
+      if (Array.isArray(remoteData)) {
+        recurringEventsCache = remoteData;
+        const key = getRecurringEventsStorageKey();
+        currentRecurringCacheKey = key;
+        localStorage.setItem(key, JSON.stringify(remoteData));
+        renderCalendar();
+        renderTodayEvents();
+        if (typeof renderRecurringEventsList === "function") {
+          renderRecurringEventsList();
+        }
+      } else if (remoteData && typeof remoteData === "object") {
+        const arr = Object.values(remoteData);
+        recurringEventsCache = arr;
+        const key = getRecurringEventsStorageKey();
+        currentRecurringCacheKey = key;
+        localStorage.setItem(key, JSON.stringify(arr));
+        renderCalendar();
+        renderTodayEvents();
+        if (typeof renderRecurringEventsList === "function") {
+          renderRecurringEventsList();
+        }
+      }
+    });
+  } catch (e) {
+    console.warn("[RecurringEvents] Lỗi init Firebase ref:", e);
+  }
+}
+
+function addRecurringEvent(recData) {
+  const list = getRecurringEvents();
+  const now = Date.now();
+  const newEvent = {
+    id: String(recData.id || `rec-ev-${now}-${Math.random().toString(36).slice(2, 7)}`),
+    title: String(recData.title || "").trim(),
+    text: String(recData.text || recData.note || "").trim(),
+    note: String(recData.note || recData.text || "").trim(),
+    category: String(recData.category || "custom"),
+    recurrenceType: String(recData.recurrenceType || "yearly"),
+    calendarType: String(recData.calendarType || "solar"),
+    day: parseInt(recData.day, 10) || 1,
+    month: parseInt(recData.month, 10) || 1,
+    birthYear: recData.birthYear ? parseInt(recData.birthYear, 10) : null,
+    time: String(recData.time || "08:00"),
+    color: String(recData.color || "#3b82f6"),
+    reminderDaysBefore: parseInt(recData.reminderDaysBefore, 10) ?? 1,
+    createdAt: Number(recData.createdAt || now),
+    updatedAt: now
+  };
+  list.push(newEvent);
+  saveRecurringEvents(list);
+  return newEvent;
+}
+
+function updateRecurringEvent(id, recData) {
+  const list = getRecurringEvents();
+  const idx = list.findIndex(item => item.id === id);
+  if (idx === -1) return null;
+  const now = Date.now();
+  list[idx] = {
+    ...list[idx],
+    title: String(recData.title || "").trim(),
+    text: String(recData.text || recData.note || "").trim(),
+    note: String(recData.note || recData.text || "").trim(),
+    category: String(recData.category || list[idx].category || "custom"),
+    recurrenceType: String(recData.recurrenceType || list[idx].recurrenceType || "yearly"),
+    calendarType: String(recData.calendarType || list[idx].calendarType || "solar"),
+    day: parseInt(recData.day, 10) || list[idx].day || 1,
+    month: parseInt(recData.month, 10) || list[idx].month || 1,
+    birthYear: recData.birthYear ? parseInt(recData.birthYear, 10) : null,
+    time: String(recData.time || list[idx].time || "08:00"),
+    color: String(recData.color || list[idx].color || "#3b82f6"),
+    reminderDaysBefore: parseInt(recData.reminderDaysBefore, 10) ?? list[idx].reminderDaysBefore ?? 1,
+    updatedAt: now
+  };
+  saveRecurringEvents(list);
+  return list[idx];
+}
+
+function deleteRecurringEvent(id) {
+  const list = getRecurringEvents();
+  const filtered = list.filter(item => item.id !== id);
+  saveRecurringEvents(filtered);
+}
+
+function getMatchingRecurringEventInstances(dateKey) {
+  if (!dateKey) return [];
+  const parts = String(dateKey).split("-").map(Number);
+  if (parts.length < 3 || isNaN(parts[0]) || isNaN(parts[1]) || isNaN(parts[2])) return [];
+  const [y, m, d] = parts;
+
+  const recurringList = getRecurringEvents();
+  if (!recurringList || recurringList.length === 0) return [];
+
+  let lunar = null;
+  const instances = [];
+
+  for (let i = 0; i < recurringList.length; i++) {
+    const rec = recurringList[i];
+    if (!rec) continue;
+
+    const recDay = parseInt(rec.day, 10);
+    const recMonth = parseInt(rec.month, 10);
+    const recType = String(rec.recurrenceType || "yearly").toLowerCase();
+    const calType = String(rec.calendarType || "solar").toLowerCase();
+    let isMatch = false;
+
+    if (calType === "lunar") {
+      if (!lunar) {
+        lunar = convertSolarToLunar(d, m, y);
+      }
+      if (lunar) {
+        if (recType === "yearly") {
+          isMatch = (lunar.lunarDay === recDay && lunar.lunarMonth === recMonth);
+        } else {
+          isMatch = (lunar.lunarDay === recDay);
+        }
+      }
+    } else {
+      if (recType === "yearly") {
+        isMatch = (d === recDay && m === recMonth);
+      } else {
+        const daysInCurrentMonth = new Date(y, m, 0).getDate();
+        if (d === recDay) {
+          isMatch = true;
+        } else if (recDay > daysInCurrentMonth && d === daysInCurrentMonth) {
+          isMatch = true;
+        }
+      }
+    }
+
+    if (isMatch) {
+      let displayTitle = rec.title || "(Sự kiện lặp lại)";
+      let recurrenceLabel = "";
+
+      if (rec.category === "death_anniversary") {
+        recurrenceLabel = rec.calendarType === "lunar"
+          ? `Giỗ chạp (${rec.day}/${rec.month} ÂL)`
+          : `Giỗ chạp (${rec.day}/${rec.month})`;
+      } else if (rec.category === "birthday") {
+        if (rec.birthYear && rec.birthYear < y) {
+          const age = y - rec.birthYear;
+          recurrenceLabel = `Sinh nhật lần thứ ${age} (SN ${rec.birthYear})`;
+        } else {
+          recurrenceLabel = rec.calendarType === "lunar"
+            ? `Sinh nhật (${rec.day}/${rec.month} ÂL)`
+            : `Sinh nhật (${rec.day}/${rec.month})`;
+        }
+      } else if (rec.category === "bill") {
+        recurrenceLabel = `Hạn nộp định kỳ (${rec.day} hàng tháng)`;
+      } else if (rec.category === "insurance") {
+        recurrenceLabel = rec.recurrenceType === "yearly"
+          ? `Gia hạn bảo hiểm (${rec.day}/${rec.month} hàng năm)`
+          : `Gia hạn bảo hiểm (${rec.day} hàng tháng)`;
+      } else {
+        if (rec.recurrenceType === "yearly") {
+          recurrenceLabel = rec.calendarType === "lunar"
+            ? `Lặp hàng năm (${rec.day}/${rec.month} ÂL)`
+            : `Lặp hàng năm (${rec.day}/${rec.month})`;
+        } else {
+          recurrenceLabel = rec.calendarType === "lunar"
+            ? `Lặp hàng tháng (Mùng ${rec.day} ÂL)`
+            : `Lặp hàng tháng (Ngày ${rec.day})`;
+        }
+      }
+
+      const instanceDateTime = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}T${rec.time || "08:00"}`;
+
+      instances.push({
+        id: `rec-inst-${rec.id}-${y}-${m}-${d}`,
+        recurringId: rec.id,
+        isRecurring: true,
+        category: rec.category,
+        recurrenceType: rec.recurrenceType,
+        calendarType: rec.calendarType,
+        recurrenceLabel: recurrenceLabel,
+        title: displayTitle,
+        text: rec.text || rec.note || "",
+        note: rec.note || rec.text || "",
+        color: rec.color || "#3b82f6",
+        eventDateTime: instanceDateTime,
+        createdAt: rec.createdAt,
+        updatedAt: rec.updatedAt
+      });
+    }
+  }
+
+  return instances;
+}
+
+function getNextOccurrenceDate(rec) {
+  if (!rec) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const curYear = today.getFullYear();
+
+  const recDay = parseInt(rec.day, 10) || 1;
+  const recMonth = parseInt(rec.month, 10) || 1;
+  const recType = String(rec.recurrenceType || "yearly").toLowerCase();
+  const calType = String(rec.calendarType || "solar").toLowerCase();
+
+  if (calType === "solar") {
+    if (recType === "yearly") {
+      let cand = new Date(curYear, recMonth - 1, recDay);
+      if (cand.getTime() < today.getTime()) {
+        cand = new Date(curYear + 1, recMonth - 1, recDay);
+      }
+      return cand;
+    } else {
+      let maxDaysInCurrentMonth = new Date(curYear, today.getMonth() + 1, 0).getDate();
+      let dayThisMonth = Math.min(recDay, maxDaysInCurrentMonth);
+      let cand = new Date(curYear, today.getMonth(), dayThisMonth);
+      if (cand.getTime() < today.getTime()) {
+        let nextM = today.getMonth() + 1;
+        let nextY = curYear;
+        if (nextM > 11) { nextM = 0; nextY++; }
+        let maxDaysInNextMonth = new Date(nextY, nextM + 1, 0).getDate();
+        cand = new Date(nextY, nextM, Math.min(recDay, maxDaysInNextMonth));
+      }
+      return cand;
+    }
+  } else {
+    // Lunar
+    if (recType === "yearly") {
+      let sol = convertLunarToSolar(recDay, recMonth, curYear);
+      if (sol && sol.year) {
+        let cand = new Date(sol.year, sol.month - 1, sol.day);
+        if (cand.getTime() >= today.getTime()) return cand;
+      }
+      let solNext = convertLunarToSolar(recDay, recMonth, curYear + 1);
+      if (solNext && solNext.year) {
+        return new Date(solNext.year, solNext.month - 1, solNext.day);
+      }
+    } else {
+      let cand = new Date(today);
+      for (let i = 0; i <= 35; i++) {
+        let d = cand.getDate();
+        let m = cand.getMonth() + 1;
+        let y = cand.getFullYear();
+        let lun = convertSolarToLunar(d, m, y);
+        if (lun && lun.lunarDay === recDay) {
+          return new Date(cand);
+        }
+        cand.setDate(cand.getDate() + 1);
+      }
+    }
+  }
+  return null;
+}
+
 function getEventsForDate(dateKey) {
   const data = getDateData(dateKey);
-  return data.events || [];
+  const directEvents = (data && Array.isArray(data.events)) ? [...data.events] : [];
+  const recurringInstances = getMatchingRecurringEventInstances(dateKey);
+  return [...directEvents, ...recurringInstances];
 }
 
 function getOvertimeHoursForDateKey(dateKey) {
@@ -2531,6 +2922,9 @@ async function initFirebaseRealtime() {
 
   // Funds reference
   initFundsFirebase();
+
+  // Recurring events reference
+  initRecurringEventsFirebase();
 
   // Cashflow categories
   loadCashflowCategoriesFromStorage();
@@ -2841,6 +3235,9 @@ async function reloadFirebaseForUser() {
   // Reload Funds
   initFundsFirebase();
 
+  // Reload Recurring Events
+  initRecurringEventsFirebase();
+
   // Reload Cashflow categories
   loadCashflowCategoriesFromStorage();
 
@@ -3046,6 +3443,8 @@ function closeAllModals() {
     "allocateModal",
     "congratulationsModal",
     "modalNotificationList",
+    "recurringEventsModal",
+    "recurringEventFormModal",
   ];
   modals.forEach((id) => {
     const el = document.getElementById(id);
@@ -4751,15 +5150,17 @@ function renderDayDetailsModalUI(dateKey, d, m, y, data) {
     holidayCheckbox.checked = !!data.isHoliday;
   }
 
-  // Render events list
+  // Render events list (bao gồm sự kiện của ngày và sự kiện lặp lại trùng ngày)
   const eventsList = document.getElementById("dayEventsList");
   if (!eventsList) return;
   eventsList.innerHTML = "";
 
+  const allDayEvents = getEventsForDate(dateKey);
+
   // Toggle header "+ Thêm" button depending on whether events exist
   const headerAddBtn = document.querySelector("#dayDetailsModal .btn-add-event");
 
-  if (!data.events || data.events.length === 0) {
+  if (!allDayEvents || allDayEvents.length === 0) {
     if (headerAddBtn) headerAddBtn.style.display = "none";
     eventsList.innerHTML = `
       <div class="empty-events-state">
@@ -4776,7 +5177,7 @@ function renderDayDetailsModalUI(dateKey, d, m, y, data) {
     `;
   } else {
     if (headerAddBtn) headerAddBtn.style.display = "";
-    data.events.forEach((event, idx) => {
+    allDayEvents.forEach((event, idx) => {
       const eventDiv = document.createElement("div");
       eventDiv.className = "event-item";
       eventDiv.style.cursor = "pointer";
@@ -4789,19 +5190,33 @@ function renderDayDetailsModalUI(dateKey, d, m, y, data) {
           minute: "2-digit",
         })
         : "--:--";
+
+      const recBadge = event.isRecurring
+        ? `<div class="event-recurring-tag ${event.calendarType === 'lunar' ? 'lunar' : ''}">🔄 ${escapeHtml(event.recurrenceLabel || 'Lặp lại')}</div>`
+        : "";
+
+      const editAction = event.isRecurring
+        ? `openRecurringEventFormModal('${event.recurringId}')`
+        : `openEditEventModal(${idx})`;
+
+      const deleteAction = event.isRecurring
+        ? `deleteRecurringEventUI('${event.recurringId}')`
+        : `deleteEventFromDateUI(${idx})`;
+
       eventDiv.innerHTML = `
         <div class="event-time" style="color: ${evColor};">${timeStr}</div>
         <div class="event-content">
           <div class="event-title">${escapeHtml(event.title || "(Không có tiêu đề)")}</div>
+          ${recBadge}
           ${event.text ? `<div class="event-text">${escapeHtml(event.text)}</div>` : ""}
         </div>
         <div class="event-actions">
-          <button class="event-edit" onclick="event.stopPropagation(); openEditEventModal(${idx})" title="Sửa" aria-label="Sửa sự kiện">
+          <button class="event-edit" onclick="event.stopPropagation(); ${editAction}" title="${event.isRecurring ? 'Sửa quy tắc lặp lại' : 'Sửa'}" aria-label="Sửa sự kiện">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm17.71-10.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.09Z" />
             </svg>
           </button>
-          <button class="event-delete" onclick="event.stopPropagation(); deleteEventFromDateUI(${idx})" title="Xóa">×</button>
+          <button class="event-delete" onclick="event.stopPropagation(); ${deleteAction}" title="${event.isRecurring ? 'Xóa quy tắc lặp lại' : 'Xóa'}">×</button>
         </div>
       `;
       // Click vào thẻ sự kiện để mở xem chi tiết sự kiện
@@ -4937,6 +5352,35 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
     );
   }
 
+  const recTag = eventObj.isRecurring
+    ? `<div class="event-recurring-tag ${eventObj.calendarType === 'lunar' ? 'lunar' : ''}" style="margin-top: 6px; display: inline-flex;">🔄 ${escapeHtml(eventObj.recurrenceLabel || 'Sự kiện lặp lại')}</div>`
+    : "";
+
+  let actionButtonsHtml = "";
+  if (eventObj.isRecurring) {
+    actionButtonsHtml = `
+      <div class="cashflow-quickview-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+        <button type="button" class="cashflow-quickview-btn-delete" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #ef4444, #dc2626); border: 1px solid rgba(252, 165, 165, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeEventQuickViewModal(); deleteRecurringEventUI('${eventObj.recurringId}');">
+          🗑️ Xóa quy tắc lặp lại
+        </button>
+        <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeEventQuickViewModal(); openRecurringEventFormModal('${eventObj.recurringId}');">
+          ✏️ Chỉnh sửa quy tắc
+        </button>
+      </div>
+    `;
+  } else if (effectiveIndex >= 0) {
+    actionButtonsHtml = `
+      <div class="cashflow-quickview-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
+        <button type="button" class="cashflow-quickview-btn-delete" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #ef4444, #dc2626); border: 1px solid rgba(252, 165, 165, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="deleteEventFromQuickView('${dKey}', ${effectiveIndex});">
+          🗑️ Xóa sự kiện
+        </button>
+        <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="selectedKey='${dKey}'; closeEventQuickViewModal(); openEditEventModal(${effectiveIndex});">
+          ✏️ Chỉnh sửa
+        </button>
+      </div>
+    `;
+  }
+
   quickViewEl.innerHTML = `
     <div class="cashflow-quickview-head">
       <div>
@@ -4944,6 +5388,7 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
         <div class="cashflow-quickview-title" style="border-left: 3px solid ${escapeHtml(color)}; padding-left: 8px;">
           ${escapeHtml(title)}
         </div>
+        ${recTag}
       </div>
       <div class="cashflow-quickview-amount" style="color: ${escapeHtml(color)}; font-size: 14px;">
         ⏰ ${timeStr}
@@ -4964,16 +5409,7 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
         <strong>${createdLabel}</strong>
       </div>
     </div>
-    ${effectiveIndex >= 0 ? `
-      <div class="cashflow-quickview-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
-        <button type="button" class="cashflow-quickview-btn-delete" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #ef4444, #dc2626); border: 1px solid rgba(252, 165, 165, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="deleteEventFromQuickView('${dKey}', ${effectiveIndex});">
-          🗑️ Xóa sự kiện
-        </button>
-        <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="selectedKey='${dKey}'; closeEventQuickViewModal(); openEditEventModal(${effectiveIndex});">
-          ✏️ Chỉnh sửa
-        </button>
-      </div>
-    ` : ""}
+    ${actionButtonsHtml}
   `;
 }
 
@@ -5020,6 +5456,180 @@ function deleteEventFromDateUI(eventIndex) {
   );
 }
 
+/* ========================== ADD MODAL RECURRENCE HELPERS ========================== */
+let currentAddModalPresetCategory = "custom";
+
+function initAddModalRecurrenceDropdowns() {
+  const mSelect = document.getElementById("newEventRecMonth");
+  const dSelect = document.getElementById("newEventRecDay");
+  if (mSelect && mSelect.options.length === 0) {
+    for (let m = 1; m <= 12; m++) {
+      const opt = document.createElement("option");
+      opt.value = m;
+      opt.textContent = `Tháng ${m}`;
+      mSelect.appendChild(opt);
+    }
+  }
+  if (dSelect && dSelect.options.length === 0) {
+    for (let d = 1; d <= 31; d++) {
+      const opt = document.createElement("option");
+      opt.value = d;
+      opt.textContent = `Ngày ${d}`;
+      dSelect.appendChild(opt);
+    }
+  }
+}
+
+function toggleEventModalRecurrence(checked) {
+  const optionsDiv = document.getElementById("newEventRecurrenceOptions");
+  if (optionsDiv) {
+    optionsDiv.style.display = checked ? "flex" : "none";
+  }
+  if (checked) {
+    initAddModalRecurrenceDropdowns();
+    updateAddModalRecurrenceFields();
+    updateAddModalRecurrencePreview();
+  }
+}
+window.toggleEventModalRecurrence = toggleEventModalRecurrence;
+
+function applyRecurrencePresetInAddModal(category) {
+  currentAddModalPresetCategory = category;
+  initAddModalRecurrenceDropdowns();
+
+  const chips = document.querySelectorAll(".rec-preset-chips .rec-preset-chip");
+  chips.forEach(chip => chip.classList.remove("active"));
+  const clickedChip = Array.from(chips).find(c => c.getAttribute("onclick")?.includes(category));
+  if (clickedChip) clickedChip.classList.add("active");
+
+  const titleInput = document.getElementById("newEventTitle");
+  const freqSelect = document.getElementById("newEventRecFreq");
+  const calSelect = document.getElementById("newEventRecCalendar");
+  const birthYearRow = document.getElementById("newEventBirthYearRow");
+
+  if (category === "death_anniversary") {
+    if (!titleInput.value || titleInput.value.startsWith("Sinh nhật") || titleInput.value.startsWith("Hạn nộp") || titleInput.value.startsWith("Gia hạn")) {
+      titleInput.value = "Giỗ ";
+    }
+    if (freqSelect) freqSelect.value = "yearly";
+    if (calSelect) calSelect.value = "lunar";
+    setEventModalColor("#f59e0b");
+    if (birthYearRow) birthYearRow.style.display = "none";
+  } else if (category === "birthday") {
+    if (!titleInput.value || titleInput.value.startsWith("Giỗ") || titleInput.value.startsWith("Hạn nộp") || titleInput.value.startsWith("Gia hạn")) {
+      titleInput.value = "Sinh nhật ";
+    }
+    if (freqSelect) freqSelect.value = "yearly";
+    if (calSelect) calSelect.value = "solar";
+    setEventModalColor("#ec4899");
+    if (birthYearRow) birthYearRow.style.display = "flex";
+  } else if (category === "bill") {
+    if (!titleInput.value || titleInput.value.startsWith("Giỗ") || titleInput.value.startsWith("Sinh nhật") || titleInput.value.startsWith("Gia hạn")) {
+      titleInput.value = "Hạn nộp tiền điện nước";
+    }
+    if (freqSelect) freqSelect.value = "monthly";
+    if (calSelect) calSelect.value = "solar";
+    const dSelect = document.getElementById("newEventRecDay");
+    if (dSelect) dSelect.value = 15;
+    setEventModalColor("#f97316");
+    if (birthYearRow) birthYearRow.style.display = "none";
+  } else if (category === "insurance") {
+    if (!titleInput.value || titleInput.value.startsWith("Giỗ") || titleInput.value.startsWith("Sinh nhật") || titleInput.value.startsWith("Hạn nộp")) {
+      titleInput.value = "Gia hạn bảo hiểm";
+    }
+    if (freqSelect) freqSelect.value = "yearly";
+    if (calSelect) calSelect.value = "solar";
+    setEventModalColor("#10b981");
+    if (birthYearRow) birthYearRow.style.display = "none";
+  } else {
+    if (birthYearRow) birthYearRow.style.display = "none";
+  }
+
+  updateAddModalRecurrenceFields();
+  updateAddModalRecurrencePreview();
+}
+window.applyRecurrencePresetInAddModal = applyRecurrencePresetInAddModal;
+
+function updateAddModalRecurrenceFields() {
+  const freq = document.getElementById("newEventRecFreq")?.value || "yearly";
+  const cal = document.getElementById("newEventRecCalendar")?.value || "solar";
+  const monthCol = document.getElementById("newEventRecMonthCol");
+  const monthLabel = document.getElementById("newEventRecMonthLabel");
+  const dayLabel = document.getElementById("newEventRecDayLabel");
+  const birthYearRow = document.getElementById("newEventBirthYearRow");
+
+  if (monthCol) {
+    monthCol.style.display = freq === "monthly" ? "none" : "";
+  }
+  if (monthLabel) {
+    monthLabel.textContent = cal === "lunar" ? "Tháng âm lịch" : "Tháng dương lịch";
+  }
+  if (dayLabel) {
+    dayLabel.textContent = cal === "lunar" ? "Ngày âm lịch" : "Ngày";
+  }
+  if (birthYearRow) {
+    birthYearRow.style.display = (currentAddModalPresetCategory === "birthday" && freq === "yearly") ? "flex" : "none";
+  }
+
+  updateAddModalRecurrencePreview();
+}
+window.updateAddModalRecurrenceFields = updateAddModalRecurrenceFields;
+
+function updateAddModalRecurrencePreview() {
+  const preview = document.getElementById("newEventRecurrencePreview");
+  if (!preview) return;
+
+  const freq = document.getElementById("newEventRecFreq")?.value || "yearly";
+  const cal = document.getElementById("newEventRecCalendar")?.value || "solar";
+  const m = parseInt(document.getElementById("newEventRecMonth")?.value, 10) || 1;
+  const d = parseInt(document.getElementById("newEventRecDay")?.value, 10) || 1;
+  const birthYear = parseInt(document.getElementById("newEventBirthYear")?.value, 10) || null;
+
+  const mockRec = {
+    category: currentAddModalPresetCategory,
+    recurrenceType: freq,
+    calendarType: cal,
+    day: d,
+    month: m,
+    birthYear: birthYear
+  };
+
+  const nextOccur = getNextOccurrenceDate(mockRec);
+  let nextText = "";
+  if (nextOccur) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((nextOccur.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    let diffStr = "";
+    if (diffDays === 0) diffStr = " (Hôm nay!)";
+    else if (diffDays === 1) diffStr = " (Ngày mai)";
+    else diffStr = ` (Còn ${diffDays} ngày nữa)`;
+
+    const dStr = `${String(nextOccur.getDate()).padStart(2, "0")}/${String(nextOccur.getMonth() + 1).padStart(2, "0")}/${nextOccur.getFullYear()}`;
+    nextText = `<br><span style="color: #60a5fa; font-weight: 600;">📅 Lần tới theo Dương lịch: ${dStr}${diffStr}</span>`;
+  }
+
+  let desc = "";
+  if (freq === "yearly") {
+    desc = cal === "lunar"
+      ? `Lặp lại vào ngày <strong>${d}/${m} Âm lịch</strong> hàng năm.${nextText}`
+      : `Lặp lại vào ngày <strong>${d}/${m} Dương lịch</strong> hàng năm.${nextText}`;
+  } else {
+    desc = cal === "lunar"
+      ? `Lặp lại vào ngày <strong>mùng ${d} Âm lịch</strong> mỗi tháng.${nextText}`
+      : `Lặp lại vào ngày <strong>${d} hàng tháng</strong>.${nextText}`;
+  }
+
+  if (currentAddModalPresetCategory === "birthday" && birthYear) {
+    const curY = new Date().getFullYear();
+    const age = curY - birthYear;
+    desc += `<br><span style="color: #f472b6;">🎂 Năm nay sẽ tròn ${age} tuổi.</span>`;
+  }
+
+  preview.innerHTML = desc;
+}
+window.updateAddModalRecurrencePreview = updateAddModalRecurrencePreview;
+
 // Add Event Modal - for creating new event
 function openAddEventModal(dateKey, d, m, y) {
   closeAllModals();
@@ -5038,6 +5648,18 @@ function openAddEventModal(dateKey, d, m, y) {
   document.getElementById("addEventModalTitle").innerText = "Thêm sự kiện";
   document.getElementById("saveEventBtn").innerText = "Lưu";
 
+  // Reset recurrence toggle
+  const recCheckbox = document.getElementById("newEventIsRecurring");
+  if (recCheckbox) {
+    recCheckbox.checked = false;
+    toggleEventModalRecurrence(false);
+  }
+  initAddModalRecurrenceDropdowns();
+  const mSelect = document.getElementById("newEventRecMonth");
+  const dSelect = document.getElementById("newEventRecDay");
+  if (mSelect) mSelect.value = m;
+  if (dSelect) dSelect.value = d;
+
   document.getElementById("addEventModal").style.display = "flex";
 }
 
@@ -5054,6 +5676,44 @@ function saveNewEvent() {
 
   if (!title && !text) {
     alert("Vui lòng nhập tiêu đề hoặc nội dung sự kiện");
+    return;
+  }
+
+  const isRecurring = document.getElementById("newEventIsRecurring")?.checked;
+  if (isRecurring && selectedEventIndex < 0) {
+    const recFreq = document.getElementById("newEventRecFreq")?.value || "yearly";
+    const recCal = document.getElementById("newEventRecCalendar")?.value || "solar";
+    const recMonth = parseInt(document.getElementById("newEventRecMonth")?.value, 10) || 1;
+    const recDay = parseInt(document.getElementById("newEventRecDay")?.value, 10) || 1;
+    const birthYear = parseInt(document.getElementById("newEventBirthYear")?.value, 10) || null;
+
+    let time = "08:00";
+    if (eventDateTime) {
+      try {
+        const dt = new Date(eventDateTime);
+        time = `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
+      } catch (e) {}
+    }
+
+    const recPayload = {
+      title,
+      text,
+      note: text,
+      category: currentAddModalPresetCategory || "custom",
+      recurrenceType: recFreq,
+      calendarType: recCal,
+      month: recMonth,
+      day: recDay,
+      time,
+      birthYear,
+      color,
+      reminderDaysBefore: 1
+    };
+
+    addRecurringEvent(recPayload);
+    closeAddEventModal();
+    const [y, m, d] = selectedKey.split("-").map(Number);
+    openDayDetailsModal(selectedKey, d, m, y);
     return;
   }
 
@@ -5089,6 +5749,575 @@ function saveNewEvent() {
   const [y, m, d] = selectedKey.split("-").map(Number);
   openDayDetailsModal(selectedKey, d, m, y);
 }
+
+/* ========================== RECURRING EVENTS MANAGER MODAL ========================== */
+
+function openRecurringEventsModal() {
+  closeAllModals();
+  renderRecurringEventsList();
+  const modal = document.getElementById("recurringEventsModal");
+  if (modal) modal.style.display = "flex";
+}
+window.openRecurringEventsModal = openRecurringEventsModal;
+
+function closeRecurringEventsModal() {
+  const modal = document.getElementById("recurringEventsModal");
+  if (modal) modal.style.display = "none";
+}
+window.closeRecurringEventsModal = closeRecurringEventsModal;
+
+function filterRecurringEventsTab(tab) {
+  currentRecurringFilterTab = tab || "all";
+  const tabs = document.querySelectorAll("#recurringEventsModal .rec-tab");
+  tabs.forEach(btn => {
+    if (btn.getAttribute("data-tab") === currentRecurringFilterTab) {
+      btn.classList.add("active");
+    } else {
+      btn.classList.remove("active");
+    }
+  });
+  renderRecurringEventsList();
+}
+window.filterRecurringEventsTab = filterRecurringEventsTab;
+
+function onSearchRecurringEvents(query) {
+  currentRecurringSearchQuery = String(query || "").trim().toLowerCase();
+  renderRecurringEventsList();
+}
+window.onSearchRecurringEvents = onSearchRecurringEvents;
+
+function getCategoryMeta(category) {
+  switch (category) {
+    case "death_anniversary":
+      return { icon: "🕯️", name: "Giỗ chạp", defaultColor: "#f59e0b" };
+    case "birthday":
+      return { icon: "🎂", name: "Sinh nhật", defaultColor: "#ec4899" };
+    case "bill":
+      return { icon: "⚡", name: "Điện nước / Hóa đơn", defaultColor: "#f97316" };
+    case "insurance":
+      return { icon: "🛡️", name: "Bảo hiểm", defaultColor: "#10b981" };
+    default:
+      return { icon: "🔄", name: "Khác", defaultColor: "#3b82f6" };
+  }
+}
+
+function renderRecurringEventsList() {
+  const listEl = document.getElementById("recurringEventsList");
+  if (!listEl) return;
+
+  const allEvents = getRecurringEvents();
+
+  // Update counter badges
+  const cntAll = allEvents.length;
+  const cntDeath = allEvents.filter(e => e.category === "death_anniversary").length;
+  const cntBirthday = allEvents.filter(e => e.category === "birthday").length;
+  const cntBill = allEvents.filter(e => e.category === "bill").length;
+  const cntInsurance = allEvents.filter(e => e.category === "insurance").length;
+  const cntCustom = allEvents.filter(e => !["death_anniversary", "birthday", "bill", "insurance"].includes(e.category)).length;
+
+  const elAll = document.getElementById("recCountAll"); if (elAll) elAll.innerText = cntAll;
+  const elDeath = document.getElementById("recCountDeath"); if (elDeath) elDeath.innerText = cntDeath;
+  const elBirthday = document.getElementById("recCountBirthday"); if (elBirthday) elBirthday.innerText = cntBirthday;
+  const elBill = document.getElementById("recCountBill"); if (elBill) elBill.innerText = cntBill;
+  const elInsurance = document.getElementById("recCountInsurance"); if (elInsurance) elInsurance.innerText = cntInsurance;
+  const elCustom = document.getElementById("recCountCustom"); if (elCustom) elCustom.innerText = cntCustom;
+
+  // Filter
+  let filtered = allEvents;
+  if (currentRecurringFilterTab !== "all") {
+    if (currentRecurringFilterTab === "custom") {
+      filtered = filtered.filter(e => !["death_anniversary", "birthday", "bill", "insurance"].includes(e.category));
+    } else {
+      filtered = filtered.filter(e => e.category === currentRecurringFilterTab);
+    }
+  }
+
+  if (filtered.length === 0) {
+    if (allEvents.length > 0) {
+      listEl.innerHTML = `
+        <div class="recurring-empty-state compact">
+          <div class="rec-empty-compact-left">
+            <span class="rec-empty-compact-icon">📂</span>
+            <div>
+              <div class="rec-empty-compact-title">Chưa có sự kiện trong mục này</div>
+              <div class="rec-empty-compact-sub">Nhấn để thêm ngay sự kiện thuộc danh mục này</div>
+            </div>
+          </div>
+          <button type="button" class="rec-empty-chip-btn primary" onclick="openRecurringEventFormModal(); applyRecurringEventPreset('${currentRecurringFilterTab}');">
+            <span>➕</span> <span>Thêm vào mục này</span>
+          </button>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = `
+      <div class="recurring-empty-state compact">
+        <div class="rec-empty-compact-header">
+          <span class="rec-empty-compact-icon">📅</span>
+          <div class="rec-empty-compact-info">
+            <div class="rec-empty-compact-title">Chưa có sự kiện lặp lại nào</div>
+            <div class="rec-empty-compact-sub">Chọn nhanh mẫu để tạo hoặc bấm Thêm mới:</div>
+          </div>
+        </div>
+        <div class="rec-empty-chips-row">
+          <button type="button" class="rec-empty-chip-btn" onclick="openRecurringEventFormModal(); applyRecurringEventPreset('death_anniversary');">
+            <span>🕯️</span> <span>Giỗ chạp</span>
+          </button>
+          <button type="button" class="rec-empty-chip-btn" onclick="openRecurringEventFormModal(); applyRecurringEventPreset('birthday');">
+            <span>🎂</span> <span>Sinh nhật</span>
+          </button>
+          <button type="button" class="rec-empty-chip-btn" onclick="openRecurringEventFormModal(); applyRecurringEventPreset('bill');">
+            <span>⚡</span> <span>Điện nước</span>
+          </button>
+          <button type="button" class="rec-empty-chip-btn" onclick="openRecurringEventFormModal(); applyRecurringEventPreset('insurance');">
+            <span>🛡️</span> <span>Bảo hiểm</span>
+          </button>
+          <button type="button" class="rec-empty-chip-btn primary" onclick="openRecurringEventFormModal();">
+            <span>➕</span> <span>Thêm mới</span>
+          </button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  // Sort by next upcoming occurrence
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const itemsWithNext = filtered.map(item => {
+    const nextOccur = getNextOccurrenceDate(item);
+    const diffDays = nextOccur
+      ? Math.round((nextOccur.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+      : 9999;
+    return { item, nextOccur, diffDays };
+  });
+
+  itemsWithNext.sort((a, b) => a.diffDays - b.diffDays);
+
+  const cardsHtml = itemsWithNext.map(({ item, nextOccur, diffDays }) => {
+    const cat = getCategoryMeta(item.category);
+    const color = escapeHtml(item.color || cat.defaultColor || "#3b82f6");
+
+    let countdownHtml = "";
+    if (nextOccur) {
+      if (diffDays === 0) {
+        countdownHtml = `<span class="rec-countdown-badge today">🎉 Hôm nay!</span>`;
+      } else if (diffDays === 1) {
+        countdownHtml = `<span class="rec-countdown-badge imminent">⚠️ Ngày mai</span>`;
+      } else if (diffDays <= 7) {
+        countdownHtml = `<span class="rec-countdown-badge imminent">⏳ Còn ${diffDays} ngày</span>`;
+      } else {
+        countdownHtml = `<span class="rec-countdown-badge normal">📅 Còn ${diffDays} ngày</span>`;
+      }
+    }
+
+    const dayNames = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+    const weekdayStr = nextOccur ? dayNames[nextOccur.getDay()] : "";
+    const nextDateFormatted = nextOccur
+      ? `${weekdayStr}, ${String(nextOccur.getDate()).padStart(2, "0")}/${String(nextOccur.getMonth() + 1).padStart(2, "0")}/${nextOccur.getFullYear()}`
+      : "";
+
+    let dateBadgeMain = "";
+    let dateBadgeSub = "";
+    if (item.recurrenceType === "yearly") {
+      dateBadgeMain = `${String(item.day).padStart(2, "0")}/${String(item.month).padStart(2, "0")}`;
+      dateBadgeSub = item.calendarType === "lunar" ? "Âm lịch" : "Dương lịch";
+    } else {
+      dateBadgeMain = `Ngày ${item.day}`;
+      dateBadgeSub = item.calendarType === "lunar" ? "Âm lịch" : "Hàng tháng";
+    }
+
+    let birthYearTag = "";
+    if (item.category === "birthday" && item.birthYear) {
+      const curY = new Date().getFullYear();
+      const age = curY - item.birthYear;
+      birthYearTag = `<span class="rec-meta-chip">🎂 SN ${item.birthYear} (Tròn ${age} tuổi)</span>`;
+    }
+
+    return `
+      <div class="recurring-event-card" style="--rec-card-color: ${color};">
+        <div class="rec-card-left">
+          <div class="rec-date-badge ${item.calendarType === 'lunar' ? 'lunar' : 'solar'}">
+            <span class="rec-date-icon">${cat.icon}</span>
+            <span class="rec-date-main">${dateBadgeMain}</span>
+            <span class="rec-date-sub">${dateBadgeSub}</span>
+          </div>
+          <div class="rec-card-main">
+            <div class="rec-card-title-row">
+              <span class="rec-card-title">${escapeHtml(item.title || "(Không có tiêu đề)")}</span>
+              <span class="rec-cat-chip">${cat.name}</span>
+              <span class="rec-freq-chip">${item.recurrenceType === 'yearly' ? 'Hàng năm' : 'Hàng tháng'}</span>
+            </div>
+            ${item.note || item.text ? `<div class="rec-card-note">${escapeHtml(item.note || item.text)}</div>` : ""}
+            <div class="rec-card-meta">
+              ${nextDateFormatted ? `<span class="rec-meta-item rec-next-date">📍 Tiếp theo: <strong>${nextDateFormatted}</strong></span>` : ""}
+              ${item.time ? `<span class="rec-meta-item">⏰ ${item.time}</span>` : ""}
+              ${birthYearTag}
+            </div>
+          </div>
+        </div>
+        <div class="rec-card-right">
+          ${countdownHtml}
+          <div class="rec-card-actions">
+            <button type="button" class="btn-rec-action edit" onclick="openRecurringEventFormModal('${item.id}')" title="Chỉnh sửa sự kiện">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm17.71-10.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.09Z"/>
+              </svg>
+              <span>Sửa</span>
+            </button>
+            <button type="button" class="btn-rec-action delete" onclick="deleteRecurringEventUI('${item.id}')" title="Xóa sự kiện">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>
+              </svg>
+              <span>Xóa</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  const addMoreHtml = `
+    <div class="rec-list-footer-add">
+      <button type="button" class="btn-rec-list-add" onclick="openRecurringEventFormModal()">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        <span>Thêm sự kiện lặp lại</span>
+      </button>
+    </div>
+  `;
+
+  listEl.innerHTML = cardsHtml + addMoreHtml;
+}
+
+/* ========================== RECURRING EVENT FORM MODAL ========================== */
+
+function openRecurringEventFormModal(editId = null) {
+  initAddModalRecurrenceDropdowns();
+  initRecFormDropdowns();
+
+  const modal = document.getElementById("recurringEventFormModal");
+  if (!modal) return;
+
+  const titleModal = document.getElementById("recurringFormModalTitle");
+  const editIdInput = document.getElementById("recFormEditId");
+  const titleInput = document.getElementById("recFormTitle");
+  const noteInput = document.getElementById("recFormNote");
+  const freqSelect = document.getElementById("recFormFrequency");
+  const calSelect = document.getElementById("recFormCalendar");
+  const mSelect = document.getElementById("recFormMonth");
+  const dSelect = document.getElementById("recFormDay");
+  const timeInput = document.getElementById("recFormTime");
+  const birthInput = document.getElementById("recFormBirthYear");
+  const remSelect = document.getElementById("recFormReminderDays");
+  const catInput = document.getElementById("recFormCategory");
+
+  if (editId) {
+    const list = getRecurringEvents();
+    const item = list.find(e => e.id === editId);
+    if (!item) return;
+
+    if (titleModal) titleModal.innerText = "Chỉnh Sửa Sự Kiện Lặp Lại";
+    if (editIdInput) editIdInput.value = item.id;
+    if (titleInput) titleInput.value = item.title || "";
+    if (noteInput) noteInput.value = item.note || item.text || "";
+    if (catInput) catInput.value = item.category || "custom";
+    if (freqSelect) freqSelect.value = item.recurrenceType || "yearly";
+    if (calSelect) calSelect.value = item.calendarType || "solar";
+    if (mSelect) mSelect.value = item.month || 1;
+    if (dSelect) dSelect.value = item.day || 1;
+    if (timeInput) timeInput.value = item.time || "08:00";
+    if (birthInput) birthInput.value = item.birthYear || "";
+    if (remSelect) remSelect.value = item.reminderDaysBefore ?? 1;
+
+    setRecFormColor(item.color || "#3b82f6");
+  } else {
+    if (titleModal) titleModal.innerText = "Thêm Sự Kiện Lặp Lại";
+    if (editIdInput) editIdInput.value = "";
+    if (titleInput) titleInput.value = "";
+    if (noteInput) noteInput.value = "";
+    if (catInput) catInput.value = "custom";
+    if (freqSelect) freqSelect.value = "yearly";
+    if (calSelect) calSelect.value = "solar";
+
+    const today = new Date();
+    if (mSelect) mSelect.value = today.getMonth() + 1;
+    if (dSelect) dSelect.value = today.getDate();
+    if (timeInput) timeInput.value = "08:00";
+    if (birthInput) birthInput.value = "";
+    if (remSelect) remSelect.value = 1;
+
+    setRecFormColor("#f59e0b");
+  }
+
+  onRecFormFrequencyChange();
+  onRecFormCalendarChange();
+  updateRecFormPreview();
+
+  modal.style.display = "flex";
+}
+window.openRecurringEventFormModal = openRecurringEventFormModal;
+
+function closeRecurringEventFormModal() {
+  const modal = document.getElementById("recurringEventFormModal");
+  if (modal) modal.style.display = "none";
+}
+window.closeRecurringEventFormModal = closeRecurringEventFormModal;
+
+function initRecFormDropdowns() {
+  const mSelect = document.getElementById("recFormMonth");
+  const dSelect = document.getElementById("recFormDay");
+  if (mSelect && mSelect.options.length === 0) {
+    for (let m = 1; m <= 12; m++) {
+      const opt = document.createElement("option");
+      opt.value = m;
+      opt.textContent = `Tháng ${m}`;
+      mSelect.appendChild(opt);
+    }
+  }
+  if (dSelect && dSelect.options.length === 0) {
+    for (let d = 1; d <= 31; d++) {
+      const opt = document.createElement("option");
+      opt.value = d;
+      opt.textContent = `Ngày ${d}`;
+      dSelect.appendChild(opt);
+    }
+  }
+
+  // Init color palette click listeners
+  const palette = document.getElementById("recFormColorPalette");
+  if (palette && !palette._recPaletteInited) {
+    palette._recPaletteInited = true;
+    palette.addEventListener("click", (e) => {
+      const swatch = e.target.closest(".event-color-swatch");
+      if (swatch && swatch.dataset.color) {
+        setRecFormColor(swatch.dataset.color);
+      }
+    });
+  }
+}
+
+function setRecFormColor(hex) {
+  const color = hex || "#3b82f6";
+  const hiddenInput = document.getElementById("recFormColor");
+  if (hiddenInput) hiddenInput.value = color;
+
+  const swatches = document.querySelectorAll("#recFormColorPalette .event-color-swatch");
+  swatches.forEach((swatch) => {
+    if (swatch.dataset.color && swatch.dataset.color.toLowerCase() === color.toLowerCase()) {
+      swatch.classList.add("active");
+    } else {
+      swatch.classList.remove("active");
+    }
+  });
+}
+
+function applyRecurringEventPreset(category) {
+  const catInput = document.getElementById("recFormCategory");
+  if (catInput) catInput.value = category;
+
+  const titleInput = document.getElementById("recFormTitle");
+  const freqSelect = document.getElementById("recFormFrequency");
+  const calSelect = document.getElementById("recFormCalendar");
+  const birthYearRow = document.getElementById("recFormBirthYearRow");
+
+  // Highlight preset button
+  const presetBtns = document.querySelectorAll(".rec-preset-grid .rec-preset-btn");
+  presetBtns.forEach(btn => btn.classList.remove("active"));
+  const activeBtn = Array.from(presetBtns).find(b => b.getAttribute("onclick")?.includes(category));
+  if (activeBtn) activeBtn.classList.add("active");
+
+  if (category === "death_anniversary") {
+    if (titleInput && (!titleInput.value || titleInput.value.startsWith("Sinh nhật") || titleInput.value.startsWith("Hạn nộp") || titleInput.value.startsWith("Gia hạn"))) {
+      titleInput.value = "Giỗ ";
+    }
+    if (freqSelect) freqSelect.value = "yearly";
+    if (calSelect) calSelect.value = "lunar";
+    setRecFormColor("#f59e0b");
+  } else if (category === "birthday") {
+    if (titleInput && (!titleInput.value || titleInput.value.startsWith("Giỗ") || titleInput.value.startsWith("Hạn nộp") || titleInput.value.startsWith("Gia hạn"))) {
+      titleInput.value = "Sinh nhật ";
+    }
+    if (freqSelect) freqSelect.value = "yearly";
+    if (calSelect) calSelect.value = "solar";
+    setRecFormColor("#ec4899");
+  } else if (category === "bill") {
+    if (titleInput && (!titleInput.value || titleInput.value.startsWith("Giỗ") || titleInput.value.startsWith("Sinh nhật") || titleInput.value.startsWith("Gia hạn"))) {
+      titleInput.value = "Hạn nộp tiền điện nước";
+    }
+    if (freqSelect) freqSelect.value = "monthly";
+    if (calSelect) calSelect.value = "solar";
+    const dSelect = document.getElementById("recFormDay");
+    if (dSelect) dSelect.value = 15;
+    setRecFormColor("#f97316");
+  } else if (category === "insurance") {
+    if (titleInput && (!titleInput.value || titleInput.value.startsWith("Giỗ") || titleInput.value.startsWith("Sinh nhật") || titleInput.value.startsWith("Hạn nộp"))) {
+      titleInput.value = "Gia hạn bảo hiểm";
+    }
+    if (freqSelect) freqSelect.value = "yearly";
+    if (calSelect) calSelect.value = "solar";
+    setRecFormColor("#10b981");
+  }
+
+  onRecFormFrequencyChange();
+  onRecFormCalendarChange();
+  updateRecFormPreview();
+}
+window.applyRecurringEventPreset = applyRecurringEventPreset;
+
+function onRecFormFrequencyChange() {
+  const freq = document.getElementById("recFormFrequency")?.value || "yearly";
+  const monthCol = document.getElementById("recFormMonthCol");
+  if (monthCol) {
+    monthCol.style.display = freq === "monthly" ? "none" : "";
+  }
+  updateRecFormPreview();
+}
+window.onRecFormFrequencyChange = onRecFormFrequencyChange;
+
+function onRecFormCalendarChange() {
+  const cal = document.getElementById("recFormCalendar")?.value || "solar";
+  const mLabel = document.getElementById("recFormMonthLabel");
+  const dLabel = document.getElementById("recFormDayLabel");
+  if (mLabel) mLabel.textContent = cal === "lunar" ? "Tháng âm lịch" : "Tháng dương lịch";
+  if (dLabel) dLabel.textContent = cal === "lunar" ? "Ngày âm lịch" : "Ngày";
+  updateRecFormPreview();
+}
+window.onRecFormCalendarChange = onRecFormCalendarChange;
+
+function updateRecFormPreview() {
+  const preview = document.getElementById("recFormOccurrencePreview");
+  if (!preview) return;
+
+  const cat = document.getElementById("recFormCategory")?.value || "custom";
+  const freq = document.getElementById("recFormFrequency")?.value || "yearly";
+  const cal = document.getElementById("recFormCalendar")?.value || "solar";
+  const m = parseInt(document.getElementById("recFormMonth")?.value, 10) || 1;
+  const d = parseInt(document.getElementById("recFormDay")?.value, 10) || 1;
+  const birthYear = parseInt(document.getElementById("recFormBirthYear")?.value, 10) || null;
+
+  const birthRow = document.getElementById("recFormBirthYearRow");
+  if (birthRow) {
+    birthRow.style.display = (cat === "birthday" && freq === "yearly") ? "flex" : "none";
+  }
+
+  const mockRec = {
+    category: cat,
+    recurrenceType: freq,
+    calendarType: cal,
+    day: d,
+    month: m,
+    birthYear: birthYear
+  };
+
+  const nextOccur = getNextOccurrenceDate(mockRec);
+  let nextText = "";
+  if (nextOccur) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.round((nextOccur.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    let diffStr = "";
+    if (diffDays === 0) diffStr = "🎉 Hôm nay!";
+    else if (diffDays === 1) diffStr = "⚠️ Ngày mai";
+    else diffStr = `⏳ Còn ${diffDays} ngày nữa`;
+
+    const dayNames = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+    const weekdayStr = dayNames[nextOccur.getDay()];
+    const dStr = `${weekdayStr}, ${String(nextOccur.getDate()).padStart(2, "0")}/${String(nextOccur.getMonth() + 1).padStart(2, "0")}/${nextOccur.getFullYear()}`;
+    nextText = `
+      <div class="rec-preview-next-box">
+        <span class="rec-preview-next-label">📅 Lần diễn ra tiếp theo (Dương lịch):</span>
+        <div class="rec-preview-next-val">
+          <strong>${dStr}</strong>
+          <span class="rec-preview-diff-badge">${diffStr}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  let desc = "";
+  if (freq === "yearly") {
+    desc = cal === "lunar"
+      ? `<div class="rec-preview-rule">🔄 Quy tắc: Lặp lại vào ngày <strong>${d}/${m} Âm lịch</strong> hàng năm</div>`
+      : `<div class="rec-preview-rule">🔄 Quy tắc: Lặp lại vào ngày <strong>${d}/${m} Dương lịch</strong> hàng năm</div>`;
+  } else {
+    desc = cal === "lunar"
+      ? `<div class="rec-preview-rule">🔄 Quy tắc: Lặp lại vào ngày <strong>mùng ${d} Âm lịch</strong> hàng tháng</div>`
+      : `<div class="rec-preview-rule">🔄 Quy tắc: Lặp lại vào ngày <strong>ngày ${d}</strong> hàng tháng</div>`;
+  }
+
+  if (cat === "birthday" && birthYear) {
+    const curY = new Date().getFullYear();
+    const age = curY - birthYear;
+    desc += `<div class="rec-preview-age">🎂 Năm nay tròn <strong>${age} tuổi</strong></div>`;
+  }
+
+  preview.innerHTML = desc + nextText;
+}
+window.updateRecFormPreview = updateRecFormPreview;
+
+function saveRecurringEventForm() {
+  const editId = document.getElementById("recFormEditId")?.value;
+  const title = document.getElementById("recFormTitle")?.value.trim();
+  const note = document.getElementById("recFormNote")?.value.trim();
+  const cat = document.getElementById("recFormCategory")?.value || "custom";
+  const freq = document.getElementById("recFormFrequency")?.value || "yearly";
+  const cal = document.getElementById("recFormCalendar")?.value || "solar";
+  const month = parseInt(document.getElementById("recFormMonth")?.value, 10) || 1;
+  const day = parseInt(document.getElementById("recFormDay")?.value, 10) || 1;
+  const time = document.getElementById("recFormTime")?.value || "08:00";
+  const birthYear = parseInt(document.getElementById("recFormBirthYear")?.value, 10) || null;
+  const reminderDays = parseInt(document.getElementById("recFormReminderDays")?.value, 10) || 1;
+  const color = document.getElementById("recFormColor")?.value || "#3b82f6";
+
+  if (!title) {
+    alert("Vui lòng nhập tiêu đề sự kiện lặp lại");
+    return;
+  }
+
+  const payload = {
+    title,
+    note,
+    text: note,
+    category: cat,
+    recurrenceType: freq,
+    calendarType: cal,
+    month,
+    day,
+    time,
+    birthYear,
+    reminderDaysBefore: reminderDays,
+    color
+  };
+
+  if (editId) {
+    updateRecurringEvent(editId, payload);
+  } else {
+    addRecurringEvent(payload);
+  }
+
+  closeRecurringEventFormModal();
+  renderRecurringEventsList();
+  renderCalendar();
+  renderTodayEvents();
+}
+window.saveRecurringEventForm = saveRecurringEventForm;
+
+function deleteRecurringEventUI(id) {
+  showConfirmPopup(
+    "Xóa sự kiện lặp lại",
+    "Bạn có chắc chắn muốn xóa quy tắc lặp lại này không? Sự kiện sẽ không còn hiển thị trên lịch nữa.",
+    "Xóa",
+    () => {
+      deleteRecurringEvent(id);
+      renderRecurringEventsList();
+      renderCalendar();
+      renderTodayEvents();
+    }
+  );
+}
+window.deleteRecurringEventUI = deleteRecurringEventUI;
 
 
 function openModal(key, d, m, y) {

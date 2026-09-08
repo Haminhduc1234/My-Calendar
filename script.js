@@ -504,21 +504,25 @@ function renderCalendar() {
       holidayName = "Ngày nghỉ lễ";
     }
 
-    let recurringChipHtml = "";
+    const hasOvertime = getOvertimeHoursForDateKey(key) > 0;
+    let recBadgesHtml = "";
     if (recurringOnDay.length > 0) {
-      const firstRec = recurringOnDay[0];
-      const catMeta = getCategoryMeta(firstRec.category);
-      const recColor = escapeHtml(firstRec.color || catMeta.defaultColor || "#3b82f6");
-      const moreSuffix = recurringOnDay.length > 1 ? ` (+${recurringOnDay.length - 1})` : "";
-      recurringChipHtml = `
-        <div class="day-recurring-chip" style="--rec-chip-color: ${recColor};" title="${escapeHtml(firstRec.title || 'Sự kiện lặp')}${moreSuffix}">
-          <span class="day-rec-icon">${catMeta.icon}</span>
-          <span class="day-rec-title">${escapeHtml(firstRec.title || "Lặp lại")}${moreSuffix}</span>
+      const displayRecs = recurringOnDay.slice(0, 2);
+      const extraRecCount = recurringOnDay.length - displayRecs.length;
+      recBadgesHtml = `
+        <div class="day-rec-badges-container">
+          ${displayRecs
+            .map((rec) => {
+              const catMeta = getCategoryMeta(rec.category);
+              const c = escapeHtml(rec.color || (catMeta ? catMeta.defaultColor : "#3b82f6"));
+              return `<span class="day-rec-badge" style="--badge-color: ${c};" title="${escapeHtml(rec.title || catMeta.name)}">${catMeta.icon}</span>`;
+            })
+            .join("")}
+          ${extraRecCount > 0 ? `<span class="day-rec-badge more" title="Còn ${extraRecCount} sự kiện lặp lại">+${extraRecCount}</span>` : ""}
         </div>
       `;
     }
 
-    const hasOvertime = getOvertimeHoursForDateKey(key) > 0;
     let dotsHtml = "";
     if (dayEvents.length > 0 || hasOvertime) {
       const displayDots = dayEvents.slice(0, 5);
@@ -530,8 +534,12 @@ function renderCalendar() {
         <div class="day-event-dots">
           ${displayDots
           .map((ev) => {
-            const c = escapeHtml(ev.color || "#3b82f6");
-            return `<span class="day-event-dot" style="background-color: ${c}; color: ${c};" title="${escapeHtml(ev.title || "Sự kiện")}"></span>`;
+            const isRec = Boolean(ev.isRecurring);
+            const catMeta = isRec ? getCategoryMeta(ev.category) : null;
+            const c = escapeHtml(ev.color || (catMeta ? catMeta.defaultColor : "#3b82f6"));
+            const prefix = catMeta ? `${catMeta.icon} ` : (isRec ? "🔄 " : "");
+            const recClass = isRec ? " day-rec-dot" : "";
+            return `<span class="day-event-dot${recClass}" style="background-color: ${c}; color: ${c};" title="${prefix}${escapeHtml(ev.title || "Sự kiện")}"></span>`;
           })
           .join("")}
           ${extraCount > 0 ? `<span class="day-event-more">+${extraCount}</span>` : ""}
@@ -543,7 +551,7 @@ function renderCalendar() {
     div.innerHTML = `
   <div class="solar">${d}</div>
   <div class="lunar">${lunar.lunarDay}/${lunar.lunarMonth}${lunar.lunarLeap ? "N" : ""}</div>
-  ${recurringChipHtml}
+  ${recBadgesHtml}
   ${dotsHtml}
 `;
 

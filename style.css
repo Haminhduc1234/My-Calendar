@@ -17322,44 +17322,98 @@ html {
   box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
 }
 
-/* Calendar Day Recurring Chip */
-.day-recurring-chip {
-  margin-top: 4px;
-  display: flex;
-  align-items: center;
-  gap: 3.5px;
-  padding: 1.5px 5px;
-  border-radius: 5px;
-  background: rgba(15, 23, 42, 0.88);
-  border-left: 2.5px solid var(--rec-chip-color, #3b82f6);
-  font-size: 10px;
-  font-weight: 600;
-  color: #f1f5f9;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  pointer-events: none;
-  line-height: 1.25;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-  box-sizing: border-box;
-}
-
-.day-rec-icon {
-  font-size: 10px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.day-rec-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* Calendar Day Recurring Indicator */
+.day-event-dot.day-rec-dot {
+  box-shadow: 0 0 8px currentColor, 0 0 1.5px #ffffff;
+  position: relative;
 }
 
 .day.has-recurring-event {
-  border-color: rgba(59, 130, 246, 0.4);
+  border-color: rgba(59, 130, 246, 0.45);
 }
+
+.day-rec-badges-container {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  max-width: calc(100% - 26px);
+  overflow: hidden;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.day-rec-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.88);
+  background: color-mix(in srgb, var(--badge-color, #3b82f6) 24%, rgba(15, 23, 42, 0.9));
+  border: 1.5px solid var(--badge-color, #3b82f6);
+  box-shadow: 0 0 6px var(--badge-color, rgba(59, 130, 246, 0.45));
+  font-size: 11px;
+  line-height: 1;
+  flex-shrink: 0;
+  user-select: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.day:hover .day-rec-badge {
+  transform: scale(1.08);
+  box-shadow: 0 0 9px var(--badge-color, rgba(59, 130, 246, 0.6));
+}
+
+.day-rec-badge.more {
+  background: rgba(30, 41, 59, 0.88);
+  border: 1px dashed rgba(148, 163, 184, 0.65);
+  box-shadow: none;
+  font-size: 9px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+@media (max-width: 640px) {
+  .day-rec-badges-container {
+    top: 4px;
+    right: 4px;
+    gap: 2px;
+    max-width: calc(100% - 24px);
+  }
+
+  .day-rec-badge {
+    width: 17px;
+    height: 17px;
+    border-radius: 4px;
+    font-size: 9.5px;
+    border-width: 1.2px;
+  }
+
+  .day-rec-badge.more {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .day-rec-badges-container {
+    top: 3px;
+    right: 3px;
+    gap: 1.5px;
+    max-width: calc(100% - 22px);
+  }
+
+  .day-rec-badge {
+    width: 15px;
+    height: 15px;
+    font-size: 8.5px;
+    border-radius: 3px;
+  }
+}
+
 
 
 /* --- Empty State (Optimized & Compact) --- */
@@ -17792,12 +17846,6 @@ html {
     justify-content: space-between;
     padding-top: 8px;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
-  }
-
-  .day-recurring-chip {
-    padding: 1px 3px;
-    font-size: 8.5px;
-    margin-top: 2px;
   }
 
   .rec-empty-chip-btn.primary {

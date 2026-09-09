@@ -237,7 +237,8 @@
           </button>
           <button class="dropdown-item" onclick="openRecurringEventsModal(); closeMoreMenu();" role="menuitem">
             <svg viewBox="0 0 24 24">
-              <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM12 10c-2.21 0-4 1.79-4 4s1.79 4 4 4c1.86 0 3.41-1.28 3.86-3H14.1c-.37.83-1.2 1.4-2.1 1.4-1.33 0-2.4-1.07-2.4-2.4s1.07-2.4 2.4-2.4c.66 0 1.26.27 1.7.7l-1.7 1.7H18v-4l-1.59 1.59C15.35 10.62 13.78 10 12 10z" />
+              <path
+                d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM12 10c-2.21 0-4 1.79-4 4s1.79 4 4 4c1.86 0 3.41-1.28 3.86-3H14.1c-.37.83-1.2 1.4-2.1 1.4-1.33 0-2.4-1.07-2.4-2.4s1.07-2.4 2.4-2.4c.66 0 1.26.27 1.7.7l-1.7 1.7H18v-4l-1.59 1.59C15.35 10.62 13.78 10 12 10z" />
             </svg>
             <span>Sự Kiện Lặp Lại</span>
           </button>
@@ -917,11 +918,16 @@
           <div id="newEventRecurrenceOptions" class="event-recurrence-options" style="display: none;">
             <label class="field-label">Mẫu gợi ý nhanh</label>
             <div class="recurrence-preset-chips">
-              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('death_anniversary')">🕯️ Giỗ chạp</button>
-              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('birthday')">🎂 Sinh nhật</button>
-              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('bill')">⚡ Tiền điện nước</button>
-              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('insurance')">🛡️ Gia hạn bảo hiểm</button>
-              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('custom')">🔄 Tùy chỉnh</button>
+              <button type="button" class="rec-preset-chip"
+                onclick="applyRecurrencePresetInAddModal('death_anniversary')">🕯️ Giỗ chạp</button>
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('birthday')">🎂
+                Sinh nhật</button>
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('bill')">⚡ Tiền
+                điện nước</button>
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('insurance')">🛡️
+                Gia hạn bảo hiểm</button>
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('custom')">🔄 Tùy
+                chỉnh</button>
             </div>
 
             <div class="rec-form-row">
@@ -955,7 +961,8 @@
             <div class="rec-form-row" id="newEventBirthYearRow" style="display: none;">
               <div class="rec-form-col">
                 <label class="field-label" for="newEventBirthYear">Năm sinh (để tính số tuổi)</label>
-                <input type="number" id="newEventBirthYear" class="rec-input" placeholder="VD: 1990" min="1900" max="2100" onchange="updateAddModalRecurrencePreview()" />
+                <input type="number" id="newEventBirthYear" class="rec-input" placeholder="VD: 1990" min="1900"
+                  max="2100" onchange="updateAddModalRecurrencePreview()" />
               </div>
             </div>
 
@@ -973,14 +980,16 @@
     </div>
 
     <!-- Modal Quản Lý Sự Kiện Lặp Lại (Recurring Events Manager) -->
-    <div id="recurringEventsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="recurringEventsModalTitle">
+    <div id="recurringEventsModal" class="modal" role="dialog" aria-modal="true"
+      aria-labelledby="recurringEventsModalTitle">
       <div class="modal-content recurring-events-modal-wrapper">
         <!-- Header -->
         <div class="recurring-events-header">
           <div class="recurring-header-left">
             <div class="recurring-header-icon">
               <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
-                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM12 10c-2.21 0-4 1.79-4 4s1.79 4 4 4c1.86 0 3.41-1.28 3.86-3H14.1c-.37.83-1.2 1.4-2.1 1.4-1.33 0-2.4-1.07-2.4-2.4s1.07-2.4 2.4-2.4c.66 0 1.26.27 1.7.7l-1.7 1.7H18v-4l-1.59 1.59C15.35 10.62 13.78 10 12 10z" />
+                <path
+                  d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM12 10c-2.21 0-4 1.79-4 4s1.79 4 4 4c1.86 0 3.41-1.28 3.86-3H14.1c-.37.83-1.2 1.4-2.1 1.4-1.33 0-2.4-1.07-2.4-2.4s1.07-2.4 2.4-2.4c.66 0 1.26.27 1.7.7l-1.7 1.7H18v-4l-1.59 1.59C15.35 10.62 13.78 10 12 10z" />
               </svg>
             </div>
             <div>
@@ -988,18 +997,27 @@
               <p class="recurring-header-sub">Quản lý giỗ chạp, sinh nhật, tiền điện nước, bảo hiểm...</p>
             </div>
           </div>
-          <button class="modal-close recurring-modal-close" onclick="closeRecurringEventsModal()" aria-label="Đóng">×</button>
+          <button class="modal-close recurring-modal-close" onclick="closeRecurringEventsModal()"
+            aria-label="Đóng">×</button>
         </div>
 
         <!-- Controls Toolbar: Tabs -->
         <div class="recurring-toolbar">
           <div class="recurring-tabs" role="tablist">
-            <button type="button" class="rec-tab active" data-tab="all" onclick="filterRecurringEventsTab('all')">Tất cả <span class="rec-tab-count" id="recCountAll">0</span></button>
-            <button type="button" class="rec-tab" data-tab="death_anniversary" onclick="filterRecurringEventsTab('death_anniversary')">🕯️ Giỗ chạp <span class="rec-tab-count" id="recCountDeath">0</span></button>
-            <button type="button" class="rec-tab" data-tab="birthday" onclick="filterRecurringEventsTab('birthday')">🎂 Sinh nhật <span class="rec-tab-count" id="recCountBirthday">0</span></button>
-            <button type="button" class="rec-tab" data-tab="bill" onclick="filterRecurringEventsTab('bill')">⚡ Điện nước <span class="rec-tab-count" id="recCountBill">0</span></button>
-            <button type="button" class="rec-tab" data-tab="insurance" onclick="filterRecurringEventsTab('insurance')">🛡️ Bảo hiểm <span class="rec-tab-count" id="recCountInsurance">0</span></button>
-            <button type="button" class="rec-tab" data-tab="custom" onclick="filterRecurringEventsTab('custom')">🔄 Khác <span class="rec-tab-count" id="recCountCustom">0</span></button>
+            <button type="button" class="rec-tab active" data-tab="all" onclick="filterRecurringEventsTab('all')">Tất cả
+              <span class="rec-tab-count" id="recCountAll">0</span></button>
+            <button type="button" class="rec-tab" data-tab="death_anniversary"
+              onclick="filterRecurringEventsTab('death_anniversary')">🕯️ Giỗ chạp <span class="rec-tab-count"
+                id="recCountDeath">0</span></button>
+            <button type="button" class="rec-tab" data-tab="birthday" onclick="filterRecurringEventsTab('birthday')">🎂
+              Sinh nhật <span class="rec-tab-count" id="recCountBirthday">0</span></button>
+            <button type="button" class="rec-tab" data-tab="bill" onclick="filterRecurringEventsTab('bill')">⚡ Điện nước
+              <span class="rec-tab-count" id="recCountBill">0</span></button>
+            <button type="button" class="rec-tab" data-tab="insurance"
+              onclick="filterRecurringEventsTab('insurance')">🛡️ Bảo hiểm <span class="rec-tab-count"
+                id="recCountInsurance">0</span></button>
+            <button type="button" class="rec-tab" data-tab="custom" onclick="filterRecurringEventsTab('custom')">🔄 Khác
+              <span class="rec-tab-count" id="recCountCustom">0</span></button>
           </div>
         </div>
 
@@ -1011,13 +1029,15 @@
     </div>
 
     <!-- Modal Thêm / Chỉnh Sửa Sự Kiện Lặp Lại (Form Modal) -->
-    <div id="recurringEventFormModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="recurringFormModalTitle">
+    <div id="recurringEventFormModal" class="modal" role="dialog" aria-modal="true"
+      aria-labelledby="recurringFormModalTitle">
       <div class="modal-content recurring-form-modal-wrapper">
         <div class="recurring-form-header">
           <div class="recurring-header-left">
-            <button type="button" class="rec-header-back-btn" onclick="closeRecurringEventFormModal()" title="Quay lại danh sách">
+            <button type="button" class="rec-header-back-btn" onclick="closeRecurringEventFormModal()"
+              title="Quay lại danh sách">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
+                <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
             </button>
             <div>
@@ -1025,7 +1045,8 @@
               <p class="recurring-header-sub">Tự động nhắc nhở hàng tháng hoặc hàng năm trên lịch</p>
             </div>
           </div>
-          <button class="modal-close recurring-modal-close" onclick="closeRecurringEventFormModal()" aria-label="Đóng">×</button>
+          <button class="modal-close recurring-modal-close" onclick="closeRecurringEventFormModal()"
+            aria-label="Đóng">×</button>
         </div>
 
         <div class="recurring-form-body">
@@ -1078,13 +1099,16 @@
                 <span>Thông tin sự kiện</span>
               </div>
               <div class="rec-form-group">
-                <label class="field-label" for="recFormTitle">Tiêu đề sự kiện <span class="required" style="color: #ef4444;">*</span></label>
-                <input type="text" id="recFormTitle" class="rec-input-styled" maxlength="80" placeholder="VD: Giỗ Cụ Nội, Sinh nhật Bố, Tiền điện nước..." />
+                <label class="field-label" for="recFormTitle">Tiêu đề sự kiện <span class="required"
+                    style="color: #ef4444;">*</span></label>
+                <input type="text" id="recFormTitle" class="rec-input-styled" maxlength="80"
+                  placeholder="VD: Giỗ Cụ Nội, Sinh nhật Bố, Tiền điện nước..." />
               </div>
 
               <div class="rec-form-group">
                 <label class="field-label" for="recFormNote">Ghi chú (tùy chọn)</label>
-                <textarea id="recFormNote" class="rec-textarea-styled" rows="2" placeholder="VD: Chuẩn bị 3 mâm cúng, số hợp đồng bảo hiểm, mã khách hàng..."></textarea>
+                <textarea id="recFormNote" class="rec-textarea-styled" rows="2"
+                  placeholder="Nhập ghi chú..."></textarea>
               </div>
             </div>
 
@@ -1131,7 +1155,8 @@
               <div class="rec-form-row" id="recFormBirthYearRow" style="display: none;">
                 <div class="rec-form-col">
                   <label class="field-label" for="recFormBirthYear">Năm sinh (tính số tuổi)</label>
-                  <input type="number" id="recFormBirthYear" class="rec-input-styled" placeholder="VD: 1990" min="1900" max="2100" onchange="updateRecFormPreview()" />
+                  <input type="number" id="recFormBirthYear" class="rec-input-styled" placeholder="VD: 1990" min="1900"
+                    max="2100" onchange="updateRecFormPreview()" />
                 </div>
                 <div class="rec-form-col">
                   <label class="field-label" for="recFormReminderDays">Nhắc nhở trước</label>
@@ -1157,14 +1182,22 @@
                 <label class="field-label">Màu sắc đánh dấu</label>
                 <div class="event-color-picker-group">
                   <div class="event-color-palette" id="recFormColorPalette">
-                    <button type="button" class="event-color-swatch active" data-color="#f59e0b" style="--swatch-color: #f59e0b;" title="Vàng hổ phách"></button>
-                    <button type="button" class="event-color-swatch" data-color="#ec4899" style="--swatch-color: #ec4899;" title="Hồng"></button>
-                    <button type="button" class="event-color-swatch" data-color="#f97316" style="--swatch-color: #f97316;" title="Cam"></button>
-                    <button type="button" class="event-color-swatch" data-color="#10b981" style="--swatch-color: #10b981;" title="Xanh lá"></button>
-                    <button type="button" class="event-color-swatch" data-color="#3b82f6" style="--swatch-color: #3b82f6;" title="Xanh dương"></button>
-                    <button type="button" class="event-color-swatch" data-color="#8b5cf6" style="--swatch-color: #8b5cf6;" title="Tím"></button>
-                    <button type="button" class="event-color-swatch" data-color="#06b6d4" style="--swatch-color: #06b6d4;" title="Xanh lơ"></button>
-                    <button type="button" class="event-color-swatch" data-color="#ef4444" style="--swatch-color: #ef4444;" title="Đỏ"></button>
+                    <button type="button" class="event-color-swatch active" data-color="#f59e0b"
+                      style="--swatch-color: #f59e0b;" title="Vàng hổ phách"></button>
+                    <button type="button" class="event-color-swatch" data-color="#ec4899"
+                      style="--swatch-color: #ec4899;" title="Hồng"></button>
+                    <button type="button" class="event-color-swatch" data-color="#f97316"
+                      style="--swatch-color: #f97316;" title="Cam"></button>
+                    <button type="button" class="event-color-swatch" data-color="#10b981"
+                      style="--swatch-color: #10b981;" title="Xanh lá"></button>
+                    <button type="button" class="event-color-swatch" data-color="#3b82f6"
+                      style="--swatch-color: #3b82f6;" title="Xanh dương"></button>
+                    <button type="button" class="event-color-swatch" data-color="#8b5cf6"
+                      style="--swatch-color: #8b5cf6;" title="Tím"></button>
+                    <button type="button" class="event-color-swatch" data-color="#06b6d4"
+                      style="--swatch-color: #06b6d4;" title="Xanh lơ"></button>
+                    <button type="button" class="event-color-swatch" data-color="#ef4444"
+                      style="--swatch-color: #ef4444;" title="Đỏ"></button>
                   </div>
                   <input type="hidden" id="recFormColor" value="#f59e0b" />
                 </div>
@@ -2107,46 +2140,65 @@
 
                   <!-- Color Palette -->
                   <div class="toolbar-group color-picker-group">
-                    <div class="color-dropdown-trigger" id="textColorTrigger" onclick="toggleColorMenu(event, 'textColorMenu')" title="Đổi màu chữ">
+                    <div class="color-dropdown-trigger" id="textColorTrigger"
+                      onclick="toggleColorMenu(event, 'textColorMenu')" title="Đổi màu chữ">
                       <span class="color-icon-letter">A</span>
                       <span class="color-preview-bar" id="textColorPreviewBar" style="background:#38bdf8;"></span>
                     </div>
                     <div class="color-dropdown-menu" id="textColorMenu" style="display:none;">
                       <div class="color-palette-title">Màu chữ</div>
                       <div class="color-grid">
-                        <button type="button" class="color-swatch" data-color="#ffffff" style="background:#ffffff;" title="Trắng"></button>
-                        <button type="button" class="color-swatch" data-color="#94a3b8" style="background:#94a3b8;" title="Xám"></button>
-                        <button type="button" class="color-swatch" data-color="#38bdf8" style="background:#38bdf8;" title="Xanh dương"></button>
-                        <button type="button" class="color-swatch" data-color="#4ade80" style="background:#4ade80;" title="Xanh lá"></button>
-                        <button type="button" class="color-swatch" data-color="#facc15" style="background:#facc15;" title="Vàng"></button>
-                        <button type="button" class="color-swatch" data-color="#fb923c" style="background:#fb923c;" title="Cam"></button>
-                        <button type="button" class="color-swatch" data-color="#f87171" style="background:#f87171;" title="Đỏ"></button>
-                        <button type="button" class="color-swatch" data-color="#c084fc" style="background:#c084fc;" title="Tím"></button>
-                        <button type="button" class="color-swatch" data-color="#f472b6" style="background:#f472b6;" title="Hồng"></button>
+                        <button type="button" class="color-swatch" data-color="#ffffff" style="background:#ffffff;"
+                          title="Trắng"></button>
+                        <button type="button" class="color-swatch" data-color="#94a3b8" style="background:#94a3b8;"
+                          title="Xám"></button>
+                        <button type="button" class="color-swatch" data-color="#38bdf8" style="background:#38bdf8;"
+                          title="Xanh dương"></button>
+                        <button type="button" class="color-swatch" data-color="#4ade80" style="background:#4ade80;"
+                          title="Xanh lá"></button>
+                        <button type="button" class="color-swatch" data-color="#facc15" style="background:#facc15;"
+                          title="Vàng"></button>
+                        <button type="button" class="color-swatch" data-color="#fb923c" style="background:#fb923c;"
+                          title="Cam"></button>
+                        <button type="button" class="color-swatch" data-color="#f87171" style="background:#f87171;"
+                          title="Đỏ"></button>
+                        <button type="button" class="color-swatch" data-color="#c084fc" style="background:#c084fc;"
+                          title="Tím"></button>
+                        <button type="button" class="color-swatch" data-color="#f472b6" style="background:#f472b6;"
+                          title="Hồng"></button>
                       </div>
                       <div class="custom-color-row">
                         <label for="customTextColorPicker">Tùy chọn:</label>
-                        <input type="color" id="customTextColorPicker" value="#38bdf8" onchange="applyCustomTextColor(this.value)" />
+                        <input type="color" id="customTextColorPicker" value="#38bdf8"
+                          onchange="applyCustomTextColor(this.value)" />
                       </div>
                     </div>
                   </div>
 
                   <!-- Highlight Palette -->
                   <div class="toolbar-group color-picker-group">
-                    <div class="color-dropdown-trigger highlight-trigger" id="highlightTrigger" onclick="toggleColorMenu(event, 'highlightColorMenu')" title="Highlight (Đổi màu nền chữ)">
+                    <div class="color-dropdown-trigger highlight-trigger" id="highlightTrigger"
+                      onclick="toggleColorMenu(event, 'highlightColorMenu')" title="Highlight (Đổi màu nền chữ)">
                       <span class="highlight-icon">🖍️</span>
                       <span class="color-preview-bar" id="highlightPreviewBar" style="background:#facc15;"></span>
                     </div>
                     <div class="color-dropdown-menu" id="highlightColorMenu" style="display:none;">
                       <div class="color-palette-title">Màu Highlight</div>
                       <div class="color-grid">
-                        <button type="button" class="color-swatch-hl" data-bg="transparent" title="Xóa highlight" style="background:transparent;border:1px dashed #64748b;">🚫</button>
-                        <button type="button" class="color-swatch-hl" data-bg="rgba(250, 204, 21, 0.35)" style="background:rgba(250, 204, 21, 0.85);" title="Highlight Vàng"></button>
-                        <button type="button" class="color-swatch-hl" data-bg="rgba(74, 222, 128, 0.35)" style="background:rgba(74, 222, 128, 0.85);" title="Highlight Xanh lá"></button>
-                        <button type="button" class="color-swatch-hl" data-bg="rgba(56, 189, 248, 0.35)" style="background:rgba(56, 189, 248, 0.85);" title="Highlight Xanh lam"></button>
-                        <button type="button" class="color-swatch-hl" data-bg="rgba(251, 113, 133, 0.35)" style="background:rgba(251, 113, 133, 0.85);" title="Highlight Đỏ hồng"></button>
-                        <button type="button" class="color-swatch-hl" data-bg="rgba(192, 132, 252, 0.35)" style="background:rgba(192, 132, 252, 0.85);" title="Highlight Tím"></button>
-                        <button type="button" class="color-swatch-hl" data-bg="rgba(251, 146, 60, 0.35)" style="background:rgba(251, 146, 60, 0.85);" title="Highlight Cam"></button>
+                        <button type="button" class="color-swatch-hl" data-bg="transparent" title="Xóa highlight"
+                          style="background:transparent;border:1px dashed #64748b;">🚫</button>
+                        <button type="button" class="color-swatch-hl" data-bg="rgba(250, 204, 21, 0.35)"
+                          style="background:rgba(250, 204, 21, 0.85);" title="Highlight Vàng"></button>
+                        <button type="button" class="color-swatch-hl" data-bg="rgba(74, 222, 128, 0.35)"
+                          style="background:rgba(74, 222, 128, 0.85);" title="Highlight Xanh lá"></button>
+                        <button type="button" class="color-swatch-hl" data-bg="rgba(56, 189, 248, 0.35)"
+                          style="background:rgba(56, 189, 248, 0.85);" title="Highlight Xanh lam"></button>
+                        <button type="button" class="color-swatch-hl" data-bg="rgba(251, 113, 133, 0.35)"
+                          style="background:rgba(251, 113, 133, 0.85);" title="Highlight Đỏ hồng"></button>
+                        <button type="button" class="color-swatch-hl" data-bg="rgba(192, 132, 252, 0.35)"
+                          style="background:rgba(192, 132, 252, 0.85);" title="Highlight Tím"></button>
+                        <button type="button" class="color-swatch-hl" data-bg="rgba(251, 146, 60, 0.35)"
+                          style="background:rgba(251, 146, 60, 0.85);" title="Highlight Cam"></button>
                       </div>
                     </div>
                   </div>
@@ -2161,7 +2213,8 @@
                     <button type="button" class="toolbar-btn" data-cmd="insertOrderedList" title="Danh sách số">
                       1.≡
                     </button>
-                    <button type="button" class="toolbar-btn" onclick="insertTaskCheckboxItem()" title="Chèn mục Checklist (☐)">
+                    <button type="button" class="toolbar-btn" onclick="insertTaskCheckboxItem()"
+                      title="Chèn mục Checklist (☐)">
                       ☑
                     </button>
                     <button type="button" class="toolbar-btn" onclick="insertTaskQuote()" title="Trích dẫn">
@@ -2176,7 +2229,8 @@
 
                   <!-- Undo / Redo / Clear / Math -->
                   <div class="toolbar-group">
-                    <button type="button" class="toolbar-btn" onclick="renderTaskEditorMath()" title="Chuyển đổi công thức Toán học (Render Math)">
+                    <button type="button" class="toolbar-btn" onclick="renderTaskEditorMath()"
+                      title="Chuyển đổi công thức Toán học (Render Math)">
                       <strong style="font-size:14px;">∑</strong>
                     </button>
                     <button type="button" class="toolbar-btn" data-cmd="undo" title="Hoàn tác (Ctrl+Z)">
@@ -2192,8 +2246,9 @@
                 </div>
 
                 <!-- Editable Content -->
-                <div id="taskFormEditor" class="task-rich-editor-content" contenteditable="true" data-placeholder="Nhập mô tả, ghi chú chi tiết hoặc kế hoạch công việc..."></div>
-                
+                <div id="taskFormEditor" class="task-rich-editor-content" contenteditable="true"
+                  data-placeholder="Nhập mô tả, ghi chú chi tiết hoặc kế hoạch công việc..."></div>
+
                 <!-- Hidden textarea for backward compatibility -->
                 <textarea id="taskFormDesc" style="display: none;" rows="3" maxlength="5000"></textarea>
               </div>
@@ -2213,12 +2268,14 @@
   </div>
 
   <!-- Task Detail Popup Modal -->
-  <div id="taskDetailModal" class="modal" onclick="if(event.target===this) closeTaskDetailModal()" style="display: none; z-index: 2200;">
+  <div id="taskDetailModal" class="modal" onclick="if(event.target===this) closeTaskDetailModal()"
+    style="display: none; z-index: 2200;">
     <div class="task-detail-card">
       <div class="task-detail-header">
         <div class="task-detail-badges">
           <span id="taskDetailProjectBadge" class="task-detail-project-badge">Dự án</span>
-          <span id="taskDetailStatusBadge" class="task-detail-status-badge pending" onclick="toggleTaskDetailStatus()" title="Nhấn để đổi trạng thái">Đang thực hiện</span>
+          <span id="taskDetailStatusBadge" class="task-detail-status-badge pending" onclick="toggleTaskDetailStatus()"
+            title="Nhấn để đổi trạng thái">Đang thực hiện</span>
         </div>
         <button type="button" class="modal-close task-detail-close" onclick="closeTaskDetailModal()">×</button>
       </div>
@@ -2321,18 +2378,22 @@
   </div>
 
   <!-- Quick Note Unsaved Changes Confirmation Popup Modal -->
-  <div id="quickNoteDraftModal" class="modal" onclick="if(event.target===this) closeQuickNoteDraftModal()" style="display: none;">
+  <div id="quickNoteDraftModal" class="modal" onclick="if(event.target===this) closeQuickNoteDraftModal()"
+    style="display: none;">
     <div class="quick-note-draft-card">
       <div style="font-size: 34px; margin-bottom: 8px; line-height: 1;">📝</div>
       <h3 style="margin: 0 0 8px 0; color: #60a5fa; font-size: 16.5px; font-weight: 700;">Ghi chú chưa được lưu</h3>
       <p style="color: #cbd5e1; font-size: 13.5px; line-height: 1.5; margin: 0 0 20px 0;">
-        Bạn có nội dung đang nhập dở. Bạn muốn <strong>Hủy</strong> thay đổi hay <strong>Lưu nháp</strong> để tiếp tục sau?
+        Bạn có nội dung đang nhập dở. Bạn muốn <strong>Hủy</strong> thay đổi hay <strong>Lưu nháp</strong> để tiếp tục
+        sau?
       </p>
       <div style="display: flex; gap: 10px; justify-content: center; width: 100%;">
-        <button type="button" class="btn-secondary" onclick="discardQuickNoteDraft()" style="flex: 1; min-height: 42px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: rgba(239, 68, 68, 0.15) !important; color: #f87171 !important; border: 1px solid rgba(239, 68, 68, 0.3) !important;">
+        <button type="button" class="btn-secondary" onclick="discardQuickNoteDraft()"
+          style="flex: 1; min-height: 42px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: rgba(239, 68, 68, 0.15) !important; color: #f87171 !important; border: 1px solid rgba(239, 68, 68, 0.3) !important;">
           Hủy
         </button>
-        <button type="button" class="btn-primary" onclick="saveQuickNoteDraftAndClose()" style="flex: 1; min-height: 42px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important; color: #ffffff !important; border: 1px solid rgba(147, 197, 253, 0.35) !important; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;">
+        <button type="button" class="btn-primary" onclick="saveQuickNoteDraftAndClose()"
+          style="flex: 1; min-height: 42px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important; color: #ffffff !important; border: 1px solid rgba(147, 197, 253, 0.35) !important; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;">
           Lưu nháp
         </button>
       </div>
@@ -3249,7 +3310,8 @@
             </div>
           </div>
           <div id="hourlyForecastContainer" style="display: none;"></div>
-          <div class="weather-forecast-title" id="weatherForecastTitle" style="display: none;">📅 Dự báo các ngày tới</div>
+          <div class="weather-forecast-title" id="weatherForecastTitle" style="display: none;">📅 Dự báo các ngày tới
+          </div>
           <div class="weather-forecast" id="weatherForecast"></div>
         </div>
       </div>

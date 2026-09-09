@@ -512,12 +512,12 @@ function renderCalendar() {
       recBadgesHtml = `
         <div class="day-rec-badges-container">
           ${displayRecs
-            .map((rec) => {
-              const catMeta = getCategoryMeta(rec.category);
-              const c = escapeHtml(rec.color || (catMeta ? catMeta.defaultColor : "#3b82f6"));
-              return `<span class="day-rec-badge" style="--badge-color: ${c};" title="${escapeHtml(rec.title || catMeta.name)}">${catMeta.icon}</span>`;
-            })
-            .join("")}
+          .map((rec) => {
+            const catMeta = getCategoryMeta(rec.category);
+            const c = escapeHtml(rec.color || (catMeta ? catMeta.defaultColor : "#3b82f6"));
+            return `<span class="day-rec-badge" style="--badge-color: ${c};" title="${escapeHtml(rec.title || catMeta.name)}">${catMeta.icon}</span>`;
+          })
+          .join("")}
           ${extraRecCount > 0 ? `<span class="day-rec-badge more" title="Còn ${extraRecCount} sự kiện lặp lại">+${extraRecCount}</span>` : ""}
         </div>
       `;
@@ -2563,8 +2563,8 @@ function syncRecurringEventsToFirebase(list) {
 
   // Đồng thời đồng bộ vào root recurringEvents/${pKey} (nếu rules root đã được mở)
   try {
-    firebaseDb.ref(`recurringEvents/${pKey}`).set(payload).catch(() => {});
-  } catch (e) {}
+    firebaseDb.ref(`recurringEvents/${pKey}`).set(payload).catch(() => { });
+  } catch (e) { }
 
   return primaryPromise;
 }
@@ -2619,9 +2619,9 @@ function initRecurringEventsFirebase() {
           if (rootSnap.exists()) {
             remoteData = rootSnap.val();
             // Tự động sao chép sang calendarEvents
-            firebaseRecurringRef.set(remoteData).catch(() => {});
+            firebaseRecurringRef.set(remoteData).catch(() => { });
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (remoteData) {
@@ -2738,7 +2738,7 @@ function getMatchingRecurringEventInstances(dateKey) {
       } else if (rec.category === "birthday") {
         if (rec.birthYear && rec.birthYear < y) {
           const age = y - rec.birthYear;
-          recurrenceLabel = `Sinh nhật lần thứ ${age} (SN ${rec.birthYear})`;
+          recurrenceLabel = `Sinh nhật lần thứ ${age}`;
         } else {
           recurrenceLabel = rec.calendarType === "lunar"
             ? `Sinh nhật (${rec.day}/${rec.month} ÂL)`
@@ -5759,7 +5759,7 @@ function saveNewEvent() {
       try {
         const dt = new Date(eventDateTime);
         time = `${String(dt.getHours()).padStart(2, "0")}:${String(dt.getMinutes()).padStart(2, "0")}`;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const recPayload = {
@@ -6822,7 +6822,7 @@ function formatDateTimeVN(timestamp) {
 // Rich Text Sanitizer
 function sanitizeRichText(html) {
   if (!html || typeof html !== "string") return "";
-  
+
   // Basic security sanitize while allowing rich formatting
   let clean = html
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
@@ -6830,7 +6830,7 @@ function sanitizeRichText(html) {
     .replace(/on\w+="[^"]*"/gi, "")
     .replace(/on\w+='[^']*'/gi, "")
     .replace(/javascript:/gi, "");
-  
+
   return clean;
 }
 
@@ -6938,7 +6938,7 @@ function openTaskDetailModal(projectId, taskId) {
       descEl.innerHTML = sanitizeRichText(task.description);
       descEl.classList.remove("is-empty");
       renderMathInContainer(descEl);
-      
+
       // Wire detail checkbox clicks to update state if clicked
       const checkboxes = descEl.querySelectorAll('input[type="checkbox"]');
       checkboxes.forEach((cb, idx) => {
@@ -7015,7 +7015,7 @@ function getTaskEditorContent() {
     const descInput = document.getElementById("taskFormDesc");
     return descInput ? descInput.value.trim() : "";
   }
-  
+
   // Check if actually empty or just whitespace/empty tags
   const rawText = editor.innerText.trim();
   const rawHtml = editor.innerHTML.trim();
@@ -7029,11 +7029,11 @@ function setTaskEditorContent(content) {
   const editor = document.getElementById("taskFormEditor");
   const descInput = document.getElementById("taskFormDesc");
   const str = content || "";
-  
+
   if (descInput) {
     descInput.value = str;
   }
-  
+
   if (editor) {
     if (!str.trim()) {
       editor.innerHTML = "";
@@ -7110,7 +7110,7 @@ function updateTaskEditorToolbarStates() {
       let isActive = false;
       try {
         isActive = document.queryCommandState(cmd);
-      } catch (e) {}
+      } catch (e) { }
       btn.classList.toggle("active", !!isActive);
     }
   });
@@ -7188,11 +7188,11 @@ function toggleColorMenu(event, menuId) {
   }
   const targetMenu = document.getElementById(menuId);
   const allMenus = document.querySelectorAll(".color-dropdown-menu");
-  
+
   allMenus.forEach((m) => {
     if (m !== targetMenu) m.style.display = "none";
   });
-  
+
   if (targetMenu) {
     targetMenu.style.display = targetMenu.style.display === "block" ? "none" : "block";
   }
@@ -7215,7 +7215,7 @@ function applyHighlightColor(bg) {
   const editor = document.getElementById("taskFormEditor");
   if (!editor) return;
   editor.focus();
-  
+
   if (bg === "transparent" || !bg) {
     document.execCommand("removeFormat", false, null);
   } else {
@@ -7224,7 +7224,7 @@ function applyHighlightColor(bg) {
       document.execCommand("backColor", false, bg);
     }
   }
-  
+
   const bar = document.getElementById("highlightPreviewBar");
   if (bar) bar.style.background = bg === "transparent" ? "#64748b" : bg;
   const menu = document.getElementById("highlightColorMenu");
@@ -8224,7 +8224,7 @@ function cancelEditQuickNote() {
   if (submitBtn) submitBtn.innerText = "+ Thêm";
   try {
     localStorage.removeItem(QUICK_NOTE_DRAFT_KEY);
-  } catch (e) {}
+  } catch (e) { }
 }
 
 function openQuickNoteDraftModal() {
@@ -8251,7 +8251,7 @@ function saveQuickNoteDraftAndClose() {
         })
       );
       showToast("Đã lưu bản nháp ghi chú");
-    } catch (e) {}
+    } catch (e) { }
   }
   closeQuickNoteDraftModal();
   forceCloseQuickNoteModal();
@@ -8260,7 +8260,7 @@ function saveQuickNoteDraftAndClose() {
 function discardQuickNoteDraft() {
   try {
     localStorage.removeItem(QUICK_NOTE_DRAFT_KEY);
-  } catch (e) {}
+  } catch (e) { }
   closeQuickNoteDraftModal();
   cancelEditQuickNote();
   forceCloseQuickNoteModal();
@@ -8364,7 +8364,7 @@ function submitQuickNote() {
   saveQuickNotes(notes);
   try {
     localStorage.removeItem(QUICK_NOTE_DRAFT_KEY);
-  } catch (e) {}
+  } catch (e) { }
   cancelEditQuickNote();
   renderQuickNotes();
   input.focus({ preventScroll: true });
@@ -19452,7 +19452,7 @@ function openTodayExtraModal() {
     modal.style.display = "flex";
     setTimeout(() => {
       const activeEl = document.querySelector("#hourlyForecastContainer .hourly-item.is-now") ||
-                       document.querySelector("#hourlyForecastContainer .hourly-item.next-hour");
+        document.querySelector("#hourlyForecastContainer .hourly-item.next-hour");
       if (activeEl) {
         activeEl.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
       }

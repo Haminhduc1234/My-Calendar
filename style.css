@@ -17359,8 +17359,8 @@ html {
 
 .day-rec-badges-container {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 7px;
+  right: 7px;
   display: flex;
   align-items: center;
   gap: 3px;
@@ -17377,25 +17377,28 @@ html {
   width: 20px;
   height: 20px;
   border-radius: 6px;
-  background: rgba(15, 23, 42, 0.88);
-  background: color-mix(in srgb, var(--badge-color, #3b82f6) 24%, rgba(15, 23, 42, 0.9));
-  border: 1.5px solid var(--badge-color, #3b82f6);
-  box-shadow: 0 0 6px var(--badge-color, rgba(59, 130, 246, 0.45));
+  background: rgba(59, 130, 246, 0.2);
+  background: color-mix(in srgb, var(--badge-color, #3b82f6) 24%, transparent);
+  border: none;
+  box-shadow: none;
   font-size: 11px;
   line-height: 1;
   flex-shrink: 0;
   user-select: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: transform 0.2s ease, background 0.2s ease;
 }
 
 .day:hover .day-rec-badge {
-  transform: scale(1.08);
-  box-shadow: 0 0 9px var(--badge-color, rgba(59, 130, 246, 0.6));
+  transform: scale(1.1);
+  background: color-mix(in srgb, var(--badge-color, #3b82f6) 36%, transparent);
+  box-shadow: none;
 }
 
 .day-rec-badge.more {
-  background: rgba(30, 41, 59, 0.88);
-  border: 1px dashed rgba(148, 163, 184, 0.65);
+  background: rgba(148, 163, 184, 0.2);
+  border: none;
   box-shadow: none;
   font-size: 9px;
   font-weight: 700;
@@ -17415,7 +17418,6 @@ html {
     height: 17px;
     border-radius: 4px;
     font-size: 9.5px;
-    border-width: 1.2px;
   }
 
   .day-rec-badge.more {
@@ -17812,6 +17814,7 @@ html {
 
 /* Event Item Recurring Badge on Day Details Modal */
 .event-recurring-tag {
+  width: fit-content;
   display: inline-flex;
   align-items: center;
   gap: 4px;

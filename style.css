@@ -17049,26 +17049,31 @@ html {
   background: rgba(255, 255, 255, 0.22);
 }
 
-/* --- Clean, Simple Event Cards --- */
+/* --- Modern Elevated Slate Event Cards (Brighter & Crisp) --- */
 .recurring-event-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 16px;
-  background: rgba(18, 27, 47, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 14px 18px;
+  background: #0f172a;
+  border: 1px solid #1e293b;
   border-left: 4.5px solid var(--rec-card-color, #3b82f6);
   border-radius: 12px;
-  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .recurring-event-card:hover {
-  background: rgba(24, 36, 62, 0.95);
-  border-color: rgba(255, 255, 255, 0.14);
+  background: #1e293b;
+  border-color: #334155;
   border-left-color: var(--rec-card-color, #3b82f6);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px -4px rgba(0, 0, 0, 0.5),
+    0 4px 12px -2px rgba(0, 0, 0, 0.3);
 }
 
 .rec-card-left {
@@ -17079,63 +17084,76 @@ html {
   min-width: 0;
 }
 
-/* Dedicated Date Badge on Card */
+/* Dedicated Date Badge on Card (Bright & Solid) */
 .rec-date-badge {
-  width: 58px;
-  min-width: 58px;
-  padding: 6px 4px;
+  width: 60px;
+  min-width: 60px;
+  padding: 7px 5px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #172438;
+  border: 1px solid #3b5173;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 2px;
+  gap: 2.5px;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .rec-date-badge.lunar {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.3);
+  background: #241d15;
+  border-color: #92400e;
 }
 
 .rec-date-badge.solar {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.25);
+  background: #152238;
+  border-color: #2563eb;
 }
 
 .rec-date-icon {
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1;
 }
 
 .rec-date-main {
   font-size: 13.5px;
   font-weight: 700;
-  color: #f8fafc;
+  color: #ffffff;
   line-height: 1.15;
 }
 
+.rec-date-badge.lunar .rec-date-main {
+  color: #fef08a;
+}
+
+.rec-date-badge.solar .rec-date-main {
+  color: #eff6ff;
+}
+
 .rec-date-sub {
-  font-size: 5.5px;
+  font-size: 6.5px;
   font-weight: 600;
-  line-height: 1;
-  padding: 1.5px 4px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.2px;
+  line-height: 1.2;
+  padding: 1.5px 6px;
+  border-radius: 999px;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+  display: inline-block;
 }
 
 .rec-date-badge.lunar .rec-date-sub {
-  color: #fcd34d;
-  background: rgba(245, 158, 11, 0.2);
+  color: #fef08a;
+  background: #78350f;
+  border: 1px solid #b45309;
 }
 
 .rec-date-badge.solar .rec-date-sub {
-  color: #93c5fd;
-  background: rgba(59, 130, 246, 0.2);
+  color: #dbeafe;
+  background: #1e40af;
+  border: 1px solid #3b82f6;
 }
 
 /* Card Main Info */
@@ -17162,28 +17180,30 @@ html {
 }
 
 .rec-cat-chip {
-  padding: 2px 8px;
+  padding: 2.5px 8px;
   font-size: 11px;
   font-weight: 600;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #cbd5e1;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #172438;
+  color: #e2e8f0;
+  border: 1px solid #3b5173;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .rec-freq-chip {
-  padding: 2px 7px;
+  padding: 2.5px 7px;
   font-size: 11px;
   font-weight: 500;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  background: #1c2b42;
   color: #94a3b8;
+  border: 1px solid #2d415f;
 }
 
 .rec-card-note {
   font-size: 12.5px;
-  color: #94a3b8;
-  line-height: 1.4;
+  color: #cbd5e1;
+  line-height: 1.45;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -17196,24 +17216,24 @@ html {
   align-items: center;
   gap: 12px;
   font-size: 12px;
-  color: #64748b;
+  color: #94a3b8;
   flex-wrap: wrap;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .rec-meta-item {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: #94a3b8;
-}
-
-.rec-meta-item.rec-next-date {
   color: #cbd5e1;
 }
 
+.rec-meta-item.rec-next-date {
+  color: #e2e8f0;
+}
+
 .rec-meta-item.rec-next-date strong {
-  color: #60a5fa;
+  color: #38bdf8;
   font-weight: 600;
 }
 
@@ -17221,10 +17241,11 @@ html {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 1px 7px;
+  padding: 1.5px 7px;
   border-radius: 6px;
-  background: rgba(236, 72, 153, 0.12);
-  color: #f472b6;
+  background: #4a1532;
+  color: #fbcfe8;
+  border: 1px solid #9d174d;
   font-size: 11px;
   font-weight: 600;
 }
@@ -17244,24 +17265,27 @@ html {
   font-weight: 700;
   border-radius: 8px;
   white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .rec-countdown-badge.today {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: #dc2626;
   color: #ffffff;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
+  border: 1px solid #ef4444;
+  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.45);
 }
 
 .rec-countdown-badge.imminent {
-  background: rgba(249, 115, 22, 0.2);
-  color: #fdba74;
-  border: 1px solid rgba(249, 115, 22, 0.35);
+  background: #7c2d12;
+  color: #ffedd5;
+  border: 1px solid #ea580c;
 }
 
 .rec-countdown-badge.normal {
-  background: rgba(59, 130, 246, 0.14);
-  color: #93c5fd;
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: #1e3a5f;
+  color: #bfdbfe;
+  border: 1px solid #3b82f6;
+  font-weight: 600;
 }
 
 .rec-card-actions {
@@ -17274,9 +17298,9 @@ html {
   height: 32px;
   padding: 0 10px 0 8px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  color: #cbd5e1;
+  border: 1px solid #3b5173;
+  background: #172438;
+  color: #e2e8f0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -17285,9 +17309,10 @@ html {
   font-size: 12px;
   font-weight: 600;
   line-height: 1;
-  transition: all 0.18s ease;
+  transition: all 0.16s ease;
   white-space: nowrap;
   user-select: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .btn-rec-action svg {
@@ -17297,29 +17322,29 @@ html {
 }
 
 .btn-rec-action.edit {
-  background: rgba(59, 130, 246, 0.12);
-  border-color: rgba(59, 130, 246, 0.28);
-  color: #93c5fd;
+  background: #1e3a5f;
+  border-color: #3b82f6;
+  color: #bfdbfe;
 }
 
 .btn-rec-action.edit:hover {
   background: #2563eb;
-  border-color: #3b82f6;
+  border-color: #60a5fa;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 3px 10px rgba(37, 99, 235, 0.4);
 }
 
 .btn-rec-action.delete {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.25);
-  color: #fca5a5;
+  background: #451217;
+  border-color: #b91c1c;
+  color: #fecaca;
 }
 
 .btn-rec-action.delete:hover {
   background: #dc2626;
-  border-color: #ef4444;
+  border-color: #f87171;
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+  box-shadow: 0 3px 10px rgba(220, 38, 38, 0.4);
 }
 
 /* Calendar Day Recurring Indicator */
@@ -17845,7 +17870,7 @@ html {
     width: 100%;
     justify-content: space-between;
     padding-top: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid #28354c;
   }
 
   .rec-empty-chip-btn.primary {

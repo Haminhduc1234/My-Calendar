@@ -11,6 +11,10 @@
       "$profileKey": {
         ".read": "auth != null",
         ".write": "auth != null",
+        "recurringEvents": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        },
         "dates": {
           "$dateKey": {
             ".read": "auth != null",

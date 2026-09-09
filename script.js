@@ -2541,18 +2541,16 @@ function syncRecurringEventsToFirebase(list) {
     return Promise.resolve(false);
   }
 
-  if (!firebaseRecurringRef) {
-    firebaseRecurringRef = firebaseDb.ref(`${FIREBASE_RECURRING_EVENTS_PATH}/${pKey}`);
-  }
-
   const cleanList = (Array.isArray(list) ? list : []).map(sanitizeRecurringEvent);
   const payload = cleanList.length > 0 ? cleanList : null;
 
-  console.log(`[RecurringEvents] Đang lưu ${cleanList.length} sự kiện vào Firebase: ${FIREBASE_RECURRING_EVENTS_PATH}/${pKey}`);
+  console.log(`[RecurringEvents] Đang lưu ${cleanList.length} sự kiện vào Firebase (profileKey: ${pKey})...`);
 
-  return firebaseRecurringRef.set(payload)
+  // Lưu vào calendarEvents/${pKey}/recurringEvents (được bảo đảm 100% bởi live rules của Firebase)
+  const primaryRef = firebaseDb.ref(`calendarEvents/${pKey}/recurringEvents`);
+  const primaryPromise = primaryRef.set(payload)
     .then(() => {
-      console.log("[RecurringEvents] ✅ Đã lưu dữ liệu sự kiện lặp lại lên Firebase thành công!");
+      console.log("[RecurringEvents] ✅ Đã lưu sự kiện lặp lại vào Firebase (calendarEvents) thành công!");
       if (typeof showCloudSyncedBadge === "function") {
         showCloudSyncedBadge();
       }
@@ -2562,6 +2560,13 @@ function syncRecurringEventsToFirebase(list) {
       console.error("[RecurringEvents] ❌ Lỗi khi lưu sự kiện lặp lại lên Firebase:", err);
       return false;
     });
+
+  // Đồng thời đồng bộ vào root recurringEvents/${pKey} (nếu rules root đã được mở)
+  try {
+    firebaseDb.ref(`recurringEvents/${pKey}`).set(payload).catch(() => {});
+  } catch (e) {}
+
+  return primaryPromise;
 }
 window.syncRecurringEventsToFirebase = syncRecurringEventsToFirebase;
 
@@ -2601,11 +2606,25 @@ function initRecurringEventsFirebase() {
     if (firebaseRecurringRef) {
       firebaseRecurringRef.off();
     }
-    firebaseRecurringRef = firebaseDb.ref(`${FIREBASE_RECURRING_EVENTS_PATH}/${pKey}`);
+    // Lắng nghe đường dẫn trong calendarEvents (tương thích 100% với rules đang active trên Firebase)
+    firebaseRecurringRef = firebaseDb.ref(`calendarEvents/${pKey}/recurringEvents`);
 
-    firebaseRecurringRef.on("value", (snapshot) => {
-      if (snapshot.exists()) {
-        const remoteData = snapshot.val();
+    firebaseRecurringRef.on("value", async (snapshot) => {
+      let remoteData = snapshot.val();
+
+      // Nếu đường dẫn calendarEvents chưa có dữ liệu, thử kiểm tra root recurringEvents
+      if (!snapshot.exists()) {
+        try {
+          const rootSnap = await firebaseDb.ref(`recurringEvents/${pKey}`).once("value");
+          if (rootSnap.exists()) {
+            remoteData = rootSnap.val();
+            // Tự động sao chép sang calendarEvents
+            firebaseRecurringRef.set(remoteData).catch(() => {});
+          }
+        } catch (e) {}
+      }
+
+      if (remoteData) {
         let list = [];
         if (Array.isArray(remoteData)) {
           list = remoteData.filter(Boolean).map(sanitizeRecurringEvent);
@@ -2623,7 +2642,7 @@ function initRecurringEventsFirebase() {
           renderRecurringEventsList();
         }
       } else {
-        // Firebase trống: kiểm tra nếu local storage có dữ liệu thì đẩy lên Firebase
+        // Firebase trống cả 2 nơi: kiểm tra nếu local storage có dữ liệu thì đẩy lên Firebase ngay
         const localList = getRecurringEvents();
         if (Array.isArray(localList) && localList.length > 0) {
           console.log("[RecurringEvents] Firebase chưa có dữ liệu, tự động đẩy", localList.length, "sự kiện từ local lên Firebase...");

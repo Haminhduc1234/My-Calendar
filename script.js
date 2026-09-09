@@ -953,7 +953,8 @@ async function migrateLegacyData(oldKey, newKey) {
     `profileSettings/${oldKey}`,
     `categories/${oldKey}`,
     `funds/${oldKey}`,
-    `countdown/${oldKey}`
+    `countdown/${oldKey}`,
+    `recurringEvents/${oldKey}`
   ];
 
   for (const path of otherPathsToMigrate) {
@@ -2474,6 +2475,36 @@ function getRecurringEventsStorageKey() {
   return pKey ? `recurring_events_${pKey}` : "recurring_events_guest";
 }
 
+function sanitizeRecurringEvent(recData) {
+  const now = Date.now();
+  const day = Math.min(31, Math.max(1, parseInt(recData.day, 10) || 1));
+  const month = Math.min(12, Math.max(1, parseInt(recData.month, 10) || 1));
+  const birthYear = recData.birthYear && !isNaN(parseInt(recData.birthYear, 10))
+    ? parseInt(recData.birthYear, 10)
+    : null;
+  const remDays = recData.reminderDaysBefore !== undefined && !isNaN(parseInt(recData.reminderDaysBefore, 10))
+    ? parseInt(recData.reminderDaysBefore, 10)
+    : 1;
+
+  return {
+    id: String(recData.id || `rec-ev-${now}-${Math.random().toString(36).slice(2, 7)}`),
+    title: String(recData.title || "").trim(),
+    text: String(recData.text || recData.note || "").trim(),
+    note: String(recData.note || recData.text || "").trim(),
+    category: String(recData.category || "custom"),
+    recurrenceType: String(recData.recurrenceType || "yearly"),
+    calendarType: String(recData.calendarType || "solar"),
+    day,
+    month,
+    birthYear,
+    time: String(recData.time || "08:00"),
+    color: String(recData.color || "#3b82f6"),
+    reminderDaysBefore: remDays,
+    createdAt: Number(recData.createdAt) || now,
+    updatedAt: Number(recData.updatedAt) || now
+  };
+}
+
 function getRecurringEvents() {
   const storageKey = getRecurringEventsStorageKey();
   if (recurringEventsCache !== null && currentRecurringCacheKey === storageKey) {
@@ -2492,7 +2523,7 @@ function getRecurringEvents() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        recurringEventsCache = parsed;
+        recurringEventsCache = parsed.map(sanitizeRecurringEvent);
         return recurringEventsCache;
       }
     }
@@ -2503,23 +2534,51 @@ function getRecurringEvents() {
   return recurringEventsCache;
 }
 
+function syncRecurringEventsToFirebase(list) {
+  const pKey = userProfileKey || localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE);
+  if (!firebaseDb || !pKey) {
+    console.log("[RecurringEvents] Chưa có kết nối Firebase hoặc chưa có profileKey:", { hasDb: !!firebaseDb, pKey });
+    return Promise.resolve(false);
+  }
+
+  if (!firebaseRecurringRef) {
+    firebaseRecurringRef = firebaseDb.ref(`${FIREBASE_RECURRING_EVENTS_PATH}/${pKey}`);
+  }
+
+  const cleanList = (Array.isArray(list) ? list : []).map(sanitizeRecurringEvent);
+  const payload = cleanList.length > 0 ? cleanList : null;
+
+  console.log(`[RecurringEvents] Đang lưu ${cleanList.length} sự kiện vào Firebase: ${FIREBASE_RECURRING_EVENTS_PATH}/${pKey}`);
+
+  return firebaseRecurringRef.set(payload)
+    .then(() => {
+      console.log("[RecurringEvents] ✅ Đã lưu dữ liệu sự kiện lặp lại lên Firebase thành công!");
+      if (typeof showCloudSyncedBadge === "function") {
+        showCloudSyncedBadge();
+      }
+      return true;
+    })
+    .catch(err => {
+      console.error("[RecurringEvents] ❌ Lỗi khi lưu sự kiện lặp lại lên Firebase:", err);
+      return false;
+    });
+}
+window.syncRecurringEventsToFirebase = syncRecurringEventsToFirebase;
+
 function saveRecurringEvents(list, shouldSyncToFirebase = true) {
   if (!Array.isArray(list)) return;
-  recurringEventsCache = list;
+  const sanitized = list.map(sanitizeRecurringEvent);
+  recurringEventsCache = sanitized;
   const key = getRecurringEventsStorageKey();
   currentRecurringCacheKey = key;
   try {
-    localStorage.setItem(key, JSON.stringify(list));
+    localStorage.setItem(key, JSON.stringify(sanitized));
   } catch (e) {
     console.error("[RecurringEvents] Lỗi ghi local storage:", e);
   }
 
-  if (shouldSyncToFirebase && firebaseRecurringRef) {
-    firebaseRecurringRef.set(list).then(() => {
-      showCloudSyncedBadge();
-    }).catch(err => {
-      console.warn("[RecurringEvents] Lỗi đồng bộ Firebase:", err);
-    });
+  if (shouldSyncToFirebase) {
+    syncRecurringEventsToFirebase(sanitized);
   }
 
   // Cập nhật lại lịch và danh sách hiển thị
@@ -2532,35 +2591,47 @@ function saveRecurringEvents(list, shouldSyncToFirebase = true) {
 }
 
 function initRecurringEventsFirebase() {
-  recurringEventsCache = null;
-  currentRecurringCacheKey = null;
-  if (!firebaseDb || !userProfileKey) return;
+  const pKey = userProfileKey || localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE);
+  if (!firebaseDb || !pKey) {
+    console.log("[RecurringEvents] initRecurringEventsFirebase: chưa sẵn sàng");
+    return;
+  }
+
   try {
-    firebaseRecurringRef = firebaseDb.ref(`${FIREBASE_RECURRING_EVENTS_PATH}/${userProfileKey}`);
+    if (firebaseRecurringRef) {
+      firebaseRecurringRef.off();
+    }
+    firebaseRecurringRef = firebaseDb.ref(`${FIREBASE_RECURRING_EVENTS_PATH}/${pKey}`);
+
     firebaseRecurringRef.on("value", (snapshot) => {
-      const remoteData = snapshot.val();
-      if (Array.isArray(remoteData)) {
-        recurringEventsCache = remoteData;
+      if (snapshot.exists()) {
+        const remoteData = snapshot.val();
+        let list = [];
+        if (Array.isArray(remoteData)) {
+          list = remoteData.filter(Boolean).map(sanitizeRecurringEvent);
+        } else if (remoteData && typeof remoteData === "object") {
+          list = Object.values(remoteData).filter(Boolean).map(sanitizeRecurringEvent);
+        }
+        console.log("[RecurringEvents] Nhận dữ liệu từ Firebase:", list.length, "sự kiện");
+        recurringEventsCache = list;
         const key = getRecurringEventsStorageKey();
         currentRecurringCacheKey = key;
-        localStorage.setItem(key, JSON.stringify(remoteData));
+        localStorage.setItem(key, JSON.stringify(list));
         renderCalendar();
         renderTodayEvents();
         if (typeof renderRecurringEventsList === "function") {
           renderRecurringEventsList();
         }
-      } else if (remoteData && typeof remoteData === "object") {
-        const arr = Object.values(remoteData);
-        recurringEventsCache = arr;
-        const key = getRecurringEventsStorageKey();
-        currentRecurringCacheKey = key;
-        localStorage.setItem(key, JSON.stringify(arr));
-        renderCalendar();
-        renderTodayEvents();
-        if (typeof renderRecurringEventsList === "function") {
-          renderRecurringEventsList();
+      } else {
+        // Firebase trống: kiểm tra nếu local storage có dữ liệu thì đẩy lên Firebase
+        const localList = getRecurringEvents();
+        if (Array.isArray(localList) && localList.length > 0) {
+          console.log("[RecurringEvents] Firebase chưa có dữ liệu, tự động đẩy", localList.length, "sự kiện từ local lên Firebase...");
+          syncRecurringEventsToFirebase(localList);
         }
       }
+    }, (err) => {
+      console.error("[RecurringEvents] Lỗi lắng nghe Firebase:", err);
     });
   } catch (e) {
     console.warn("[RecurringEvents] Lỗi init Firebase ref:", e);
@@ -2569,26 +2640,9 @@ function initRecurringEventsFirebase() {
 
 function addRecurringEvent(recData) {
   const list = getRecurringEvents();
-  const now = Date.now();
-  const newEvent = {
-    id: String(recData.id || `rec-ev-${now}-${Math.random().toString(36).slice(2, 7)}`),
-    title: String(recData.title || "").trim(),
-    text: String(recData.text || recData.note || "").trim(),
-    note: String(recData.note || recData.text || "").trim(),
-    category: String(recData.category || "custom"),
-    recurrenceType: String(recData.recurrenceType || "yearly"),
-    calendarType: String(recData.calendarType || "solar"),
-    day: parseInt(recData.day, 10) || 1,
-    month: parseInt(recData.month, 10) || 1,
-    birthYear: recData.birthYear ? parseInt(recData.birthYear, 10) : null,
-    time: String(recData.time || "08:00"),
-    color: String(recData.color || "#3b82f6"),
-    reminderDaysBefore: parseInt(recData.reminderDaysBefore, 10) ?? 1,
-    createdAt: Number(recData.createdAt || now),
-    updatedAt: now
-  };
+  const newEvent = sanitizeRecurringEvent(recData);
   list.push(newEvent);
-  saveRecurringEvents(list);
+  saveRecurringEvents(list, true);
   return newEvent;
 }
 
@@ -2596,31 +2650,16 @@ function updateRecurringEvent(id, recData) {
   const list = getRecurringEvents();
   const idx = list.findIndex(item => item.id === id);
   if (idx === -1) return null;
-  const now = Date.now();
-  list[idx] = {
-    ...list[idx],
-    title: String(recData.title || "").trim(),
-    text: String(recData.text || recData.note || "").trim(),
-    note: String(recData.note || recData.text || "").trim(),
-    category: String(recData.category || list[idx].category || "custom"),
-    recurrenceType: String(recData.recurrenceType || list[idx].recurrenceType || "yearly"),
-    calendarType: String(recData.calendarType || list[idx].calendarType || "solar"),
-    day: parseInt(recData.day, 10) || list[idx].day || 1,
-    month: parseInt(recData.month, 10) || list[idx].month || 1,
-    birthYear: recData.birthYear ? parseInt(recData.birthYear, 10) : null,
-    time: String(recData.time || list[idx].time || "08:00"),
-    color: String(recData.color || list[idx].color || "#3b82f6"),
-    reminderDaysBefore: parseInt(recData.reminderDaysBefore, 10) ?? list[idx].reminderDaysBefore ?? 1,
-    updatedAt: now
-  };
-  saveRecurringEvents(list);
+  const merged = { ...list[idx], ...recData, updatedAt: Date.now() };
+  list[idx] = sanitizeRecurringEvent(merged);
+  saveRecurringEvents(list, true);
   return list[idx];
 }
 
 function deleteRecurringEvent(id) {
   const list = getRecurringEvents();
   const filtered = list.filter(item => item.id !== id);
-  saveRecurringEvents(filtered);
+  saveRecurringEvents(filtered, true);
 }
 
 function getMatchingRecurringEventInstances(dateKey) {
@@ -3232,6 +3271,7 @@ async function reloadFirebaseForUser() {
   if (firebaseQuickNotesRef) firebaseQuickNotesRef.off();
   if (firebaseTranslateHistoryRef) firebaseTranslateHistoryRef.off();
   if (firebaseProjectsRef) firebaseProjectsRef.off();
+  if (firebaseRecurringRef) firebaseRecurringRef.off();
 
   // Update Firebase references with new userProfileKey
   firebaseDatesRef = firebaseDb.ref(`${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`);

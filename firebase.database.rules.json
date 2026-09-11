@@ -109,7 +109,7 @@
       "$profileKey": {
         ".read": true,
         ".write": true,
-        ".indexOn": ["reminderAtMs", "delivered", "deliveredAt"]
+        ".indexOn": ["reminderAtMs"]
       }
     },
     "userNotifications": {

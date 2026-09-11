@@ -232,29 +232,41 @@ module.exports = async (req, res) => {
     const db = admin.database();
     const now = Date.now();
 
-    // ── Quét toàn bộ eventReminders ───────────────────────────────────
-    const remindersSnap = await db.ref(REMINDERS_PATH).get();
-    const allProfiles = remindersSnap.val() || {};
+    // ── Lấy danh sách profile keys (chỉ lấy key, không tải data) ────
+    const profilesSnap = await db.ref(REMINDERS_PATH).get();
+    const allProfiles = profilesSnap.val();
 
-    if (!Object.keys(allProfiles).length) {
+    if (!allProfiles || typeof allProfiles !== "object" || !Object.keys(allProfiles).length) {
       return res.status(200).json({
         success: true,
-        message: "Không có reminder nào trong hệ thống.",
-        processed: 0,
-        cleaned: 0
+        message: "Không có reminder nào.",
+        processed: 0
       });
     }
 
     let processedCount = 0;
     let skippedCount = 0;
     let cleanedCount = 0;
-    const results = [];
+    const cleanupThreshold = now - CLEANUP_THRESHOLD_MS;
 
     for (const [profileKey, reminders] of Object.entries(allProfiles)) {
       if (!reminders || typeof reminders !== "object") continue;
 
       for (const [reminderId, reminder] of Object.entries(reminders)) {
-        if (!reminder || reminder.delivered === true) continue;
+        if (!reminder) continue;
+
+        // ── Dọn dẹp reminder đã gửi quá 24 giờ ───────────────────
+        if (
+          reminder.delivered === true &&
+          Number(reminder.deliveredAt || 0) < cleanupThreshold
+        ) {
+          await db.ref(`${REMINDERS_PATH}/${profileKey}/${reminderId}`).remove();
+          cleanedCount++;
+          continue;
+        }
+
+        // Đã gửi rồi → bỏ qua
+        if (reminder.delivered === true) continue;
 
         const reminderAtMs = Number(reminder.reminderAtMs || 0);
         if (reminderAtMs <= 0) continue;
@@ -262,7 +274,7 @@ module.exports = async (req, res) => {
         // Chưa đến hạn → bỏ qua
         if (reminderAtMs > now) continue;
 
-        // Quá cũ (> 2 giờ) → đánh dấu delivered để không quét lại, nhưng không gửi
+        // Quá cũ (> 2 giờ) → đánh dấu skip, không gửi
         if (now - reminderAtMs > MAX_OVERDUE_MS) {
           await db.ref(`${REMINDERS_PATH}/${profileKey}/${reminderId}`).update({
             delivered: true,
@@ -275,51 +287,22 @@ module.exports = async (req, res) => {
 
         // ── Gửi FCM push ───────────────────────────────────────────
         try {
-          const result = await sendReminderToProfile(db, profileKey, reminder, reminderId, now);
-          results.push({
-            profileKey,
-            reminderId,
-            eventTitle: reminder.eventTitle,
-            ...result
-          });
+          await sendReminderToProfile(db, profileKey, reminder, reminderId, now);
           processedCount++;
         } catch (err) {
           console.error(`[Cron] Lỗi gửi reminder ${reminderId}:`, err.message);
-          results.push({
-            profileKey,
-            reminderId,
-            eventTitle: reminder.eventTitle,
-            success: false,
-            error: err.message
-          });
         }
       }
     }
 
-    // ── Dọn dẹp reminder đã gửi quá 24 giờ ─────────────────────────
-    const cleanupThreshold = now - CLEANUP_THRESHOLD_MS;
-    for (const [profileKey, reminders] of Object.entries(allProfiles)) {
-      if (!reminders || typeof reminders !== "object") continue;
-      for (const [reminderId, reminder] of Object.entries(reminders)) {
-        if (
-          reminder?.delivered === true &&
-          Number(reminder.deliveredAt || 0) < cleanupThreshold
-        ) {
-          await db.ref(`${REMINDERS_PATH}/${profileKey}/${reminderId}`).remove();
-          cleanedCount++;
-        }
-      }
-    }
-
-    console.log(`[Cron] ✅ Hoàn tất: ${processedCount} gửi, ${skippedCount} bỏ qua (quá hạn), ${cleanedCount} dọn dẹp`);
+    console.log(`[Cron] ✅ Hoàn tất: ${processedCount} gửi, ${skippedCount} bỏ qua, ${cleanedCount} dọn dẹp`);
 
     return res.status(200).json({
       success: true,
-      timestamp: new Date(now).toISOString(),
+      ts: new Date(now).toISOString(),
       processed: processedCount,
       skipped: skippedCount,
-      cleaned: cleanedCount,
-      results
+      cleaned: cleanedCount
     });
 
   } catch (err) {

@@ -15,6 +15,10 @@
   ],
   "routes": [
     {
+      "src": "/api/cron/([^.]+)",
+      "dest": "/api/cron/$1.js"
+    },
+    {
       "src": "/api/([^.]+)",
       "dest": "/api/$1.js"
     },
@@ -28,6 +32,12 @@
     {
       "src": "/(.*)",
       "dest": "/index.html"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/check-reminders",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

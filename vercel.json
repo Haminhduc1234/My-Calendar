@@ -6,10 +6,6 @@
       "use": "@vercel/node"
     },
     {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
-    },
-    {
       "src": "**",
       "use": "@vercel/static",
       "config": {
@@ -19,15 +15,15 @@
   ],
   "routes": [
     {
-      "src": "/api/cron/check-reminders(\\.js)?",
+      "src": "/api/cron/check-reminders",
       "dest": "/api/check-reminders.js"
     },
     {
-      "src": "/api/check-reminders(\\.js)?",
+      "src": "/api/check-reminders",
       "dest": "/api/check-reminders.js"
     },
     {
-      "src": "/api/send-push(\\.js)?",
+      "src": "/api/send-push",
       "dest": "/api/send-push.js"
     },
     {

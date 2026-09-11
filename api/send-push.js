@@ -84,6 +84,7 @@ module.exports = async (req, res) => {
       if (eventData.category) bodyParts.push(eventData.category);
       if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
       if (eventData.text || eventData.note) bodyParts.push(eventData.text || eventData.note);
+      if (eventData.hasImage) bodyParts.push("📎 Kèm hình ảnh");
       targetUrl = `/?action=cashflow&id=${encodeURIComponent(eventData.id || "")}&date=${encodeURIComponent(dateKey || "")}&amount=${encodeURIComponent(eventData.amount || "")}&category=${encodeURIComponent(eventData.category || "")}&cashflowType=${encodeURIComponent(eventData.cashflowType || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
     } else if (type === "fund_allocation" || type === "funds") {
       title = `📊 Phân bổ quỹ: ${eventData.fundName || "Quỹ"}`;
@@ -113,6 +114,10 @@ module.exports = async (req, res) => {
     const eventId = String(eventData?.id || "");
     const notificationTag = eventId ? `event-${eventId}` : `event-${Date.now()}`;
 
+    // Loại bỏ trường image (base64) để tránh vượt giới hạn 4KB payload của FCM
+    const safeEventData = { ...(eventData || {}) };
+    delete safeEventData.image;
+
     const message = {
       tokens: tokens,
       data: {
@@ -125,7 +130,7 @@ module.exports = async (req, res) => {
         tag: notificationTag,
         text: String(eventData?.text || eventData?.note || ""),
         note: String(eventData?.note || eventData?.text || ""),
-        eventDataJson: JSON.stringify(eventData || {})
+        eventDataJson: JSON.stringify(safeEventData)
       },
       webpush: {
         fcmOptions: {

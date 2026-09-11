@@ -3817,6 +3817,7 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
     if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
     const cleanNote = String(eventData.text || eventData.note || "").replace(/^undefined$/i, "").trim();
     if (cleanNote) bodyParts.push(cleanNote);
+    if (eventData.hasImage) bodyParts.push("📎 Kèm hình ảnh");
     notificationUrl = `./?action=cashflow&id=${encodeURIComponent(eventData.id || "")}&date=${encodeURIComponent(dateKey || "")}&amount=${encodeURIComponent(eventData.amount || "")}&category=${encodeURIComponent(eventData.category || "")}&cashflowType=${encodeURIComponent(eventData.cashflowType || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
     notificationTag = `cashflow-${eventData.id || dateKey || Date.now()}`;
   } else if (type === "fund_allocation" || type === "funds") {
@@ -4320,7 +4321,10 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
       cashflowType: String(eventData.cashflowType || ""),
       category: String(eventData.category || ""),
       amount: Number(eventData.amount || 0),
-      image: String(eventData.image || ""),
+      // KHÔNG gửi image (base64) trong payload thông báo vì dữ liệu quá lớn
+      // sẽ khiến Firebase RTDB và FCM (giới hạn 4KB) bị lỗi ghi/gửi
+      // Thay vào đó chỉ gửi cờ hasImage để hiển thị text "Kèm hình ảnh"
+      hasImage: !!(eventData.image && eventData.image.startsWith("data:")),
       // Dữ liệu bổ sung cho fund allocation
       fundName: String(eventData.fundName || "")
     },
@@ -4357,6 +4361,7 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
     if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
     const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
     if (cleanText) bodyParts.push(cleanText);
+    if (payload.eventData.hasImage) bodyParts.push("📎 Kèm hình ảnh");
   } else if (type === "funds" || type === "fund_allocation") {
     notifTitle = `📊 Phân bổ quỹ: ${payload.eventData.fundName || "Quỹ"}`;
     if (payload.eventData.amount) {
@@ -4433,13 +4438,20 @@ async function saveNotificationToHistory(notificationType, title, body, dateKey,
     }
 
     const notifRef = firebaseDb.ref(`${FIREBASE_USER_NOTIFICATIONS_PATH}/${userProfileKey}`).push();
+    // Loại bỏ trường image (base64) khỏi eventData trước khi lưu lịch sử thông báo
+    // để tránh vượt giới hạn kích thước payload của Firebase RTDB
+    let cleanEventData = null;
+    if (eventData) {
+      cleanEventData = JSON.parse(JSON.stringify(eventData));
+      delete cleanEventData.image;
+    }
     const payload = {
       id: notifRef.key,
       notificationType: type,
       title: defaultTitle,
       body: cleanBody,
       dateKey: cleanDateKey,
-      eventData: eventData ? JSON.parse(JSON.stringify(eventData)) : null,
+      eventData: cleanEventData,
       createdAt: Date.now(),
       read: false
     };

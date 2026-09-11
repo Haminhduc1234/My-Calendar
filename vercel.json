@@ -2,6 +2,10 @@
   "version": 2,
   "builds": [
     {
+      "src": "api/*.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api/**/*.js",
       "use": "@vercel/node"
     },
@@ -15,8 +19,16 @@
   ],
   "routes": [
     {
-      "src": "/api/cron/([^.]+)",
-      "dest": "/api/cron/$1.js"
+      "src": "/api/cron/check-reminders(\\.js)?",
+      "dest": "/api/check-reminders.js"
+    },
+    {
+      "src": "/api/check-reminders(\\.js)?",
+      "dest": "/api/check-reminders.js"
+    },
+    {
+      "src": "/api/send-push(\\.js)?",
+      "dest": "/api/send-push.js"
     },
     {
       "src": "/api/([^.]+)",

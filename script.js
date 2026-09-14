@@ -392,7 +392,7 @@ function renderTodayEvents() {
   const nowTime = Date.now();
 
   panel.innerHTML = `
-    <div class="today-events-list">${events
+    <div class="today-timeline-container">${events
       .map((ev, idx) => {
         const timeStr = ev.eventDateTime
           ? new Date(ev.eventDateTime).toLocaleTimeString("vi-VN", {
@@ -400,7 +400,7 @@ function renderTodayEvents() {
             minute: "2-digit",
           })
           : "";
-        const evColor = escapeHtml(ev.color || "#3b82f6");
+        const evColor = escapeHtml(ev.color || "#38bdf8");
 
         let imminentBadge = "";
 
@@ -411,28 +411,53 @@ function renderTodayEvents() {
               const diffMinutes = Math.round((evTime - nowTime) / (60 * 1000));
               if (diffMinutes > 0 && diffMinutes <= 60) {
                 // Sắp đến hạn (trong 60 phút tới): Tag đỏ thỉnh thoảng rung
-                imminentBadge = `<span class="imminent-badge" title="Sự kiện sắp đến hạn trong ${diffMinutes} phút">🔥 Còn ${diffMinutes}p</span>`;
+                imminentBadge = `<span class="imminent-badge" title="Sự kiện sắp đến hạn trong ${diffMinutes} phút"><i class="fi fi-rr-flame"></i>Còn ${diffMinutes}p</span>`;
               } else if (diffMinutes <= 0 && diffMinutes >= -60) {
                 // Đang diễn ra: Tag xanh lá cây đứng im
-                imminentBadge = `<span class="imminent-badge is-live" title="Sự kiện đang diễn ra">⚡ Đang diễn ra</span>`;
+                imminentBadge = `<span class="imminent-badge is-live" title="Sự kiện đang diễn ra"><i class="fi fi-rr-bolt"></i>Đang diễn ra</span>`;
               }
             }
           } catch (e) { }
         }
 
         const recBadge = ev.isRecurring
-          ? `<span class="event-recurring-tag ${ev.calendarType === 'lunar' ? 'lunar' : ''}" style="margin-left: 6px; font-size: 10.5px; padding: 1px 6px;">🔄 ${escapeHtml(ev.recurrenceLabel || 'Lặp lại')}</span>`
+          ? `<span class="event-recurring-tag ${ev.calendarType === 'lunar' ? 'lunar' : ''}" title="${escapeHtml(ev.recurrenceLabel || 'Lặp lại')}"><i class="fi fi-rr-refresh"></i>${escapeHtml(ev.recurrenceLabel || 'Lặp lại')}</span>`
           : "";
 
-        return `<div class="today-event-item" 
-                     style="--event-color: ${evColor}; border-left-color: ${evColor}; cursor: pointer;"
+        return `<div class="today-timeline-item" 
+                     style="--event-color: ${evColor};"
                      onclick="selectedKey='${key}'; openEventQuickViewModal(getEventsForDate('${key}')[${idx}], '${key}', ${idx});"
                      title="Nhấp để xem chi tiết sự kiện">
-          ${timeStr ? `<span class="today-event-time" style="color: ${evColor};">${timeStr}</span>` : ""}
-          <span class="today-event-title">${escapeHtml(ev.title || "(Không có tiêu đề)")}</span>
-          ${recBadge}
-          ${imminentBadge}
-          ${ev.text ? `<span class="today-event-text">${escapeHtml(ev.text)}</span>` : ""}
+          <!-- Cột trái: Mốc thời gian -->
+          <div class="today-timeline-time-col">
+            <span class="today-timeline-time ${!timeStr ? 'is-allday' : ''}">${timeStr || "Cả ngày"}</span>
+          </div>
+
+          <!-- Trục timeline: Chấm tròn (Node) & Đường nối (Stem) -->
+          <div class="today-timeline-axis-col">
+            <span class="today-timeline-node"></span>
+            <span class="today-timeline-stem"></span>
+          </div>
+
+          <!-- Cột phải: Thẻ nội dung sự kiện -->
+          <div class="today-timeline-card">
+            <div class="today-timeline-card-top">
+              <span class="today-timeline-title">${escapeHtml(ev.title || "(Không có tiêu đề)")}</span>
+              <i class="fi fi-rr-angle-small-right today-timeline-arrow"></i>
+            </div>
+            ${(imminentBadge || recBadge) ? `
+              <div class="today-timeline-badges">
+                ${imminentBadge}
+                ${recBadge}
+              </div>
+            ` : ""}
+            ${ev.text ? `
+              <div class="today-timeline-snippet">
+                <i class="fi fi-rr-document"></i>
+                <span>${escapeHtml(ev.text)}</span>
+              </div>
+            ` : ""}
+          </div>
         </div>`;
       })
       .join("")}</div>
@@ -745,10 +770,18 @@ function togglePasswordVisibility(inputId, iconId) {
 
   if (input.type === "password") {
     input.type = "text";
-    icon.innerHTML = `<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>`;
+    if (icon.tagName === "I") {
+      icon.className = "fi fi-rr-eye-crossed";
+    } else {
+      icon.innerHTML = `<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>`;
+    }
   } else {
     input.type = "password";
-    icon.innerHTML = `<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>`;
+    if (icon.tagName === "I") {
+      icon.className = "fi fi-rr-eye";
+    } else {
+      icon.innerHTML = `<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>`;
+    }
   }
 }
 
@@ -4780,10 +4813,7 @@ function renderNotificationList() {
     bodyEl.innerHTML = `
       <div class="notification-empty-state">
         <div class="notification-empty-icon">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
+          <i class="fi fi-rr-bell-slash" style="font-size: 28px;"></i>
         </div>
         <div class="notification-empty-text">${notificationFilterMode === "unread" ? "Không có thông báo chưa đọc" : "Chưa có thông báo nào"}</div>
       </div>
@@ -4796,19 +4826,19 @@ function renderNotificationList() {
     const isUnread = !item.read;
     const type = item.notificationType || "event";
 
-    let iconText = "📅";
+    let iconHtml = '<i class="fi fi-rr-calendar"></i>';
     let iconClass = "event";
     let typeLabel = "Sự kiện";
     if (type === "cashflow") {
-      iconText = "💸";
+      iconHtml = '<i class="fi fi-rr-donate"></i>';
       iconClass = "cashflow";
       typeLabel = "Thu chi";
     } else if (type === "funds" || type === "fund_allocation") {
-      iconText = "🏦";
+      iconHtml = '<i class="fi fi-rr-wallet"></i>';
       iconClass = "funds";
       typeLabel = "Quỹ";
     } else if (type === "reminder") {
-      iconText = "⏰";
+      iconHtml = '<i class="fi fi-rr-alarm-clock"></i>';
       iconClass = "reminder";
       typeLabel = "Nhắc nhở";
     }
@@ -4820,7 +4850,7 @@ function renderNotificationList() {
 
     html += `
       <div class="notification-item type-${iconClass} ${isUnread ? "unread" : ""}" style="${delayStyle}" onclick="handleNotificationItemClick('${item.id}')">
-        <div class="notif-item-icon ${iconClass}">${iconText}</div>
+        <div class="notif-item-icon ${iconClass}">${iconHtml}</div>
         <div class="notif-item-content">
           <div class="notif-item-title">
             <span>${title}</span>
@@ -4828,18 +4858,12 @@ function renderNotificationList() {
           </div>
           <div class="notif-item-body">${body}</div>
           <div class="notif-item-time">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
+            <i class="fi fi-rr-clock" style="font-size: 12px; margin-right: 4px;"></i>
             <span>${timeStr}</span>
           </div>
         </div>
         <button type="button" class="notif-item-delete" title="Xóa thông báo" onclick="deleteNotificationItem('${item.id}', event)">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg>
+          <i class="fi fi-rr-trash"></i>
         </button>
       </div>
     `;
@@ -5245,12 +5269,7 @@ function renderDayDetailsModalUI(dateKey, d, m, y, data) {
       <div class="empty-events-state">
         <div class="empty-events-text">Chưa có sự kiện nào cho ngày này</div>
         <button type="button" class="empty-events-add-btn" onclick="openAddEventModalFromDayDetails()" title="Thêm sự kiện mới" aria-label="Thêm sự kiện mới">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 2v4M16 2v4"></path>
-            <rect x="3" y="4" width="18" height="18" rx="3"></rect>
-            <path d="M3 10h18"></path>
-            <path d="M12 14v4M10 16h4"></path>
-          </svg>
+          <i class="fi fi-rr-calendar-plus" style="font-size: 20px;"></i>
         </button>
       </div>
     `;
@@ -5271,7 +5290,7 @@ function renderDayDetailsModalUI(dateKey, d, m, y, data) {
         : "--:--";
 
       const recBadge = event.isRecurring
-        ? `<div class="event-recurring-tag ${event.calendarType === 'lunar' ? 'lunar' : ''}">🔄 ${escapeHtml(event.recurrenceLabel || 'Lặp lại')}</div>`
+        ? `<div class="event-recurring-tag ${event.calendarType === 'lunar' ? 'lunar' : ''}"><i class="fi fi-rr-refresh" style="font-size: 10px; margin-right: 4px;"></i>${escapeHtml(event.recurrenceLabel || 'Lặp lại')}</div>`
         : "";
 
       const editAction = event.isRecurring
@@ -5291,11 +5310,9 @@ function renderDayDetailsModalUI(dateKey, d, m, y, data) {
         </div>
         <div class="event-actions">
           <button class="event-edit" onclick="event.stopPropagation(); ${editAction}" title="${event.isRecurring ? 'Sửa quy tắc lặp lại' : 'Sửa'}" aria-label="Sửa sự kiện">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm17.71-10.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.09Z" />
-            </svg>
+            <i class="fi fi-rr-pencil"></i>
           </button>
-          <button class="event-delete" onclick="event.stopPropagation(); ${deleteAction}" title="${event.isRecurring ? 'Xóa quy tắc lặp lại' : 'Xóa'}">×</button>
+          <button class="event-delete" onclick="event.stopPropagation(); ${deleteAction}" title="${event.isRecurring ? 'Xóa quy tắc lặp lại' : 'Xóa'}"><i class="fi fi-rr-cross-small"></i></button>
         </div>
       `;
       // Click vào thẻ sự kiện để mở xem chi tiết sự kiện
@@ -5432,7 +5449,7 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
   }
 
   const recTag = eventObj.isRecurring
-    ? `<div class="event-recurring-tag ${eventObj.calendarType === 'lunar' ? 'lunar' : ''}" style="margin-top: 6px; display: inline-flex;">🔄 ${escapeHtml(eventObj.recurrenceLabel || 'Sự kiện lặp lại')}</div>`
+    ? `<div class="event-recurring-tag ${eventObj.calendarType === 'lunar' ? 'lunar' : ''}" style="margin-top: 6px; display: inline-flex;"><i class="fi fi-rr-refresh" style="font-size: 10px; margin-right: 4px;"></i>${escapeHtml(eventObj.recurrenceLabel || 'Sự kiện lặp lại')}</div>`
     : "";
 
   let actionButtonsHtml = "";
@@ -5440,10 +5457,10 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
     actionButtonsHtml = `
       <div class="cashflow-quickview-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
         <button type="button" class="cashflow-quickview-btn-delete" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #ef4444, #dc2626); border: 1px solid rgba(252, 165, 165, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeEventQuickViewModal(); deleteRecurringEventUI('${eventObj.recurringId}');">
-          🗑️ Xóa quy tắc lặp lại
+          <i class="fi fi-rr-trash"></i> Xóa quy tắc lặp lại
         </button>
         <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeEventQuickViewModal(); openRecurringEventFormModal('${eventObj.recurringId}');">
-          ✏️ Chỉnh sửa quy tắc
+          <i class="fi fi-rr-pencil"></i> Chỉnh sửa quy tắc
         </button>
       </div>
     `;
@@ -5451,10 +5468,10 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
     actionButtonsHtml = `
       <div class="cashflow-quickview-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
         <button type="button" class="cashflow-quickview-btn-delete" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #ef4444, #dc2626); border: 1px solid rgba(252, 165, 165, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="deleteEventFromQuickView('${dKey}', ${effectiveIndex});">
-          🗑️ Xóa sự kiện
+          <i class="fi fi-rr-trash"></i> Xóa sự kiện
         </button>
         <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="selectedKey='${dKey}'; closeEventQuickViewModal(); openEditEventModal(${effectiveIndex});">
-          ✏️ Chỉnh sửa
+          <i class="fi fi-rr-pencil"></i> Chỉnh sửa
         </button>
       </div>
     `;
@@ -5469,8 +5486,8 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
         </div>
         ${recTag}
       </div>
-      <div class="cashflow-quickview-amount" style="color: ${escapeHtml(color)}; font-size: 14px;">
-        ⏰ ${timeStr}
+      <div class="cashflow-quickview-amount" style="color: ${escapeHtml(color)}; font-size: 14px; display: inline-flex; align-items: center; gap: 4px;">
+        <i class="fi fi-rr-clock"></i> ${timeStr}
       </div>
     </div>
     <div class="cashflow-quickview-note">${escapeHtml(note)}</div>
@@ -5868,15 +5885,15 @@ window.onSearchRecurringEvents = onSearchRecurringEvents;
 function getCategoryMeta(category) {
   switch (category) {
     case "death_anniversary":
-      return { icon: "🕯️", name: "Giỗ chạp", defaultColor: "#f59e0b" };
+      return { icon: '<i class="fi fi-rr-flame"></i>', iconText: "Giỗ chạp", name: "Giỗ chạp", defaultColor: "#f59e0b" };
     case "birthday":
-      return { icon: "🎂", name: "Sinh nhật", defaultColor: "#ec4899" };
+      return { icon: '<i class="fi fi-rr-cake-birthday"></i>', iconText: "Sinh nhật", name: "Sinh nhật", defaultColor: "#ec4899" };
     case "bill":
-      return { icon: "⚡", name: "Điện nước / Hóa đơn", defaultColor: "#f97316" };
+      return { icon: '<i class="fi fi-rr-bolt"></i>', iconText: "Điện nước", name: "Điện nước / Hóa đơn", defaultColor: "#f97316" };
     case "insurance":
-      return { icon: "🛡️", name: "Bảo hiểm", defaultColor: "#10b981" };
+      return { icon: '<i class="fi fi-rr-shield-check"></i>', iconText: "Bảo hiểm", name: "Bảo hiểm", defaultColor: "#10b981" };
     default:
-      return { icon: "🔄", name: "Khác", defaultColor: "#3b82f6" };
+      return { icon: '<i class="fi fi-rr-refresh"></i>', iconText: "Khác", name: "Khác", defaultColor: "#3b82f6" };
   }
 }
 
@@ -5916,14 +5933,14 @@ function renderRecurringEventsList() {
       listEl.innerHTML = `
         <div class="recurring-empty-state compact">
           <div class="rec-empty-compact-left">
-            <span class="rec-empty-compact-icon">📂</span>
+            <span class="rec-empty-compact-icon"><i class="fi fi-rr-folder-open"></i></span>
             <div>
               <div class="rec-empty-compact-title">Chưa có sự kiện trong mục này</div>
               <div class="rec-empty-compact-sub">Nhấn để thêm ngay sự kiện thuộc danh mục này</div>
             </div>
           </div>
           <button type="button" class="rec-empty-chip-btn primary" onclick="openRecurringEventFormModal(); applyRecurringEventPreset('${currentRecurringFilterTab}');">
-            <span>➕</span> <span>Thêm vào mục này</span>
+            <span><i class="fi fi-rr-plus"></i></span> <span>Thêm vào mục này</span>
           </button>
         </div>
       `;
@@ -5933,7 +5950,7 @@ function renderRecurringEventsList() {
     listEl.innerHTML = `
       <div class="recurring-empty-state compact">
         <div class="rec-empty-compact-header">
-          <span class="rec-empty-compact-icon">📅</span>
+          <span class="rec-empty-compact-icon"><i class="fi fi-rr-calendar"></i></span>
           <div class="rec-empty-compact-info">
             <div class="rec-empty-compact-title">Chưa có sự kiện lặp lại nào</div>
             <div class="rec-empty-compact-sub">Chọn nhanh mẫu để tạo hoặc bấm Thêm mới:</div>
@@ -5941,19 +5958,19 @@ function renderRecurringEventsList() {
         </div>
         <div class="rec-empty-chips-row">
           <button type="button" class="rec-empty-chip-btn" onclick="openRecurringEventFormModal(); applyRecurringEventPreset('death_anniversary');">
-            <span>🕯️</span> <span>Giỗ chạp</span>
+            <span><i class="fi fi-rr-flame"></i></span> <span>Giỗ chạp</span>
           </button>
           <button type="button" class="rec-empty-chip-btn" onclick="openRecurringEventFormModal(); applyRecurringEventPreset('birthday');">
-            <span>🎂</span> <span>Sinh nhật</span>
+            <span><i class="fi fi-rr-cake-birthday"></i></span> <span>Sinh nhật</span>
           </button>
           <button type="button" class="rec-empty-chip-btn" onclick="openRecurringEventFormModal(); applyRecurringEventPreset('bill');">
-            <span>⚡</span> <span>Điện nước</span>
+            <span><i class="fi fi-rr-bolt"></i></span> <span>Điện nước</span>
           </button>
           <button type="button" class="rec-empty-chip-btn" onclick="openRecurringEventFormModal(); applyRecurringEventPreset('insurance');">
-            <span>🛡️</span> <span>Bảo hiểm</span>
+            <span><i class="fi fi-rr-shield-check"></i></span> <span>Bảo hiểm</span>
           </button>
           <button type="button" class="rec-empty-chip-btn primary" onclick="openRecurringEventFormModal();">
-            <span>➕</span> <span>Thêm mới</span>
+            <span><i class="fi fi-rr-plus"></i></span> <span>Thêm mới</span>
           </button>
         </div>
       </div>
@@ -5976,19 +5993,19 @@ function renderRecurringEventsList() {
   itemsWithNext.sort((a, b) => a.diffDays - b.diffDays);
 
   const cardsHtml = itemsWithNext.map(({ item, nextOccur, diffDays }) => {
+    const color = escapeHtml(item.color || "#3b82f6");
     const cat = getCategoryMeta(item.category);
-    const color = escapeHtml(item.color || cat.defaultColor || "#3b82f6");
 
     let countdownHtml = "";
     if (nextOccur) {
       if (diffDays === 0) {
-        countdownHtml = `<span class="rec-countdown-badge today">🎉 Hôm nay!</span>`;
+        countdownHtml = `<span class="rec-countdown-badge today"><i class="fi fi-rr-sparkles" style="margin-right: 3px;"></i>Hôm nay!</span>`;
       } else if (diffDays === 1) {
-        countdownHtml = `<span class="rec-countdown-badge imminent">⚠️ Ngày mai</span>`;
+        countdownHtml = `<span class="rec-countdown-badge imminent"><i class="fi fi-rr-triangle-warning" style="margin-right: 3px;"></i>Ngày mai</span>`;
       } else if (diffDays <= 7) {
-        countdownHtml = `<span class="rec-countdown-badge imminent">⏳ Còn ${diffDays} ngày</span>`;
+        countdownHtml = `<span class="rec-countdown-badge imminent"><i class="fi fi-rr-clock" style="margin-right: 3px;"></i>Còn ${diffDays} ngày</span>`;
       } else {
-        countdownHtml = `<span class="rec-countdown-badge normal">📅 Còn ${diffDays} ngày</span>`;
+        countdownHtml = `<span class="rec-countdown-badge normal"><i class="fi fi-rr-calendar" style="margin-right: 3px;"></i>Còn ${diffDays} ngày</span>`;
       }
     }
 
@@ -6041,15 +6058,11 @@ function renderRecurringEventsList() {
           ${countdownHtml}
           <div class="rec-card-actions">
             <button type="button" class="btn-rec-action edit" onclick="openRecurringEventFormModal('${item.id}')" title="Chỉnh sửa sự kiện">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm17.71-10.04a1.003 1.003 0 0 0 0-1.42l-2.5-2.5a1.003 1.003 0 0 0-1.42 0l-1.96 1.96 3.75 3.75 2.13-2.09Z"/>
-              </svg>
+              <i class="fi fi-rr-pencil"></i>
               <span>Sửa</span>
             </button>
             <button type="button" class="btn-rec-action delete" onclick="deleteRecurringEventUI('${item.id}')" title="Xóa sự kiện">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>
-              </svg>
+              <i class="fi fi-rr-trash"></i>
               <span>Xóa</span>
             </button>
           </div>
@@ -6061,7 +6074,7 @@ function renderRecurringEventsList() {
   const addMoreHtml = `
     <div class="rec-list-footer-add">
       <button type="button" class="btn-rec-list-add" onclick="openRecurringEventFormModal()">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        <i class="fi fi-rr-plus"></i>
         <span>Thêm sự kiện lặp lại</span>
       </button>
     </div>
@@ -6550,23 +6563,17 @@ function renderProjectsList() {
       return `
       <div class="project-item" data-project-id="${project.id}" onclick="if(!event.target.closest('.item-actions')) openProjectTasksModal('${project.id}', '${escapeHtml(project.title || "")}')">
         <div class="project-item-header">
-          <div class="project-item-icon">📁</div>
+          <div class="project-item-icon"><i class="fi fi-rr-folder"></i></div>
           <div class="project-item-title-wrap">
             <div class="project-item-title">${escapeHtml(project.title || "Dự án không tên")}</div>
             ${project.description ? `<div class="project-item-text">${escapeHtml(project.description)}</div>` : ""}
           </div>
           <div class="item-actions" onclick="event.stopPropagation();" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
             <button type="button" class="item-btn edit-btn" draggable="false" onclick="event.stopPropagation(); event.preventDefault(); editProject('${project.id}');" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="Sửa dự án">
-              <svg style="pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
+              <i class="fi fi-rr-pencil"></i>
             </button>
             <button type="button" class="item-btn delete-btn" draggable="false" onclick="event.stopPropagation(); event.preventDefault(); deleteProject('${project.id}');" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="Xóa dự án">
-              <svg style="pointer-events: none;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
+              <i class="fi fi-rr-trash"></i>
             </button>
           </div>
         </div>
@@ -6795,16 +6802,10 @@ function renderProjectTasksList(projectId) {
         </div>
         <div class="item-actions" onclick="event.stopPropagation();" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
           <button type="button" class="item-btn edit-btn" draggable="false" onclick="event.stopPropagation(); event.preventDefault(); editTask('${projectId}', '${task.id}');" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="Sửa công việc">
-            <svg style="pointer-events: none;" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
+            <i class="fi fi-rr-pencil"></i>
           </button>
           <button type="button" class="item-btn delete-btn" draggable="false" onclick="event.stopPropagation(); event.preventDefault(); deleteTask('${projectId}', '${task.id}');" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" title="Xóa công việc">
-            <svg style="pointer-events: none;" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
+            <i class="fi fi-rr-trash"></i>
           </button>
         </div>
       </div>
@@ -7446,7 +7447,23 @@ function showConfirmPopup(title, message, confirmText, callback, args, options =
 
   const popupType = options.type || "danger";
   if (iconEl) {
-    iconEl.textContent = options.icon || (popupType === "warning" ? "⚠️" : (popupType === "primary" ? "ℹ️" : "🗑️"));
+    let iconHtml = options.icon;
+    if (!iconHtml || iconHtml === "🗑️") {
+      iconHtml = '<i class="fi fi-rr-trash"></i>';
+    } else if (iconHtml === "⚠️") {
+      iconHtml = '<i class="fi fi-rr-triangle-warning"></i>';
+    } else if (iconHtml === "🚪") {
+      iconHtml = '<i class="fi fi-rr-sign-out-alt"></i>';
+    } else if (iconHtml === "🔕") {
+      iconHtml = '<i class="fi fi-rr-bell-slash"></i>';
+    } else if (iconHtml === "ℹ️" || iconHtml === "info") {
+      iconHtml = '<i class="fi fi-rr-info"></i>';
+    } else if (!iconHtml.includes("<")) {
+      if (popupType === "warning") iconHtml = '<i class="fi fi-rr-triangle-warning"></i>';
+      else if (popupType === "primary") iconHtml = '<i class="fi fi-rr-info"></i>';
+      else iconHtml = '<i class="fi fi-rr-trash"></i>';
+    }
+    iconEl.innerHTML = iconHtml;
     iconEl.className = `confirm-popup-icon ${popupType}`;
   }
 
@@ -11988,11 +12005,7 @@ function renderCashflowRecentList() {
     actionBtn.type = "button";
     actionBtn.title = "Tùy chọn";
     actionBtn.setAttribute("aria-label", "Tùy chọn");
-    actionBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-      <circle cx="8" cy="3" r="1.5"/>
-      <circle cx="8" cy="8" r="1.5"/>
-      <circle cx="8" cy="13" r="1.5"/>
-    </svg>`;
+    actionBtn.innerHTML = `<i class="fi fi-rr-menu-dots-vertical"></i>`;
     actionBtn.addEventListener("click", (event) => {
       event.stopPropagation();
       toggleCashflowAction(actionBtn);
@@ -12003,10 +12016,7 @@ function renderCashflowRecentList() {
 
     const editItem = document.createElement("button");
     editItem.className = "cashflow-action-item";
-    editItem.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-    </svg> Sửa giao dịch`;
+    editItem.innerHTML = `<i class="fi fi-rr-pencil" style="margin-right: 6px;"></i> Sửa giao dịch`;
     editItem.addEventListener("click", (event) => {
       event.stopPropagation();
       startCashflowEdit(entry.id);
@@ -12015,10 +12025,7 @@ function renderCashflowRecentList() {
 
     const deleteItem = document.createElement("button");
     deleteItem.className = "cashflow-action-item danger";
-    deleteItem.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <polyline points="3 6 5 6 21 6"/>
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-    </svg> Xóa giao dịch`;
+    deleteItem.innerHTML = `<i class="fi fi-rr-trash" style="margin-right: 6px;"></i> Xóa giao dịch`;
     deleteItem.addEventListener("click", (event) => {
       event.stopPropagation();
       removeCashflowEntry(entry.id);
@@ -12152,11 +12159,7 @@ function renderCashflowAllTransactionsList() {
     actionBtn.type = "button";
     actionBtn.title = "Tùy chọn";
     actionBtn.setAttribute("aria-label", "Tùy chọn");
-    actionBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-      <circle cx="8" cy="3" r="1.5"/>
-      <circle cx="8" cy="8" r="1.5"/>
-      <circle cx="8" cy="13" r="1.5"/>
-    </svg>`;
+    actionBtn.innerHTML = `<i class="fi fi-rr-menu-dots-vertical"></i>`;
     actionBtn.addEventListener("click", (event) => {
       event.stopPropagation();
       toggleCashflowAction(actionBtn);
@@ -12167,10 +12170,7 @@ function renderCashflowAllTransactionsList() {
 
     const editItem = document.createElement("button");
     editItem.className = "cashflow-action-item";
-    editItem.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-    </svg> Sửa giao dịch`;
+    editItem.innerHTML = `<i class="fi fi-rr-pencil" style="margin-right: 6px;"></i> Sửa giao dịch`;
     editItem.addEventListener("click", (event) => {
       event.stopPropagation();
       closeCashflowAllTransactionsModal();
@@ -12180,10 +12180,7 @@ function renderCashflowAllTransactionsList() {
 
     const deleteItem = document.createElement("button");
     deleteItem.className = "cashflow-action-item danger";
-    deleteItem.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <polyline points="3 6 5 6 21 6"/>
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-    </svg> Xóa giao dịch`;
+    deleteItem.innerHTML = `<i class="fi fi-rr-trash" style="margin-right: 6px;"></i> Xóa giao dịch`;
     deleteItem.addEventListener("click", (event) => {
       event.stopPropagation();
       removeCashflowEntry(entry.id);
@@ -13563,38 +13560,23 @@ function renderFundsList() {
       </div>
       <div class="fund-item-actions">
         <button class="fund-action-btn" onclick="toggleFundAction(this, event)" title="Tùy chọn">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <circle cx="8" cy="3" r="1.5"/>
-            <circle cx="8" cy="8" r="1.5"/>
-            <circle cx="8" cy="13" r="1.5"/>
-          </svg>
+          <i class="fi fi-rr-menu-dots-vertical"></i>
         </button>
         <div class="fund-action-dropdown">
           <button class="fund-action-item" onclick="editFund('${fund.id}'); closeFundActionDropdown(this);">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
+            <i class="fi fi-rr-pencil"></i>
             Sửa quỹ
           </button>
           <button class="fund-action-item" onclick="openTopupFundModal('${fund.id}'); closeFundActionDropdown(this);">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
+            <i class="fi fi-rr-plus"></i>
             Thêm vào quỹ
           </button>
           <button class="fund-action-item" onclick="openWithdrawFundModal('${fund.id}'); closeFundActionDropdown(this);">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
+            <i class="fi fi-rr-minus"></i>
             Lấy ra từ quỹ
           </button>
           <button class="fund-action-item danger" onclick="confirmDeleteFund('${fund.id}'); closeFundActionDropdown(this);">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
+            <i class="fi fi-rr-trash"></i>
             Xóa quỹ
           </button>
         </div>
@@ -15196,7 +15178,7 @@ function renderNewsItems(items) {
 
       const thumbHtml = item.thumb
         ? `<img src="${item.thumb}" class="news-card-thumb" loading="lazy" onerror="this.style.display='none'">`
-        : `<div class="news-card-thumb" style="display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05);"><svg viewBox="0 0 24 24" style="width:24px; fill:rgba(255,255,255,0.2)"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div>`;
+        : `<div class="news-card-thumb" style="display:flex; align-items:center; justify-content:center; background:rgba(15,23,42,0.6);"><i class="fi fi-rr-newspaper" style="font-size:24px; color:rgba(56,189,248,0.4);"></i></div>`;
 
       return `
       <a href="${item.link}" target="_blank" class="news-card">
@@ -15402,9 +15384,7 @@ function renderTranslateHistoryModal() {
             <span class="translate-history-time">${timeStr}</span>
             <div class="translate-history-actions-btns">
               <button class="translate-history-delete-btn" onclick="deleteTranslateHistoryItem('${item.id}'); renderTranslateHistoryModal();" title="Xóa">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                </svg>
+                <i class="fi fi-rr-cross-small"></i>
               </button>
             </div>
           </div>
@@ -17511,9 +17491,7 @@ async function copyTranslation() {
 
   try {
     await navigator.clipboard.writeText(text);
-    copyBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-    </svg>`;
+    copyBtn.innerHTML = `<i class="fi fi-rr-check"></i>`;
     copyBtn.classList.add("copied");
 
     setTimeout(() => {
@@ -17530,9 +17508,7 @@ async function copyTranslation() {
     document.execCommand("copy");
     document.body.removeChild(textarea);
 
-    copyBtn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
-    </svg>`;
+    copyBtn.innerHTML = `<i class="fi fi-rr-check"></i>`;
     copyBtn.classList.add("copied");
 
     setTimeout(() => {
@@ -17585,7 +17561,7 @@ function renderTranslateHistory() {
   if (translateHistoryCache.length === 0) {
     container.innerHTML = `
       <div class="app-empty-state">
-        <div class="app-empty-icon">🌐</div>
+        <div class="app-empty-icon"><i class="fi fi-rr-language"></i></div>
         <div class="app-empty-title">Chưa có lịch sử dịch</div>
       </div>
     `;
@@ -17619,9 +17595,7 @@ function renderTranslateHistory() {
             <span class="translate-history-time">${timeStr}</span>
             <div class="translate-history-actions-btns">
               <button class="translate-history-delete-btn" onclick="deleteTranslateHistoryItem('${item.id}')" title="Xóa">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-                  <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                </svg>
+                <i class="fi fi-rr-cross-small"></i>
               </button>
             </div>
           </div>
@@ -18142,16 +18116,9 @@ function closeLearnModal() {
 function getNoResultsHTML(message = "Không tìm thấy kết quả nào.") {
   return `
     <div class="vocab-no-results">
-      <svg class="vocab-no-results-icon" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="60" cy="60" r="50" fill="var(--surface-2)" />
-        <circle cx="60" cy="60" r="35" stroke="var(--muted)" stroke-width="2" stroke-dasharray="4 4" fill="none" />
-        <text x="60" y="55" text-anchor="middle" font-size="28" font-weight="600" fill="var(--text-secondary)">Aa</text>
-        <text x="60" y="72" text-anchor="middle" font-size="12" fill="var(--muted)">?</text>
-        <line x1="35" y1="95" x2="85" y2="95" stroke="var(--line)" stroke-width="2" stroke-linecap="round" />
-        <circle cx="40" cy="95" r="3" fill="var(--accent)" opacity="0.6" />
-        <circle cx="60" cy="95" r="3" fill="var(--accent)" opacity="0.4" />
-        <circle cx="80" cy="95" r="3" fill="var(--accent)" opacity="0.6" />
-      </svg>
+      <div class="vocab-no-results-icon-wrap" style="width: 72px; height: 72px; margin: 0 auto 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.25); box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);">
+        <i class="fi fi-rr-search-alt" style="font-size: 32px; color: #38bdf8; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.5));"></i>
+      </div>
       <div class="vocab-no-results-text">${message}</div>
       <div class="vocab-no-results-hint">Thử tìm kiếm với từ khóa khác</div>
     </div>
@@ -18686,9 +18653,7 @@ function renderVocabCard() {
       <div class="learn-card-top-row">
         <div class="learn-card-category">${getCategoryName(currentVocabCategory)}</div>
         <button class="learn-card-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.word)}')` : `speakEnglish('${escapeHtml(item.word)}')`}" title="Nghe phát âm">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-          </svg>
+          <i class="fi fi-rr-volume" style="font-size: 16px; margin-right: 4px;"></i>
           Phát âm
         </button>
       </div>
@@ -18709,7 +18674,7 @@ function renderVocabCard() {
       <div class="learn-card-example">
         <div class="learn-card-example-header">
           <div class="learn-card-example-label">Ví dụ minh họa</div>
-          <button class="learn-card-example-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.example)}')` : `speakEnglish('${escapeHtml(item.example)}')`}" title="Nghe ví dụ">🔊</button>
+          <button class="learn-card-example-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.example)}')` : `speakEnglish('${escapeHtml(item.example)}')`}" title="Nghe ví dụ"><i class="fi fi-rr-volume"></i></button>
         </div>
         <div class="learn-card-example-en ${isZh ? "learn-card-example-zh" : ""}">${item.example}</div>
         ${item.examplePinyin ? `<div class="learn-card-example-pinyin">${item.examplePinyin}</div>` : ""}
@@ -18749,13 +18714,13 @@ function renderGrammarCard() {
       <div class="learn-card-example">
         <div class="learn-card-example-header">
           <div class="learn-card-example-label">Ví dụ áp dụng</div>
-          <button class="learn-card-example-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.example)}')` : `speakEnglish('${escapeHtml(item.example)}')`}" title="Nghe ví dụ">🔊</button>
+          <button class="learn-card-example-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.example)}')` : `speakEnglish('${escapeHtml(item.example)}')`}" title="Nghe ví dụ"><i class="fi fi-rr-volume"></i></button>
         </div>
         <div class="learn-card-example-en ${isZh ? "learn-card-example-zh" : ""}">${item.example}</div>
         ${item.examplePinyin ? `<div class="learn-card-example-pinyin">${item.examplePinyin}</div>` : ""}
         <div class="learn-card-example-vi">${item.exampleVi || ""}</div>
       </div>
-      ${item.note ? `<div class="learn-card-note">📌 <strong>Lưu ý:</strong> ${item.note}</div>` : ""}
+      ${item.note ? `<div class="learn-card-note"><i class="fi fi-rr-thumbtack" style="margin-right: 4px;"></i><strong>Lưu ý:</strong> ${item.note}</div>` : ""}
     </div>
   `;
 }
@@ -18781,9 +18746,7 @@ function renderPhraseCard() {
       <div class="learn-card-top-row">
         <div class="learn-card-situation">${item.situation || getPhraseCategoryName(currentPhraseCategory)}</div>
         <button class="learn-card-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.phrase)}')` : `speakEnglish('${escapeHtml(item.phrase)}')`}" title="Nghe đọc mẫu câu">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-          </svg>
+          <i class="fi fi-rr-volume" style="font-size: 16px; margin-right: 4px;"></i>
           Phát âm
         </button>
       </div>

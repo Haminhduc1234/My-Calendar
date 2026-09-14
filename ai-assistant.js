@@ -356,12 +356,12 @@ function appendAIMessage(role, content, shouldSave) {
   messageEl.className = "ai-message " + (role === "assistant" ? "assistant" : "user");
   
   const avatarIcon = role === "assistant" 
-    ? '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>'
-    : '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>';
+    ? '<i class="fi fi-rr-sparkles"></i>'
+    : '<i class="fi fi-rr-user"></i>';
   
   const renderedContent = renderMarkdown(content);
   
-  messageEl.innerHTML = '<div class="ai-message-avatar"><svg viewBox="0 0 24 24" fill="currentColor">' + avatarIcon + '</svg></div><div class="ai-message-content">' + renderedContent + '</div>';
+  messageEl.innerHTML = '<div class="ai-message-avatar">' + avatarIcon + '</div><div class="ai-message-content">' + renderedContent + '</div>';
   
   container.appendChild(messageEl);
   container.scrollTop = container.scrollHeight;
@@ -388,7 +388,7 @@ function appendAITyping() {
   const typingEl = document.createElement("div");
   typingEl.className = "ai-message assistant";
   typingEl.id = "aiTypingMessage";
-  typingEl.innerHTML = '<div class="ai-message-avatar"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div><div class="ai-message-content"><div class="ai-typing"><span></span><span></span><span></span></div></div>';
+  typingEl.innerHTML = '<div class="ai-message-avatar"><i class="fi fi-rr-sparkles"></i></div><div class="ai-message-content"><div class="ai-typing"><span></span><span></span><span></span></div></div>';
   container.appendChild(typingEl);
   container.scrollTop = container.scrollHeight;
 }

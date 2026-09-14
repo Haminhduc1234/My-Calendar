@@ -549,7 +549,10 @@
 
     if (formTitle) formTitle.textContent = `Chỉnh Sửa: ${contact.name || "Người thân"}`;
     if (submitBtn) submitBtn.innerHTML = '<i class="fi fi-rr-check"></i> Cập Nhật';
-    if (cancelBtn) cancelBtn.style.display = "inline-flex";
+    if (cancelBtn) {
+      cancelBtn.style.display = "inline-flex";
+      cancelBtn.innerHTML = '<i class="fi fi-rr-cross"></i> Hủy bỏ';
+    }
 
     updateAvatarPreview();
     renderPresetAvatarGrid();

@@ -65,7 +65,8 @@
           </div>
         </div>
         <div class="today-top-actions">
-          <button type="button" id="btnSeniorOneTouch" class="senior-one-touch-top-btn" title="Gọi người thân một chạm" onclick="openSeniorCallModal()">
+          <button type="button" id="btnSeniorOneTouch" class="senior-one-touch-top-btn" title="Gọi người thân một chạm"
+            onclick="openSeniorCallModal()">
             <i class="fi fi-sr-heart"></i>
             <span class="senior-btn-label">Một Chạm</span>
           </button>
@@ -217,19 +218,23 @@
           <span class="nav-label">Khác</span>
         </button>
         <div id="moreMenuDropdown" class="more-dropdown" role="menu">
-          <button class="dropdown-item item-senior-call" onclick="openSeniorCallModal(); closeMoreMenu();" role="menuitem">
+          <button class="dropdown-item item-senior-call" onclick="openSeniorCallModal(); closeMoreMenu();"
+            role="menuitem">
             <span class="menu-icon-wrap" style="color: #ec4899;"><i class="fi fi-sr-heart"></i></span>
-            <span>Gọi Người Thân (Một Chạm)</span>
+            <span>Gọi Người Thân</span>
           </button>
-          <button class="dropdown-item item-senior-settings" onclick="openSeniorSettingsModal(); closeMoreMenu();" role="menuitem">
+          <button class="dropdown-item item-senior-settings" onclick="openSeniorSettingsModal(); closeMoreMenu();"
+            role="menuitem">
             <span class="menu-icon-wrap" style="color: #2563eb;"><i class="fi fi-rr-users"></i></span>
             <span>Cài Đặt Người Thân</span>
           </button>
-          <button class="dropdown-item item-add-event" onclick="openAddEventModalForToday(); closeMoreMenu();" role="menuitem">
+          <button class="dropdown-item item-add-event" onclick="openAddEventModalForToday(); closeMoreMenu();"
+            role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-calendar-plus"></i></span>
             <span>Thêm Sự Kiện</span>
           </button>
-          <button class="dropdown-item item-recurring" onclick="openRecurringEventsModal(); closeMoreMenu();" role="menuitem">
+          <button class="dropdown-item item-recurring" onclick="openRecurringEventsModal(); closeMoreMenu();"
+            role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-refresh"></i></span>
             <span>Sự Kiện Lặp Lại</span>
           </button>
@@ -266,7 +271,8 @@
             <span>Dự Án</span>
           </button>
           <div class="dropdown-divider"></div>
-          <button class="dropdown-item item-logout danger" onclick="logoutProfileSession(); closeMoreMenu();" role="menuitem">
+          <button class="dropdown-item item-logout danger" onclick="logoutProfileSession(); closeMoreMenu();"
+            role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-sign-out-alt"></i></span>
             <span>Đăng Xuất</span>
           </button>
@@ -785,14 +791,19 @@
             <label class="field-label">Mẫu gợi ý nhanh</label>
             <div class="recurrence-preset-chips">
               <button type="button" class="rec-preset-chip"
-                onclick="applyRecurrencePresetInAddModal('death_anniversary')"><i class="fi fi-rr-flame"></i> Giỗ chạp</button>
-              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('birthday')"><i class="fi fi-rr-cake-birthday"></i>
+                onclick="applyRecurrencePresetInAddModal('death_anniversary')"><i class="fi fi-rr-flame"></i> Giỗ
+                chạp</button>
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('birthday')"><i
+                  class="fi fi-rr-cake-birthday"></i>
                 Sinh nhật</button>
-              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('bill')"><i class="fi fi-rr-bolt"></i> Tiền
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('bill')"><i
+                  class="fi fi-rr-bolt"></i> Tiền
                 điện nước</button>
-              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('insurance')"><i class="fi fi-rr-shield-check"></i>
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('insurance')"><i
+                  class="fi fi-rr-shield-check"></i>
                 Gia hạn bảo hiểm</button>
-              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('custom')"><i class="fi fi-rr-refresh"></i> Tùy
+              <button type="button" class="rec-preset-chip" onclick="applyRecurrencePresetInAddModal('custom')"><i
+                  class="fi fi-rr-refresh"></i> Tùy
                 chỉnh</button>
             </div>
 
@@ -870,16 +881,19 @@
             <button type="button" class="rec-tab active" data-tab="all" onclick="filterRecurringEventsTab('all')">Tất cả
               <span class="rec-tab-count" id="recCountAll">0</span></button>
             <button type="button" class="rec-tab" data-tab="death_anniversary"
-              onclick="filterRecurringEventsTab('death_anniversary')"><i class="fi fi-rr-flame"></i> Giỗ chạp <span class="rec-tab-count"
-                id="recCountDeath">0</span></button>
-            <button type="button" class="rec-tab" data-tab="birthday" onclick="filterRecurringEventsTab('birthday')"><i class="fi fi-rr-cake-birthday"></i>
+              onclick="filterRecurringEventsTab('death_anniversary')"><i class="fi fi-rr-flame"></i> Giỗ chạp <span
+                class="rec-tab-count" id="recCountDeath">0</span></button>
+            <button type="button" class="rec-tab" data-tab="birthday" onclick="filterRecurringEventsTab('birthday')"><i
+                class="fi fi-rr-cake-birthday"></i>
               Sinh nhật <span class="rec-tab-count" id="recCountBirthday">0</span></button>
-            <button type="button" class="rec-tab" data-tab="bill" onclick="filterRecurringEventsTab('bill')"><i class="fi fi-rr-bolt"></i> Điện nước
+            <button type="button" class="rec-tab" data-tab="bill" onclick="filterRecurringEventsTab('bill')"><i
+                class="fi fi-rr-bolt"></i> Điện nước
               <span class="rec-tab-count" id="recCountBill">0</span></button>
             <button type="button" class="rec-tab" data-tab="insurance"
-              onclick="filterRecurringEventsTab('insurance')"><i class="fi fi-rr-shield-check"></i> Bảo hiểm <span class="rec-tab-count"
-                id="recCountInsurance">0</span></button>
-            <button type="button" class="rec-tab" data-tab="custom" onclick="filterRecurringEventsTab('custom')"><i class="fi fi-rr-refresh"></i> Khác
+              onclick="filterRecurringEventsTab('insurance')"><i class="fi fi-rr-shield-check"></i> Bảo hiểm <span
+                class="rec-tab-count" id="recCountInsurance">0</span></button>
+            <button type="button" class="rec-tab" data-tab="custom" onclick="filterRecurringEventsTab('custom')"><i
+                class="fi fi-rr-refresh"></i> Khác
               <span class="rec-tab-count" id="recCountCustom">0</span></button>
           </div>
         </div>
@@ -2023,7 +2037,8 @@
                       <div class="color-palette-title">Màu Highlight</div>
                       <div class="color-grid">
                         <button type="button" class="color-swatch-hl" data-bg="transparent" title="Xóa highlight"
-                          style="background:transparent;border:1px dashed #64748b;"><i class="fi fi-rr-ban"></i></button>
+                          style="background:transparent;border:1px dashed #64748b;"><i
+                            class="fi fi-rr-ban"></i></button>
                         <button type="button" class="color-swatch-hl" data-bg="rgba(250, 204, 21, 0.35)"
                           style="background:rgba(250, 204, 21, 0.85);" title="Highlight Vàng"></button>
                         <button type="button" class="color-swatch-hl" data-bg="rgba(74, 222, 128, 0.35)"
@@ -2212,7 +2227,8 @@
   <div id="quickNoteDraftModal" class="modal" onclick="if(event.target===this) closeQuickNoteDraftModal()"
     style="display: none;">
     <div class="quick-note-draft-card">
-      <div style="font-size: 36px; margin-bottom: 8px; line-height: 1; color: #38bdf8;"><i class="fi fi-rr-document-signed"></i></div>
+      <div style="font-size: 36px; margin-bottom: 8px; line-height: 1; color: #38bdf8;"><i
+          class="fi fi-rr-document-signed"></i></div>
       <h3 style="margin: 0 0 8px 0; color: #60a5fa; font-size: 16.5px; font-weight: 700;">Ghi chú chưa được lưu</h3>
       <p style="color: #cbd5e1; font-size: 13.5px; line-height: 1.5; margin: 0 0 20px 0;">
         Bạn có nội dung đang nhập dở. Bạn muốn <strong>Hủy</strong> thay đổi hay <strong>Lưu nháp</strong> để tiếp tục
@@ -2526,7 +2542,8 @@
     <div class="learn-lang-picker-overlay" onclick="closeLearnLangPicker()"></div>
     <div class="learn-lang-picker-content">
       <button class="modal-close learn-lang-picker-close" onclick="closeLearnLangPicker()">×</button>
-      <div class="learn-lang-picker-icon"><i class="fi fi-rr-graduation-cap" style="font-size: 40px; color: #38bdf8;"></i></div>
+      <div class="learn-lang-picker-icon"><i class="fi fi-rr-graduation-cap"
+          style="font-size: 40px; color: #38bdf8;"></i></div>
       <h2 class="learn-lang-picker-title">Bạn muốn học ngôn ngữ nào?</h2>
       <p class="learn-lang-picker-subtitle">Chọn ngôn ngữ để bắt đầu hành trình học tập của bạn</p>
       <div class="learn-lang-picker-options">
@@ -3071,7 +3088,8 @@
             </div>
           </div>
           <div id="hourlyForecastContainer" style="display: none;"></div>
-          <div class="weather-forecast-title" id="weatherForecastTitle" style="display: none;"><i class="fi fi-rr-calendar" style="margin-right: 6px;"></i>Dự báo các ngày tới
+          <div class="weather-forecast-title" id="weatherForecastTitle" style="display: none;"><i
+              class="fi fi-rr-calendar" style="margin-right: 6px;"></i>Dự báo các ngày tới
           </div>
           <div class="weather-forecast" id="weatherForecast"></div>
         </div>
@@ -3080,7 +3098,8 @@
   </div>
 
   <!-- Senior Call Modal (Gọi Video Một Chạm Zalo - Dạng Full) -->
-  <div id="seniorCallModal" class="modal" style="display: none;" onclick="if(event.target===this) closeSeniorCallModal()">
+  <div id="seniorCallModal" class="modal" style="display: none;"
+    onclick="if(event.target===this) closeSeniorCallModal()">
     <div class="modal-content event-modal-wrapper senior-modal-wrapper">
       <div class="event-modal-header">
         <div class="senior-header-title-box">
@@ -3088,7 +3107,8 @@
           <div class="date-label">Chạm vào ảnh để gọi Video Zalo tức thì</div>
         </div>
         <div class="senior-header-actions">
-          <button type="button" class="btn-secondary senior-header-action-btn" title="Cài đặt danh bạ người thân" onclick="closeSeniorCallModal(); openSeniorSettingsModal();">
+          <button type="button" class="btn-secondary senior-header-action-btn" title="Cài đặt danh bạ người thân"
+            onclick="closeSeniorCallModal(); openSeniorSettingsModal();">
             <i class="fi fi-rr-settings"></i> <span>Cài đặt</span>
           </button>
           <button type="button" class="modal-close event-modal-close" onclick="closeSeniorCallModal()">×</button>
@@ -3101,7 +3121,8 @@
   </div>
 
   <!-- Senior Settings Modal (Cài Đặt Danh Bạ Người Thân - Dạng Full) -->
-  <div id="seniorSettingsModal" class="modal" style="display: none;" onclick="if(event.target===this) closeSeniorSettingsModal()">
+  <div id="seniorSettingsModal" class="modal" style="display: none;"
+    onclick="if(event.target===this) closeSeniorSettingsModal()">
     <div class="modal-content event-modal-wrapper senior-modal-wrapper senior-settings-wrapper">
       <div class="event-modal-header">
         <div class="senior-header-title-box">
@@ -3109,7 +3130,8 @@
           <div class="date-label">Thêm, sửa, xóa thông tin và số điện thoại Zalo</div>
         </div>
         <div class="senior-header-actions">
-          <button type="button" class="btn-secondary senior-header-action-btn" title="Quay lại danh bạ một chạm" onclick="closeSeniorSettingsModal(); openSeniorCallModal();">
+          <button type="button" class="btn-secondary senior-header-action-btn" title="Quay lại danh bạ một chạm"
+            onclick="closeSeniorSettingsModal(); openSeniorCallModal();">
             <i class="fi fi-sr-heart" style="color: #f43f5e;"></i> <span>Gọi người thân</span>
           </button>
           <button type="button" class="modal-close event-modal-close" onclick="closeSeniorSettingsModal()">×</button>
@@ -3124,19 +3146,23 @@
 
         <!-- Form thêm / sửa -->
         <div id="seniorFormContainer" class="senior-form-card">
-          <h4 id="seniorFormTitle" class="senior-section-title"><i class="fi fi-rr-user-add"></i> Thêm Người Thân Mới</h4>
+          <h4 id="seniorFormTitle" class="senior-section-title"><i class="fi fi-rr-user-add"></i> Thêm Người Thân Mới
+          </h4>
           <form id="seniorContactForm" onsubmit="saveSeniorContactForm(event)">
             <div class="senior-form-row">
               <div class="senior-form-group">
                 <label for="seniorInputName">Tên hiển thị <span class="req">*</span></label>
-                <input type="text" id="seniorInputName" class="senior-input" placeholder="Ví dụ: Con trai Đức, Bé Lan..." required maxlength="40" autocomplete="off" />
+                <input type="text" id="seniorInputName" class="senior-input"
+                  placeholder="Ví dụ: Con trai Đức, Bé Lan..." required maxlength="40" autocomplete="off" />
               </div>
               <div class="senior-form-group">
                 <label for="seniorInputPhone">Số điện thoại Zalo <span class="req">*</span></label>
-                <input type="tel" id="seniorInputPhone" class="senior-input" placeholder="Nhập SĐT Zalo (VD: 0988123456)" required autocomplete="off" />
+                <input type="tel" id="seniorInputPhone" class="senior-input"
+                  placeholder="Nhập SĐT Zalo (VD: 0988123456)" required autocomplete="off" />
               </div>
             </div>
-            <small class="senior-hint" style="margin-top: -6px; margin-bottom: 12px;">Chạm vào avatar sẽ kết nối gọi video Zalo tức thì theo số điện thoại này.</small>
+            <small class="senior-hint" style="margin-top: -6px; margin-bottom: 12px;">Chạm vào avatar sẽ kết nối gọi
+              video Zalo tức thì theo số điện thoại này.</small>
 
             <!-- Chọn Avatar -->
             <div class="senior-form-group">
@@ -3151,7 +3177,8 @@
                   <div class="senior-upload-row">
                     <label class="senior-btn-upload-file">
                       <i class="fi fi-rr-picture"></i> Hoặc Tải Ảnh Thật Từ Máy
-                      <input type="file" id="seniorFileInput" accept="image/*" style="display: none;" onchange="handleSeniorFileUpload(event)" />
+                      <input type="file" id="seniorFileInput" accept="image/*" style="display: none;"
+                        onchange="handleSeniorFileUpload(event)" />
                     </label>
                   </div>
                 </div>
@@ -3159,8 +3186,9 @@
             </div>
 
             <div class="senior-form-actions">
-              <button type="button" id="btnCancelSeniorEdit" class="senior-btn-cancel" style="display: none;" onclick="cancelSeniorEdit()">
-                Hủy Chỉnh Sửa
+              <button type="button" id="btnCancelSeniorEdit" class="senior-btn-cancel" style="display: none;"
+                onclick="cancelSeniorEdit()">
+                <i class="fi fi-rr-cross"></i> Hủy bỏ
               </button>
               <button type="submit" id="btnSaveSeniorContact" class="senior-btn-save">
                 <i class="fi fi-rr-disk"></i> Lưu Người Thân

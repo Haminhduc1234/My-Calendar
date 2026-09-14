@@ -18404,23 +18404,10 @@ img[src=""] {
   height: 85vh !important;
   max-height: 800px !important;
   max-width: 650px !important;
-  padding: 16px 16px 20px 16px !important;
+  padding: 18px 20px 20px 20px !important;
   box-sizing: border-box !important;
   position: relative !important;
   overflow: hidden !important;
-}
-
-@media (max-width: 540px) {
-  #seniorCallModal .modal-content,
-  #seniorSettingsModal .modal-content {
-    width: 100% !important;
-    height: 100% !important;
-    max-height: 100% !important;
-    border-radius: 0 !important;
-    margin: 0 !important;
-    padding: 14px 14px 20px 14px !important;
-    border: none !important;
-  }
 }
 
 /* Header Đồng Bộ event-modal-header */
@@ -18436,12 +18423,18 @@ img[src=""] {
   font-weight: 700 !important;
   display: flex;
   align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .senior-header-title-box .date-label {
   color: #94a3b8 !important;
   font-size: 12px !important;
   margin: 0 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .senior-header-actions {
@@ -18452,9 +18445,9 @@ img[src=""] {
 }
 
 .senior-header-action-btn {
-  height: 32px !important;
+  height: 34px !important;
   padding: 0 12px !important;
-  border-radius: 8px !important;
+  border-radius: 9px !important;
   font-size: 12.5px !important;
   font-weight: 600 !important;
   background: rgba(255, 255, 255, 0.08) !important;
@@ -18465,6 +18458,7 @@ img[src=""] {
   gap: 6px !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
+  white-space: nowrap !important;
 }
 
 .senior-header-action-btn:hover {
@@ -18480,8 +18474,18 @@ img[src=""] {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 4px 2px 24px 2px;
+  overscroll-behavior: contain;
+  padding: 8px 2px 24px 2px;
   gap: 14px;
+}
+
+.senior-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.senior-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
 }
 
 /* Grid & Cards - Màn Hình Gọi Một Chạm */
@@ -18512,14 +18516,19 @@ img[src=""] {
   box-shadow: 0 8px 24px rgba(0, 104, 255, 0.15);
 }
 
+.senior-contact-card:active {
+  transform: scale(0.99);
+}
+
 .senior-avatar-wrapper {
   position: relative;
-  width: 72px;
-  height: 72px;
-  min-width: 72px;
+  width: 70px;
+  height: 70px;
+  min-width: 70px;
   border-radius: 50%;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   background: #1e293b;
+  flex-shrink: 0;
 }
 
 .senior-card-avatar {
@@ -18622,6 +18631,10 @@ img[src=""] {
   box-shadow: 0 6px 18px rgba(0, 104, 255, 0.55);
 }
 
+.senior-btn-zalo:active {
+  transform: scale(0.97);
+}
+
 .senior-btn-phone {
   width: 42px;
   height: 42px;
@@ -18636,6 +18649,10 @@ img[src=""] {
   background: #22c55e;
   color: #ffffff;
   transform: scale(1.06);
+}
+
+.senior-btn-phone:active {
+  transform: scale(0.95);
 }
 
 /* Empty state */
@@ -18690,7 +18707,7 @@ img[src=""] {
    CÀI ĐẶT NGƯỜI THÂN - STYLES
    ========================================== */
 .senior-settings-section {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .senior-section-title {
@@ -18711,9 +18728,19 @@ img[src=""] {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 210px;
+  max-height: 200px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding-right: 4px;
+}
+
+.senior-settings-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.senior-settings-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
 }
 
 .senior-settings-empty {
@@ -18750,6 +18777,7 @@ img[src=""] {
   object-fit: cover;
   display: block;
   background: #1e293b;
+  flex-shrink: 0;
 }
 
 .senior-settings-item-details {
@@ -18758,15 +18786,21 @@ img[src=""] {
 }
 
 .senior-item-name {
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
   color: #f1f5f9;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .senior-item-sub {
   font-size: 12px;
   color: #94a3b8;
   margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .senior-item-rel {
@@ -18822,7 +18856,7 @@ img[src=""] {
   border-color: rgba(239, 68, 68, 0.3);
 }
 
-/* Form */
+/* Form Card */
 .senior-form-card {
   padding: 16px 18px;
   border-radius: 18px;
@@ -18834,12 +18868,6 @@ img[src=""] {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-}
-
-@media (max-width: 480px) {
-  .senior-form-row {
-    grid-template-columns: 1fr;
-  }
 }
 
 .senior-form-group {
@@ -18894,14 +18922,15 @@ img[src=""] {
 }
 
 .senior-avatar-preview-box {
-  width: 68px;
-  height: 68px;
-  min-width: 68px;
+  width: 66px;
+  height: 66px;
+  min-width: 66px;
   border-radius: 50%;
   overflow: hidden;
   border: 2.5px solid #3b82f6;
   background: #1e293b;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
 }
 
 .senior-avatar-preview-img {
@@ -18913,12 +18942,13 @@ img[src=""] {
 
 .senior-avatar-picker-right {
   flex: 1;
+  min-width: 0;
 }
 
 .senior-preset-label-row {
   font-size: 11.5px;
   color: #94a3b8;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .senior-preset-grid {
@@ -18936,6 +18966,7 @@ img[src=""] {
   overflow: hidden;
   transition: all 0.2s ease;
   background: #1e293b;
+  flex-shrink: 0;
 }
 
 .senior-preset-option.selected {
@@ -18955,7 +18986,7 @@ img[src=""] {
 }
 
 .senior-upload-row {
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .senior-btn-upload-file {
@@ -19031,14 +19062,14 @@ img[src=""] {
 /* Toast Message */
 .senior-toast {
   position: fixed;
-  bottom: 28px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   left: 50%;
   transform: translateX(-50%) translateY(90px);
   background: #0f1c34;
   color: #ffffff;
-  padding: 12px 24px;
+  padding: 12px 22px;
   border-radius: 30px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
@@ -19046,7 +19077,7 @@ img[src=""] {
   opacity: 0;
   pointer-events: none;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  max-width: 90%;
+  max-width: calc(100% - 32px);
   text-align: center;
 }
 
@@ -19071,4 +19102,244 @@ img[src=""] {
   border-color: #3b82f6;
   background: rgba(15, 28, 52, 0.95);
   box-shadow: 0 12px 36px rgba(59, 130, 246, 0.3);
+}
+
+/* =======================================================
+   RESPONSIVE CHO MOBILE (SMARTPHONE, TABLET DỌC)
+   ======================================================= */
+@media (max-width: 600px) {
+  /* Toàn màn hình modal chuẩn App Mobile */
+  #seniorCallModal,
+  #seniorSettingsModal {
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+
+  #seniorCallModal .modal-content,
+  #seniorSettingsModal .modal-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 12px 14px calc(14px + env(safe-area-inset-bottom, 0px)) 14px !important;
+    border: none !important;
+  }
+
+  /* Header Modal */
+  .senior-header-title-box h3 {
+    font-size: 16px !important;
+  }
+
+  .senior-header-title-box .date-label {
+    font-size: 11px !important;
+  }
+
+  .senior-container {
+    padding: 6px 2px calc(24px + env(safe-area-inset-bottom, 12px)) 2px;
+    gap: 12px;
+  }
+}
+
+/* Layout đặc biệt khi màn hình dưới 520px: Thẻ danh bạ chuyển sang 2 tầng thông thoáng */
+@media (max-width: 520px) {
+  /* Thẻ liên hệ một chạm */
+  .senior-contact-card {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    padding: 14px 14px 12px 14px;
+    gap: 10px 14px;
+    border-radius: 16px;
+  }
+
+  /* Hàng trên: Avatar và thông tin liên hệ */
+  .senior-contact-card > .senior-avatar-wrapper {
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    flex-shrink: 0;
+  }
+
+  .senior-contact-card > .senior-contact-info {
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+
+  .senior-contact-name {
+    font-size: 16.5px;
+  }
+
+  .senior-contact-phone {
+    font-size: 13.5px;
+    margin-top: 3px;
+  }
+
+  /* Hàng dưới: Cụm nút hành động dàn ngang to rõ, cực kỳ dễ chạm */
+  .senior-card-actions {
+    flex-basis: 100% !important;
+    width: 100% !important;
+    margin-top: 2px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    gap: 8px;
+  }
+
+  .senior-btn-zalo {
+    flex: 1;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    justify-content: center;
+  }
+
+  .senior-btn-phone {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Modal Cài Đặt trên màn hình <= 520px */
+  .senior-settings-list {
+    max-height: 180px;
+    gap: 7px;
+  }
+
+  .senior-settings-item {
+    padding: 9px 10px;
+    gap: 10px;
+  }
+
+  .senior-settings-item-avatar {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+  }
+
+  .senior-item-name {
+    font-size: 13.5px;
+  }
+
+  .senior-item-sub {
+    font-size: 11.5px;
+  }
+
+  .senior-ctrl-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+    border-radius: 8px;
+  }
+
+  /* Form thêm người thân trên mobile */
+  .senior-form-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .senior-form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .senior-input {
+    font-size: 16px !important; /* Ngăn iOS Safari tự zoom in */
+    padding: 10px 12px;
+  }
+
+  /* Avatar Picker trên mobile */
+  .senior-avatar-picker-container {
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .senior-avatar-preview-box {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+  }
+
+  .senior-preset-option {
+    width: 34px;
+    height: 34px;
+  }
+
+  .senior-btn-upload-file {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 8px 10px;
+  }
+
+  .senior-form-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .senior-btn-save {
+    flex: 1;
+    justify-content: center;
+    height: 42px;
+    font-size: 13.5px;
+  }
+
+  .senior-btn-cancel {
+    height: 42px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+}
+
+/* Tối ưu thêm cho màn hình siêu nhỏ (<= 400px như iPhone SE / Galaxy Mini) */
+@media (max-width: 400px) {
+  .senior-header-action-btn {
+    width: 34px !important;
+    height: 34px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+  }
+
+  .senior-header-action-btn span {
+    display: none !important;
+  }
+
+  .senior-header-title-box h3 {
+    font-size: 15px !important;
+  }
+
+  .senior-header-title-box .date-label {
+    font-size: 10.5px !important;
+  }
+
+  .senior-item-controls {
+    gap: 3px;
+  }
+
+  .senior-ctrl-btn {
+    width: 27px;
+    height: 27px;
+    font-size: 11px;
+    border-radius: 6px;
+  }
+
+  .senior-avatar-picker-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .senior-avatar-picker-right {
+    width: 100%;
+  }
+
+  .senior-preset-grid {
+    justify-content: center;
+  }
 }

@@ -140,7 +140,6 @@
       {
         id: "sc_seed_1",
         name: "Con trai",
-        relation: "Con trai",
         phone: "",
         presetAvatar: "son",
         avatar: "",
@@ -150,7 +149,6 @@
       {
         id: "sc_seed_2",
         name: "Con gái",
-        relation: "Con gái",
         phone: "",
         presetAvatar: "daughter",
         avatar: "",
@@ -160,7 +158,6 @@
       {
         id: "sc_seed_3",
         name: "Bác sĩ gia đình",
-        relation: "Bác sĩ",
         phone: "115",
         presetAvatar: "doctor",
         avatar: "",
@@ -361,7 +358,6 @@
       const avatarSrc = getSeniorAvatarSrc(c);
       const phoneDisplay = formatPhoneDisplay(c.phone);
       const safeName = c.name || "Người thân";
-      const relationBadge = c.relation ? `<span class="senior-relation-tag">${c.relation}</span>` : "";
 
       return `
         <div class="senior-contact-card" onclick="callSeniorZalo('${c.phone || ""}', '${safeName.replace(/'/g, "\\'")}')">
@@ -374,7 +370,6 @@
           <div class="senior-contact-info">
             <div class="senior-contact-name-row">
               <span class="senior-contact-name">${safeName}</span>
-              ${relationBadge}
             </div>
             <div class="senior-contact-phone">${phoneDisplay}</div>
           </div>
@@ -438,7 +433,6 @@
           <div class="senior-settings-item-details">
             <div class="senior-item-name">${c.name || "Chưa có tên"}</div>
             <div class="senior-item-sub">
-              ${c.relation ? `<span class="senior-item-rel">${c.relation}</span> • ` : ""}
               <span class="senior-item-phone">${c.phone || "Chưa có SĐT"}</span>
             </div>
           </div>
@@ -510,7 +504,6 @@
 
     const nameInput = document.getElementById("seniorInputName");
     const phoneInput = document.getElementById("seniorInputPhone");
-    const relInput = document.getElementById("seniorInputRelation");
     const fileInput = document.getElementById("seniorFileInput");
     const submitBtn = document.getElementById("btnSaveSeniorContact");
     const cancelBtn = document.getElementById("btnCancelSeniorEdit");
@@ -518,7 +511,6 @@
 
     if (nameInput) nameInput.value = "";
     if (phoneInput) phoneInput.value = "";
-    if (relInput) relInput.value = "Con trai";
     if (fileInput) fileInput.value = "";
     if (formTitle) formTitle.textContent = "Thêm Người Thân Mới";
     if (submitBtn) submitBtn.innerHTML = '<i class="fi fi-rr-disk"></i> Lưu Người Thân';
@@ -541,14 +533,12 @@
     editingContactId = id;
     const nameInput = document.getElementById("seniorInputName");
     const phoneInput = document.getElementById("seniorInputPhone");
-    const relInput = document.getElementById("seniorInputRelation");
     const submitBtn = document.getElementById("btnSaveSeniorContact");
     const cancelBtn = document.getElementById("btnCancelSeniorEdit");
     const formTitle = document.getElementById("seniorFormTitle");
 
     if (nameInput) nameInput.value = contact.name || "";
     if (phoneInput) phoneInput.value = contact.phone || "";
-    if (relInput) relInput.value = contact.relation || "";
 
     if (contact.avatar && contact.avatar.startsWith("data:image")) {
       uploadedAvatarData = contact.avatar;
@@ -646,11 +636,9 @@
 
     const nameInput = document.getElementById("seniorInputName");
     const phoneInput = document.getElementById("seniorInputPhone");
-    const relInput = document.getElementById("seniorInputRelation");
 
     const name = (nameInput?.value || "").trim();
     const phone = cleanPhoneNumber(phoneInput?.value || "");
-    const relation = (relInput?.value || "").trim();
 
     if (!name) {
       alert("Vui lòng nhập tên người thân!");
@@ -675,7 +663,6 @@
           ...seniorContactsCache[idx],
           name,
           phone,
-          relation,
           avatar: finalAvatar,
           presetAvatar: finalPreset,
           updatedAt: Date.now()
@@ -688,7 +675,6 @@
         id: `sc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
         name,
         phone,
-        relation,
         avatar: finalAvatar,
         presetAvatar: finalPreset,
         order: seniorContactsCache.length + 1,

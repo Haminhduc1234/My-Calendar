@@ -1371,12 +1371,14 @@ function openProfileSettingsModal() {
   }
 
   // Load name and bio
-  document.getElementById("profileDisplayName").value =
-    settings.displayName || "";
-  document.getElementById("profileBio").value = settings.bio || "";
-  document.getElementById("profileBioCount").textContent = (
-    settings.bio || ""
-  ).length;
+  const nameEl = document.getElementById("profileDisplayName");
+  if (nameEl) nameEl.value = settings.displayName || "";
+  const bioEl = document.getElementById("profileBio") || document.getElementById("profileBioInput");
+  if (bioEl) bioEl.value = settings.bio || "";
+  const bioCountEl = document.getElementById("profileBioCount");
+  if (bioCountEl) {
+    bioCountEl.textContent = (settings.bio || "").length;
+  }
 
   updateNotificationUIState();
   modal.style.display = "flex";
@@ -1592,10 +1594,10 @@ window.removeProfileCover = removeProfileCover;
 function saveProfileSettings() {
   const avatarPreview = document.getElementById("profileAvatarPreview");
   const coverPreview = document.getElementById("profileCoverPreview");
-  const displayName = document
-    .getElementById("profileDisplayName")
-    .value.trim();
-  const bio = document.getElementById("profileBio").value.trim();
+  const nameInputEl = document.getElementById("profileDisplayName");
+  const displayName = nameInputEl ? nameInputEl.value.trim() : "";
+  const bioInputEl = document.getElementById("profileBio") || document.getElementById("profileBioInput");
+  const bio = bioInputEl ? bioInputEl.value.trim() : "";
 
   const settings = {
     avatar: avatarPreview.classList.contains("has-image")
@@ -1805,9 +1807,13 @@ function initProfileOnLoad() {
     .addEventListener("change", handleCoverSelect);
 
   // Setup bio character counter
-  document.getElementById("profileBio").addEventListener("input", function () {
-    document.getElementById("profileBioCount").textContent = this.value.length;
-  });
+  const bioInputEl = document.getElementById("profileBio") || document.getElementById("profileBioInput");
+  if (bioInputEl) {
+    bioInputEl.addEventListener("input", function () {
+      const countEl = document.getElementById("profileBioCount");
+      if (countEl) countEl.textContent = this.value.length;
+    });
+  }
 }
 
 function setupProfileFirebaseListener() {
@@ -3047,6 +3053,11 @@ async function initFirebaseRealtime() {
   // Load Profile Settings from Firebase
   loadProfileSettingsFromFirebase();
 
+  // Senior Mode - Gọi Người Thân Một Chạm & Danh Bạ
+  if (typeof initSeniorFirebase === "function") {
+    initSeniorFirebase(firebaseDb, userProfileKey);
+  }
+
   console.log("[Firebase] Đã khởi tạo thành công, firebaseDb:", !!firebaseDb);
 
   // Lắng nghe sự thay đổi của Translate History
@@ -3401,6 +3412,11 @@ async function reloadFirebaseForUser() {
   setupProfileFirebaseListener();
   loadProfileSettingsFromFirebase();
 
+  // Senior Mode - Gọi Người Thân Một Chạm & Danh Bạ
+  if (typeof initSeniorFirebase === "function") {
+    initSeniorFirebase(firebaseDb, userProfileKey);
+  }
+
   // Track first Firebase data load for this user
   let isFirstReloadLoad = true;
 
@@ -3545,6 +3561,8 @@ function closeAllModals() {
     "modalNotificationList",
     "recurringEventsModal",
     "recurringEventFormModal",
+    "seniorCallModal",
+    "seniorSettingsModal",
   ];
   modals.forEach((id) => {
     const el = document.getElementById(id);

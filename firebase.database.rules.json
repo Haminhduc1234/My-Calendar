@@ -64,6 +64,13 @@
         ".write": "auth != null"
       }
     },
+    "seniorContacts": {
+      "$profileKey": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".indexOn": ["updatedAt"]
+      }
+    },
     "notificationTokens": {
       "$profileKey": {
         ".read": "auth != null",

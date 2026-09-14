@@ -57,18 +57,24 @@
     <div class="today-panel" id="todayPanel">
       <div class="today-top-bar">
         <div class="today-profile" id="todayProfile" onclick="openProfileSettingsModal()">
-          <img class="today-profile-avatar" id="todayProfileAvatar" src="" alt="Profile" style="display: none;" />
+          <img class="today-profile-avatar" id="todayProfileAvatar" alt="Profile" style="display: none;" />
           <div class="today-profile-placeholder" id="todayProfilePlaceholder" style="display: none;"></div>
           <div class="today-profile-info">
             <div class="today-profile-name" id="todayProfileName"></div>
             <div class="today-profile-bio" id="todayProfileBio"></div>
           </div>
         </div>
-        <button type="button" id="btnNotificationBell" class="notification-bell-btn" title="Thông báo"
-          onclick="openNotificationModal()">
-          <i class="fi fi-rr-bell"></i>
-          <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
-        </button>
+        <div class="today-top-actions">
+          <button type="button" id="btnSeniorOneTouch" class="senior-one-touch-top-btn" title="Gọi người thân một chạm" onclick="openSeniorCallModal()">
+            <i class="fi fi-sr-heart"></i>
+            <span class="senior-btn-label">Một Chạm</span>
+          </button>
+          <button type="button" id="btnNotificationBell" class="notification-bell-btn" title="Thông báo"
+            onclick="openNotificationModal()">
+            <i class="fi fi-rr-bell"></i>
+            <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
+          </button>
+        </div>
       </div>
       <div class="today-date">
         <div class="weekday" id="todayWeekday"></div>
@@ -211,6 +217,14 @@
           <span class="nav-label">Khác</span>
         </button>
         <div id="moreMenuDropdown" class="more-dropdown" role="menu">
+          <button class="dropdown-item item-senior-call" onclick="openSeniorCallModal(); closeMoreMenu();" role="menuitem">
+            <span class="menu-icon-wrap" style="color: #ec4899;"><i class="fi fi-sr-heart"></i></span>
+            <span>Gọi Người Thân (Một Chạm)</span>
+          </button>
+          <button class="dropdown-item item-senior-settings" onclick="openSeniorSettingsModal(); closeMoreMenu();" role="menuitem">
+            <span class="menu-icon-wrap" style="color: #2563eb;"><i class="fi fi-rr-users"></i></span>
+            <span>Cài Đặt Người Thân</span>
+          </button>
           <button class="dropdown-item item-add-event" onclick="openAddEventModalForToday(); closeMoreMenu();" role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-calendar-plus"></i></span>
             <span>Thêm Sự Kiện</span>
@@ -523,8 +537,11 @@
 
           <!-- Bio Section -->
           <div class="profile-field">
-            <label class="profile-label" for="profileBioInput">Tiểu sử</label>
-            <textarea id="profileBioInput" class="profile-input profile-textarea"
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label class="profile-label" for="profileBio" style="margin-bottom: 0;">Tiểu sử</label>
+              <span style="font-size: 11px; color: #94a3b8;"><span id="profileBioCount">0</span>/150</span>
+            </div>
+            <textarea id="profileBio" class="profile-input profile-textarea"
               placeholder="Viết vài dòng giới thiệu về bạn..." maxlength="150" rows="3"></textarea>
           </div>
 
@@ -2869,6 +2886,7 @@
   <script src="public/my-music-library.js"></script>
   <script src="learn-en-data.js"></script>
   <script src="learn-zh-data.js"></script>
+  <script src="senior-mode.js"></script>
   <script src="script.js"></script>
   <!-- <script src="MapSearch.js"></script> -->
 
@@ -3056,6 +3074,104 @@
           <div class="weather-forecast-title" id="weatherForecastTitle" style="display: none;"><i class="fi fi-rr-calendar" style="margin-right: 6px;"></i>Dự báo các ngày tới
           </div>
           <div class="weather-forecast" id="weatherForecast"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Senior Call Modal (Gọi Video Một Chạm Zalo - Dạng Full) -->
+  <div id="seniorCallModal" class="modal" style="display: none;" onclick="if(event.target===this) closeSeniorCallModal()">
+    <div class="modal-content event-modal-wrapper senior-modal-wrapper">
+      <div class="event-modal-header">
+        <div class="senior-header-title-box">
+          <h3><i class="fi fi-sr-heart" style="color: #f43f5e; margin-right: 8px;"></i>Gọi Cho Người Thân</h3>
+          <div class="date-label">Chạm vào ảnh để gọi Video Zalo tức thì</div>
+        </div>
+        <div class="senior-header-actions">
+          <button type="button" class="btn-secondary senior-header-action-btn" title="Cài đặt danh bạ người thân" onclick="closeSeniorCallModal(); openSeniorSettingsModal();">
+            <i class="fi fi-rr-settings"></i> <span>Cài đặt</span>
+          </button>
+          <button type="button" class="modal-close event-modal-close" onclick="closeSeniorCallModal()">×</button>
+        </div>
+      </div>
+      <div class="senior-container">
+        <div id="seniorContactsGrid" class="senior-contacts-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Senior Settings Modal (Cài Đặt Danh Bạ Người Thân - Dạng Full) -->
+  <div id="seniorSettingsModal" class="modal" style="display: none;" onclick="if(event.target===this) closeSeniorSettingsModal()">
+    <div class="modal-content event-modal-wrapper senior-modal-wrapper senior-settings-wrapper">
+      <div class="event-modal-header">
+        <div class="senior-header-title-box">
+          <h3><i class="fi fi-rr-users" style="color: #3b82f6; margin-right: 8px;"></i>Cài Đặt Người Thân</h3>
+          <div class="date-label">Thêm, sửa, xóa thông tin và số điện thoại Zalo</div>
+        </div>
+        <div class="senior-header-actions">
+          <button type="button" class="btn-secondary senior-header-action-btn" title="Quay lại danh bạ một chạm" onclick="closeSeniorSettingsModal(); openSeniorCallModal();">
+            <i class="fi fi-sr-heart" style="color: #f43f5e;"></i> <span>Gọi người thân</span>
+          </button>
+          <button type="button" class="modal-close event-modal-close" onclick="closeSeniorSettingsModal()">×</button>
+        </div>
+      </div>
+      <div class="senior-container senior-settings-container">
+        <!-- Danh sách hiện tại -->
+        <div class="senior-settings-section">
+          <h4 class="senior-section-title"><i class="fi fi-rr-list"></i> Danh Sách Hiện Tại</h4>
+          <div id="seniorSettingsList" class="senior-settings-list"></div>
+        </div>
+
+        <!-- Form thêm / sửa -->
+        <div id="seniorFormContainer" class="senior-form-card">
+          <h4 id="seniorFormTitle" class="senior-section-title"><i class="fi fi-rr-user-add"></i> Thêm Người Thân Mới</h4>
+          <form id="seniorContactForm" onsubmit="saveSeniorContactForm(event)">
+            <div class="senior-form-row">
+              <div class="senior-form-group">
+                <label for="seniorInputName">Tên hiển thị <span class="req">*</span></label>
+                <input type="text" id="seniorInputName" class="senior-input" placeholder="Ví dụ: Con trai Đức, Con gái Lan..." required maxlength="40" autocomplete="off" />
+              </div>
+              <div class="senior-form-group">
+                <label for="seniorInputRelation">Mối quan hệ / Vai vế</label>
+                <input type="text" id="seniorInputRelation" class="senior-input" placeholder="Ví dụ: Con trai, Cháu gái, Bác sĩ..." maxlength="30" autocomplete="off" />
+              </div>
+            </div>
+
+            <div class="senior-form-group">
+              <label for="seniorInputPhone">Số điện thoại Zalo <span class="req">*</span></label>
+              <input type="tel" id="seniorInputPhone" class="senior-input" placeholder="Nhập số điện thoại Zalo (VD: 0988123456)" required autocomplete="off" />
+              <small class="senior-hint">Khi bấm vào avatar, hệ thống sẽ mở Zalo kết nối cuộc gọi video ngay theo số này.</small>
+            </div>
+
+            <!-- Chọn Avatar -->
+            <div class="senior-form-group">
+              <label>Avatar đại diện</label>
+              <div class="senior-avatar-picker-container">
+                <div class="senior-avatar-preview-box">
+                  <img id="seniorAvatarPreview" class="senior-avatar-preview-img" alt="Avatar preview" />
+                </div>
+                <div class="senior-avatar-picker-right">
+                  <div class="senior-preset-label-row">Mẫu có sẵn:</div>
+                  <div id="seniorPresetGrid" class="senior-preset-grid"></div>
+                  <div class="senior-upload-row">
+                    <label class="senior-btn-upload-file">
+                      <i class="fi fi-rr-picture"></i> Hoặc Tải Ảnh Thật Từ Máy
+                      <input type="file" id="seniorFileInput" accept="image/*" style="display: none;" onchange="handleSeniorFileUpload(event)" />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="senior-form-actions">
+              <button type="button" id="btnCancelSeniorEdit" class="senior-btn-cancel" style="display: none;" onclick="cancelSeniorEdit()">
+                Hủy Chỉnh Sửa
+              </button>
+              <button type="submit" id="btnSaveSeniorContact" class="senior-btn-save">
+                <i class="fi fi-rr-disk"></i> Lưu Người Thân
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

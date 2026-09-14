@@ -14,8 +14,25 @@ const MAX_BATCH_SIZE = 100;
 const EVENT_LINK = "/";
 const ICON_PATH = "/public/favicon.png";
 
-function buildNotificationBody(event, dateKey) {
+function buildNotificationBody(event, dateKey, notificationType = "event") {
   const bodyParts = [];
+  const type = notificationType || "event";
+  if (type === "cashflow") {
+    if (event.amount) bodyParts.push(`${Number(event.amount).toLocaleString("vi-VN")} đ`);
+    if (event.category) bodyParts.push(event.category);
+    const dateStr = event.date || dateKey;
+    if (dateStr) bodyParts.push(`Ngày ${dateStr}`);
+    if (event.text || event.note) bodyParts.push(event.text || event.note);
+    if (event.hasImage) bodyParts.push("📎 Kèm hình ảnh");
+    return bodyParts.join(" | ") || "Có giao dịch thu chi mới";
+  }
+  if (type === "fund_allocation" || type === "funds") {
+    if (event.amount) bodyParts.push(`${Number(event.amount).toLocaleString("vi-VN")} đ`);
+    const dateStr = event.date || dateKey;
+    if (dateStr) bodyParts.push(`Ngày ${dateStr}`);
+    if (event.text || event.note) bodyParts.push(event.text || event.note);
+    return bodyParts.join(" | ") || "Có phân bổ quỹ mới";
+  }
   const dateStr = event.date || dateKey;
   if (dateStr) bodyParts.push(`Ngày ${dateStr}`);
   if (event.eventDateTime) {
@@ -88,7 +105,7 @@ async function sendNotificationToProfile(profileKey, eventData, dateKey = "", ex
     targetUrl = `/?action=event&id=${encodeURIComponent(eventData.id || "")}&title=${encodeURIComponent(eventData.title || "")}&text=${encodeURIComponent(eventData.text || eventData.note || "")}&note=${encodeURIComponent(eventData.note || eventData.text || "")}&eventDateTime=${encodeURIComponent(eventData.eventDateTime || "")}&color=${encodeURIComponent(eventData.color || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}&date=${encodeURIComponent(dateKey || "")}`;
   }
 
-  const body = buildNotificationBody(eventData, dateKey);
+  const body = buildNotificationBody(eventData, dateKey, type);
 
   const message = {
     tokens,
@@ -121,7 +138,14 @@ async function sendNotificationToProfile(profileKey, eventData, dateKey = "", ex
       profileKey: String(profileKey),
       dateKey: String(dateKey || ""),
       title: String(title),
-      text: String(eventData.text || ""),
+      body: String(body),
+      text: String(eventData.text || eventData.note || ""),
+      note: String(eventData.note || eventData.text || ""),
+      amount: String(eventData.amount || ""),
+      category: String(eventData.category || ""),
+      cashflowType: String(eventData.cashflowType || ""),
+      hasImage: eventData.hasImage ? "true" : "false",
+      fundName: String(eventData.fundName || ""),
       eventDateTime: String(eventData.eventDateTime || ""),
       createdAt: String(eventData.createdAt || Date.now()),
       url: targetUrl,

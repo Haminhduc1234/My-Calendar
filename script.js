@@ -3934,7 +3934,7 @@ async function initFirebaseMessaging() {
       firebaseMessaging.onMessage((payload) => {
         console.log("[FCM] Foreground message received:", payload);
         const title = payload.notification?.title || payload.data?.title || "Sự kiện mới từ thiết bị khác";
-        const body = payload.notification?.body || payload.data?.text || payload.data?.body || "";
+        const body = payload.notification?.body || payload.data?.body || payload.data?.text || "";
         const dateKey = payload.data?.dateKey || payload.data?.date || "";
         const notificationType = payload.data?.notificationType || "event";
         let parsedEventData = null;
@@ -4388,9 +4388,9 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
   const notifBody = bodyParts.join(" | ") || "";
   saveNotificationToHistory(type, notifTitle, notifBody, dateKey, payload.eventData);
 
-  // 3. Gọi Serverless Endpoint /api/send-push.js (gửi FCM đánh thức các thiết bị đang đóng app)
+  // 3. Gọi Serverless Endpoint /api/send-push (gửi FCM đánh thức các thiết bị đang đóng app)
   try {
-    fetch("/api/send-push.js", {
+    fetch("/api/send-push", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -11137,19 +11137,33 @@ function addCashflowEntry() {
     saveDateData(targetDateKey, data);
 
     // Bắn thông báo đẩy đến tất cả thiết bị cùng tài khoản
-    const categoryName = (cashflowCategories[type] || []).find(c => c.id === category)?.name || category;
-    queueEventNotification({
-      id: entry.id,
-      title: type === "expense" ? "Chi tiêu mới" : "Thu nhập mới",
-      text: note || "",
-      note: note || "",
-      date: date,
-      cashflowType: type,
-      category: categoryName,
-      amount: amount,
-      image: image || "",
-      createdAt: entry.createdAt || Date.now()
-    }, targetDateKey, "cashflow");
+    let categoryName = category;
+    try {
+      const catList = Array.isArray(cashflowCategories[type])
+        ? cashflowCategories[type]
+        : Object.values(cashflowCategories[type] || {});
+      const matched = catList.find(c => c && (c.id === category || c.name === category));
+      if (matched && matched.name) categoryName = matched.name;
+    } catch (e) {
+      console.warn("[Cashflow] Lỗi tìm tên danh mục:", e);
+    }
+
+    try {
+      queueEventNotification({
+        id: entry.id,
+        title: type === "expense" ? "Chi tiêu mới" : "Thu nhập mới",
+        text: note || "",
+        note: note || "",
+        date: date,
+        cashflowType: type,
+        category: categoryName,
+        amount: amount,
+        image: image || "",
+        createdAt: entry.createdAt || Date.now()
+      }, targetDateKey, "cashflow");
+    } catch (errNotif) {
+      console.warn("[Cashflow] Lỗi queueEventNotification:", errNotif);
+    }
   }
 
   reloadCashflowEntriesFromCache();

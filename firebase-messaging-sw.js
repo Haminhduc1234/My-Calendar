@@ -19,45 +19,64 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
 
             const type = payload.data?.notificationType || "event";
             const dateStr = payload.data?.dateKey || payload.data?.date || "";
-            let title = payload.data?.title || "🔔 Sự kiện mới trên Lịch Việt";
             let targetUrl = payload.data?.url || payload.fcmOptions?.link || "./";
             const bodyParts = [];
 
+            let eventData = {};
+            if (payload.data?.eventDataJson) {
+                try { eventData = JSON.parse(payload.data.eventDataJson); } catch (e) { }
+            }
+
+            const amount = payload.data?.amount || eventData.amount || "";
+            const category = payload.data?.category || eventData.category || "";
+            const cashflowType = payload.data?.cashflowType || eventData.cashflowType || "";
+            const hasImage = payload.data?.hasImage === "true" || payload.data?.hasImage === true || eventData.hasImage;
+
+            let title = payload.data?.title || payload.notification?.title || "";
+
             if (type === "cashflow") {
-                const isExpense = payload.data?.cashflowType === "expense";
-                title = payload.data?.title || (isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới");
-                if (payload.data?.category) bodyParts.push(payload.data.category);
-                if (payload.data?.amount) bodyParts.push(`${Number(payload.data.amount).toLocaleString("vi-VN")} đ`);
-                if (payload.data?.text || payload.data?.note) bodyParts.push(payload.data.text || payload.data.note);
+                const isExpense = cashflowType === "expense";
+                if (!title) title = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
+                if (amount) bodyParts.push(`${Number(amount).toLocaleString("vi-VN")} đ`);
+                if (category) bodyParts.push(category);
+                if (dateStr) bodyParts.push(`Ngày ${dateStr}`);
+                const noteText = payload.data?.text || payload.data?.note || eventData.text || eventData.note;
+                if (noteText) bodyParts.push(noteText);
+                if (hasImage) bodyParts.push("📎 Kèm hình ảnh");
                 targetUrl = targetUrl !== "./" ? targetUrl : (
-                    `./?action=cashflow&id=${encodeURIComponent(payload.data?.id || "")}&date=${encodeURIComponent(dateStr || "")}&amount=${encodeURIComponent(payload.data?.amount || "")}&category=${encodeURIComponent(payload.data?.category || "")}&cashflowType=${encodeURIComponent(payload.data?.cashflowType || "")}&note=${encodeURIComponent(payload.data?.text || payload.data?.note || "")}&createdAt=${encodeURIComponent(payload.data?.createdAt || Date.now())}`
+                    `./?action=cashflow&id=${encodeURIComponent(payload.data?.eventId || eventData.id || "")}&date=${encodeURIComponent(dateStr || "")}&amount=${encodeURIComponent(amount)}&category=${encodeURIComponent(category)}&cashflowType=${encodeURIComponent(cashflowType)}&note=${encodeURIComponent(noteText || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`
                 );
             } else if (type === "fund_allocation" || type === "funds") {
-                title = payload.data?.title || "📊 Phân bổ quỹ mới";
-                if (payload.data?.fundName) bodyParts.push(`Quỹ: ${payload.data.fundName}`);
-                if (payload.data?.amount) bodyParts.push(`${Number(payload.data.amount).toLocaleString("vi-VN")} đ`);
-                if (payload.data?.text || payload.data?.note) bodyParts.push(payload.data.text || payload.data.note);
-                targetUrl = targetUrl !== "./" ? targetUrl : `./?action=funds&id=${encodeURIComponent(payload.data?.id || "")}&fundName=${encodeURIComponent(payload.data?.fundName || "")}&amount=${encodeURIComponent(payload.data?.amount || "")}&note=${encodeURIComponent(payload.data?.text || payload.data?.note || "")}&createdAt=${encodeURIComponent(payload.data?.createdAt || Date.now())}`;
-            } else {
+                const fundName = payload.data?.fundName || eventData.fundName || "Quỹ";
+                if (!title) title = `📊 Phân bổ quỹ: ${fundName}`;
+                if (amount) bodyParts.push(`${Number(amount).toLocaleString("vi-VN")} đ`);
                 if (dateStr) bodyParts.push(`Ngày ${dateStr}`);
-                if (payload.data?.eventDateTime) {
+                const noteText = payload.data?.text || payload.data?.note || eventData.text || eventData.note;
+                if (noteText) bodyParts.push(noteText);
+                targetUrl = targetUrl !== "./" ? targetUrl : `./?action=funds&id=${encodeURIComponent(payload.data?.eventId || eventData.id || "")}&fundName=${encodeURIComponent(fundName)}&amount=${encodeURIComponent(amount)}&note=${encodeURIComponent(noteText || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
+            } else {
+                if (!title) title = "🔔 Sự kiện mới trên Lịch Việt";
+                if (dateStr) bodyParts.push(`Ngày ${dateStr}`);
+                const evDateTime = payload.data?.eventDateTime || eventData.eventDateTime;
+                if (evDateTime) {
                     try {
-                        const dt = new Date(payload.data.eventDateTime);
+                        const dt = new Date(evDateTime);
                         if (!Number.isNaN(dt.getTime())) {
                             bodyParts.push(`Lúc ${dt.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`);
                         }
                     } catch { }
                 }
-                if (payload.data?.text || payload.data?.note) bodyParts.push(payload.data.text || payload.data.note);
+                const noteText = payload.data?.text || payload.data?.note || eventData.text || eventData.note;
+                if (noteText) bodyParts.push(noteText);
                 targetUrl = targetUrl !== "./" ? targetUrl : (
-                    `./?action=event&id=${encodeURIComponent(payload.data?.id || "")}&title=${encodeURIComponent(payload.data?.title || "")}&text=${encodeURIComponent(payload.data?.text || payload.data?.note || "")}&note=${encodeURIComponent(payload.data?.note || payload.data?.text || "")}&eventDateTime=${encodeURIComponent(payload.data?.eventDateTime || "")}&color=${encodeURIComponent(payload.data?.color || "")}&createdAt=${encodeURIComponent(payload.data?.createdAt || Date.now())}&date=${encodeURIComponent(dateStr || "")}`
+                    `./?action=event&id=${encodeURIComponent(payload.data?.eventId || eventData.id || "")}&title=${encodeURIComponent(title)}&text=${encodeURIComponent(noteText || "")}&note=${encodeURIComponent(noteText || "")}&eventDateTime=${encodeURIComponent(evDateTime || "")}&color=${encodeURIComponent(payload.data?.color || eventData.color || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}&date=${encodeURIComponent(dateStr || "")}`
                 );
             }
 
-            if (payload.notification?.body) bodyParts.push(payload.notification.body);
+            const finalBody = (bodyParts.length > 0 ? bodyParts.join(" | ") : (payload.data?.body || payload.notification?.body)) || "Bạn có một thông báo mới";
 
             return self.registration.showNotification(title, {
-                body: bodyParts.join(" | ") || "Bạn có một thông báo mới",
+                body: finalBody,
                 icon: "/public/favicon.png",
                 badge: "/public/favicon.png",
                 tag: `notify-${type}-${dateStr || payload.data?.eventId || Date.now()}`,
@@ -66,7 +85,10 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
                     url: targetUrl,
                     dateKey: dateStr,
                     notificationType: type,
-                    eventData: payload.data
+                    eventData: {
+                        ...(eventData || {}),
+                        ...(payload.data || {})
+                    }
                 }
             });
         });

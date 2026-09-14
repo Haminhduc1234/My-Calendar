@@ -120,21 +120,39 @@ module.exports = async (req, res) => {
 
     const message = {
       tokens: tokens,
-      data: {
+      notification: {
         title: title,
-        body: body,
-        notificationType: type,
+        body: body
+      },
+      data: {
+        title: String(title),
+        body: String(body),
+        notificationType: String(type),
         dateKey: String(dateKey || ""),
-        url: targetUrl,
-        eventId: eventId,
-        tag: notificationTag,
+        url: String(targetUrl),
+        eventId: String(eventId),
+        tag: String(notificationTag),
         text: String(eventData?.text || eventData?.note || ""),
         note: String(eventData?.note || eventData?.text || ""),
+        amount: String(eventData?.amount || ""),
+        category: String(eventData?.category || ""),
+        cashflowType: String(eventData?.cashflowType || ""),
+        hasImage: eventData?.hasImage ? "true" : "false",
+        fundName: String(eventData?.fundName || ""),
         eventDataJson: JSON.stringify(safeEventData)
       },
       webpush: {
         fcmOptions: {
           link: targetUrl
+        },
+        notification: {
+          title: title,
+          body: body,
+          icon: "/public/favicon.png",
+          badge: "/public/favicon.png",
+          tag: notificationTag,
+          requireInteraction: false,
+          vibrate: [200, 100, 200]
         },
         headers: {
           Urgency: "high"

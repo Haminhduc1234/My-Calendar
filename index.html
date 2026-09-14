@@ -692,7 +692,17 @@
               Cập nhật mật khẩu
             </button>
           </div>
-
+          <!-- App Update & Cache Clearing Section -->
+          <div class="profile-cache-section">
+            <button type="button" class=" profile-cache-btn" onclick="clearCacheAndReloadApp()">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              <span>Xóa Cache & Cập Nhật Ngay</span>
+            </button>
+          </div>
           <!-- Notification Settings Section -->
           <div class="profile-notification-section">
             <h4 class="profile-section-title">Thông báo</h4>
@@ -711,35 +721,6 @@
                   Thử nghiệm
                 </button> -->
               </div>
-            </div>
-          </div>
-
-          <!-- App Update & Cache Clearing Section -->
-          <div class="profile-cache-section">
-            <h4 class="profile-section-title">Cập nhật & Xóa Cache Ứng dụng</h4>
-            <p class="profile-section-desc">
-              Dọn dẹp bộ nhớ đệm (CacheStorage & Service Worker) để lập tức tải phiên bản mới nhất từ Vercel mà không
-              cần cài đặt lại WPA/PWA.
-            </p>
-            <button type="button" class="btn-primary profile-cache-btn" onclick="clearCacheAndReloadApp()">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
-                stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-              </svg>
-              <span>Xóa Cache & Cập Nhật Ngay</span>
-            </button>
-          </div>
-
-
-          <div class="profile-skeleton" id="profileSkeleton">
-            <div class="skeleton-project">
-              <div class="skeleton-project-title"></div>
-              <div class="skeleton-project-desc"></div>
-            </div>
-            <div class="skeleton-project">
-              <div class="skeleton-project-title"></div>
-              <div class="skeleton-project-desc"></div>
             </div>
           </div>
         </div>

@@ -13424,11 +13424,12 @@ input[type="datetime-local"] {
 
 /* Clear Cache & Update App Special Button */
 .profile-cache-btn {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
-  border: 1px solid rgba(56, 189, 248, 0.35) !important;
-  color: #ffffff !important;
-  padding: 9px 18px !important;
-  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35) !important;
+  align-self: center;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border: 1px solid rgba(147, 197, 253, 0.25);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);
 }
 
 .profile-cache-btn:hover {

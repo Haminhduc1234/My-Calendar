@@ -4192,7 +4192,7 @@ function updateNotificationUIState() {
   } else {
     statusEl.textContent = "Chưa bật";
     statusEl.style.color = "#f59e0b";
-    descEl.textContent = "Chạm để cấp quyền và bật nhận thông báo";
+    descEl.textContent = "";
     btnToggle.textContent = "Bật thông báo";
     btnToggle.disabled = false;
     btnToggle.style.opacity = "1";

@@ -550,7 +550,7 @@ body::before {
 
 .today-events-panel {
   width: 100%;
-  margin-bottom: 12px;
+  margin-top: 12px;
   animation: panelIn 0.56s ease both;
 }
 
@@ -8859,6 +8859,8 @@ input[type="datetime-local"] {
 
 .more-dropdown {
   position: absolute;
+  max-height: 280px;
+  overflow-y: auto;
   bottom: calc(100% + 18px);
   right: 0;
   min-width: 220px;

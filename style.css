@@ -663,9 +663,9 @@ body::before {
   flex-direction: column;
   gap: 5px;
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-              background 0.2s ease,
-              border-color 0.2s ease,
-              box-shadow 0.2s ease;
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .today-timeline-card-top {
@@ -8894,7 +8894,7 @@ input[type="datetime-local"] {
 /* Cải thiện bottom-nav trên màn hình nhỏ */
 @media (max-width: 540px) {
   .bottom-nav {
-    bottom: 8px;
+    bottom: 18px;
     width: calc(100% - 32px);
     border-radius: 30px;
     height: 64px;
@@ -18194,14 +18194,17 @@ html {
   font-size: 24px;
   line-height: 1;
 }
+
 .confirm-popup-icon.danger i {
   color: #f87171;
   filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6));
 }
+
 .confirm-popup-icon.warning i {
   color: #fbbf24;
   filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6));
 }
+
 .confirm-popup-icon.primary i {
   color: #38bdf8;
   filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
@@ -18213,19 +18216,23 @@ html {
   color: #38bdf8;
   transition: all 0.2s ease;
 }
+
 .rec-tab.active i {
   color: #ffffff;
   filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.6));
 }
+
 .rec-preset-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
+
 .rec-preset-chip i {
   font-size: 13px;
   color: #38bdf8;
 }
+
 .rec-preset-btn .preset-icon i {
   font-size: 20px;
   color: #38bdf8;
@@ -18238,6 +18245,7 @@ html {
   line-height: 1;
   margin-right: 4px;
 }
+
 .btn-rec-list-add i {
   font-size: 13px;
   margin-right: 6px;
@@ -18255,6 +18263,7 @@ html {
   font-size: 13px;
   line-height: 1;
 }
+
 .project-item-icon i {
   font-size: 18px;
   color: #38bdf8;
@@ -18266,15 +18275,18 @@ html {
   font-size: 16px;
   color: #38bdf8;
 }
+
 .notif-item-time i {
   font-size: 12px;
   color: #64748b;
 }
+
 .notif-item-delete i {
   font-size: 13px;
   color: #94a3b8;
   transition: color 0.2s ease;
 }
+
 .notif-item-delete:hover i {
   color: #f87171;
 }
@@ -18286,16 +18298,19 @@ html {
   color: #94a3b8;
   transition: all 0.2s ease;
 }
+
 .cashflow-action-btn:hover i,
 .fund-action-btn:hover i {
   color: #38bdf8;
 }
+
 .cashflow-action-item i,
 .fund-action-item i {
   font-size: 13px;
   color: #38bdf8;
   margin-right: 8px;
 }
+
 .cashflow-action-item.danger i,
 .fund-action-item.danger i {
   color: #f87171;
@@ -18307,6 +18322,7 @@ html {
   line-height: 1;
   color: #cbd5e1;
 }
+
 .toolbar-btn:hover i {
   color: #38bdf8;
 }
@@ -18317,17 +18333,21 @@ html {
   font-size: 14px;
   color: #38bdf8;
 }
+
 .translate-copy-btn i {
   font-size: 15px;
 }
+
 .learn-nav-btn i {
   font-size: 15px;
   line-height: 1;
   color: #38bdf8;
 }
+
 .learn-card-speak-btn i {
   color: #38bdf8;
 }
+
 .celebration-badge i {
   font-size: 40px;
   color: #fbbf24;
@@ -18407,6 +18427,7 @@ img[src=""] {
 }
 
 @media (max-width: 540px) {
+
   .senior-one-touch-top-btn,
   .notification-bell-btn {
     width: 40px;
@@ -18416,16 +18437,19 @@ img[src=""] {
     align-items: center;
     border-radius: 50%;
   }
+
   .senior-one-touch-top-btn i,
   .notification-bell-btn i,
   .notification-bell-btn svg {
     font-size: 16px;
     top: 1px;
   }
+
   .senior-one-touch-top-btn .senior-btn-label,
   .notification-bell-btn .notification-btn-label {
     display: none;
   }
+
   .notification-badge {
     top: -3px;
     right: -3px;
@@ -19370,6 +19394,7 @@ img[src=""] {
    RESPONSIVE CHO MOBILE (SMARTPHONE, TABLET DỌC)
    ======================================================= */
 @media (max-width: 600px) {
+
   /* Toàn màn hình modal chuẩn App Mobile */
   #seniorCallModal,
   #seniorSettingsModal,
@@ -19410,6 +19435,7 @@ img[src=""] {
 
 /* Layout đặc biệt khi màn hình dưới 520px: Thẻ danh bạ chuyển sang 2 tầng thông thoáng */
 @media (max-width: 520px) {
+
   /* Thẻ liên hệ một chạm */
   .senior-contact-card {
     display: flex !important;
@@ -19422,14 +19448,14 @@ img[src=""] {
   }
 
   /* Hàng trên: Avatar và thông tin liên hệ */
-  .senior-contact-card > .senior-avatar-wrapper {
+  .senior-contact-card>.senior-avatar-wrapper {
     width: 58px;
     height: 58px;
     min-width: 58px;
     flex-shrink: 0;
   }
 
-  .senior-contact-card > .senior-contact-info {
+  .senior-contact-card>.senior-contact-info {
     flex: 1 1 160px;
     min-width: 0;
   }
@@ -19524,7 +19550,8 @@ img[src=""] {
   }
 
   .senior-input {
-    font-size: 16px !important; /* Ngăn iOS Safari tự zoom in */
+    font-size: 16px !important;
+    /* Ngăn iOS Safari tự zoom in */
     padding: 10px 12px;
   }
 
@@ -19615,4 +19642,4 @@ img[src=""] {
   .senior-preset-grid {
     gap: 8px;
   }
-}
+}

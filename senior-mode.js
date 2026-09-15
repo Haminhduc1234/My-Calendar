@@ -398,8 +398,6 @@
     const modal = document.getElementById("seniorSettingsModal");
     if (!modal) return;
     renderSeniorSettingsList();
-    renderPresetAvatarGrid();
-    resetSeniorForm();
     modal.style.display = "flex";
   };
 
@@ -407,17 +405,29 @@
     const modal = document.getElementById("seniorSettingsModal");
     if (!modal) return;
     modal.style.display = "none";
-    resetSeniorForm();
+    closeSeniorFormModal();
   };
 
   // Render danh sách trong Modal Cài đặt
   function renderSeniorSettingsList() {
     const container = document.getElementById("seniorSettingsList");
+    const countEl = document.getElementById("seniorContactCount");
+    if (countEl) {
+      countEl.textContent = seniorContactsCache ? seniorContactsCache.length : 0;
+    }
+
     if (!container) return;
 
     if (!seniorContactsCache || seniorContactsCache.length === 0) {
       container.innerHTML = `
-        <div class="senior-settings-empty">Danh bạ đang trống. Hãy thêm người thân ở mẫu bên dưới!</div>
+        <div class="senior-settings-empty-card">
+          <div class="senior-empty-icon"><i class="fi fi-rr-users"></i></div>
+          <div class="senior-empty-title">Chưa có người thân trong danh bạ</div>
+          <p class="senior-empty-desc">Nhấn vào nút bên dưới để thêm thông tin người thân đầu tiên.</p>
+          <button type="button" class="senior-btn-add-quick" onclick="openSeniorFormModal()">
+            <i class="fi fi-rr-user-add"></i> + Thêm Người Thân Ngay
+          </button>
+        </div>
       `;
       return;
     }
@@ -443,10 +453,10 @@
             <button type="button" class="senior-ctrl-btn" title="Chuyển xuống" onclick="moveSeniorContact('${c.id}', 1)" ${isLast ? "disabled" : ""}>
               <i class="fi fi-rr-arrow-down"></i>
             </button>
-            <button type="button" class="senior-ctrl-btn edit" title="Sửa" onclick="editSeniorContact('${c.id}')">
+            <button type="button" class="senior-ctrl-btn edit" title="Chỉnh sửa thông tin" onclick="openSeniorFormModal('${c.id}')">
               <i class="fi fi-rr-edit"></i>
             </button>
-            <button type="button" class="senior-ctrl-btn delete" title="Xóa" onclick="deleteSeniorContact('${c.id}')">
+            <button type="button" class="senior-ctrl-btn delete" title="Xóa người thân" onclick="deleteSeniorContact('${c.id}')">
               <i class="fi fi-rr-trash"></i>
             </button>
           </div>
@@ -454,6 +464,82 @@
       `;
     }).join("");
   }
+
+  // ==========================================
+  // MODAL THÊM / SỬA NGƯỜI THÂN (#seniorContactFormModal)
+  // ==========================================
+
+  window.openSeniorFormModal = function (contactId = null) {
+    editingContactId = contactId || null;
+    const modal = document.getElementById("seniorContactFormModal");
+    if (!modal) return;
+
+    const titleEl = document.getElementById("seniorFormModalTitle");
+    const nameInput = document.getElementById("seniorInputName");
+    const phoneInput = document.getElementById("seniorInputPhone");
+    const submitBtn = document.getElementById("btnSaveSeniorContact");
+    const fileInput = document.getElementById("seniorFileInput");
+
+    if (fileInput) fileInput.value = "";
+
+    if (editingContactId) {
+      // Chế độ sửa
+      const contact = seniorContactsCache.find((c) => c.id === editingContactId);
+      if (contact) {
+        if (titleEl) {
+          titleEl.innerHTML = '<i class="fi fi-rr-edit" style="color: #3b82f6; margin-right: 8px;"></i>Chỉnh Sửa Người Thân';
+        }
+        if (submitBtn) {
+          submitBtn.innerHTML = '<i class="fi fi-rr-check"></i> Cập Nhật';
+        }
+        if (nameInput) nameInput.value = contact.name || "";
+        if (phoneInput) phoneInput.value = contact.phone || "";
+
+        if (contact.avatar && contact.avatar.startsWith("data:image")) {
+          uploadedAvatarData = contact.avatar;
+        } else {
+          uploadedAvatarData = null;
+          selectedPresetAvatar = contact.presetAvatar || "son";
+        }
+      }
+    } else {
+      // Chế độ thêm mới
+      if (titleEl) {
+        titleEl.innerHTML = '<i class="fi fi-rr-user-add" style="color: #3b82f6; margin-right: 8px;"></i>Thêm Người Thân Mới';
+      }
+      if (submitBtn) {
+        submitBtn.innerHTML = '<i class="fi fi-rr-disk"></i> Lưu Người Thân';
+      }
+      if (nameInput) nameInput.value = "";
+      if (phoneInput) phoneInput.value = "";
+      uploadedAvatarData = null;
+      selectedPresetAvatar = "son";
+    }
+
+    updateAvatarPreview();
+    renderPresetAvatarGrid();
+    modal.style.display = "flex";
+
+    // Tự động focus vào ô nhập tên
+    setTimeout(() => {
+      if (nameInput) nameInput.focus();
+    }, 120);
+  };
+
+  window.closeSeniorFormModal = function () {
+    const modal = document.getElementById("seniorContactFormModal");
+    if (modal) modal.style.display = "none";
+    editingContactId = null;
+    uploadedAvatarData = null;
+  };
+
+  window.editSeniorContact = function (id) {
+    openSeniorFormModal(id);
+  };
+
+  window.cancelSeniorEdit = function () {
+    closeSeniorFormModal();
+  };
 
   // Render lưới avatar minh họa có sẵn
   function renderPresetAvatarGrid() {
@@ -496,72 +582,6 @@
     }
   }
 
-  // Reset form nhập liệu
-  function resetSeniorForm() {
-    editingContactId = null;
-    selectedPresetAvatar = "son";
-    uploadedAvatarData = null;
-
-    const nameInput = document.getElementById("seniorInputName");
-    const phoneInput = document.getElementById("seniorInputPhone");
-    const fileInput = document.getElementById("seniorFileInput");
-    const submitBtn = document.getElementById("btnSaveSeniorContact");
-    const cancelBtn = document.getElementById("btnCancelSeniorEdit");
-    const formTitle = document.getElementById("seniorFormTitle");
-
-    if (nameInput) nameInput.value = "";
-    if (phoneInput) phoneInput.value = "";
-    if (fileInput) fileInput.value = "";
-    if (formTitle) formTitle.textContent = "Thêm Người Thân Mới";
-    if (submitBtn) submitBtn.innerHTML = '<i class="fi fi-rr-disk"></i> Lưu Người Thân';
-    if (cancelBtn) cancelBtn.style.display = "none";
-
-    updateAvatarPreview();
-    renderPresetAvatarGrid();
-  }
-
-  window.cancelSeniorEdit = function () {
-    resetSeniorForm();
-    renderSeniorSettingsList();
-  };
-
-  // Sửa liên hệ
-  window.editSeniorContact = function (id) {
-    const contact = seniorContactsCache.find((c) => c.id === id);
-    if (!contact) return;
-
-    editingContactId = id;
-    const nameInput = document.getElementById("seniorInputName");
-    const phoneInput = document.getElementById("seniorInputPhone");
-    const submitBtn = document.getElementById("btnSaveSeniorContact");
-    const cancelBtn = document.getElementById("btnCancelSeniorEdit");
-    const formTitle = document.getElementById("seniorFormTitle");
-
-    if (nameInput) nameInput.value = contact.name || "";
-    if (phoneInput) phoneInput.value = contact.phone || "";
-
-    if (contact.avatar && contact.avatar.startsWith("data:image")) {
-      uploadedAvatarData = contact.avatar;
-    } else {
-      uploadedAvatarData = null;
-      selectedPresetAvatar = contact.presetAvatar || "son";
-    }
-
-    if (formTitle) formTitle.textContent = `Chỉnh Sửa: ${contact.name || "Người thân"}`;
-    if (submitBtn) submitBtn.innerHTML = '<i class="fi fi-rr-check"></i> Cập Nhật';
-    if (cancelBtn) {
-      cancelBtn.style.display = "inline-flex";
-      cancelBtn.innerHTML = '<i class="fi fi-rr-cross"></i> Hủy bỏ';
-    }
-
-    updateAvatarPreview();
-    renderPresetAvatarGrid();
-    renderSeniorSettingsList();
-
-    // Scroll form vào tầm mắt
-    document.getElementById("seniorFormContainer")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  };
-
   // Xóa liên hệ
   window.deleteSeniorContact = function (id) {
     const contact = seniorContactsCache.find((c) => c.id === id);
@@ -576,7 +596,7 @@
     renderSeniorSettingsList();
     renderSeniorCallList();
     if (editingContactId === id) {
-      resetSeniorForm();
+      closeSeniorFormModal();
     }
     showSeniorToast("Đã xóa người thân khỏi danh bạ", "info");
   };
@@ -690,7 +710,7 @@
     saveToFirebase();
     renderSeniorSettingsList();
     renderSeniorCallList();
-    resetSeniorForm();
+    closeSeniorFormModal();
   };
 
   // Khởi động sẵn danh bạ từ LocalStorage

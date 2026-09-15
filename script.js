@@ -3563,6 +3563,7 @@ function closeAllModals() {
     "recurringEventFormModal",
     "seniorCallModal",
     "seniorSettingsModal",
+    "seniorContactFormModal",
   ];
   modals.forEach((id) => {
     const el = document.getElementById(id);

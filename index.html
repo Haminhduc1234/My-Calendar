@@ -68,12 +68,11 @@
           <button type="button" id="btnSeniorOneTouch" class="senior-one-touch-top-btn" title="Gọi người thân một chạm"
             onclick="openSeniorCallModal()">
             <i class="fi fi-sr-heart"></i>
-            <span class="senior-btn-label">Một Chạm</span>
           </button>
           <button type="button" id="btnNotificationBell" class="notification-bell-btn" title="Thông báo"
             onclick="openNotificationModal()">
             <i class="fi fi-rr-bell"></i>
-            <span id="notificationBadge" class="notification-badge" style="display: none;">0</span>
+            <span id="notificationBadge" class="notification-badge" style="display: none;">2</span>
           </button>
         </div>
       </div>
@@ -218,11 +217,6 @@
           <span class="nav-label">Khác</span>
         </button>
         <div id="moreMenuDropdown" class="more-dropdown" role="menu">
-          <button class="dropdown-item item-senior-call" onclick="openSeniorCallModal(); closeMoreMenu();"
-            role="menuitem">
-            <span class="menu-icon-wrap" style="color: #ec4899;"><i class="fi fi-sr-heart"></i></span>
-            <span>Gọi Người Thân</span>
-          </button>
           <button class="dropdown-item item-senior-settings" onclick="openSeniorSettingsModal(); closeMoreMenu();"
             role="menuitem">
             <span class="menu-icon-wrap" style="color: #2563eb;"><i class="fi fi-rr-users"></i></span>
@@ -3127,75 +3121,95 @@
       <div class="event-modal-header">
         <div class="senior-header-title-box">
           <h3><i class="fi fi-rr-users" style="color: #3b82f6; margin-right: 8px;"></i>Cài Đặt Người Thân</h3>
-          <div class="date-label">Thêm, sửa, xóa thông tin và số điện thoại Zalo</div>
+          <div class="date-label">Danh sách liên hệ gọi Video Zalo một chạm</div>
         </div>
         <div class="senior-header-actions">
-          <button type="button" class="btn-secondary senior-header-action-btn" title="Quay lại danh bạ một chạm"
-            onclick="closeSeniorSettingsModal(); openSeniorCallModal();">
-            <i class="fi fi-sr-heart" style="color: #f43f5e;"></i> <span>Gọi người thân</span>
-          </button>
           <button type="button" class="modal-close event-modal-close" onclick="closeSeniorSettingsModal()">×</button>
         </div>
       </div>
       <div class="senior-container senior-settings-container">
-        <!-- Danh sách hiện tại -->
-        <div class="senior-settings-section">
-          <h4 class="senior-section-title"><i class="fi fi-rr-list"></i> Danh Sách Hiện Tại</h4>
-          <div id="seniorSettingsList" class="senior-settings-list"></div>
+        <!-- Thanh công cụ đầu danh sách -->
+        <div class="senior-list-header-bar">
+          <div class="senior-list-count-badge">
+            <i class="fi fi-rr-list"></i> Danh Sách (<span id="seniorContactCount">0</span>)
+          </div>
+          <button type="button" class="senior-btn-add-banner" onclick="openSeniorFormModal()">
+            <i class="fi fi-rr-user-add"></i> <span> Thêm người thân</span>
+          </button>
         </div>
 
-        <!-- Form thêm / sửa -->
-        <div id="seniorFormContainer" class="senior-form-card">
-          <h4 id="seniorFormTitle" class="senior-section-title"><i class="fi fi-rr-user-add"></i> Thêm Người Thân Mới
-          </h4>
-          <form id="seniorContactForm" onsubmit="saveSeniorContactForm(event)">
-            <div class="senior-form-row">
-              <div class="senior-form-group">
-                <label for="seniorInputName">Tên hiển thị <span class="req">*</span></label>
-                <input type="text" id="seniorInputName" class="senior-input"
-                  placeholder="Ví dụ: Con trai Đức, Bé Lan..." required maxlength="40" autocomplete="off" />
-              </div>
-              <div class="senior-form-group">
-                <label for="seniorInputPhone">Số điện thoại Zalo <span class="req">*</span></label>
-                <input type="tel" id="seniorInputPhone" class="senior-input"
-                  placeholder="Nhập SĐT Zalo (VD: 0988123456)" required autocomplete="off" />
-              </div>
-            </div>
-            <small class="senior-hint" style="margin-top: -6px; margin-bottom: 12px;">Chạm vào avatar sẽ kết nối gọi
-              video Zalo tức thì theo số điện thoại này.</small>
+        <!-- Danh sách hiện tại (chiếm trọn không gian, cuộn thoáng đãng) -->
+        <div id="seniorSettingsList" class="senior-settings-list full-height"></div>
+      </div>
+    </div>
+  </div>
 
-            <!-- Chọn Avatar -->
+  <!-- Senior Contact Form Modal (Modal Thêm / Chỉnh Sửa Người Thân) -->
+  <div id="seniorContactFormModal" class="modal senior-form-modal-backdrop" style="display: none;"
+    onclick="if(event.target===this) closeSeniorFormModal()">
+    <div class="modal-content event-modal-wrapper senior-modal-wrapper senior-form-popup-wrapper">
+      <div class="event-modal-header">
+        <div class="senior-header-title-box">
+          <h3 id="seniorFormModalTitle"><i class="fi fi-rr-user-add" style="color: #3b82f6; margin-right: 8px;"></i>Thêm
+            Người Thân Mới</h3>
+          <div class="date-label">Nhập tên, số điện thoại Zalo và chọn ảnh đại diện</div>
+        </div>
+        <button type="button" class="modal-close event-modal-close" onclick="closeSeniorFormModal()">×</button>
+      </div>
+      <div class="senior-container senior-form-modal-container">
+        <form id="seniorContactForm" onsubmit="saveSeniorContactForm(event)">
+          <div class="senior-form-row">
             <div class="senior-form-group">
-              <label>Avatar đại diện</label>
-              <div class="senior-avatar-picker-container">
-                <div class="senior-avatar-preview-box">
+              <label for="seniorInputName">Tên <span class="req">*</span></label>
+              <input type="text" id="seniorInputName" class="senior-input" placeholder="Nhập..." required maxlength="40"
+                autocomplete="off" />
+            </div>
+            <div class="senior-form-group">
+              <label for="seniorInputPhone">Số điện thoại <span class="req">*</span></label>
+              <input type="tel" id="seniorInputPhone" class="senior-input" placeholder="Nhập..." required
+                autocomplete="off" />
+            </div>
+          </div>
+
+          <!-- Chọn Avatar -->
+          <div class="senior-form-group">
+            <label class="senior-avatar-main-label">Ảnh đại diện</label>
+            <div class="senior-avatar-picker-card">
+              <!-- Khu vực Hero Avatar ở giữa -->
+              <div class="senior-avatar-hero-wrap">
+                <div class="senior-avatar-preview-box" onclick="document.getElementById('seniorFileInput').click()"
+                  title="Chạm để tải ảnh từ máy">
                   <img id="seniorAvatarPreview" class="senior-avatar-preview-img" alt="Avatar preview" />
-                </div>
-                <div class="senior-avatar-picker-right">
-                  <div class="senior-preset-label-row">Mẫu có sẵn:</div>
-                  <div id="seniorPresetGrid" class="senior-preset-grid"></div>
-                  <div class="senior-upload-row">
-                    <label class="senior-btn-upload-file">
-                      <i class="fi fi-rr-picture"></i> Hoặc Tải Ảnh Thật Từ Máy
-                      <input type="file" id="seniorFileInput" accept="image/*" style="display: none;"
-                        onchange="handleSeniorFileUpload(event)" />
-                    </label>
+                  <div class="senior-avatar-cam-badge" title="Tải ảnh lên">
+                    <i class="fi fi-rr-camera"></i>
                   </div>
                 </div>
+                <label class="senior-btn-upload-file">
+                  <i class="fi fi-rr-picture"></i> Tải ảnh từ thiết bị
+                  <input type="file" id="seniorFileInput" accept="image/*" style="display: none;"
+                    onchange="handleSeniorFileUpload(event)" />
+                </label>
               </div>
-            </div>
 
-            <div class="senior-form-actions">
-              <button type="button" id="btnCancelSeniorEdit" class="senior-btn-cancel" style="display: none;"
-                onclick="cancelSeniorEdit()">
-                <i class="fi fi-rr-cross"></i> Hủy bỏ
-              </button>
-              <button type="submit" id="btnSaveSeniorContact" class="senior-btn-save">
-                <i class="fi fi-rr-disk"></i> Lưu Người Thân
-              </button>
+              <!-- Dòng ngăn cách tinh tế -->
+              <div class="senior-avatar-divider">
+                <span>hoặc chọn hình minh họa</span>
+              </div>
+
+              <!-- Lưới biểu tượng có sẵn -->
+              <div id="seniorPresetGrid" class="senior-preset-grid"></div>
             </div>
-          </form>
-        </div>
+          </div>
+
+          <div class="senior-form-actions">
+            <button type="button" id="btnCancelSeniorEdit" class="senior-btn-cancel" onclick="closeSeniorFormModal()">
+              <i class="fi fi-rr-cross"></i> Hủy bỏ
+            </button>
+            <button type="submit" id="btnSaveSeniorContact" class="senior-btn-save">
+              <i class="fi fi-rr-disk"></i> Lưu Người Thân
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>

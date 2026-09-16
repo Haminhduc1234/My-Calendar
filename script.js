@@ -1492,14 +1492,20 @@ function applyCrop() {
     return;
   }
 
+  const isPng =
+    cropModalFile &&
+    (cropModalFile.type === "image/png" ||
+      (cropModalFile.name && cropModalFile.name.toLowerCase().endsWith(".png")));
+
   const croppedCanvas = cropper.getCroppedCanvas({
     maxWidth: cropModalType === "avatar" ? 512 : 1920,
     maxHeight: cropModalType === "avatar" ? 512 : 1080,
+    fillColor: isPng ? undefined : "#ffffff",
     imageSmoothingEnabled: true,
     imageSmoothingQuality: "high",
   });
 
-  const dataUrl = croppedCanvas.toDataURL("image/jpeg", 0.9);
+  const dataUrl = croppedCanvas.toDataURL(isPng ? "image/png" : "image/jpeg", 0.92);
   const previewId =
     cropModalType === "avatar" ? "profileAvatarPreview" : "profileCoverPreview";
   const placeholderId =
@@ -1814,6 +1820,250 @@ function initProfileOnLoad() {
       if (countEl) countEl.textContent = this.value.length;
     });
   }
+
+  // Setup avatar preview listeners
+  initAvatarPreviewListeners();
+}
+
+// ==================== AVATAR PREVIEW & ZOOM LOGIC ====================
+let avatarPreviewState = {
+  scale: 1,
+  minScale: 0.5,
+  maxScale: 4.5,
+  translateX: 0,
+  translateY: 0,
+  isDragging: false,
+  startX: 0,
+  startY: 0,
+  lastTouchDistance: 0,
+  touchStartX: 0,
+  touchStartY: 0,
+  isInitialized: false,
+};
+
+function openAvatarPreviewModal(event) {
+  if (event) {
+    event.stopPropagation();
+  }
+  const avatarEl = document.getElementById("todayProfileAvatar");
+  let avatarSrc = "";
+  if (avatarEl && avatarEl.src && !avatarEl.src.endsWith("#") && avatarEl.style.display !== "none") {
+    avatarSrc = avatarEl.src;
+  } else if (profileSettingsCache && profileSettingsCache.avatar) {
+    avatarSrc = profileSettingsCache.avatar;
+  } else {
+    const cached = loadProfileSettings();
+    if (cached && cached.avatar) {
+      avatarSrc = cached.avatar;
+    }
+  }
+
+  if (!avatarSrc) {
+    openProfileSettingsModal();
+    return;
+  }
+
+  const modal = document.getElementById("avatarPreviewModal");
+  const previewImg = document.getElementById("avatarPreviewImg");
+  const titleText = document.getElementById("avatarPreviewTitleText");
+  const nameEl = document.getElementById("todayProfileName");
+
+  if (titleText) {
+    const name = (nameEl && nameEl.textContent.trim()) || "Ảnh đại diện";
+    titleText.textContent = name;
+  }
+
+  if (previewImg) {
+    previewImg.src = avatarSrc;
+  }
+
+  resetAvatarPreviewZoom();
+  initAvatarPreviewListeners();
+
+  if (modal) {
+    modal.style.display = "flex";
+  }
+}
+window.openAvatarPreviewModal = openAvatarPreviewModal;
+
+function closeAvatarPreviewModal() {
+  const modal = document.getElementById("avatarPreviewModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+  resetAvatarPreviewZoom();
+}
+window.closeAvatarPreviewModal = closeAvatarPreviewModal;
+
+function updateAvatarPreviewTransform(smooth = false) {
+  const wrapper = document.getElementById("avatarPreviewWrapper");
+  const zoomLevelEl = document.getElementById("avatarPreviewZoomLevel");
+  const body = document.getElementById("avatarPreviewBody");
+  if (!wrapper) return;
+
+  if (smooth) {
+    wrapper.style.transition = "transform 0.22s cubic-bezier(0.25, 1, 0.5, 1)";
+  } else {
+    wrapper.style.transition = "none";
+  }
+
+  wrapper.style.transform = `translate(${avatarPreviewState.translateX}px, ${avatarPreviewState.translateY}px) scale(${avatarPreviewState.scale})`;
+
+  if (zoomLevelEl) {
+    zoomLevelEl.textContent = `${Math.round(avatarPreviewState.scale * 100)}%`;
+  }
+
+  if (body) {
+    body.style.cursor = avatarPreviewState.scale > 1.05 ? (avatarPreviewState.isDragging ? "grabbing" : "grab") : "default";
+  }
+}
+
+function zoomAvatarPreview(delta) {
+  let newScale = Math.round((avatarPreviewState.scale + delta) * 100) / 100;
+  if (newScale < avatarPreviewState.minScale) newScale = avatarPreviewState.minScale;
+  if (newScale > avatarPreviewState.maxScale) newScale = avatarPreviewState.maxScale;
+
+  if (newScale <= 1) {
+    avatarPreviewState.translateX = 0;
+    avatarPreviewState.translateY = 0;
+  }
+  avatarPreviewState.scale = newScale;
+  updateAvatarPreviewTransform(true);
+}
+window.zoomAvatarPreview = zoomAvatarPreview;
+
+function resetAvatarPreviewZoom() {
+  avatarPreviewState.scale = 1;
+  avatarPreviewState.translateX = 0;
+  avatarPreviewState.translateY = 0;
+  avatarPreviewState.isDragging = false;
+  updateAvatarPreviewTransform(true);
+}
+window.resetAvatarPreviewZoom = resetAvatarPreviewZoom;
+
+function initAvatarPreviewListeners() {
+  if (avatarPreviewState.isInitialized) return;
+  avatarPreviewState.isInitialized = true;
+
+  const body = document.getElementById("avatarPreviewBody");
+  const modal = document.getElementById("avatarPreviewModal");
+  if (!body) return;
+
+  // Mouse wheel zoom
+  body.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.2 : -0.2;
+      zoomAvatarPreview(delta);
+    },
+    { passive: false }
+  );
+
+  // Mouse drag to pan
+  body.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return; // Only left click
+    avatarPreviewState.isDragging = true;
+    avatarPreviewState.startX = e.clientX - avatarPreviewState.translateX;
+    avatarPreviewState.startY = e.clientY - avatarPreviewState.translateY;
+    body.style.cursor = "grabbing";
+  });
+
+  window.addEventListener("mousemove", (e) => {
+    if (!avatarPreviewState.isDragging) return;
+    avatarPreviewState.translateX = e.clientX - avatarPreviewState.startX;
+    avatarPreviewState.translateY = e.clientY - avatarPreviewState.startY;
+    updateAvatarPreviewTransform(false);
+  });
+
+  window.addEventListener("mouseup", () => {
+    if (avatarPreviewState.isDragging) {
+      avatarPreviewState.isDragging = false;
+      if (body) {
+        body.style.cursor = avatarPreviewState.scale > 1.05 ? "grab" : "default";
+      }
+    }
+  });
+
+  // Double click to toggle 1x and 2x zoom
+  body.addEventListener("dblclick", (e) => {
+    e.preventDefault();
+    if (avatarPreviewState.scale > 1.1) {
+      resetAvatarPreviewZoom();
+    } else {
+      avatarPreviewState.scale = 2;
+      avatarPreviewState.translateX = 0;
+      avatarPreviewState.translateY = 0;
+      updateAvatarPreviewTransform(true);
+    }
+  });
+
+  // Touch support: Pan and Pinch-to-zoom
+  body.addEventListener(
+    "touchstart",
+    (e) => {
+      if (e.touches.length === 1) {
+        avatarPreviewState.isDragging = true;
+        avatarPreviewState.touchStartX = e.touches[0].clientX - avatarPreviewState.translateX;
+        avatarPreviewState.touchStartY = e.touches[0].clientY - avatarPreviewState.translateY;
+      } else if (e.touches.length === 2) {
+        avatarPreviewState.isDragging = false;
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        avatarPreviewState.lastTouchDistance = Math.hypot(dx, dy);
+      }
+    },
+    { passive: true }
+  );
+
+  body.addEventListener(
+    "touchmove",
+    (e) => {
+      if (e.touches.length === 1 && avatarPreviewState.isDragging) {
+        avatarPreviewState.translateX = e.touches[0].clientX - avatarPreviewState.touchStartX;
+        avatarPreviewState.translateY = e.touches[0].clientY - avatarPreviewState.touchStartY;
+        updateAvatarPreviewTransform(false);
+      } else if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const distance = Math.hypot(dx, dy);
+        if (avatarPreviewState.lastTouchDistance > 0) {
+          const factor = distance / avatarPreviewState.lastTouchDistance;
+          let newScale = avatarPreviewState.scale * factor;
+          if (newScale < avatarPreviewState.minScale) newScale = avatarPreviewState.minScale;
+          if (newScale > avatarPreviewState.maxScale) newScale = avatarPreviewState.maxScale;
+          avatarPreviewState.scale = newScale;
+          updateAvatarPreviewTransform(false);
+        }
+        avatarPreviewState.lastTouchDistance = distance;
+      }
+    },
+    { passive: true }
+  );
+
+  body.addEventListener(
+    "touchend",
+    () => {
+      avatarPreviewState.isDragging = false;
+      avatarPreviewState.lastTouchDistance = 0;
+    },
+    { passive: true }
+  );
+
+  // Keyboard shortcut: Esc to close, +, -, 0 to zoom
+  window.addEventListener("keydown", (e) => {
+    if (modal && modal.style.display === "flex") {
+      if (e.key === "Escape") {
+        closeAvatarPreviewModal();
+      } else if (e.key === "+" || e.key === "=") {
+        zoomAvatarPreview(0.25);
+      } else if (e.key === "-" || e.key === "_") {
+        zoomAvatarPreview(-0.25);
+      } else if (e.key === "0") {
+        resetAvatarPreviewZoom();
+      }
+    }
+  });
 }
 
 function setupProfileFirebaseListener() {
@@ -6048,7 +6298,7 @@ function renderRecurringEventsList() {
     if (item.category === "birthday" && item.birthYear) {
       const curY = new Date().getFullYear();
       const age = curY - item.birthYear;
-      birthYearTag = `<span class="rec-meta-chip">🎂 SN ${item.birthYear} (Tròn ${age} tuổi)</span>`;
+      birthYearTag = `<span class="rec-meta-chip">🎂 SN ${item.birthYear} (Tròn ${age + 1} tuổi)</span>`;
     }
 
     return `
@@ -9255,6 +9505,144 @@ function getWeatherColor(code) {
   return "#d0e2ff";
 }
 
+function getWeatherButtonTheme(code, isDay = 1) {
+  // 0: Trời quang
+  if (code === 0) {
+    if (isDay) {
+      return {
+        icon: "☀️",
+        bg: "linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ea580c 100%)",
+        shadow: "0 3px 12px rgba(245, 158, 11, 0.4)",
+        border: "rgba(254, 240, 138, 0.4)"
+      };
+    } else {
+      return {
+        icon: "🌙",
+        bg: "linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)",
+        shadow: "0 3px 12px rgba(67, 56, 202, 0.4)",
+        border: "rgba(165, 180, 252, 0.35)"
+      };
+    }
+  }
+
+  // 1, 2: Ít mây / Nắng nhẹ
+  if ([1, 2].includes(code)) {
+    if (isDay) {
+      return {
+        icon: "🌤️",
+        bg: "linear-gradient(135deg, #0284c7 0%, #0ea5e9 45%, #f59e0b 100%)",
+        shadow: "0 3px 12px rgba(14, 165, 233, 0.4)",
+        border: "rgba(186, 230, 253, 0.4)"
+      };
+    } else {
+      return {
+        icon: "🌙",
+        bg: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)",
+        shadow: "0 3px 12px rgba(51, 65, 85, 0.4)",
+        border: "rgba(148, 163, 184, 0.35)"
+      };
+    }
+  }
+
+  // 3: Nhiều mây / Âm u
+  if (code === 3) {
+    return {
+      icon: "☁️",
+      bg: "linear-gradient(135deg, #475569 0%, #64748b 50%, #94a3b8 100%)",
+      shadow: "0 3px 12px rgba(71, 85, 105, 0.4)",
+      border: "rgba(226, 232, 240, 0.35)"
+    };
+  }
+
+  // 45, 48: Sương mù
+  if ([45, 48].includes(code)) {
+    return {
+      icon: "🌫️",
+      bg: "linear-gradient(135deg, #334155 0%, #0f766e 50%, #64748b 100%)",
+      shadow: "0 3px 12px rgba(15, 118, 110, 0.35)",
+      border: "rgba(153, 246, 228, 0.35)"
+    };
+  }
+
+  // 51, 53, 55, 56, 57: Mưa phùn
+  if ([51, 53, 55, 56, 57].includes(code)) {
+    return {
+      icon: "🌦️",
+      bg: "linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #3b82f6 100%)",
+      shadow: "0 3px 12px rgba(6, 182, 212, 0.4)",
+      border: "rgba(165, 243, 252, 0.4)"
+    };
+  }
+
+  // 61, 63, 65, 80, 81, 82: Mưa rào / Mưa to
+  if ([61, 63, 65, 80, 81, 82].includes(code)) {
+    return {
+      icon: "🌧️",
+      bg: "linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #0284c7 100%)",
+      shadow: "0 3px 12px rgba(37, 99, 235, 0.45)",
+      border: "rgba(191, 219, 254, 0.4)"
+    };
+  }
+
+  // 66, 67, 71, 73, 75, 77, 85, 86: Tuyết / Mưa tuyết
+  if ([66, 67, 71, 73, 75, 77, 85, 86].includes(code)) {
+    return {
+      icon: "❄️",
+      bg: "linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #bae6fd 100%)",
+      shadow: "0 3px 12px rgba(56, 189, 248, 0.4)",
+      border: "rgba(240, 249, 255, 0.45)"
+    };
+  }
+
+  // 95, 96, 99: Dông sét
+  if ([95, 96, 99].includes(code)) {
+    return {
+      icon: "⛈️",
+      bg: "linear-gradient(135deg, #581c87 0%, #7c3aed 50%, #eab308 100%)",
+      shadow: "0 3px 12px rgba(124, 58, 237, 0.5)",
+      border: "rgba(233, 213, 255, 0.45)"
+    };
+  }
+
+  return {
+    icon: isDay ? "🌤️" : "🌙",
+    bg: "linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ea580c 100%)",
+    shadow: "0 3px 12px rgba(245, 158, 11, 0.35)",
+    border: "rgba(255, 255, 255, 0.25)"
+  };
+}
+
+function updateWeatherButtonTheme(code, isDay = 1, temperature = null) {
+  const btn = document.getElementById("floatingTodayExtraBtn");
+  if (!btn) return;
+
+  const theme = getWeatherButtonTheme(code, isDay);
+  btn.style.background = theme.bg;
+  btn.style.boxShadow = theme.shadow;
+  btn.style.borderColor = theme.border;
+
+  const floatingIconEl = btn.querySelector(".floating-btn-icon");
+  if (floatingIconEl) {
+    floatingIconEl.textContent = theme.icon;
+  }
+
+  if (temperature !== null && temperature !== undefined) {
+    btn.title = `Thời tiết: ${Math.round(temperature)}°C - ${weatherCodeToText(code)}`;
+  } else {
+    btn.title = `Thời tiết: ${weatherCodeToText(code)}`;
+  }
+
+  try {
+    localStorage.setItem("lastWeatherCode", code);
+    localStorage.setItem("lastWeatherIsDay", isDay ? "1" : "0");
+    if (temperature !== null && temperature !== undefined) {
+      localStorage.setItem("lastWeatherTemp", Math.round(temperature));
+    }
+    localStorage.setItem("lastWeatherIcon", theme.icon);
+    localStorage.setItem("lastWeatherText", btn.title);
+  } catch { }
+}
+
 function handleWeather(lat, lon) {
   Promise.all([
     fetch(
@@ -9291,19 +9679,8 @@ function handleWeather(lat, lon) {
               </div>
           `;
 
-      // Cập nhật biểu tượng và tooltip của nút nổi theo thời tiết thực tế
-      const floatingIconEl = document.querySelector("#floatingTodayExtraBtn .floating-btn-icon");
-      const floatingBtn = document.getElementById("floatingTodayExtraBtn");
-      if (floatingIconEl) {
-        floatingIconEl.textContent = icon;
-      }
-      if (floatingBtn) {
-        floatingBtn.title = `Thời tiết: ${Math.round(w.temperature)}°C - ${weatherCodeToText(w.weathercode)}`;
-      }
-      try {
-        localStorage.setItem("lastWeatherIcon", icon);
-        localStorage.setItem("lastWeatherText", `Thời tiết: ${Math.round(w.temperature)}°C - ${weatherCodeToText(w.weathercode)}`);
-      } catch { }
+      // Cập nhật biểu tượng, màu sắc và tooltip của nút thời tiết theo thời tiết thực tế
+      updateWeatherButtonTheme(w.weathercode, isDay, w.temperature);
 
       renderHourlyForecast(data.hourly, data.current_weather.time);
       renderForecast(data.daily, data.hourly);
@@ -19480,167 +19857,40 @@ function initFloatingTodayExtraBtn() {
   const btn = document.getElementById("floatingTodayExtraBtn");
   if (!btn) return;
 
-  const STORAGE_KEY = "todayExtraBtnPos_v1";
-  const margin = 8;
+  // Xóa các thuộc tính kéo thả / tọa độ cũ nếu còn sót trong localStorage hoặc inline style
+  try {
+    localStorage.removeItem("todayExtraBtnPos_v1");
+  } catch { }
 
-  let isDragging = false;
-  let startX = 0, startY = 0;
-  let initialLeft = 0, initialTop = 0;
-  let dragMoved = false;
+  btn.style.position = "";
+  btn.style.top = "";
+  btn.style.left = "";
+  btn.style.bottom = "";
+  btn.style.right = "";
+  btn.style.transform = "";
+  btn.classList.remove("dragging", "snapped-left", "snapped-right");
 
-  // Khôi phục vị trí và icon thời tiết đã lưu
-  const savedIcon = localStorage.getItem("lastWeatherIcon");
-  const savedText = localStorage.getItem("lastWeatherText");
-  const floatingIconEl = btn.querySelector(".floating-btn-icon");
-  if (savedIcon && floatingIconEl) {
-    floatingIconEl.textContent = savedIcon;
-  }
-  if (savedText) {
-    btn.title = savedText;
-  }
-
-  const savedPos = localStorage.getItem(STORAGE_KEY);
-  if (savedPos) {
-    try {
-      const pos = JSON.parse(savedPos);
-      const btnWidth = btn.offsetWidth || 44;
-      const btnHeight = btn.offsetHeight || 44;
-      const maxTop = window.innerHeight - btnHeight - margin;
-      const top = Math.min(Math.max(margin, pos.top), maxTop);
-
-      btn.style.top = top + "px";
-      btn.style.bottom = "auto";
-
-      if (pos.side === "left") {
-        btn.style.left = margin + "px";
-        btn.style.right = "auto";
-        btn.classList.add("snapped-left");
-        btn.classList.remove("snapped-right");
-      } else {
-        btn.style.left = (window.innerWidth - btnWidth - margin) + "px";
-        btn.style.right = "auto";
-        btn.classList.add("snapped-right");
-        btn.classList.remove("snapped-left");
-      }
-    } catch (e) {
-      console.warn("[FloatingBtn] Lỗi khôi phục vị trí nút:", e);
+  // Khôi phục icon, màu sắc và tooltip thời tiết đã lưu
+  const savedCode = localStorage.getItem("lastWeatherCode");
+  const savedIsDay = localStorage.getItem("lastWeatherIsDay");
+  const savedTemp = localStorage.getItem("lastWeatherTemp");
+  if (savedCode !== null && savedCode !== undefined) {
+    updateWeatherButtonTheme(parseInt(savedCode, 10), savedIsDay !== "0" ? 1 : 0, savedTemp ? parseFloat(savedTemp) : null);
+  } else {
+    const savedIcon = localStorage.getItem("lastWeatherIcon");
+    const savedText = localStorage.getItem("lastWeatherText");
+    const floatingIconEl = btn.querySelector(".floating-btn-icon");
+    if (savedIcon && floatingIconEl) {
+      floatingIconEl.textContent = savedIcon;
+    }
+    if (savedText) {
+      btn.title = savedText;
     }
   }
 
-  function onPointerDown(e) {
-    if (e.button !== undefined && e.button !== 0) return;
-
-    isDragging = true;
-    dragMoved = false;
-
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-    startX = clientX;
-    startY = clientY;
-
-    const rect = btn.getBoundingClientRect();
-    initialLeft = rect.left;
-    initialTop = rect.top;
-
-    btn.style.transition = "none";
-  }
-
-  function onPointerMove(e) {
-    if (!isDragging) return;
-
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-    const dx = clientX - startX;
-    const dy = clientY - startY;
-
-    if (Math.hypot(dx, dy) > 5) {
-      dragMoved = true;
-      btn.classList.add("dragging");
-    }
-
-    if (dragMoved) {
-      if (e.cancelable) e.preventDefault();
-
-      const btnWidth = btn.offsetWidth || 44;
-      const btnHeight = btn.offsetHeight || 44;
-
-      let newLeft = initialLeft + dx;
-      let newTop = initialTop + dy;
-
-      newLeft = Math.min(Math.max(0, newLeft), window.innerWidth - btnWidth);
-      newTop = Math.min(Math.max(margin, newTop), window.innerHeight - btnHeight - margin);
-
-      btn.style.left = newLeft + "px";
-      btn.style.top = newTop + "px";
-      btn.style.right = "auto";
-    }
-  }
-
-  function onPointerUp() {
-    if (!isDragging) return;
-    isDragging = false;
-    btn.classList.remove("dragging");
-
-    if (!dragMoved) {
-      openTodayExtraModal();
-      return;
-    }
-
-    const rect = btn.getBoundingClientRect();
-    const btnWidth = rect.width || 44;
-    const btnHeight = rect.height || 44;
-    const centerX = rect.left + btnWidth / 2;
-
-    btn.style.transition = "left 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), top 0.15s ease";
-
-    let targetSide = "right";
-    let targetLeft = window.innerWidth - btnWidth - margin;
-
-    if (centerX < window.innerWidth / 2) {
-      targetSide = "left";
-      targetLeft = margin;
-      btn.classList.add("snapped-left");
-      btn.classList.remove("snapped-right");
-    } else {
-      btn.classList.add("snapped-right");
-      btn.classList.remove("snapped-left");
-    }
-
-    btn.style.left = targetLeft + "px";
-    btn.style.right = "auto";
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        side: targetSide,
-        top: rect.top
-      })
-    );
-  }
-
-  btn.addEventListener("mousedown", onPointerDown);
-  window.addEventListener("mousemove", onPointerMove);
-  window.addEventListener("mouseup", onPointerUp);
-
-  btn.addEventListener("touchstart", onPointerDown, { passive: false });
-  window.addEventListener("touchmove", onPointerMove, { passive: false });
-  window.addEventListener("touchend", onPointerUp);
-
-  window.addEventListener("resize", () => {
-    const rect = btn.getBoundingClientRect();
-    const btnWidth = rect.width || 44;
-    const btnHeight = rect.height || 44;
-
-    let isLeft = rect.left < window.innerWidth / 2;
-    let targetLeft = isLeft ? margin : window.innerWidth - btnWidth - margin;
-    let targetTop = Math.min(Math.max(margin, rect.top), window.innerHeight - btnHeight - margin);
-
-    btn.style.transition = "none";
-    btn.style.left = targetLeft + "px";
-    btn.style.top = targetTop + "px";
-  });
+  btn.onclick = function () {
+    openTodayExtraModal();
+  };
 }
 
 document.addEventListener("keydown", (e) => {

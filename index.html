@@ -56,15 +56,33 @@
   <div class="app-wrapper">
     <div class="today-panel" id="todayPanel">
       <div class="today-top-bar">
-        <div class="today-profile" id="todayProfile" onclick="openProfileSettingsModal()">
-          <img class="today-profile-avatar" id="todayProfileAvatar" alt="Profile" style="display: none;" />
-          <div class="today-profile-placeholder" id="todayProfilePlaceholder" style="display: none;"></div>
-          <div class="today-profile-info">
-            <div class="today-profile-name" id="todayProfileName"></div>
+        <div class="today-profile" id="todayProfile">
+          <div class="today-profile-avatar-wrapper" id="todayProfileAvatarWrapper">
+            <img class="today-profile-avatar" id="todayProfileAvatar" alt="Profile" style="display: none;"
+              onclick="openAvatarPreviewModal(event)" title="Xem ảnh đại diện" />
+            <div class="today-profile-placeholder" id="todayProfilePlaceholder" style="display: none;"
+              onclick="openProfileSettingsModal()" title="Cài đặt hồ sơ"></div>
+            <div class="today-profile-badge" id="todayProfileBadge" title="Tài khoản đã xác minh">
+              <svg viewBox="0 0 16 16" class="fb-verified-badge-svg" aria-label="Đã xác minh">
+                <path fill="#0866FF" stroke="#ffffff" stroke-width="0.9" stroke-linejoin="round"
+                  d="M10.067.87a2.89 2.89 0 0 0-4.134 0l-.622.638-.89-.011a2.89 2.89 0 0 0-2.924 2.924l.01.89-.636.622a2.89 2.89 0 0 0 0 4.134l.637.622-.011.89a2.89 2.89 0 0 0 2.924 2.924l.89-.01.622.636a2.89 2.89 0 0 0 4.134 0l.622-.637.89.011a2.89 2.89 0 0 0 2.924-2.924l-.01-.89.636-.622a2.89 2.89 0 0 0 0-4.134l-.637-.622.011-.89a2.89 2.89 0 0 0 2.924-2.924l-.89.01z" />
+                <path fill="#ffffff"
+                  d="m10.354 6.854-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7 8.793l2.646-2.647a.5.5 0 0 1 .708.708z" />
+              </svg>
+            </div>
+          </div>
+          <div class="today-profile-info" onclick="openProfileSettingsModal()" title="Cài đặt hồ sơ">
+            <div class="today-profile-name-row">
+              <div class="today-profile-name" id="todayProfileName"></div>
+            </div>
             <div class="today-profile-bio" id="todayProfileBio"></div>
           </div>
         </div>
         <div class="today-top-actions">
+          <button type="button" id="floatingTodayExtraBtn" class="today-weather-top-btn" title="Thời tiết"
+            onclick="openTodayExtraModal()" aria-label="Xem thời tiết và trích dẫn">
+            <span class="floating-btn-icon"><i class="fi fi-rr-cloud-sun"></i></span>
+          </button>
           <button type="button" id="btnSeniorOneTouch" class="senior-one-touch-top-btn" title="Gọi người thân một chạm"
             onclick="openSeniorCallModal()">
             <i class="fi fi-sr-heart"></i>
@@ -222,20 +240,15 @@
             <span class="menu-icon-wrap" style="color: #2563eb;"><i class="fi fi-rr-users"></i></span>
             <span>Cài Đặt Liên Hệ</span>
           </button>
-          <button class="dropdown-item item-add-event" onclick="openAddEventModalForToday(); closeMoreMenu();"
-            role="menuitem">
-            <span class="menu-icon-wrap"><i class="fi fi-rr-calendar-plus"></i></span>
-            <span>Thêm Sự Kiện</span>
-          </button>
           <button class="dropdown-item item-recurring" onclick="openRecurringEventsModal(); closeMoreMenu();"
             role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-refresh"></i></span>
             <span>Sự Kiện Lặp Lại</span>
           </button>
-          <button class="dropdown-item item-currency" onclick="openCurrencyModal(); closeMoreMenu();" role="menuitem">
+          <!-- <button class="dropdown-item item-currency" onclick="openCurrencyModal(); closeMoreMenu();" role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-coins"></i></span>
             <span>Tiền Tệ</span>
-          </button>
+          </button> -->
           <button class="dropdown-item item-gold" onclick="openGoldModal(); closeMoreMenu();" role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-gem"></i></span>
             <span>Giá Vàng</span>
@@ -244,10 +257,10 @@
             <span class="menu-icon-wrap"><i class="fi fi-rr-time-fast"></i></span>
             <span>Tăng Ca</span>
           </button>
-          <button class="dropdown-item item-countdown" onclick="openCountdownModal(); closeMoreMenu();" role="menuitem">
+          <!-- <button class="dropdown-item item-countdown" onclick="openCountdownModal(); closeMoreMenu();" role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-hourglass-end"></i></span>
             <span>Đếm Ngược</span>
-          </button>
+          </button> -->
           <button class="dropdown-item item-news" onclick="openNewsModal(); closeMoreMenu();" role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-newspaper"></i></span>
             <span>Tin Tức</span>
@@ -256,10 +269,10 @@
             <span class="menu-icon-wrap"><i class="fi fi-rr-graduation-cap"></i></span>
             <span>Học Tiếng</span>
           </button>
-          <button class="dropdown-item item-music" onclick="openMyMusicModal(); closeMoreMenu();" role="menuitem">
+          <!-- <button class="dropdown-item item-music" onclick="openMyMusicModal(); closeMoreMenu();" role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-music-note"></i></span>
             <span>Music</span>
-          </button>
+          </button> -->
           <button class="dropdown-item item-projects" onclick="openProjectsModal(); closeMoreMenu();" role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-briefcase"></i></span>
             <span>Dự Án</span>
@@ -2996,6 +3009,43 @@
     </div>
   </div>
 
+  <!-- Avatar Image Preview & Zoom Modal -->
+  <div id="avatarPreviewModal" class="modal avatar-preview-modal" style="display: none;">
+    <div class="avatar-preview-backdrop" onclick="closeAvatarPreviewModal()"></div>
+    <div class="avatar-preview-container">
+      <div class="avatar-preview-header">
+        <div class="avatar-preview-title">
+          <i class="fi fi-rr-picture"></i>
+          <span id="avatarPreviewTitleText">Ảnh đại diện</span>
+        </div>
+        <div class="avatar-preview-controls">
+          <button type="button" class="avatar-preview-btn" onclick="zoomAvatarPreview(0.25)" title="Phóng to (+)">
+            <i class="fi fi-rr-zoom-in"></i>
+          </button>
+          <button type="button" class="avatar-preview-btn" onclick="zoomAvatarPreview(-0.25)" title="Thu nhỏ (-)">
+            <i class="fi fi-rr-zoom-out"></i>
+          </button>
+          <button type="button" class="avatar-preview-btn" onclick="resetAvatarPreviewZoom()" title="Tỷ lệ gốc (100%)">
+            <i class="fi fi-rr-expand"></i>
+          </button>
+          <button type="button" class="avatar-preview-btn avatar-preview-close-btn" onclick="closeAvatarPreviewModal()"
+            title="Đóng (Esc)">
+            <i class="fi fi-rr-cross"></i>
+          </button>
+        </div>
+      </div>
+      <div class="avatar-preview-body" id="avatarPreviewBody">
+        <div class="avatar-preview-img-wrapper" id="avatarPreviewWrapper">
+          <img id="avatarPreviewImg" class="avatar-preview-img" src="" alt="Avatar Full" draggable="false" />
+        </div>
+      </div>
+      <div class="avatar-preview-footer">
+        <span class="avatar-preview-tip">Cuộn chuột để thu phóng • Kéo để di chuyển</span>
+        <span class="avatar-preview-zoom-level" id="avatarPreviewZoomLevel">100%</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Notification List Modal -->
   <div id="modalNotificationList" class="modal" style="display: none;">
     <div class="modal-content notification-modal-content">
@@ -3032,11 +3082,6 @@
     </div>
   </div>
 
-  <!-- Floating Button for Weather & Quote -->
-  <button type="button" id="floatingTodayExtraBtn" class="floating-today-extra-btn" title="Thời tiết"
-    aria-label="Xem thời tiết và trích dẫn">
-    <span class="floating-btn-icon"><i class="fi fi-rr-cloud-sun"></i></span>
-  </button>
 
   <!-- Today Extra Modal -->
   <div id="todayExtraModal" class="modal" onclick="if(event.target===this) closeTodayExtraModal()"

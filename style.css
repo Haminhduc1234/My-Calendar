@@ -13879,13 +13879,39 @@ input[type="datetime-local"] {
   align-items: center;
   gap: 12px;
   z-index: 10;
-  cursor: pointer;
-  opacity: 0.85;
-  transition: opacity 0.2s ease;
+  opacity: 1;
 }
 
-.today-profile:hover {
-  opacity: 0.85;
+.today-profile-avatar-wrapper {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  flex-shrink: 0;
+}
+
+.today-profile-badge {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  z-index: 5;
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.today-profile-avatar-wrapper:hover .today-profile-badge {
+  transform: scale(1.15);
+}
+
+.fb-verified-badge-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .today-profile-info {
@@ -13894,6 +13920,37 @@ input[type="datetime-local"] {
   gap: 2px;
   flex: 1;
   min-width: 0;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.today-profile-info:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.today-profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.today-profile-name-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.today-profile-name-badge .fb-verified-badge-svg {
+  width: 15px;
+  height: 15px;
 }
 
 .today-profile-name {
@@ -13911,7 +13968,7 @@ input[type="datetime-local"] {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .today-profile-avatar {
@@ -13919,9 +13976,17 @@ input[type="datetime-local"] {
   height: 62px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(168, 196, 242, 0.4);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  background-color: #ffffff;
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 3px #0ea5e9, 0 0 16px rgba(14, 165, 233, 0.45), 0 4px 12px rgba(0, 0, 0, 0.35);
   flex-shrink: 0;
+  cursor: zoom-in;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+}
+
+.today-profile-avatar:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 0 3.5px #38bdf8, 0 0 24px rgba(56, 189, 248, 0.7), 0 6px 16px rgba(0, 0, 0, 0.4);
 }
 
 .today-profile-avatar:not([src]),
@@ -13930,26 +13995,195 @@ input[type="datetime-local"] {
 }
 
 .today-profile-placeholder {
-  width: 42px;
-  height: 42px;
+  width: 62px;
+  height: 62px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(168, 196, 242, 0.3);
+  background: rgba(255, 255, 255, 0.08);
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.5), 0 0 14px rgba(14, 165, 233, 0.3), 0 4px 10px rgba(0, 0, 0, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.5);
-  transition: all 0.2s ease;
+  color: #38bdf8;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  flex-shrink: 0;
 }
 
 .today-profile-placeholder:hover {
   background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(168, 196, 242, 0.5);
+  box-shadow: 0 0 0 3.5px #38bdf8, 0 0 18px rgba(56, 189, 248, 0.5);
+  color: #ffffff;
+  transform: scale(1.05);
 }
 
 .today-profile-placeholder svg {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
+}
+
+/* ==================== AVATAR PREVIEW & ZOOM MODAL ==================== */
+.avatar-preview-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10000 !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+}
+
+.avatar-preview-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 15, 28, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.avatar-preview-container {
+  position: relative !important;
+  z-index: 2 !important;
+  display: flex;
+  flex-direction: column;
+  width: min(92vw, 560px) !important;
+  max-height: 90vh;
+  background: rgba(18, 25, 42, 0.96) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(56, 189, 248, 0.25) !important;
+  overflow: hidden;
+  animation: avatarPreviewPopIn 0.25s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+.avatar-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.avatar-preview-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.avatar-preview-title i {
+  color: #38bdf8;
+  font-size: 18px;
+}
+
+.avatar-preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar-preview-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.avatar-preview-btn:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: rgba(56, 189, 248, 0.55);
+  color: #38bdf8;
+  transform: translateY(-1px);
+}
+
+.avatar-preview-close-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.55);
+  color: #ef4444;
+}
+
+.avatar-preview-body {
+  position: relative;
+  width: 100%;
+  height: 440px;
+  max-height: 58vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: radial-gradient(circle at center, rgba(30, 41, 59, 0.75) 0%, rgba(13, 19, 33, 0.98) 100%);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.avatar-preview-body:active {
+  cursor: grabbing;
+}
+
+.avatar-preview-img-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: center center;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.avatar-preview-img {
+  max-width: 82%;
+  max-height: 380px;
+  border-radius: 18px;
+  object-fit: contain;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.55);
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  background-color: #ffffff;
+}
+
+.avatar-preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.avatar-preview-zoom-level {
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
+  font-weight: 700;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+@keyframes avatarPreviewPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* Cover image in today panel - Full background */
@@ -18426,8 +18660,69 @@ img[src=""] {
   transform: translateY(1px) scale(0.97);
 }
 
+/* Nút Thời Tiết Cố Định Trong Top Actions */
+.today-weather-top-btn {
+  position: relative;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ea580c 100%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 3px 12px rgba(245, 158, 11, 0.35);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  box-sizing: border-box;
+  line-height: 1;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.today-weather-top-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  filter: brightness(1.14);
+}
+
+.today-weather-top-btn:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+.today-weather-top-btn .floating-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.today-weather-top-btn:hover .floating-btn-icon {
+  transform: scale(1.18);
+}
+
+.today-weather-top-btn .floating-btn-icon i {
+  position: relative;
+  top: 1.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
+  color: #ffffff;
+}
+
 @media (max-width: 540px) {
 
+  .today-weather-top-btn,
   .senior-one-touch-top-btn,
   .notification-bell-btn {
     width: 40px;
@@ -18438,6 +18733,8 @@ img[src=""] {
     border-radius: 50%;
   }
 
+  .today-weather-top-btn .floating-btn-icon,
+  .today-weather-top-btn .floating-btn-icon i,
   .senior-one-touch-top-btn i,
   .notification-bell-btn i,
   .notification-bell-btn svg {

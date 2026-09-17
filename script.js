@@ -381,6 +381,7 @@ function renderTodayEvents() {
   const key = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
   const events = getEventsForDate(key);
   const panel = document.getElementById("todayEvents");
+
   if (!panel) return;
 
   if (events.length === 0) {
@@ -392,7 +393,8 @@ function renderTodayEvents() {
   const nowTime = Date.now();
 
   panel.innerHTML = `
-    <div class="today-timeline-container">${events
+    <div class="today-timeline-container">
+      ${events
       .map((ev, idx) => {
         const timeStr = ev.eventDateTime
           ? new Date(ev.eventDateTime).toLocaleTimeString("vi-VN", {
@@ -530,12 +532,27 @@ function renderCalendar() {
     }
 
     const hasOvertime = getOvertimeHoursForDateKey(key) > 0;
+    const dayMeals = typeof window.getMealForDate === "function" ? window.getMealForDate(key) : null;
+    let mealBadgeHtml = "";
+    if (dayMeals && dayMeals.length > 0) {
+      const mealSummary = dayMeals
+        .map((m) => {
+          const typeLabel = m.mealType === "breakfast" ? "Bữa Sáng 🌅" : m.mealType === "lunch" ? "Bữa Trưa ☀️" : "Bữa Tối 🌙";
+          const dishesList = (m.dishes || []).map((d) => d.title).join(", ");
+          return `${typeLabel}: ${dishesList}`;
+        })
+        .join(" | ");
+      mealBadgeHtml = `<span class="day-rec-badge day-meal-badge" style="--badge-color: #f59e0b;" title="🍲 Thực đơn: ${escapeHtml(mealSummary)}">🍲</span>`;
+      div.classList.add("has-meal");
+    }
+
     let recBadgesHtml = "";
-    if (recurringOnDay.length > 0) {
+    if (recurringOnDay.length > 0 || mealBadgeHtml) {
       const displayRecs = recurringOnDay.slice(0, 2);
       const extraRecCount = recurringOnDay.length - displayRecs.length;
       recBadgesHtml = `
         <div class="day-rec-badges-container">
+          ${mealBadgeHtml}
           ${displayRecs
           .map((rec) => {
             const catMeta = getCategoryMeta(rec.category);
@@ -5536,6 +5553,75 @@ function renderDayDetailsModalUI(dateKey, d, m, y, data) {
   const holidayCheckbox = document.getElementById("dayIsHoliday");
   if (holidayCheckbox) {
     holidayCheckbox.checked = !!data.isHoliday;
+  }
+
+  // Render Thực Đơn Bữa Cơm Gia Đình
+  const mealSection = document.getElementById("dayMealSection");
+  if (mealSection) {
+    const dayMeals = typeof window.getMealForDate === "function" ? window.getMealForDate(dateKey) : null;
+    if (dayMeals && dayMeals.length > 0) {
+      mealSection.style.display = "block";
+      mealSection.innerHTML = `
+        <div class="day-meal-card">
+          <div class="day-meal-header">
+            <div class="day-meal-title">
+              <span class="day-meal-icon-tag">🍲</span>
+              <span>Thực Đơn Gia Đình</span>
+            </div>
+            <button type="button" class="day-meal-add-btn" onclick="if(window.openAssignMealModalForDay) window.openAssignMealModalForDay('${dateKey}')" title="Thêm món khác vào ngày này">
+              <i class="fi fi-rr-plus"></i> <span>Thêm món</span>
+            </button>
+          </div>
+          <div class="day-meal-list">
+            ${dayMeals.map((meal) => {
+        const typeBadge = meal.mealType === 'breakfast' ? 'Bữa Sáng 🌅' : meal.mealType === 'lunch' ? 'Bữa Trưa ☀️' : 'Bữa Tối 🌙';
+        return `
+                <div class="day-meal-group">
+                  <div class="day-meal-group-header">
+                    <div class="day-meal-header-meta" onclick="if(window.editCalendarMeal) window.editCalendarMeal('${dateKey}', '${meal.id}')" title="Bấm để chỉnh sửa bữa ăn này">
+                      <span class="day-meal-type-pill meal-type-${meal.mealType}">${typeBadge}</span>
+                    </div>
+                    <div class="day-meal-actions">
+                      <button type="button" class="day-meal-action-btn day-meal-edit-btn" onclick="if(window.editCalendarMeal) window.editCalendarMeal('${dateKey}', '${meal.id}')" title="Chỉnh sửa bữa cơm này" aria-label="Chỉnh sửa bữa cơm này">
+                        <i class="fi fi-rr-pencil"></i>
+                      </button>
+                      <button type="button" class="day-meal-action-btn day-meal-delete-btn" onclick="window.removeMealFromDate('${dateKey}', '${meal.id}')" title="Xóa thực đơn bữa này" aria-label="Xóa thực đơn bữa này">
+                        <i class="fi fi-rr-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="day-meal-dishes">
+                    ${(meal.dishes || []).map(dish => `
+                      <div class="day-meal-dish-item" onclick="closeDayDetailsModal(); if(window.openCookbookRecipeDetail) window.openCookbookRecipeDetail('${dish.id}')" title="Bấm để xem công thức nấu">
+                        <img src="${dish.coverImage || 'public/favicon.png'}" alt="${escapeHtml(dish.title)}" />
+                        <div class="day-meal-dish-info">
+                          <div class="day-meal-dish-name">${escapeHtml(dish.title)}</div>
+                          <div class="day-meal-dish-sub"><i class="fi fi-rr-clock"></i> <span>${dish.cookTime ? `${dish.cookTime}p` : 'Gia đình'}</span></div>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `;
+      }).join('')}
+          </div>
+        </div>
+      `;
+    } else {
+      mealSection.style.display = "block";
+      mealSection.innerHTML = `
+        <div class="day-meal-empty-card" onclick="if(window.openAssignMealModalForDay) window.openAssignMealModalForDay('${dateKey}')" title="Lên thực đơn bữa cơm cho ngày này">
+          <div class="day-meal-empty-left">
+            <span class="day-meal-empty-icon">🍲</span>
+            <div>
+              <div class="day-meal-empty-title">Chưa có thực đơn hôm nay</div>
+              <div class="day-meal-empty-desc">Bấm để chọn món hoặc lên mâm cơm 🍲</div>
+            </div>
+          </div>
+          <button type="button" class="day-meal-empty-btn" title="Thêm thực đơn"><i class="fi fi-rr-plus"></i></button>
+        </div>
+      `;
+    }
   }
 
   // Render events list (bao gồm sự kiện của ngày và sự kiện lặp lại trùng ngày)

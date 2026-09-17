@@ -21240,3 +21240,389 @@ div.fc-modal .fc-modal-dialog,
   border-color: rgba(245, 158, 11, 0.6);
   color: #fef08a;
 }
+
+/* ==========================================================================
+   CALENDAR MEAL INTEGRATION STYLES
+   ========================================================================== */
+
+.day-meal-badge {
+  background: rgba(245, 158, 11, 0.22) !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  color: #fbbf24 !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  cursor: pointer;
+  pointer-events: auto !important;
+}
+
+.day:hover .day-meal-badge {
+  background: rgba(245, 158, 11, 0.38) !important;
+  border-color: rgba(245, 158, 11, 0.7) !important;
+}
+
+.day.has-meal {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+/* Day Details Modal: Meal Section */
+.day-meal-section {
+  margin-bottom: 16px;
+}
+
+.day-meal-card {
+  background: linear-gradient(145deg, rgba(30, 41, 59, 0.65) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  position: relative;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.day-meal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.day-meal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+.day-meal-icon-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  font-size: 1.05rem;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
+}
+
+.day-meal-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  font-family: inherit;
+}
+
+.day-meal-add-btn:hover {
+  background: rgba(245, 158, 11, 0.32);
+  border-color: rgba(245, 158, 11, 0.6);
+  color: #ffffff;
+}
+
+.day-meal-add-btn i {
+  position: relative;
+  top: 1px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.day-meal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.day-meal-group {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  transition: border-color 0.18s ease;
+}
+
+.day-meal-group:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.day-meal-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+
+.day-meal-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+}
+
+.day-meal-type-pill {
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: filter 0.15s ease;
+}
+
+.day-meal-header-meta:hover .day-meal-type-pill {
+  filter: brightness(1.15);
+}
+
+/* Cute pastel theme per meal type */
+.day-meal-type-pill.meal-type-dinner {
+  background: rgba(147, 51, 234, 0.16);
+  border-color: rgba(168, 85, 247, 0.35);
+  color: #d8b4fe;
+}
+
+.day-meal-type-pill.meal-type-lunch {
+  background: rgba(245, 158, 11, 0.16);
+  border-color: rgba(251, 191, 36, 0.35);
+  color: #fde047;
+}
+
+.day-meal-type-pill.meal-type-breakfast {
+  background: rgba(249, 115, 22, 0.16);
+  border-color: rgba(251, 146, 60, 0.35);
+  color: #fdba74;
+}
+
+.day-meal-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.day-meal-action-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.day-meal-action-btn i {
+  position: static !important;
+  top: 0 !important;
+  font-size: 11px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+}
+
+.day-meal-edit-btn {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.25);
+  color: #93c5fd;
+}
+
+.day-meal-edit-btn:hover {
+  background: rgba(59, 130, 246, 0.28);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #ffffff;
+}
+
+.day-meal-delete-btn {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.day-meal-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #ffffff;
+}
+
+.day-meal-dishes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+  gap: 8px;
+}
+
+.day-meal-dish-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 10px 6px 8px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.day-meal-dish-item:hover {
+  background: rgba(255, 255, 255, 0.085);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.day-meal-dish-item img {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.day-meal-dish-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.day-meal-dish-name {
+  font-weight: 600;
+  font-size: 0.82rem;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.day-meal-dish-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  padding: 1px 6px;
+  border-radius: 5px;
+  margin-top: 3px;
+  line-height: 1.2;
+}
+
+.day-meal-dish-sub i {
+  position: relative;
+  top: 0.5px;
+  font-size: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Empty meal card in day details */
+.day-meal-empty-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, rgba(30, 41, 59, 0.35) 100%);
+  border: 1.5px dashed rgba(245, 158, 11, 0.32);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.day-meal-empty-card:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(30, 41, 59, 0.5) 100%);
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.day-meal-empty-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.day-meal-empty-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
+}
+
+.day-meal-empty-title {
+  font-weight: 600;
+  font-size: 0.86rem;
+  color: #fde68a;
+  letter-spacing: -0.01em;
+}
+
+.day-meal-empty-desc {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.day-meal-empty-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.day-meal-empty-card:hover .day-meal-empty-btn {
+  background: rgba(245, 158, 11, 0.32);
+  border-color: rgba(245, 158, 11, 0.6);
+  color: #ffffff;
+}
+
+.day-meal-empty-btn i {
+  position: static !important;
+  top: 0 !important;
+  font-size: 13px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+}

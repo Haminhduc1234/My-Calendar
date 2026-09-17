@@ -22,6 +22,9 @@
 
   let recipesCache = [];
   let dietaryCache = [];
+  let calendarMealsCache = {}; // { [dateKey]: [ mealObj, ... ] }
+  let firebaseCalendarMealsRef = null;
+  let currentAssigningMealData = null;
 
   let currentTab = "recipes"; // 'recipes' | 'dietary' | 'mealplan'
   let currentCategory = "all";
@@ -326,10 +329,18 @@
         dietaryCache = [...DEFAULT_DIETARY];
         saveDietaryToLocalStorage();
       }
+
+      const storedCalendarMeals = localStorage.getItem(getStorageKey("calendarMeals"));
+      if (storedCalendarMeals) {
+        calendarMealsCache = JSON.parse(storedCalendarMeals);
+      } else {
+        calendarMealsCache = {};
+      }
     } catch (e) {
       console.error("[FamilyCookbook] Lỗi đọc LocalStorage:", e);
       recipesCache = [...DEFAULT_RECIPES];
       dietaryCache = [...DEFAULT_DIETARY];
+      calendarMealsCache = {};
     }
   }
 
@@ -349,6 +360,21 @@
     }
   }
 
+  function saveCalendarMealsToLocalStorage() {
+    try {
+      localStorage.setItem(getStorageKey("calendarMeals"), JSON.stringify(calendarMealsCache));
+    } catch (e) {
+      console.warn("[FamilyCookbook] Không thể ghi LocalStorage calendarMeals:", e);
+    }
+  }
+
+  function saveCalendarMealsToFirebase() {
+    if (!firebaseCalendarMealsRef) return;
+    firebaseCalendarMealsRef.set(calendarMealsCache).catch((err) => {
+      console.warn("[FamilyCookbook] Lỗi ghi Firebase calendarMeals:", err);
+    });
+  }
+
   // Firebase Realtime DB Sync
   function initCookbookFirebase(firebaseDb, profileKey) {
     if (!firebaseDb || !profileKey) return;
@@ -361,6 +387,7 @@
     // Firebase refs
     firebaseRecipesRef = firebaseDb.ref(`familyCookbook/${activeProfileKey}/recipes`);
     firebaseDietaryRef = firebaseDb.ref(`familyCookbook/${activeProfileKey}/dietaryNotes`);
+    firebaseCalendarMealsRef = firebaseDb.ref(`familyCookbook/${activeProfileKey}/calendarMeals`);
 
     // Listen to recipes
     firebaseRecipesRef.on("value", (snapshot) => {
@@ -386,6 +413,23 @@
       }
       saveDietaryToLocalStorage();
       renderCookbookContent();
+    });
+
+    // Listen to calendar meals
+    firebaseCalendarMealsRef.on("value", (snapshot) => {
+      const data = snapshot.val();
+      if (data && typeof data === "object") {
+        calendarMealsCache = data;
+      } else {
+        calendarMealsCache = {};
+      }
+      saveCalendarMealsToLocalStorage();
+      if (typeof window.renderCalendar === "function") {
+        window.renderCalendar();
+      }
+      if (typeof window.renderTodayEvents === "function") {
+        window.renderTodayEvents();
+      }
     });
   }
 
@@ -731,9 +775,14 @@
     };
 
     container.innerHTML = `
+      <div class="fc-mealplan-actions" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap;">
         <button type="button" class="fc-btn fc-btn-primary" onclick="window.generateSmartMealPlan()">
-          <i class="fi fi-rr-refresh"></i> Gợi ý lại
+          <i class="fi fi-rr-refresh"></i> <span>Gợi Ý Mâm Khác</span>
         </button>
+        <button type="button" class="fc-btn fc-btn-mealplan fc-assign-mealplan-btn" onclick="window.openAssignMealToCalendarModal('mealplan')" title="Gán mâm cơm này vào lịch">
+          <i class="fi fi-rr-calendar-plus"></i> <span>Gán Mâm Cơm Vào Lịch</span>
+        </button>
+      </div>
 
       <div class="fc-mealplan-container">
         <div class="fc-mealplan-slots">
@@ -861,6 +910,9 @@
         </div>
 
         <div class="fc-detail-footer">
+          <button type="button" class="fc-btn fc-btn-secondary fc-detail-cal-btn" onclick="window.openAssignMealToCalendarModal('recipe', '${rec.id}')" title="Gán vào lịch">
+            <i class="fi fi-rr-calendar-plus"></i> <span>Gán Vào Lịch</span>
+          </button>
           <button type="button" class="fc-btn fc-btn-secondary fc-detail-edit-btn" onclick="window.editRecipe('${rec.id}')" title="Chỉnh sửa món">
             <i class="fi fi-rr-edit"></i> <span>Chỉnh Sửa</span>
           </button>
@@ -1737,6 +1789,607 @@
     } else {
       showCookbookToast("Chưa có món nào khác trong danh mục này!", "info");
     }
+  };
+
+  // ==========================================================================
+  // CALENDAR MEAL INTEGRATION (TÍCH HỢP THỰC ĐƠN VÀO LỊCH GIA ĐÌNH)
+  // ==========================================================================
+
+  function formatDateKeyToInput(dateKey) {
+    if (!dateKey) return "";
+    const parts = dateKey.split("-");
+    if (parts.length !== 3) return "";
+    const y = parts[0];
+    const m = String(parts[1]).padStart(2, "0");
+    const d = String(parts[2]).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  function formatInputToDateKey(inputVal) {
+    if (!inputVal) return "";
+    const parts = inputVal.split("-");
+    if (parts.length !== 3) return "";
+    return `${parseInt(parts[0], 10)}-${parseInt(parts[1], 10)}-${parseInt(parts[2], 10)}`;
+  }
+
+  function getMealForDate(dateKey) {
+    if (!dateKey || !calendarMealsCache) return null;
+    const meals = calendarMealsCache[dateKey];
+    if (Array.isArray(meals) && meals.length > 0) return meals;
+    return null;
+  }
+
+  function getAllCalendarMeals() {
+    return calendarMealsCache;
+  }
+
+  function removeMealFromDate(dateKey, mealId) {
+    if (!dateKey || !calendarMealsCache[dateKey]) return;
+    if (mealId) {
+      calendarMealsCache[dateKey] = calendarMealsCache[dateKey].filter((m) => m.id !== mealId);
+      if (calendarMealsCache[dateKey].length === 0) {
+        delete calendarMealsCache[dateKey];
+      }
+    } else {
+      delete calendarMealsCache[dateKey];
+    }
+    saveCalendarMealsToLocalStorage();
+    saveCalendarMealsToFirebase();
+    if (typeof window.renderCalendar === "function") window.renderCalendar();
+    if (typeof window.renderTodayEvents === "function") window.renderTodayEvents();
+    if (typeof window.renderDayDetailsModalUI === "function") {
+      const parts = dateKey.split("-");
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        const d = parseInt(parts[2], 10);
+        const dateData = typeof window.getDateData === "function" ? window.getDateData(dateKey) : {};
+        window.renderDayDetailsModalUI(dateKey, d, m, y, dateData);
+      }
+    }
+    showCookbookToast("Đã xóa thực đơn khỏi ngày này!", "info");
+  }
+
+  function formatDateKeyToDisplay(dateKey) {
+    if (!dateKey) return "";
+    const parts = dateKey.split("-");
+    if (parts.length !== 3) return dateKey;
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const d = parseInt(parts[2], 10);
+    const dateObj = new Date(y, m - 1, d);
+    const dayNames = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+    const dayOfWeek = dayNames[dateObj.getDay()];
+    return `${dayOfWeek}, ${d}/${m}/${y}`;
+  }
+
+  function toggleAssignDateChange() {
+    const wrap = document.getElementById("fcAssignDateChangeWrap");
+    if (wrap) {
+      wrap.style.display = wrap.style.display === "none" ? "block" : "none";
+    }
+  }
+
+  function editCalendarMeal(dateKey, mealId) {
+    if (!dateKey || !calendarMealsCache[dateKey]) {
+      showCookbookToast("Không tìm thấy thông tin bữa ăn!", "error");
+      return;
+    }
+    const meal = calendarMealsCache[dateKey].find((m) => m.id === mealId);
+    if (!meal) {
+      showCookbookToast("Không tìm thấy bữa ăn cần sửa!", "error");
+      return;
+    }
+    openAssignMealToCalendarModal("edit", { dateKey, meal });
+  }
+
+  function openAssignMealToCalendarModal(sourceType, param) {
+    let dishesToAssign = [];
+    let initialDateKey = "";
+    let initialMealType = "dinner";
+    let editingMealId = null;
+    let originalDateKey = null;
+
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+    const tomorrow = new Date();
+    tomorrow.setDate(now.getDate() + 1);
+    const tomorrowKey = `${tomorrow.getFullYear()}-${tomorrow.getMonth() + 1}-${tomorrow.getDate()}`;
+
+    // Thứ Bảy & Chủ Nhật tới
+    const dayOfWeek = now.getDay();
+    const daysUntilSat = (6 - dayOfWeek + 7) % 7;
+    const satDate = new Date();
+    satDate.setDate(now.getDate() + (daysUntilSat === 0 ? 7 : daysUntilSat));
+    const satKey = `${satDate.getFullYear()}-${satDate.getMonth() + 1}-${satDate.getDate()}`;
+
+    const daysUntilSun = (7 - dayOfWeek + 7) % 7;
+    const sunDate = new Date();
+    sunDate.setDate(now.getDate() + (daysUntilSun === 0 ? 7 : daysUntilSun));
+    const sunKey = `${sunDate.getFullYear()}-${sunDate.getMonth() + 1}-${sunDate.getDate()}`;
+
+    const isSpecificDaySource =
+      (sourceType === "day" && !!param) ||
+      (sourceType === "edit" && param && (param.dateKey || param.meal?.dateKey));
+
+    if (sourceType === "edit" && param && param.meal) {
+      const { meal, dateKey } = param;
+      editingMealId = meal.id;
+      originalDateKey = dateKey || meal.dateKey;
+      initialDateKey = originalDateKey || todayKey;
+      initialMealType = meal.mealType || "dinner";
+      dishesToAssign = (meal.dishes || []).map((d) => {
+        const full = recipesCache.find((r) => r.id === d.id);
+        return full ? { ...full } : { ...d };
+      });
+    } else if (sourceType === "mealplan") {
+      if (!currentSuggestedMeal) {
+        generateSmartMealPlan();
+      }
+      const { main, soup, veggie } = currentSuggestedMeal || {};
+      dishesToAssign = [main, soup, veggie].filter(Boolean);
+      initialDateKey = todayKey;
+    } else if (sourceType === "recipe") {
+      const rec = recipesCache.find((r) => r.id === param);
+      if (rec) dishesToAssign = [{ ...rec }];
+      initialDateKey = todayKey;
+    } else if (sourceType === "day") {
+      initialDateKey = param || todayKey;
+      dishesToAssign = [];
+    } else {
+      initialDateKey = todayKey;
+    }
+
+    const modal = document.getElementById("cookbookAssignMealModal");
+    if (!modal) return;
+
+    let initialDateInput = formatDateKeyToInput(initialDateKey);
+
+    currentAssigningMealData = {
+      sourceType,
+      editingMealId,
+      originalDateKey,
+      targetDateKey: initialDateKey,
+      mealType: initialMealType,
+      dishes: dishesToAssign
+    };
+
+    const isEditMode = sourceType === "edit";
+    const modalTitle = isEditMode ? "Chỉnh Sửa Thực Đơn" : "Gán Thực Đơn Vào Lịch";
+    const modalSub = isEditMode ? "Tùy chỉnh món ăn và các bữa cơm trong gia đình" : "Đồng bộ bữa cơm vào lịch";
+    const modalIcon = isEditMode ? "fi-rr-pencil" : "fi-rr-calendar-plus";
+
+    modal.innerHTML = `
+      <div class="fc-modal-dialog fc-assign-dialog">
+        <div class="fc-header" style="justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="fc-header-icon"><i class="fi ${modalIcon}"></i></div>
+            <div>
+              <h3 class="fc-header-title" style="font-size: 1.1rem;">${modalTitle}</h3>
+              <div class="fc-header-sub" style="font-size: 0.78rem;">${modalSub}</div>
+            </div>
+          </div>
+          <button type="button" class="fc-btn-close" onclick="window.closeAssignMealModal()" title="Đóng">
+            <i class="fi fi-rr-cross"></i>
+          </button>
+        </div>
+
+        <div class="fc-body fc-assign-body">
+          <!-- 1. Chọn / Hiển thị Ngày -->
+          <div class="fc-assign-sec">
+            ${isSpecificDaySource ? `
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div class="fc-assign-sec-title" style="margin-bottom: 0;">
+                  <i class="fi fi-rr-calendar"></i> Ngày thực đơn:
+                </div>
+                <button type="button" class="fc-btn-change-date-link" onclick="window.toggleAssignDateChange()" style="background: transparent; border: none; color: #60a5fa; font-size: 0.78rem; cursor: pointer; text-decoration: underline; font-family: inherit; padding: 2px 4px;">
+                  Đổi ngày khác
+                </button>
+              </div>
+              <div class="fc-selected-day-badge" style="margin-top: 8px; display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-radius: 9px; background: rgba(59, 130, 246, 0.14); border: 1px solid rgba(59, 130, 246, 0.28);">
+                <i class="fi fi-rr-calendar-check" style="color: #93c5fd; font-size: 15px;"></i>
+                <span id="fcSelectedDayBadgeText" style="font-weight: 700; color: #fff; font-size: 0.92rem;">${formatDateKeyToDisplay(initialDateKey)}</span>
+                <span style="font-size: 0.75rem; color: #94a3b8; margin-left: auto;">(Đã chọn sẵn)</span>
+              </div>
+              <div id="fcAssignDateChangeWrap" style="display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
+                <div class="fc-quick-date-chips">
+                  <button type="button" class="fc-date-chip ${initialDateKey === todayKey ? 'active' : ''}" onclick="window.selectQuickAssignDate('${todayKey}')">
+                    Hôm Nay
+                  </button>
+                  <button type="button" class="fc-date-chip ${initialDateKey === tomorrowKey ? 'active' : ''}" onclick="window.selectQuickAssignDate('${tomorrowKey}')">
+                    Ngày Mai
+                  </button>
+                  <button type="button" class="fc-date-chip ${initialDateKey === satKey ? 'active' : ''}" onclick="window.selectQuickAssignDate('${satKey}')">
+                    Thứ 7
+                  </button>
+                  <button type="button" class="fc-date-chip ${initialDateKey === sunKey ? 'active' : ''}" onclick="window.selectQuickAssignDate('${sunKey}')">
+                    Chủ Nhật
+                  </button>
+                </div>
+                <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
+                  <span style="font-size: 0.8rem; color: var(--fc-text-secondary);">Hoặc chọn ngày:</span>
+                  <input type="date" class="fc-form-input" id="fcAssignDateInput" style="max-width: 170px; padding: 6px 10px; font-size: 0.86rem;" value="${initialDateInput}" onchange="window.onAssignDateInputChange(this.value)" />
+                </div>
+              </div>
+            ` : `
+              <div class="fc-assign-sec-title"><i class="fi fi-rr-calendar"></i> Chọn Ngày:</div>
+              <div class="fc-quick-date-chips">
+                <button type="button" class="fc-date-chip ${initialDateKey === todayKey ? 'active' : ''}" onclick="window.selectQuickAssignDate('${todayKey}')">
+                  Hôm Nay (${now.getDate()}/${now.getMonth() + 1})
+                </button>
+                <button type="button" class="fc-date-chip ${initialDateKey === tomorrowKey ? 'active' : ''}" onclick="window.selectQuickAssignDate('${tomorrowKey}')">
+                  Ngày Mai (${tomorrow.getDate()}/${tomorrow.getMonth() + 1})
+                </button>
+                <button type="button" class="fc-date-chip ${initialDateKey === satKey ? 'active' : ''}" onclick="window.selectQuickAssignDate('${satKey}')">
+                  Thứ 7 (${satDate.getDate()}/${satDate.getMonth() + 1})
+                </button>
+                <button type="button" class="fc-date-chip ${initialDateKey === sunKey ? 'active' : ''}" onclick="window.selectQuickAssignDate('${sunKey}')">
+                  Chủ Nhật (${sunDate.getDate()}/${sunDate.getMonth() + 1})
+                </button>
+              </div>
+              <div style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 0.8rem; color: var(--fc-text-secondary);">Hoặc chọn ngày:</span>
+                <input type="date" class="fc-form-input" id="fcAssignDateInput" style="max-width: 170px; padding: 6px 10px; font-size: 0.86rem;" value="${initialDateInput}" onchange="window.onAssignDateInputChange(this.value)" />
+              </div>
+            `}
+          </div>
+
+          <!-- 2. Chọn Bữa Ăn -->
+          <div class="fc-assign-sec">
+            <div class="fc-assign-sec-title"><i class="fi fi-rr-clock"></i> Chọn bữa:</div>
+            <div class="fc-meal-type-segmented">
+              <button type="button" class="fc-meal-type-btn ${initialMealType === 'dinner' ? 'active' : ''}" data-type="dinner" onclick="window.selectAssignMealType('dinner')">
+                🌙 Tối
+              </button>
+              <button type="button" class="fc-meal-type-btn ${initialMealType === 'lunch' ? 'active' : ''}" data-type="lunch" onclick="window.selectAssignMealType('lunch')">
+                ☀️ Trưa
+              </button>
+              <button type="button" class="fc-meal-type-btn ${initialMealType === 'breakfast' ? 'active' : ''}" data-type="breakfast" onclick="window.selectAssignMealType('breakfast')">
+                🌅 Sáng
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. Món Ăn Trong Bữa -->
+          <div class="fc-assign-sec">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+              <div class="fc-assign-sec-title" style="margin-bottom: 0;">
+                <i class="fi fi-rr-utensils"></i> Món Ăn Trong Bữa (<span id="fcAssignDishesCount">${dishesToAssign.length}</span> món):
+              </div>
+            </div>
+            
+            <div class="fc-assign-dishes-preview" id="fcAssignDishesPreview"></div>
+
+            <!-- Tích chọn thêm món -->
+            <div class="fc-assign-add-section" style="margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+              <!-- Header mặc định: Tiêu đề + Nút icon tìm kiếm -->
+              <div id="fcAssignSearchHeaderDefault" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
+                <div style="font-size: 0.82rem; font-weight: 600; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
+                  Sổ tay món ăn:
+                </div>
+                <button type="button" class="fc-assign-search-toggle-btn" onclick="window.toggleAssignDishSearch(true)" title="Tìm kiếm món ăn" aria-label="Tìm kiếm món ăn">
+                  <i class="fi fi-rr-search"></i>
+                </button>
+              </div>
+
+              <!-- Thanh tìm kiếm mở rộng Full Chiều Rộng -->
+              <div id="fcAssignSearchExpandWrap" class="fc-assign-search-expand-wrap" style="display: none;">
+                <div class="fc-assign-search-box">
+                  <i class="fi fi-rr-search fc-assign-search-icon"></i>
+                  <input type="text" id="fcAssignDishSearch" class="fc-assign-search-input" placeholder="Tìm tên món, loại món..." oninput="window.filterAssignDishes(this.value)" onkeydown="if(event.key==='Escape') window.toggleAssignDishSearch(false)" />
+                  <button type="button" class="fc-assign-search-close-btn" onclick="window.toggleAssignDishSearch(false)" title="Đóng tìm kiếm" aria-label="Đóng tìm kiếm">
+                    <i class="fi fi-rr-cross"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="fc-assign-dish-selector" id="fcAssignDishSelector"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fc-detail-footer" style="${isEditMode ? 'justify-content: space-between;' : 'justify-content: flex-end;'} gap: 10px;">
+          ${isEditMode ? `
+            <button type="button" class="fc-btn fc-btn-danger fc-btn-icon-only" onclick="window.deleteEditingMeal()" title="Xóa bữa này" aria-label="Xóa bữa này">
+              <i class="fi fi-rr-trash"></i>
+            </button>
+          ` : ''}
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="fc-btn fc-btn-secondary fc-btn-icon-only" onclick="window.closeAssignMealModal()" title="Hủy bỏ" aria-label="Hủy bỏ">
+              <i class="fi fi-rr-cross"></i>
+            </button>
+            <button type="button" class="fc-btn fc-btn-mealplan fc-btn-icon-only" onclick="window.confirmAssignMealToCalendar()" title="${isEditMode ? 'Cập nhật bữa ăn' : 'Lưu vào lịch gia đình'}" aria-label="${isEditMode ? 'Cập nhật bữa ăn' : 'Lưu vào lịch gia đình'}">
+              <i class="fi fi-rr-check"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    renderAssignDishesPreview();
+    renderAssignDishesSelector();
+
+    modal.style.display = "flex";
+    modal.classList.add("active");
+  }
+
+  function renderAssignDishesPreview() {
+    const container = document.getElementById("fcAssignDishesPreview");
+    const countEl = document.getElementById("fcAssignDishesCount");
+    if (!container || !currentAssigningMealData) return;
+    const dishes = currentAssigningMealData.dishes || [];
+    if (countEl) countEl.textContent = dishes.length;
+
+    if (dishes.length === 0) {
+      container.innerHTML = `
+        <div class="fc-assign-dishes-empty">
+          Chưa có món ăn nào được chọn cho bữa này.<br/>
+          <span style="font-size: 0.76rem; color: #f59e0b;">Hãy tích chọn ít nhất 1 món từ danh sách bên dưới!</span>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = dishes
+      .map(
+        (d) => `
+        <div class="fc-assign-dish-badge" data-dish-id="${d.id}">
+          <img src="${d.coverImage || PRESET_COVERS.thitkho}" alt="${d.title}" />
+          <div style="flex: 1; min-width: 0;">
+            <div class="fc-assign-dish-name">${d.title}</div>
+            <div class="fc-assign-dish-cat">${CATEGORIES[d.category]?.label || 'Món ngon'} • ${d.cookTime || 30} phút</div>
+          </div>
+          <button type="button" class="fc-assign-dish-remove" onclick="window.removeDishFromAssigning('${d.id}')" title="Bỏ món này">
+            <i class="fi fi-rr-cross"></i>
+          </button>
+        </div>
+      `
+      )
+      .join("");
+  }
+
+  function renderAssignDishesSelector(filterText = "") {
+    const container = document.getElementById("fcAssignDishSelector");
+    if (!container || !currentAssigningMealData) return;
+    const currentDishes = currentAssigningMealData.dishes || [];
+    const query = (filterText || "").trim().toLowerCase();
+
+    const filtered = recipesCache.filter((r) => {
+      if (!query) return true;
+      return (
+        r.title.toLowerCase().includes(query) ||
+        (CATEGORIES[r.category]?.label || "").toLowerCase().includes(query)
+      );
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--fc-text-muted); font-size: 0.8rem; padding: 12px;">Không tìm thấy món ăn phù hợp</div>`;
+      return;
+    }
+
+    container.innerHTML = filtered
+      .map((r) => {
+        const isChecked = currentDishes.some((d) => d.id === r.id);
+        return `
+        <label class="fc-assign-dish-option ${isChecked ? 'selected' : ''}">
+          <input type="checkbox" name="assignDishChoice" value="${r.id}" ${isChecked ? 'checked' : ''} onchange="window.toggleAssignDishChoice('${r.id}')" />
+          <img src="${r.coverImage || PRESET_COVERS.thitkho}" alt="" />
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 600; font-size: 0.84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #fff;">${r.title}</div>
+            <div style="font-size: 0.74rem; color: var(--fc-text-muted);">${CATEGORIES[r.category]?.label || 'Món ăn'} • ${r.cookTime || 30}p</div>
+          </div>
+        </label>
+      `;
+      })
+      .join("");
+  }
+
+  function filterAssignDishes(text) {
+    renderAssignDishesSelector(text);
+  }
+
+  function toggleAssignDishSearch(open) {
+    const defaultHeader = document.getElementById("fcAssignSearchHeaderDefault");
+    const expandWrap = document.getElementById("fcAssignSearchExpandWrap");
+    const searchInput = document.getElementById("fcAssignDishSearch");
+
+    if (open) {
+      if (defaultHeader) defaultHeader.style.display = "none";
+      if (expandWrap) {
+        expandWrap.style.display = "block";
+        if (searchInput) {
+          searchInput.focus();
+          if (searchInput.value) {
+            filterAssignDishes(searchInput.value);
+          }
+        }
+      }
+    } else {
+      if (expandWrap) expandWrap.style.display = "none";
+      if (defaultHeader) defaultHeader.style.display = "flex";
+      if (searchInput) {
+        searchInput.value = "";
+      }
+      filterAssignDishes("");
+    }
+  }
+
+  function removeDishFromAssigning(dishId) {
+    if (!currentAssigningMealData || !currentAssigningMealData.dishes) return;
+    currentAssigningMealData.dishes = currentAssigningMealData.dishes.filter((d) => d.id !== dishId);
+    renderAssignDishesPreview();
+    renderAssignDishesSelector(document.getElementById("fcAssignDishSearch")?.value || "");
+  }
+
+  function deleteEditingMeal() {
+    if (!currentAssigningMealData || !currentAssigningMealData.editingMealId) return;
+    const { originalDateKey, editingMealId } = currentAssigningMealData;
+    if (confirm("Bạn có chắc chắn muốn xóa thực đơn bữa này không?")) {
+      removeMealFromDate(originalDateKey, editingMealId);
+      closeAssignMealModal();
+    }
+  }
+
+  function closeAssignMealModal() {
+    const modal = document.getElementById("cookbookAssignMealModal");
+    if (modal) {
+      modal.style.display = "none";
+      modal.classList.remove("active");
+    }
+    currentAssigningMealData = null;
+  }
+
+  function selectQuickAssignDate(dateKey) {
+    if (!currentAssigningMealData) return;
+    currentAssigningMealData.targetDateKey = dateKey;
+    const input = document.getElementById("fcAssignDateInput");
+    if (input) input.value = formatDateKeyToInput(dateKey);
+    document.querySelectorAll(".fc-date-chip").forEach((chip) => chip.classList.remove("active"));
+    const activeChip = Array.from(document.querySelectorAll(".fc-date-chip")).find((c) => c.getAttribute("onclick")?.includes(dateKey));
+    if (activeChip) activeChip.classList.add("active");
+    const badgeText = document.getElementById("fcSelectedDayBadgeText");
+    if (badgeText) badgeText.textContent = formatDateKeyToDisplay(dateKey);
+  }
+
+  function onAssignDateInputChange(val) {
+    if (!currentAssigningMealData || !val) return;
+    const key = formatInputToDateKey(val);
+    currentAssigningMealData.targetDateKey = key;
+    document.querySelectorAll(".fc-date-chip").forEach((chip) => chip.classList.remove("active"));
+    const activeChip = Array.from(document.querySelectorAll(".fc-date-chip")).find((c) => c.getAttribute("onclick")?.includes(key));
+    if (activeChip) activeChip.classList.add("active");
+    const badgeText = document.getElementById("fcSelectedDayBadgeText");
+    if (badgeText) badgeText.textContent = formatDateKeyToDisplay(key);
+  }
+
+  function selectAssignMealType(type) {
+    if (!currentAssigningMealData) return;
+    currentAssigningMealData.mealType = type;
+    document.querySelectorAll(".fc-meal-type-btn").forEach((btn) => {
+      btn.classList.toggle("active", btn.dataset.type === type);
+    });
+  }
+
+  function toggleAssignDishChoice(dishId) {
+    if (!currentAssigningMealData) return;
+    if (!currentAssigningMealData.dishes) currentAssigningMealData.dishes = [];
+    const idx = currentAssigningMealData.dishes.findIndex((d) => d.id === dishId);
+    if (idx >= 0) {
+      currentAssigningMealData.dishes.splice(idx, 1);
+    } else {
+      const rec = recipesCache.find((r) => r.id === dishId);
+      if (rec) currentAssigningMealData.dishes.push({ ...rec });
+    }
+    renderAssignDishesPreview();
+    renderAssignDishesSelector(document.getElementById("fcAssignDishSearch")?.value || "");
+  }
+
+  function confirmAssignMealToCalendar() {
+    if (!currentAssigningMealData) return;
+    const { sourceType, originalDateKey, editingMealId, targetDateKey, mealType, dishes } = currentAssigningMealData;
+    if (!targetDateKey) {
+      showCookbookToast("Vui lòng chọn ngày để lên thực đơn!", "error");
+      return;
+    }
+    if (!dishes || dishes.length === 0) {
+      showCookbookToast("Vui lòng chọn ít nhất 1 món ăn cho bữa này!", "error");
+      return;
+    }
+
+    // Nếu đang chỉnh sửa và đổi sang ngày khác, gỡ bữa này khỏi ngày cũ trước
+    if (sourceType === "edit" && originalDateKey && originalDateKey !== targetDateKey) {
+      if (calendarMealsCache[originalDateKey]) {
+        calendarMealsCache[originalDateKey] = calendarMealsCache[originalDateKey].filter((m) => m.id !== editingMealId);
+        if (calendarMealsCache[originalDateKey].length === 0) {
+          delete calendarMealsCache[originalDateKey];
+        }
+      }
+    }
+
+    if (!calendarMealsCache[targetDateKey]) {
+      calendarMealsCache[targetDateKey] = [];
+    }
+
+    const minimalDishes = dishes.map((d) => ({
+      id: d.id,
+      title: d.title,
+      category: d.category || "main",
+      coverImage: d.coverImage || "",
+      cookTime: d.cookTime || 30
+    }));
+
+    const mealId = (sourceType === "edit" && editingMealId) ? editingMealId : "meal_" + Date.now();
+    const mealTitle = mealType === "breakfast" ? "Bữa Sáng" : mealType === "lunch" ? "Bữa Trưa" : "Bữa Tối";
+    const mealObj = {
+      id: mealId,
+      dateKey: targetDateKey,
+      mealType: mealType || "dinner",
+      title: mealTitle,
+      dishes: minimalDishes,
+      updatedAt: Date.now()
+    };
+
+    const existingIdx = calendarMealsCache[targetDateKey].findIndex((m) => m.id === mealId || (sourceType !== "edit" && m.mealType === mealType));
+    if (existingIdx >= 0) {
+      calendarMealsCache[targetDateKey][existingIdx] = mealObj;
+    } else {
+      calendarMealsCache[targetDateKey].push(mealObj);
+    }
+
+    saveCalendarMealsToLocalStorage();
+    saveCalendarMealsToFirebase();
+
+    if (typeof window.renderCalendar === "function") {
+      window.renderCalendar();
+    }
+    if (typeof window.renderTodayEvents === "function") {
+      window.renderTodayEvents();
+    }
+    if (typeof window.renderDayDetailsModalUI === "function") {
+      const parts = targetDateKey.split("-");
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        const d = parseInt(parts[2], 10);
+        const dateData = typeof window.getDateData === "function" ? window.getDateData(targetDateKey) : {};
+        window.renderDayDetailsModalUI(targetDateKey, d, m, y, dateData);
+      }
+      if (sourceType === "edit" && originalDateKey && originalDateKey !== targetDateKey) {
+        const oParts = originalDateKey.split("-");
+        if (oParts.length === 3) {
+          const oy = parseInt(oParts[0], 10);
+          const om = parseInt(oParts[1], 10);
+          const od = parseInt(oParts[2], 10);
+          const oDateData = typeof window.getDateData === "function" ? window.getDateData(originalDateKey) : {};
+          window.renderDayDetailsModalUI(originalDateKey, od, om, oy, oDateData);
+        }
+      }
+    }
+
+    closeAssignMealModal();
+    const parts = targetDateKey.split("-");
+    const formattedDate = parts.length === 3 ? `${parts[2]}/${parts[1]}` : targetDateKey;
+    showCookbookToast(sourceType === "edit" ? `Đã cập nhật ${mealTitle} ngày ${formattedDate}! 🍲` : `Đã gán thực đơn vào ngày ${formattedDate} trên Lịch gia đình! 🍲`, "success");
+  }
+
+  window.editCalendarMeal = editCalendarMeal;
+  window.openAssignMealToCalendarModal = openAssignMealToCalendarModal;
+  window.closeAssignMealModal = closeAssignMealModal;
+  window.selectQuickAssignDate = selectQuickAssignDate;
+  window.onAssignDateInputChange = onAssignDateInputChange;
+  window.toggleAssignDateChange = toggleAssignDateChange;
+  window.selectAssignMealType = selectAssignMealType;
+  window.toggleAssignDishChoice = toggleAssignDishChoice;
+  window.removeDishFromAssigning = removeDishFromAssigning;
+  window.filterAssignDishes = filterAssignDishes;
+  window.toggleAssignDishSearch = toggleAssignDishSearch;
+  window.deleteEditingMeal = deleteEditingMeal;
+  window.confirmAssignMealToCalendar = confirmAssignMealToCalendar;
+  window.getMealForDate = getMealForDate;
+  window.getAllCalendarMeals = getAllCalendarMeals;
+  window.removeMealFromDate = removeMealFromDate;
+  window.openAssignMealModalForDay = function (dateKey) {
+    openAssignMealToCalendarModal("day", dateKey);
   };
 
   // Pre-load local state on script parse

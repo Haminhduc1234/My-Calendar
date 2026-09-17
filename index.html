@@ -18,8 +18,8 @@
     rel="stylesheet" />
   <!-- Flaticon UIcons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons/css/all/all.css" />
-  <link rel="stylesheet" href="style.css?v=20260917_no_hover_motion" />
-  <link rel="stylesheet" href="family-cookbook.css?v=20260917_remove_fav_filter" />
+  <link rel="stylesheet" href="style.css?v=20260917_cute_meal_card" />
+  <link rel="stylesheet" href="family-cookbook.css?v=20260917_search_pos" />
   <link rel="icon" type="image/png" href="public/favicon.png" />
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -662,6 +662,9 @@
         </div>
 
         <div class="day-details-content">
+          <!-- Thực đơn bữa cơm gia đình -->
+          <div id="dayMealSection" class="day-meal-section"></div>
+
           <div class="events-section">
             <div class="section-header">
               <h4>Sự kiện của ngày</h4>
@@ -2917,8 +2920,8 @@
   <script src="learn-en-data.js"></script>
   <script src="learn-zh-data.js"></script>
   <script src="senior-mode.js?v=20260916"></script>
-  <script src="family-cookbook.js?v=20260917_remove_fav_filter"></script>
-  <script src="script.js?v=20260916"></script>
+  <script src="family-cookbook.js?v=20260917_search_pos"></script>
+  <script src="script.js?v=20260917_cute_meal_card"></script>
   <!-- <script src="MapSearch.js"></script> -->
 
   <!-- <script>
@@ -3343,6 +3346,12 @@
   <!-- 3. Recipe Form Modal -->
   <div id="cookbookRecipeFormModal" class="modal fc-modal" style="display: none;"
     onclick="if(event.target===this) closeCookbookRecipeFormModal()">
+    <!-- Content injected dynamically -->
+  </div>
+
+  <!-- 4. Assign Meal To Calendar Modal -->
+  <div id="cookbookAssignMealModal" class="modal fc-modal" style="display: none;"
+    onclick="if(event.target===this) closeAssignMealModal()">
     <!-- Content injected dynamically -->
   </div>
 </body>

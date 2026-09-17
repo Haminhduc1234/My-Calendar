@@ -81,6 +81,10 @@ i.fi,
 .fc-btn-close>i,
 .rec-header-back-btn>i,
 .recurring-modal-close>i,
+.funds-modal-close>i,
+.funds-header-icon>i,
+.cashflow-modal-close>i,
+.cashflow-header-icon>i,
 .fc-header-icon>i,
 .fc-card-fav-btn>i,
 .fc-detail-back-btn>i,
@@ -1404,12 +1408,7 @@ body::before {
     justify-content: center;
   }
 
-  /* Keep cashflow and funds modals as bottom sheet on desktop */
-  #cashflowModal,
-  #fundsModal {
-    align-items: flex-end;
-    justify-content: center;
-  }
+
 
   /* All modal contents centered on desktop - reset positioning */
   .modal>div:not(.cashflow-modal-shell):not(.funds-modal-shell),
@@ -1530,46 +1529,9 @@ body::before {
   position: relative;
 }
 
-.cashflow-modal-shell {
-  width: min(94vw, 920px);
-  max-width: none !important;
-  max-height: min(92vh, 920px) !important;
-  border-radius: 24px 24px 0 0 !important;
-  margin: 0 !important;
-  padding: 10px 14px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
-  background: linear-gradient(180deg,
-      rgba(12, 28, 55, 0.98),
-      rgba(8, 20, 41, 0.98)) !important;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42) !important;
-  animation: sheetSlideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1) !important;
-}
 
-.funds-modal-shell {
-  width: min(94vw, 920px);
-  max-width: none !important;
-  max-height: min(92vh, 920px) !important;
-  border-radius: 24px 24px 0 0 !important;
-  margin: 0 !important;
-  padding: 10px 14px calc(14px + env(safe-area-inset-bottom, 0px)) !important;
-  background: linear-gradient(180deg,
-      rgba(12, 28, 55, 0.98),
-      rgba(8, 20, 41, 0.98)) !important;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42) !important;
-  animation: sheetSlideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1) !important;
-}
 
-.funds-sheet-handle {
-  width: 56px;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(214, 228, 255, 0.3);
-  margin: 2px auto 12px;
-  flex-shrink: 0;
-}
 
-.funds-modal-header {
-  margin-bottom: 10px;
-}
 
 .event-modal-header {
   display: flex;
@@ -5225,34 +5187,197 @@ body::before {
   }
 }
 
-/* ========================== CASHFLOW MODAL ========================== */
+/* ========================== CASHFLOW MODAL (FULL-SCREEN) ========================== */
 
-.cashflow-modal-shell {
-  width: min(94vw, 920px);
-  max-height: min(92vh, 920px);
+#cashflowModal {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  max-height: 100dvh !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: #0b1120 !important;
+  z-index: 2500 !important;
+  display: none;
+  flex-direction: column !important;
+  border-radius: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+}
+
+#cashflowModal .cashflow-modal-shell {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #0b1120 !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+}
+
+/* Modal con trong quản lý thu chi */
+#cashflowCategoryModal,
+#cashflowQuickViewModal,
+#cashflowAllTransactionsModal {
+  z-index: 2550 !important;
+}
+
+/* --- Sticky Top Header --- */
+.cashflow-modal-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 30;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.cashflow-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cashflow-header-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.cashflow-header-icon i {
+  position: static !important;
+  top: 0 !important;
+}
+
+.cashflow-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.cashflow-modal-header h3 {
+  margin: 0 !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
+  letter-spacing: -0.2px;
+  line-height: 1.25;
+}
+
+.cashflow-header-sub {
+  margin: 3px 0 0 0;
+  font-size: 12.5px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Close button: 34px x 34px, radius 9px, static top 0 */
+.cashflow-modal-close {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  margin-left: auto !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 9px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #94a3b8 !important;
+  font-size: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+}
+
+.cashflow-modal-close:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #f87171 !important;
+}
+
+/* Optical Icon Alignment */
+.cashflow-modal-header i[class*="fi-"],
+.cashflow-modal-footer i[class*="fi-"],
+.cashflow-mobile-footer i[class*="fi-"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  position: relative;
+  top: 1px;
+}
+
+/* --- Scrollable Body Container --- */
+.cashflow-modal-body {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.cashflow-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cashflow-modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cashflow-modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+.cashflow-modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.cashflow-content-wrap {
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px 20px 32px 20px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  padding-top: 10px;
-}
-
-.cashflow-sheet-handle {
-  width: 56px;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(214, 228, 255, 0.3);
-  margin: 2px auto 12px;
-  flex-shrink: 0;
-}
-
-.cashflow-modal-header {
-  margin-bottom: 10px;
-}
-
-.cashflow-modal-subtitle {
-  margin: 6px 0 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: #9cb4d7;
+  gap: 14px;
 }
 
 .cashflow-modal-body {
@@ -5634,9 +5759,80 @@ input[type="datetime-local"] {
   color: #ffffff;
 }
 
-/* Mobile footer bar: ẩn mặc định trên desktop, chỉ hiện trên mobile */
+/* Sticky Footer Toolbar (hiển thị trên cả Desktop và Mobile) */
+.cashflow-modal-footer,
 .cashflow-mobile-footer {
-  display: none;
+  flex-shrink: 0;
+  display: flex !important;
+  justify-content: center;
+  padding: 12px 24px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 30;
+  box-sizing: border-box;
+  margin: 0 !important;
+}
+
+.cashflow-footer-inner {
+  max-width: 860px;
+  width: 100%;
+  display: flex;
+  gap: 12px;
+}
+
+.cashflow-mobile-close-btn,
+.cashflow-mobile-add-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  white-space: nowrap;
+}
+
+.cashflow-mobile-close-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #cbd5e1 !important;
+}
+
+.cashflow-mobile-close-btn:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+}
+
+.cashflow-mobile-close-btn.is-cancel-mode {
+  background: #e11d48 !important;
+  border-color: #e11d48 !important;
+  color: #ffffff !important;
+}
+
+.cashflow-mobile-close-btn.is-cancel-mode:hover {
+  background: #be123c !important;
+  border-color: #be123c !important;
+}
+
+.cashflow-mobile-add-btn {
+  background: linear-gradient(140deg, #059669, #047857) !important;
+  border: 1px solid rgba(16, 185, 129, 0.5) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25) !important;
+}
+
+.cashflow-mobile-add-btn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.35) !important;
 }
 
 .cashflow-cancel-btn {
@@ -5703,8 +5899,7 @@ input[type="datetime-local"] {
     color 0.22s ease;
 }
 
-.cashflow-range-chip:hover {
-}
+.cashflow-range-chip:hover {}
 
 .cashflow-range-chip:active {
   transform: translateY(1px) scale(0.97);
@@ -6609,29 +6804,46 @@ input[type="datetime-local"] {
 
 }
 
+@media (max-width: 640px) {
+  .cashflow-modal-header {
+    padding: 12px 14px;
+  }
+
+  .cashflow-header-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+    border-radius: 9px;
+  }
+
+  .cashflow-modal-header h3 {
+    font-size: 16px !important;
+  }
+
+  .cashflow-header-sub {
+    font-size: 11.5px;
+    max-width: 220px;
+  }
+
+  .cashflow-content-wrap {
+    padding: 12px 14px 20px 14px;
+    gap: 10px;
+  }
+
+  .cashflow-modal-footer,
+  .cashflow-mobile-footer {
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .cashflow-mobile-close-btn,
+  .cashflow-mobile-add-btn {
+    min-height: 42px;
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+}
+
 @media (max-width: 540px) {
-
-  #cashflowModal,
-  #fundsModal {
-    align-items: flex-end;
-    overflow: hidden;
-    padding: 0;
-    left: 0;
-    right: 0;
-  }
-
-  .cashflow-modal-shell,
-  .funds-modal-shell {
-    width: 100%;
-    max-width: 100vw;
-    max-height: calc(100dvh - 8px);
-    margin: 0;
-    border-radius: 24px 24px 0 0;
-    padding: 10px 14px calc(14px + env(safe-area-inset-bottom, 0px));
-    display: flex;
-    flex-direction: column;
-  }
-
   .cashflow-modal-body {
     padding-right: 0;
     gap: 12px;
@@ -6693,114 +6905,9 @@ input[type="datetime-local"] {
   .cashflow-chart-wrap {
     height: 200px;
   }
-
-  /* Modal body co giãn để footer luôn ở dưới cùng modal */
-  .cashflow-modal-body {
-    flex: 1 1 auto;
-    min-height: 0;
-  }
-
-  .cashflow-mobile-footer {
-    display: flex;
-    gap: 10px;
-    padding: 12px 0 calc(8px + env(safe-area-inset-bottom, 0px));
-    margin-top: auto;
-    flex-shrink: 0;
-    background: linear-gradient(180deg,
-        rgba(12, 28, 55, 0) 0%,
-        rgba(12, 28, 55, 0.6) 30%,
-        rgba(12, 28, 55, 0.95) 100%);
-    margin-left: -14px;
-    margin-right: -14px;
-    margin-bottom: calc(-14px - env(safe-area-inset-bottom, 0px));
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-
-  .cashflow-mobile-close-btn,
-  .cashflow-mobile-add-btn {
-    flex: 1 1 0;
-    min-height: 48px;
-    padding: 12px 16px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    border: 1px solid transparent;
-  }
-
-  .cashflow-mobile-close-btn {
-    background: #475569;
-    border: 1px solid #475569;
-    color: #ffffff;
-  }
-
-  .cashflow-mobile-close-btn:hover,
-  .cashflow-mobile-close-btn:active {
-    background: #334155;
-    border-color: #334155;
-    color: #ffffff;
-  }
-
-  .cashflow-mobile-add-btn {
-    flex: 1 1 0;
-    background: #059669;
-    border: 1px solid #059669;
-    color: #ffffff;
-    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
-  }
-
-  .cashflow-mobile-add-btn:hover,
-  .cashflow-mobile-add-btn:active {
-    background: #047857;
-    border-color: #047857;
-    color: #ffffff;
-  }
-
-  .cashflow-mobile-add-btn:disabled,
-  .cashflow-mobile-close-btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-
-  /* Trạng thái Hủy sửa */
-  .cashflow-mobile-close-btn.is-cancel-mode {
-    background: #e11d48;
-    border: 1px solid #e11d48;
-    color: #ffffff;
-  }
-
-  .cashflow-mobile-close-btn.is-cancel-mode:hover,
-  .cashflow-mobile-close-btn.is-cancel-mode:active {
-    background: #be123c;
-    border-color: #be123c;
-    color: #ffffff;
-  }
 }
 
 @media (min-width: 541px) {
-
-  #cashflowModal,
-  #fundsModal {
-    align-items: flex-end;
-    padding: 0;
-    overflow: hidden;
-  }
-
-  .cashflow-modal-shell,
-  .funds-modal-shell {
-    width: min(94vw, 920px);
-    max-width: none;
-    max-height: calc(100vh - 48px);
-    margin: 0;
-    border-radius: 24px 24px 0 0;
-    padding: 10px 18px calc(18px + env(safe-area-inset-bottom, 0px));
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.45);
-    animation: sheetSlideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-
   .cashflow-modal-body {
     padding-right: 0;
   }
@@ -6855,21 +6962,193 @@ input[type="datetime-local"] {
   filter: brightness(1.08);
 }
 
-/* ========================== FUNDS MODAL ========================== */
+/* ========================== FUNDS MODAL (FULL-SCREEN) ========================== */
 
-.funds-modal-shell {
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100vh - 48px);
-  overflow: hidden;
+#fundsModal {
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  max-height: 100dvh !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: #0b1120 !important;
+  z-index: 2500 !important;
+  display: none;
+  flex-direction: column !important;
+  border-radius: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
 }
 
+#fundsModal .funds-modal-shell {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #0b1120 !important;
+  overflow: hidden !important;
+  box-shadow: none !important;
+}
+
+/* Modal con trong quản lý quỹ (Thêm/Sửa quỹ, Phân bổ, Nạp/Rút quỹ, Chúc mừng) */
+#fundModal,
+#allocateModal,
+#topupFundModal,
+#congratulationsModal {
+  z-index: 2550 !important;
+}
+
+/* --- Sticky Top Header --- */
+.funds-modal-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 30;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.funds-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.funds-header-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.funds-header-icon i {
+  position: static !important;
+  top: 0 !important;
+}
+
+.funds-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.funds-modal-header h3 {
+  margin: 0 !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
+  letter-spacing: -0.2px;
+  line-height: 1.25;
+}
+
+.funds-header-sub {
+  margin: 3px 0 0 0;
+  font-size: 12.5px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Close button: 34px x 34px, radius 9px, static top 0 */
+.funds-modal-close {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  margin-left: auto !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 9px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #94a3b8 !important;
+  font-size: 20px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  flex-shrink: 0 !important;
+  line-height: 1 !important;
+}
+
+.funds-modal-close:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #f87171 !important;
+}
+
+/* Optical Icon Alignment */
+.funds-modal-header i[class*="fi-"],
+.funds-footer-btn i[class*="fi-"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  position: relative;
+  top: 1px;
+}
+
+/* --- Scrollable Body Container --- */
 .funds-container {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
-  padding-bottom: 8px;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.funds-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.funds-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.funds-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+
+.funds-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.funds-content-wrap {
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 16px 20px 32px 20px;
+  box-sizing: border-box;
 }
 
 .funds-balance-section {
@@ -7037,64 +7316,119 @@ input[type="datetime-local"] {
 }
 
 .funds-modal-footer {
-  display: flex;
-  gap: 10px;
-  padding-top: 12px;
-  padding-bottom: 4px;
-  margin-top: auto;
   flex-shrink: 0;
-  border-top: 1px solid rgba(168, 85, 247, 0.18);
-  background: linear-gradient(180deg, rgba(8, 20, 42, 0) 0%, rgba(8, 20, 42, 0.75) 35%, rgba(8, 20, 42, 0.98) 100%);
+  display: flex;
+  justify-content: center;
+  padding: 12px 24px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: rgba(15, 23, 42, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 30;
+  box-sizing: border-box;
+}
+
+.funds-footer-inner {
+  max-width: 860px;
+  width: 100%;
+  display: flex;
+  gap: 12px;
 }
 
 .funds-footer-btn {
   flex: 1 1 0;
   min-width: 0;
   min-height: 44px;
-  padding: 11px 12px;
+  padding: 10px 16px;
   border-radius: 12px;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   font-family: inherit;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
   white-space: nowrap;
 }
 
 .funds-footer-btn-allocate {
   border: 1px solid rgba(16, 185, 129, 0.5);
   background: linear-gradient(140deg, #059669, #047857);
-  color: #d1fae5;
-  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.22);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
 }
 
 .funds-footer-btn-allocate:hover {
   filter: brightness(1.1);
-  box-shadow: 0 6px 18px rgba(5, 150, 105, 0.32);
-}
-
-.funds-footer-btn-allocate:active {
-  transform: translateY(0);
+  box-shadow: 0 4px 16px rgba(5, 150, 105, 0.35);
 }
 
 .funds-footer-btn-create {
-  border: 1px solid rgba(192, 132, 252, 0.55);
-  background: linear-gradient(140deg, #42A5F5, #7c3aed);
-  color: #f3e8ff;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.22);
+  border: 1px solid rgba(147, 197, 253, 0.35);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
 }
 
 .funds-footer-btn-create:hover {
   filter: brightness(1.1);
-  box-shadow: 0 6px 18px rgba(124, 58, 237, 0.32);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
 }
 
-.funds-footer-btn-create:active {
-  transform: translateY(0);
+/* Mobile Responsiveness for Full-Screen Funds Modal */
+@media (max-width: 640px) {
+  .funds-modal-header {
+    padding: 12px 14px;
+  }
+
+  .funds-header-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+    border-radius: 9px;
+  }
+
+  .funds-modal-header h3 {
+    font-size: 16px !important;
+  }
+
+  .funds-header-sub {
+    font-size: 11.5px;
+    max-width: 220px;
+  }
+
+  .funds-content-wrap {
+    padding: 12px 14px 20px 14px;
+  }
+
+  .funds-balance-section {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .funds-balance-card {
+    padding: 10px 6px;
+  }
+
+  .funds-balance-label {
+    font-size: 10.5px;
+  }
+
+  .funds-balance-value {
+    font-size: 12.5px;
+  }
+
+  .funds-modal-footer {
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .funds-footer-btn {
+    min-height: 42px;
+    font-size: 13px;
+    padding: 8px 12px;
+  }
 }
 
 .fund-jar {
@@ -7525,8 +7859,7 @@ input[type="datetime-local"] {
     border-color 0.15s;
 }
 
-.fund-color-btn:hover {
-}
+.fund-color-btn:hover {}
 
 .fund-color-btn.active {
   border-color: #fff;
@@ -9066,8 +9399,7 @@ input[type="datetime-local"] {
 }
 
 .nav-item.prominent:hover .prominent-inner svg,
-.nav-item.prominent:hover .prominent-inner i {
-}
+.nav-item.prominent:hover .prominent-inner i {}
 
 .nav-item.prominent:hover .nav-label {
   color: #7dd3fc;
@@ -13864,7 +14196,7 @@ input[type="datetime-local"] {
 .today-profile {
   display: flex;
   align-items: start;
-  gap: 12px;
+  gap: 4px;
   z-index: 10;
   opacity: 1;
 }
@@ -13891,8 +14223,7 @@ input[type="datetime-local"] {
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.today-profile-avatar-wrapper:hover .today-profile-badge {
-}
+.today-profile-avatar-wrapper:hover .today-profile-badge {}
 
 .fb-verified-badge-svg {
   width: 100%;
@@ -14283,8 +14614,7 @@ input[type="datetime-local"] {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
-.profile-avatar-change-btn:hover {
-}
+.profile-avatar-change-btn:hover {}
 
 /* Avatar delete button - top right corner */
 .profile-avatar-delete-btn {
@@ -15536,8 +15866,7 @@ html {
   transition: transform 0.2s ease;
 }
 
-.notification-item:hover .notif-item-icon {
-}
+.notification-item:hover .notif-item-icon {}
 
 .notif-item-icon.event {
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.15));
@@ -18606,8 +18935,7 @@ img[src=""] {
   filter: brightness(1.08);
 }
 
-.senior-one-touch-top-btn:hover i {
-}
+.senior-one-touch-top-btn:hover i {}
 
 .senior-one-touch-top-btn:active {
   transform: translateY(1px) scale(0.97);
@@ -18657,8 +18985,7 @@ img[src=""] {
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.today-weather-top-btn:hover .floating-btn-icon {
-}
+.today-weather-top-btn:hover .floating-btn-icon {}
 
 .today-weather-top-btn .floating-btn-icon i {
   position: relative;
@@ -20312,8 +20639,7 @@ div.fc-modal .fc-modal-dialog,
   transition: transform 0.3s ease;
 }
 
-.fc-recipe-card:hover .fc-card-cover img {
-}
+.fc-recipe-card:hover .fc-card-cover img {}
 
 .fc-card-fav-btn {
   position: absolute;

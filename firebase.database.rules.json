@@ -125,6 +125,12 @@
         ".write": true,
         ".indexOn": ["createdAt", "read"]
       }
+    },
+    "familyCookbook": {
+      "$profileKey": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
     }
   }
 }

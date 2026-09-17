@@ -18,7 +18,8 @@
     rel="stylesheet" />
   <!-- Flaticon UIcons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons/css/all/all.css" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=20260917_icons" />
+  <link rel="stylesheet" href="family-cookbook.css?v=20260917_search_v4" />
   <link rel="icon" type="image/png" href="public/favicon.png" />
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -235,6 +236,11 @@
           <span class="nav-label">Khác</span>
         </button>
         <div id="moreMenuDropdown" class="more-dropdown" role="menu">
+          <button class="dropdown-item item-cookbook"
+            onclick="event.stopPropagation(); openFamilyCookbookModal(); closeMoreMenu();" role="menuitem">
+            <span class="menu-icon-wrap" style="color: #f59e0b;"><i class="fi fi-rr-hat-chef"></i></span>
+            <span>Bí Kíp Nấu Ăn</span>
+          </button>
           <button class="dropdown-item item-senior-settings" onclick="openSeniorSettingsModal(); closeMoreMenu();"
             role="menuitem">
             <span class="menu-icon-wrap" style="color: #2563eb;"><i class="fi fi-rr-users"></i></span>
@@ -2910,8 +2916,9 @@
   <script src="public/my-music-library.js"></script>
   <script src="learn-en-data.js"></script>
   <script src="learn-zh-data.js"></script>
-  <script src="senior-mode.js"></script>
-  <script src="script.js"></script>
+  <script src="senior-mode.js?v=20260916"></script>
+  <script src="family-cookbook.js?v=20260917_search_v4"></script>
+  <script src="script.js?v=20260916"></script>
   <!-- <script src="MapSearch.js"></script> -->
 
   <!-- <script>
@@ -3257,6 +3264,86 @@
         </form>
       </div>
     </div>
+  </div>
+
+  <!-- ==========================================================================
+       FAMILY COOKBOOK & DIETARY NOTES MODALS
+       ========================================================================== -->
+  <!-- 1. Main Modal -->
+  <div id="familyCookbookModal" class="modal fc-modal" style="display: none;"
+    onclick="if(event.target===this) closeFamilyCookbookModal()">
+    <div class="fc-modal-dialog">
+      <div class="fc-header">
+        <!-- Title Box (ẩn khi mở ô tìm kiếm) -->
+        <div class="fc-header-title-box">
+          <div class="fc-header-icon"><i class="fi fi-rr-hat-chef"></i></div>
+          <div class="fc-header-text">
+            <h3 class="fc-header-title">
+              <span class="fc-header-title-text">Sổ Tay Nấu Ăn</span>
+            </h3>
+            <div class="fc-header-sub">Gợi ý mâm cơm ngon mỗi ngày</div>
+          </div>
+        </div>
+
+        <!-- Ô Tìm Kiếm Trên Header (Mở ra khi click icon search và ẩn title) -->
+        <div class="fc-header-search-box" id="fcHeaderSearchBox" style="display: none;">
+          <i class="fi fi-rr-search fc-header-search-icon"></i>
+          <input type="text" class="fc-header-search-input" id="fcSearchInput"
+            placeholder="Tìm theo tên món, nguyên liệu, người nấu..." oninput="window.onCookbookSearchInput(this.value)"
+            onkeydown="if(event.key==='Escape') window.closeCookbookHeaderSearch()" autocomplete="off" />
+          <button type="button" class="fc-header-search-close-btn" id="fcHeaderSearchCloseBtn"
+            onclick="window.closeCookbookHeaderSearch()" title="Đóng tìm kiếm">
+            <i class="fi fi-rr-cross"></i>
+          </button>
+        </div>
+
+        <!-- Header Actions -->
+        <div class="fc-header-actions">
+          <button type="button" class="fc-btn-header-search" id="fcBtnHeaderSearch"
+            onclick="window.openCookbookHeaderSearch()" title="Tìm kiếm món ăn" aria-label="Tìm kiếm món ăn">
+            <i class="fi fi-rr-search"></i>
+          </button>
+          <button type="button" class="fc-btn fc-btn-primary" onclick="openCookbookRecipeFormModal()"
+            title="Thêm Món Mới">
+            <i class="fi fi-rr-plus"></i> <span>Thêm Món Mới</span>
+          </button>
+          <button type="button" class="fc-btn-close" onclick="closeFamilyCookbookModal()" aria-label="Đóng">
+            <i class="fi fi-rr-cross"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Nav Sub-tabs -->
+      <div class="fc-nav-tabs">
+        <button type="button" class="fc-tab-btn active" data-tab="recipes" onclick="switchCookbookTab('recipes')">
+          <i class="fi fi-rr-book-bookmark"></i>
+          <span class="fc-tab-text-desktop">Kho Bí Kíp Món Ăn</span>
+          <span class="fc-tab-text-mobile">Bí Kíp Món</span>
+        </button>
+        <button type="button" class="fc-tab-btn" data-tab="mealplan" onclick="switchCookbookTab('mealplan')">
+          <i class="fi fi-rr-utensils"></i>
+          <span class="fc-tab-text-desktop">Gợi Ý Mâm Cơm</span>
+          <span class="fc-tab-text-mobile">Gợi Ý Bữa Ăn</span>
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div id="fcTabContent" class="fc-body">
+        <!-- Rendered dynamically by family-cookbook.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Recipe Detail / Cooking Mode Modal -->
+  <div id="cookbookRecipeDetailModal" class="modal fc-modal" style="display: none;"
+    onclick="if(event.target===this) closeCookbookRecipeDetail()">
+    <!-- Content injected dynamically -->
+  </div>
+
+  <!-- 3. Recipe Form Modal -->
+  <div id="cookbookRecipeFormModal" class="modal fc-modal" style="display: none;"
+    onclick="if(event.target===this) closeCookbookRecipeFormModal()">
+    <!-- Content injected dynamically -->
   </div>
 </body>
 

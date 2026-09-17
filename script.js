@@ -3308,6 +3308,11 @@ async function initFirebaseRealtime() {
     initSeniorFirebase(firebaseDb, userProfileKey);
   }
 
+  // Family Cookbook & Dietary Notes
+  if (typeof initCookbookFirebase === "function") {
+    initCookbookFirebase(firebaseDb, userProfileKey);
+  }
+
   console.log("[Firebase] Đã khởi tạo thành công, firebaseDb:", !!firebaseDb);
 
   // Lắng nghe sự thay đổi của Translate History
@@ -3667,6 +3672,11 @@ async function reloadFirebaseForUser() {
     initSeniorFirebase(firebaseDb, userProfileKey);
   }
 
+  // Family Cookbook & Dietary Notes
+  if (typeof initCookbookFirebase === "function") {
+    initCookbookFirebase(firebaseDb, userProfileKey);
+  }
+
   // Track first Firebase data load for this user
   let isFirstReloadLoad = true;
 
@@ -3814,10 +3824,16 @@ function closeAllModals() {
     "seniorCallModal",
     "seniorSettingsModal",
     "seniorContactFormModal",
+    "familyCookbookModal",
+    "cookbookRecipeDetailModal",
+    "cookbookRecipeFormModal",
   ];
   modals.forEach((id) => {
     const el = document.getElementById(id);
-    if (el) el.style.display = "none";
+    if (el) {
+      el.style.display = "none";
+      el.classList.remove("active");
+    }
   });
 }
 
@@ -9201,6 +9217,32 @@ function closeMoreMenu() {
   if (dropdown) dropdown.classList.remove("is-open");
   if (btn) btn.setAttribute("aria-expanded", "false");
 }
+
+function openFamilyCookbookModal() {
+  closeAllModals();
+  const modal = document.getElementById("familyCookbookModal");
+  if (modal) {
+    modal.style.display = "flex";
+    modal.classList.add("active");
+    try {
+      if (typeof window.renderCookbookContent === "function") {
+        window.renderCookbookContent();
+      }
+    } catch (err) {
+      console.error("[FamilyCookbook] Lỗi render nội dung:", err);
+    }
+  }
+}
+
+function closeFamilyCookbookModal() {
+  const modal = document.getElementById("familyCookbookModal");
+  if (modal) {
+    modal.style.display = "none";
+    modal.classList.remove("active");
+  }
+}
+window.openFamilyCookbookModal = openFamilyCookbookModal;
+window.closeFamilyCookbookModal = closeFamilyCookbookModal;
 
 // Close more menu when clicking outside
 document.addEventListener("click", (e) => {

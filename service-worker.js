@@ -91,13 +91,16 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
     }
 }
 
-const CACHE_NAME = "calendar-pwa-v11-" + Date.now();
+const CACHE_NAME = "calendar-pwa-v12-" + Date.now();
 const FILES_TO_CACHE = [
     "./",
     "./index.html",
     "./firebase-config.js",
     "./firebase-messaging-sw.js",
     "./style.css",
+    "./family-cookbook.css",
+    "./family-cookbook.js",
+    "./senior-mode.js",
     "./learn-en-data.js",
     "./learn-zh-data.js",
     "./script.js",

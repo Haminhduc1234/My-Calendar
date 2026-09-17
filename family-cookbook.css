@@ -442,7 +442,7 @@ div.fc-modal .fc-modal-dialog,
 .fc-header-search-close-btn:hover {
   background: rgba(239, 68, 68, 0.3) !important;
   color: #fca5a5 !important;
-  transform: translateY(-50%) scale(1.08) !important;
+  transform: translateY(-50%)  !important;
 }
 
 .fc-header-search-close-btn i {
@@ -488,7 +488,6 @@ div.fc-modal .fc-modal-dialog,
   background: rgba(245, 158, 11, 0.18) !important;
   border-color: rgba(245, 158, 11, 0.45) !important;
   color: #fbbf24 !important;
-  transform: translateY(-1px) !important;
 }
 
 
@@ -516,7 +515,6 @@ div.fc-modal .fc-modal-dialog,
 
 .fc-btn-primary:hover {
   filter: brightness(1.08);
-  transform: translateY(-1px);
 }
 
 .fc-btn-secondary {
@@ -538,7 +536,6 @@ div.fc-modal .fc-modal-dialog,
 
 .fc-btn-mealplan:hover {
   filter: brightness(1.08);
-  transform: translateY(-1px);
 }
 
 .fc-btn-close {
@@ -757,7 +754,6 @@ div.fc-modal .fc-modal-dialog,
 }
 
 .fc-recipe-card:hover {
-  transform: translateY(-4px);
   border-color: rgba(245, 158, 11, 0.4);
   box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.5);
 }
@@ -778,7 +774,6 @@ div.fc-modal .fc-modal-dialog,
 }
 
 .fc-recipe-card:hover .fc-card-cover img {
-  transform: scale(1.05);
 }
 
 .fc-card-fav-btn {
@@ -803,7 +798,6 @@ div.fc-modal .fc-modal-dialog,
 .fc-card-fav-btn:hover,
 .fc-card-fav-btn.active {
   color: #f59e0b;
-  transform: scale(1.1);
   background: rgba(0, 0, 0, 0.75);
 }
 
@@ -921,7 +915,6 @@ div.fc-modal .fc-modal-dialog,
 }
 
 .fc-member-card:hover {
-  transform: translateY(-2px);
   border-color: rgba(59, 130, 246, 0.4);
 }
 
@@ -1810,6 +1803,5 @@ div.fc-modal .fc-modal-dialog,
 .today-cookbook-top-btn:hover {
   background: rgba(245, 158, 11, 0.28);
   border-color: rgba(245, 158, 11, 0.6);
-  transform: scale(1.08);
   color: #fef08a;
 }

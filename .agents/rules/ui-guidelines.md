@@ -69,3 +69,15 @@ Nếu chỉ dùng `display: flex; align-items: center;` thông thường, **icon
    - Sub-tabs thiết kế dạng **Segmented Pill/Capsule**:
      - Desktop: Căn lề trái chuẩn `24px` đồng bộ thẳng hàng với Header và vùng nội dung.
      - Mobile: Grid 2 cột cân xứng tuyệt đối, căn lề ngang chuẩn `14px`, nút tab cao `38px` với icon và chữ đặt nằm ngang (`flex-direction: row`).
+
+---
+
+## 3. Quy tắc hiệu ứng Hover (No Hover Movement / Motion Rule)
+
+1. **Không dịch chuyển/phóng to phần tử khi rê chuột**:
+   - Nghiêm cấm sử dụng `transform: translateY(...)`, `translateX(...)`, `scale(...)`, `rotate(...)` trong các selector `:hover` của Button, Card, Tab, Link, Icon, Calendar Day, Menu item...
+   - Lý do: Gây hiện tượng nhảy/giật giao diện (jitter), gây mất tập trung, và bị lỗi dính hiệu ứng (sticky hover) trên thiết bị cảm ứng / di động.
+
+2. **Phản hồi tương tác thị giác chuẩn mực**:
+   - Khi hover, chỉ sử dụng thay đổi nhẹ về độ sáng/màu chữ (`color`), màu nền (`background`), đường viền (`border-color`) hoặc bóng mờ tĩnh (`box-shadow`).
+   - Đảm bảo phần tử luôn đứng yên ổn định tại chỗ khi người dùng di chuột qua.

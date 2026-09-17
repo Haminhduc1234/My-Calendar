@@ -459,7 +459,6 @@
     if (!container) return;
 
     let filtered = recipesCache.filter((rec) => {
-      if (onlyFavorites && !rec.isFavorite) return false;
       if (currentCategory !== "all" && rec.category !== currentCategory) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase().trim();
@@ -510,13 +509,14 @@
 
           const catLabel = CATEGORIES[rec.category]?.label || "Món ăn";
           const favClass = rec.isFavorite ? "active" : "";
+          const cardFavClass = rec.isFavorite ? "is-favorite" : "";
 
           return `
-            <div class="fc-recipe-card" onclick="window.openCookbookRecipeDetail('${rec.id}')">
+            <div class="fc-recipe-card ${cardFavClass}" onclick="window.openCookbookRecipeDetail('${rec.id}')">
               <div class="fc-card-cover">
                 <img src="${rec.coverImage || PRESET_COVERS.thitkho}" alt="${rec.title}" loading="lazy" />
                 <span class="fc-card-category-badge">${catLabel}</span>
-                <button type="button" class="fc-card-fav-btn ${favClass}" onclick="event.stopPropagation(); window.toggleFavoriteRecipe('${rec.id}')" title="Yêu thích">
+                <button type="button" class="fc-card-fav-btn ${favClass}" onclick="event.stopPropagation(); window.toggleFavoriteRecipe('${rec.id}')" title="${rec.isFavorite ? "Bỏ đánh dấu sao" : "Đánh dấu sao"}">
                   <i class="fi fi-sr-star"></i>
                 </button>
               </div>
@@ -546,12 +546,6 @@
     if (existingToolbar && existingFilters && existingGrid) {
       existingGrid.innerHTML = cardsHtml;
       existingFilters.innerHTML = catFilterHtml;
-
-      const favBtn = existingToolbar.querySelector(".fc-fav-filter-btn") || existingToolbar.querySelector("button.fc-btn");
-      if (favBtn) {
-        favBtn.className = `fc-btn ${onlyFavorites ? "fc-btn-primary" : "fc-btn-secondary"} fc-fav-filter-btn`;
-        favBtn.innerHTML = `<i class="fi fi-sr-star"></i> Món Ruột (${recipesCache.filter((r) => r.isFavorite).length})`;
-      }
       return;
     }
 
@@ -560,9 +554,6 @@
         <div class="fc-category-filters">
           ${catFilterHtml}
         </div>
-        <button type="button" class="fc-btn ${onlyFavorites ? "fc-btn-primary" : "fc-btn-secondary"} fc-fav-filter-btn" onclick="window.toggleOnlyFavorites()" title="Lọc danh sách món yêu thích">
-          <i class="fi fi-sr-star"></i> Món Ruột (${recipesCache.filter((r) => r.isFavorite).length})
-        </button>
       </div>
 
       <div class="fc-recipe-grid">
@@ -801,13 +792,16 @@
         <div class="fc-detail-hero">
           <img src="${rec.coverImage || PRESET_COVERS.thitkho}" alt="${rec.title}" />
           <div class="fc-detail-hero-overlay">
-            <div style="display: flex; justify-content: flex-end;">
-              <button type="button" class="fc-btn-close" onclick="window.closeCookbookRecipeDetail()">
+            <div style="display: flex; justify-content: flex-end; gap: 8px;">
+              <button type="button" class="fc-btn-close fc-detail-fav-btn ${rec.isFavorite ? "active" : ""}" onclick="window.toggleFavoriteRecipe('${rec.id}')" title="${rec.isFavorite ? "Bỏ đánh dấu sao" : "Đánh dấu sao"}">
+                <i class="fi fi-sr-star"></i>
+              </button>
+              <button type="button" class="fc-btn-close" onclick="window.closeCookbookRecipeDetail()" title="Đóng">
                 <i class="fi fi-rr-cross"></i>
               </button>
             </div>
             <div>
-              <h2 class="fc-detail-title">${rec.title}</h2>
+              <h2 class="fc-detail-title">${rec.title} ${rec.isFavorite ? `<span style="color: #fbbf24; font-size: 1.15rem; vertical-align: middle;" title="Đã đánh dấu sao">⭐</span>` : ""}</h2>
               <div class="fc-detail-stat-row" style="margin-top: 8px;">
                 <div class="fc-detail-badge"><i class="fi fi-rr-hat-chef" style="color: #fbbf24;"></i> ${rec.author || "Mẹ"}</div>
                 <div class="fc-detail-badge"><i class="fi fi-rr-clock"></i> Nấu: ${rec.cookTime || 30} phút</div>
@@ -866,15 +860,15 @@
           </div>
         </div>
 
-        <div class="fc-header" style="justify-content: flex-end; gap: 10px; background: rgba(10, 18, 40, 0.9);">
-          <button type="button" class="fc-btn fc-btn-secondary" onclick="window.editRecipe('${rec.id}')">
-            <i class="fi fi-rr-edit"></i> Chỉnh Sửa
+        <div class="fc-detail-footer">
+          <button type="button" class="fc-btn fc-btn-secondary fc-detail-edit-btn" onclick="window.editRecipe('${rec.id}')" title="Chỉnh sửa món">
+            <i class="fi fi-rr-edit"></i> <span>Chỉnh Sửa</span>
           </button>
-          <button type="button" class="fc-btn fc-btn-secondary" style="color: #ef4444;" onclick="window.deleteRecipe('${rec.id}')">
-            <i class="fi fi-rr-trash"></i> Xóa Món
+          <button type="button" class="fc-btn fc-btn-secondary fc-detail-delete-btn" style="color: #ef4444;" onclick="window.deleteRecipe('${rec.id}')" title="Xóa món">
+            <i class="fi fi-rr-trash"></i> <span>Xóa Món</span>
           </button>
-          <button type="button" class="fc-btn fc-btn-primary" onclick="window.closeCookbookRecipeDetail()">
-            Đóng Lại
+          <button type="button" class="fc-btn fc-btn-primary fc-detail-close-btn" onclick="window.closeCookbookRecipeDetail()" title="Đóng lại">
+            <span>Đóng Lại</span>
           </button>
         </div>
       </div>
@@ -1212,7 +1206,11 @@
       saveRecipesToLocalStorage();
       saveRecipesToFirebase();
       renderCookbookContent();
-      showCookbookToast(rec.isFavorite ? `Đã thêm "${rec.title}" vào Món Ruột ⭐` : `Đã bỏ yêu thích "${rec.title}"`, "info");
+      const detailModal = document.getElementById("cookbookRecipeDetailModal");
+      if (detailModal && detailModal.classList.contains("active") && viewingRecipeId === recipeId) {
+        openCookbookRecipeDetail(recipeId);
+      }
+      showCookbookToast(rec.isFavorite ? `Đã đánh dấu sao "${rec.title}" ⭐` : `Đã bỏ đánh dấu sao "${rec.title}"`, "info");
     }
   }
 
@@ -1518,7 +1516,7 @@
   };
 
   window.toggleOnlyFavorites = function () {
-    onlyFavorites = !onlyFavorites;
+    // Không còn dùng bộ lọc Món Ruột
     renderRecipesTab();
   };
 

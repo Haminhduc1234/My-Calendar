@@ -703,6 +703,12 @@ div.fc-modal .fc-modal-dialog,
   overflow-x: auto;
   padding-bottom: 2px;
   max-width: 100%;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fc-category-filters::-webkit-scrollbar {
+  display: none;
 }
 
 .fc-cat-pill {
@@ -785,7 +791,7 @@ div.fc-modal .fc-modal-dialog,
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(6px);
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #cbd5e1;
   display: flex;
   align-items: center;
@@ -795,10 +801,48 @@ div.fc-modal .fc-modal-dialog,
   font-size: 14px;
 }
 
+.fc-card-fav-btn i {
+  position: static !important;
+  top: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
 .fc-card-fav-btn:hover,
 .fc-card-fav-btn.active {
-  color: #f59e0b;
-  background: rgba(0, 0, 0, 0.75);
+  color: #fbbf24;
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.fc-card-fav-btn.active {
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
+}
+
+.fc-recipe-card.is-favorite {
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.fc-detail-fav-btn {
+  color: #cbd5e1;
+}
+
+.fc-detail-fav-btn i {
+  position: static !important;
+  top: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.fc-detail-fav-btn:hover,
+.fc-detail-fav-btn.active {
+  color: #fbbf24 !important;
+  background: rgba(245, 158, 11, 0.2) !important;
+  border-color: rgba(245, 158, 11, 0.45) !important;
 }
 
 .fc-card-category-badge {
@@ -1289,6 +1333,19 @@ div.fc-modal .fc-modal-dialog,
   line-height: 1.45;
 }
 
+/* Detail Modal Footer */
+.fc-detail-footer {
+  padding: 14px 20px;
+  background: rgba(10, 18, 40, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
 /* Forms */
 .fc-form-group {
   display: flex;
@@ -1699,6 +1756,41 @@ div.fc-modal .fc-modal-dialog,
     border-radius: 9px !important;
     font-size: 15px !important;
     flex-shrink: 0 !important;
+  }
+
+  /* Detail Modal Footer on Mobile: chỉ hiển thị icon để tiết kiệm diện tích, bỏ nút Đóng Lại */
+  .fc-detail-footer {
+    padding: 10px 14px !important;
+    gap: 8px !important;
+    justify-content: flex-end !important;
+  }
+
+  .fc-detail-footer .fc-detail-edit-btn,
+  .fc-detail-footer .fc-detail-delete-btn {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    border-radius: 9px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .fc-detail-footer .fc-detail-edit-btn span,
+  .fc-detail-footer .fc-detail-delete-btn span {
+    display: none !important;
+  }
+
+  .fc-detail-footer .fc-detail-edit-btn i,
+  .fc-detail-footer .fc-detail-delete-btn i {
+    font-size: 15px !important;
+    margin: 0 !important;
+    position: static !important;
+    top: 0 !important;
+  }
+
+  .fc-detail-footer .fc-detail-close-btn {
+    display: none !important;
   }
 
   #familyCookbookModal .fc-nav-tabs,

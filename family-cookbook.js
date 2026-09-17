@@ -1078,6 +1078,8 @@
         </form>
       </div>
     `;
+
+    bindStepsDragDrop();
   }
 
   function renderIngredientsInputs() {
@@ -1096,7 +1098,10 @@
   function renderStepsInputs() {
     return tempSteps
       .map((step, idx) => `
-        <div class="fc-dynamic-row" style="align-items: flex-start;">
+        <div class="fc-dynamic-row fc-step-input-row" data-step-index="${idx}" style="align-items: flex-start;">
+          <div class="fc-step-drag-handle" title="Kéo thả để đổi thứ tự bước">
+            <i class="fi fi-rr-menu-dots-vertical"></i>
+          </div>
           <div class="fc-step-num" style="margin-top: 6px;">${idx + 1}</div>
           <textarea class="fc-form-textarea" rows="2" placeholder="Mô tả chi tiết bước làm ${idx + 1}..." style="flex: 1;" oninput="window.updateStep(${idx}, this.value)" required>${step.instruction || ""}</textarea>
           <button type="button" class="fc-dynamic-del-btn" style="margin-top: 6px;" onclick="window.removeStepRow(${idx})" title="Xóa bước"><i class="fi fi-rr-trash"></i></button>
@@ -1556,17 +1561,161 @@
     if (tempIngredients[idx]) tempIngredients[idx][field] = val;
   };
 
-  window.addStepRow = function () {
-    tempSteps.push({ stepNumber: tempSteps.length + 1, instruction: "" });
+  function syncStepTextareasToState() {
     const cont = document.getElementById("rfStepsContainer");
-    if (cont) cont.innerHTML = renderStepsInputs();
+    if (!cont) return;
+    const rows = cont.querySelectorAll(".fc-step-input-row");
+    rows.forEach((row) => {
+      const idx = parseInt(row.dataset.stepIndex, 10);
+      const ta = row.querySelector("textarea");
+      if (ta && tempSteps[idx]) {
+        tempSteps[idx].instruction = ta.value;
+      }
+    });
+  }
+
+  function renderAndRebindSteps() {
+    const cont = document.getElementById("rfStepsContainer");
+    if (cont) {
+      cont.innerHTML = renderStepsInputs();
+      bindStepsDragDrop();
+    }
+  }
+
+  let draggedStepIndex = null;
+  let touchStartStepY = 0;
+  let touchDraggedStepRow = null;
+  let touchFromStepIdx = null;
+
+  function bindStepsDragDrop() {
+    const cont = document.getElementById("rfStepsContainer");
+    if (!cont) return;
+    const rows = cont.querySelectorAll(".fc-step-input-row");
+
+    rows.forEach((row) => {
+      const handle = row.querySelector(".fc-step-drag-handle");
+      if (!handle) return;
+
+      // Desktop Drag: enable draggable only when grabbing handle
+      handle.addEventListener("mousedown", () => {
+        row.draggable = true;
+      });
+
+      row.addEventListener("dragstart", (e) => {
+        draggedStepIndex = parseInt(row.dataset.stepIndex, 10);
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", String(draggedStepIndex));
+        row.classList.add("is-dragging");
+      });
+
+      row.addEventListener("dragend", () => {
+        row.draggable = false;
+        row.classList.remove("is-dragging");
+        rows.forEach((r) => r.classList.remove("drag-over-above", "drag-over-below"));
+        draggedStepIndex = null;
+      });
+
+      row.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        const currentIdx = parseInt(row.dataset.stepIndex, 10);
+        if (draggedStepIndex === null || draggedStepIndex === currentIdx) return;
+
+        const rect = row.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        const isAbove = e.clientY < midY;
+
+        row.classList.toggle("drag-over-above", isAbove);
+        row.classList.toggle("drag-over-below", !isAbove);
+      });
+
+      row.addEventListener("dragleave", () => {
+        row.classList.remove("drag-over-above", "drag-over-below");
+      });
+
+      row.addEventListener("drop", (e) => {
+        e.preventDefault();
+        row.classList.remove("drag-over-above", "drag-over-below");
+        const toIdx = parseInt(row.dataset.stepIndex, 10);
+        if (draggedStepIndex === null || draggedStepIndex === toIdx) return;
+
+        syncStepTextareasToState();
+        const [movedStep] = tempSteps.splice(draggedStepIndex, 1);
+        tempSteps.splice(toIdx, 0, movedStep);
+        tempSteps.forEach((s, i) => (s.stepNumber = i + 1));
+        draggedStepIndex = null;
+        renderAndRebindSteps();
+      });
+
+      // Mobile Touch Drag: touch and drag handle to reorder
+      handle.addEventListener("touchstart", (e) => {
+        if (e.touches.length !== 1) return;
+        touchStartStepY = e.touches[0].clientY;
+        touchDraggedStepRow = row;
+        touchFromStepIdx = parseInt(row.dataset.stepIndex, 10);
+        touchDraggedStepRow.classList.add("is-dragging");
+      }, { passive: true });
+
+      handle.addEventListener("touchmove", (e) => {
+        if (!touchDraggedStepRow) return;
+        const touch = e.touches[0];
+        const diff = Math.abs(touch.clientY - touchStartStepY);
+        if (diff > 8 && e.cancelable) {
+          e.preventDefault();
+        }
+
+        const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+        const overRow = elem ? elem.closest(".fc-step-input-row") : null;
+
+        rows.forEach((r) => {
+          if (r === overRow && r !== touchDraggedStepRow) {
+            r.classList.add("drag-over-above");
+          } else {
+            r.classList.remove("drag-over-above", "drag-over-below");
+          }
+        });
+      }, { passive: false });
+
+      handle.addEventListener("touchend", (e) => {
+        if (!touchDraggedStepRow) return;
+        const touch = e.changedTouches[0];
+        const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+        const overRow = elem ? elem.closest(".fc-step-input-row") : null;
+
+        touchDraggedStepRow.classList.remove("is-dragging");
+        rows.forEach((r) => r.classList.remove("drag-over-above", "drag-over-below"));
+
+        if (overRow && touchFromStepIdx !== null) {
+          const toIdx = parseInt(overRow.dataset.stepIndex, 10);
+          if (!isNaN(toIdx) && toIdx !== touchFromStepIdx) {
+            syncStepTextareasToState();
+            const [movedStep] = tempSteps.splice(touchFromStepIdx, 1);
+            tempSteps.splice(toIdx, 0, movedStep);
+            tempSteps.forEach((s, i) => (s.stepNumber = i + 1));
+            renderAndRebindSteps();
+          }
+        }
+
+        touchDraggedStepRow = null;
+        touchFromStepIdx = null;
+      });
+    });
+  }
+
+  window.bindStepsDragDrop = bindStepsDragDrop;
+
+  window.addStepRow = function () {
+    syncStepTextareasToState();
+    tempSteps.push({ stepNumber: tempSteps.length + 1, instruction: "" });
+    renderAndRebindSteps();
   };
 
   window.removeStepRow = function (idx) {
     if (tempSteps.length <= 1) return;
+    syncStepTextareasToState();
     tempSteps.splice(idx, 1);
-    const cont = document.getElementById("rfStepsContainer");
-    if (cont) cont.innerHTML = renderStepsInputs();
+    tempSteps.forEach((s, i) => (s.stepNumber = i + 1));
+    renderAndRebindSteps();
   };
 
   window.updateStep = function (idx, val) {

@@ -1378,6 +1378,64 @@ div.fc-modal .fc-modal-dialog,
   color: #fff;
 }
 
+/* Drag & Drop Step Rows */
+.fc-step-input-row {
+  position: relative;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  padding: 3px 0;
+}
+
+.fc-step-drag-handle {
+  width: 28px;
+  height: 34px;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  cursor: grab;
+  border-radius: 7px;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.fc-step-drag-handle:hover {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.15);
+}
+
+.fc-step-drag-handle:active {
+  cursor: grabbing;
+}
+
+.fc-step-drag-handle i {
+  font-size: 15px;
+  position: static !important;
+  top: 0 !important;
+  line-height: 1;
+}
+
+.fc-step-input-row.is-dragging {
+  opacity: 0.35 !important;
+  background: rgba(245, 158, 11, 0.08) !important;
+  border: 1px dashed rgba(245, 158, 11, 0.5) !important;
+}
+
+.fc-step-input-row.drag-over-above {
+  border-top: 2px solid #f59e0b !important;
+  box-shadow: 0 -3px 8px rgba(245, 158, 11, 0.25);
+}
+
+.fc-step-input-row.drag-over-below {
+  border-bottom: 2px solid #f59e0b !important;
+  box-shadow: 0 3px 8px rgba(245, 158, 11, 0.25);
+}
+
 /* Preset Image Selector */
 .fc-image-picker-grid {
   display: grid;

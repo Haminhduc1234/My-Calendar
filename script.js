@@ -1766,6 +1766,7 @@ function applyProfileToUI(settings) {
   const profileWrapper = document.getElementById("todayProfile");
   const avatarEl = document.getElementById("todayProfileAvatar");
   const avatarPlaceholder = document.getElementById("todayProfilePlaceholder");
+  const badgeEl = document.getElementById("todayProfileBadge");
   const nameEl = document.getElementById("todayProfileName");
   const bioEl = document.getElementById("todayProfileBio");
 
@@ -1777,18 +1778,37 @@ function applyProfileToUI(settings) {
     bioEl.textContent = settings.bio || "";
   }
 
-  // Update avatar
+  // Update avatar & verified badge (chỉ hiển thị badge khi avatar đã tải thành công)
   if (settings.avatar) {
-    avatarEl.src = settings.avatar;
-    avatarEl.style.display = "block";
-    if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
-    avatarEl.onerror = () => {
-      avatarEl.style.display = "none";
-      if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
-    };
+    if (badgeEl) badgeEl.style.display = "none";
+    if (avatarEl) {
+      avatarEl.onload = () => {
+        avatarEl.style.display = "block";
+        if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
+        if (badgeEl) badgeEl.style.display = "flex";
+      };
+      avatarEl.onerror = () => {
+        avatarEl.style.display = "none";
+        if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
+        if (badgeEl) badgeEl.style.display = "none";
+      };
+      avatarEl.src = settings.avatar;
+      // Tránh trường hợp ảnh load từ cache trước khi gán onload
+      if (avatarEl.complete && avatarEl.naturalWidth > 0) {
+        avatarEl.style.display = "block";
+        if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
+        if (badgeEl) badgeEl.style.display = "flex";
+      }
+    }
   } else {
-    avatarEl.style.display = "none";
+    if (avatarEl) {
+      avatarEl.onload = null;
+      avatarEl.onerror = null;
+      avatarEl.src = "";
+      avatarEl.style.display = "none";
+    }
     if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
+    if (badgeEl) badgeEl.style.display = "none";
   }
 
   // Apply cover to today panel
@@ -1819,6 +1839,11 @@ function initProfileOnLoad() {
     if (nameEl) {
       nameEl.textContent = currentUsername;
     }
+    const badgeEl = document.getElementById("todayProfileBadge");
+    if (badgeEl) badgeEl.style.display = "none";
+  } else {
+    const badgeEl = document.getElementById("todayProfileBadge");
+    if (badgeEl) badgeEl.style.display = "none";
   }
 
   // Setup file input listeners

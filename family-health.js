@@ -263,165 +263,9 @@
     }
   }
 
-  // Dữ liệu mẫu ban đầu để giao diện ấm cúng, sẵn sàng trải nghiệm
-  const INITIAL_MEMBERS = [
-    {
-      id: 'mem_dad',
-      name: 'Bố Tuấn',
-      role: 'Bố',
-      gender: 'male',
-      birthDate: '1986-04-15',
-      avatarIcon: 'fi-rr-user',
-      avatarColor: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
-      note: 'Duy trì chạy bộ buổi sáng'
-    },
-    {
-      id: 'mem_mom',
-      name: 'Mẹ Hằng',
-      role: 'Mẹ',
-      gender: 'female',
-      birthDate: '1989-10-22',
-      avatarIcon: 'fi-rr-heart',
-      avatarColor: 'linear-gradient(135deg, #ec4899, #be185d)',
-      note: 'Tập yoga 3 buổi/tuần'
-    },
-    {
-      id: 'mem_child_1',
-      name: 'Bé Bông',
-      role: 'Con gái',
-      gender: 'female',
-      birthDate: '2018-06-12',
-      avatarIcon: 'fi-rr-flower',
-      avatarColor: 'linear-gradient(135deg, #f59e0b, #d97706)',
-      note: 'Chuẩn bị vào lớp 2, thích nhảy múa'
-    },
-    {
-      id: 'mem_baby',
-      name: 'Bé Sóc',
-      role: 'Con trai út',
-      gender: 'male',
-      birthDate: '2025-07-10',
-      avatarIcon: 'fi-rr-baby',
-      avatarColor: 'linear-gradient(135deg, #06b6d4, #0891b2)',
-      note: '14 tháng tuổi, đang tập đi và ăn dặm rất ngoan'
-    }
-  ];
-
-  const INITIAL_LOGS = [
-    {
-      id: 'log_dad_1',
-      memberId: 'mem_dad',
-      measuredDate: '2026-07-15',
-      heightCm: 172,
-      weightKg: 70.2,
-      notes: 'Bắt đầu đặt mục tiêu giảm cân'
-    },
-    {
-      id: 'log_dad_2',
-      memberId: 'mem_dad',
-      measuredDate: '2026-08-15',
-      heightCm: 172,
-      weightKg: 69.0,
-      notes: 'Đo định kỳ tháng trước'
-    },
-    {
-      id: 'log_dad_3',
-      memberId: 'mem_dad',
-      measuredDate: '2026-09-15',
-      heightCm: 172,
-      weightKg: 67.5,
-      notes: 'Giảm được 1.5kg sau 1 tháng chạy bộ'
-    },
-    {
-      id: 'log_mom_1',
-      memberId: 'mem_mom',
-      measuredDate: '2026-08-10',
-      heightCm: 160,
-      weightKg: 52.5,
-      notes: 'Duy trì tập yoga'
-    },
-    {
-      id: 'log_mom_2',
-      memberId: 'mem_mom',
-      measuredDate: '2026-09-15',
-      heightCm: 160,
-      weightKg: 52.0,
-      notes: 'Chỉ số rất ổn định'
-    },
-    {
-      id: 'log_child_1',
-      memberId: 'mem_child_1',
-      measuredDate: '2024-06-15',
-      heightCm: 114,
-      weightKg: 20.0,
-      notes: 'Lúc bé tròn 6 tuổi'
-    },
-    {
-      id: 'log_child_2',
-      memberId: 'mem_child_1',
-      measuredDate: '2025-06-15',
-      heightCm: 120,
-      weightKg: 22.2,
-      notes: 'Lúc bé tròn 7 tuổi'
-    },
-    {
-      id: 'log_child_3',
-      memberId: 'mem_child_1',
-      measuredDate: '2026-09-15',
-      heightCm: 125,
-      weightKg: 24.5,
-      notes: 'Bé ăn ngủ ngoan, tăng chiều cao đều bám sát chuẩn WHO'
-    },
-    // Chuỗi mốc đo thực tế theo từng tháng tuổi của Bé Sóc (0 - 14 tháng)
-    {
-      id: 'log_baby_0',
-      memberId: 'mem_baby',
-      measuredDate: '2025-07-10',
-      heightCm: 50.0,
-      weightKg: 3.3,
-      notes: 'Lúc mới sinh (0 tháng tuổi)'
-    },
-    {
-      id: 'log_baby_3',
-      memberId: 'mem_baby',
-      measuredDate: '2025-10-10',
-      heightCm: 61.5,
-      weightKg: 6.5,
-      notes: 'Tròn 3 tháng tuổi, cứng cáp biết lẫy'
-    },
-    {
-      id: 'log_baby_6',
-      memberId: 'mem_baby',
-      measuredDate: '2026-01-10',
-      heightCm: 67.5,
-      weightKg: 8.0,
-      notes: 'Tròn 6 tháng tuổi, bắt đầu ăn dặm bột rây'
-    },
-    {
-      id: 'log_baby_9',
-      memberId: 'mem_baby',
-      measuredDate: '2026-04-10',
-      heightCm: 72.0,
-      weightKg: 9.0,
-      notes: 'Tròn 9 tháng tuổi, biết bò nhanh và mọc 4 răng'
-    },
-    {
-      id: 'log_baby_12',
-      memberId: 'mem_baby',
-      measuredDate: '2026-07-10',
-      heightCm: 76.0,
-      weightKg: 9.8,
-      notes: 'Thôi nôi tròn 1 tuổi (12 tháng), chập chững bước đi'
-    },
-    {
-      id: 'log_baby_14',
-      memberId: 'mem_baby',
-      measuredDate: '2026-09-10',
-      heightCm: 78.5,
-      weightKg: 10.3,
-      notes: '14 tháng tuổi, phát triển thể lực và vận động rất chuẩn WHO'
-    }
-  ];
+  // Dữ liệu ban đầu: để trống để ưu tiên đọc và đồng bộ dữ liệu thực tế từ Firebase Realtime Database
+  const INITIAL_MEMBERS = [];
+  const INITIAL_LOGS = [];
 
   // --- STATE QUẢN LÝ ---
   let state = {
@@ -677,21 +521,20 @@
     isFirebaseSyncReady = true;
 
     // 1. Lắng nghe real-time danh sách thành viên
+    // 1. Lắng nghe real-time danh sách thành viên thực tế từ Firebase
     firebaseHealthMembersRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        state.members = Array.isArray(data) ? data : Object.values(data);
-        // Tự động bổ sung mem_baby nếu chưa có
-        if (!state.members.some(m => m.id === 'mem_baby')) {
-          const babyMember = INITIAL_MEMBERS.find(m => m.id === 'mem_baby');
-          if (babyMember) {
-            state.members.push(babyMember);
-            saveMembersToFirebase();
-          }
+        let membersList = Array.isArray(data) ? data : Object.values(data);
+        // Loại bỏ hoàn toàn mem_baby nếu trước đây từng bị auto-inject vào Firebase
+        membersList = membersList.filter(m => m && m.id !== 'mem_baby');
+        state.members = membersList;
+        // Dọn dẹp node mem_baby trên Firebase nếu còn lưu
+        if (data.mem_baby || (Array.isArray(data) && data.some(m => m && m.id === 'mem_baby'))) {
+          try { firebaseHealthMembersRef.child('mem_baby').remove(); } catch (e) {}
         }
       } else {
-        // Lần đầu tạo trên Firebase cho profile này: đẩy dữ liệu hiện có lên
-        saveMembersToFirebase();
+        state.members = [];
       }
       try {
         localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(state.members));
@@ -699,23 +542,22 @@
       renderIfModalActive();
     });
 
-    // 2. Lắng nghe real-time danh sách số đo
+    // 2. Lắng nghe real-time danh sách số đo thực tế từ Firebase
     firebaseHealthLogsRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        state.logs = Array.isArray(data) ? data : Object.values(data);
-        // Tự động bổ sung số đo baby nếu chưa có
-        const hasBabyLogs = state.logs.some(l => l.memberId === 'mem_baby');
-        if (!hasBabyLogs) {
-          const babyLogs = INITIAL_LOGS.filter(l => l.memberId === 'mem_baby');
-          if (babyLogs.length > 0) {
-            state.logs.push(...babyLogs);
-            saveLogsToFirebase();
+        let logsList = Array.isArray(data) ? data : Object.values(data);
+        // Loại bỏ logs của mem_baby nếu trước đây từng bị auto-inject
+        logsList = logsList.filter(l => l && l.memberId !== 'mem_baby' && !String(l.id).startsWith('log_baby_'));
+        state.logs = logsList;
+        // Dọn dẹp logs của baby trên Firebase nếu có
+        ['log_baby_0', 'log_baby_3', 'log_baby_6', 'log_baby_9', 'log_baby_12', 'log_baby_14'].forEach(id => {
+          if (data[id]) {
+            try { firebaseHealthLogsRef.child(id).remove(); } catch (e) {}
           }
-        }
+        });
       } else {
-        // Lần đầu tạo trên Firebase cho profile này: đẩy số đo hiện có lên
-        saveLogsToFirebase();
+        state.logs = [];
       }
       try {
         localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(state.logs));
@@ -767,39 +609,30 @@
       const storedLogs = localStorage.getItem(STORAGE_KEYS.LOGS);
 
       if (storedMembers) {
-        state.members = JSON.parse(storedMembers);
-        // Tự động bổ sung mem_baby nếu dữ liệu cũ trong máy chưa có
-        if (!state.members.some(m => m.id === 'mem_baby')) {
-          const babyMember = INITIAL_MEMBERS.find(m => m.id === 'mem_baby');
-          if (babyMember) {
-            state.members.push(babyMember);
-            saveMembers();
-          }
+        const parsed = JSON.parse(storedMembers);
+        if (Array.isArray(parsed)) {
+          state.members = parsed.filter(m => m && m.id !== 'mem_baby');
+        } else {
+          state.members = [];
         }
       } else {
-        state.members = INITIAL_MEMBERS;
-        saveMembers();
+        state.members = [];
       }
 
       if (storedLogs) {
-        state.logs = JSON.parse(storedLogs);
-        // Bổ sung số đo mẫu của baby nếu chưa có
-        const hasBabyLogs = state.logs.some(l => l.memberId === 'mem_baby');
-        if (!hasBabyLogs) {
-          const babyLogs = INITIAL_LOGS.filter(l => l.memberId === 'mem_baby');
-          if (babyLogs.length > 0) {
-            state.logs.push(...babyLogs);
-            saveLogs();
-          }
+        const parsed = JSON.parse(storedLogs);
+        if (Array.isArray(parsed)) {
+          state.logs = parsed.filter(l => l && l.memberId !== 'mem_baby' && !String(l.id).startsWith('log_baby_'));
+        } else {
+          state.logs = [];
         }
       } else {
-        state.logs = INITIAL_LOGS;
-        saveLogs();
+        state.logs = [];
       }
     } catch (e) {
       console.warn('[FamilyHealth] Lỗi đọc localStorage:', e);
-      state.members = INITIAL_MEMBERS;
-      state.logs = INITIAL_LOGS;
+      state.members = [];
+      state.logs = [];
     }
   }
 
@@ -2334,7 +2167,9 @@
     if (!firebaseHealthMembersRef && window.firebaseDb && window.userProfileKey) {
       initFamilyHealthFirebase(window.firebaseDb, window.userProfileKey);
     }
-    loadData();
+    if (state.members.length === 0 && state.logs.length === 0) {
+      loadData();
+    }
     const modal = document.getElementById('familyHealthModal');
     if (modal) {
       modal.style.display = 'flex';

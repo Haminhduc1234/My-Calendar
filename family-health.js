@@ -768,7 +768,6 @@
               <div class="fh-member-meta">
                 <div class="fh-member-name-row">
                   <h4 class="fh-member-name">${escapeHtml(member.name)}</h4>
-                  <span class="fh-member-role-badge">${escapeHtml(member.role)}</span>
                 </div>
                 <div class="fh-member-age">
                   <i class="fi fi-rr-calendar"></i> ${ageLabel} • ${member.gender === 'female' ? 'Nữ' : 'Nam'}
@@ -834,7 +833,6 @@
             <div class="fh-member-meta">
               <div class="fh-member-name-row">
                 <h4 class="fh-member-name">${escapeHtml(member.name)}</h4>
-                <span class="fh-member-role-badge">${escapeHtml(member.role)}</span>
               </div>
               <div class="fh-member-age">
                 <i class="fi fi-rr-calendar"></i> <span>${ageLabel} • ${member.gender === 'female' ? 'Nữ' : 'Nam'}</span>
@@ -1000,7 +998,7 @@
           ${renderMemberAvatarHtml(m, 'fh-cmp-avatar')}
           <div class="fh-cmp-info">
             <span class="fh-cmp-name">${escapeHtml(m.name)}</span>
-            <span class="fh-cmp-sub">${escapeHtml(m.role)} • ${mAgeLabel}</span>
+            <span class="fh-cmp-sub">${m.gender === 'female' ? 'Nữ' : 'Nam'} • ${mAgeLabel}</span>
           </div>
         </button>
       `;
@@ -1472,7 +1470,7 @@
       `<option value="all" ${state.selectedMemberIdForHistory === 'all' ? 'selected' : ''}>Tất cả thành viên (${state.members.length})</option>`,
       ...state.members.map(m => `
         <option value="${m.id}" ${state.selectedMemberIdForHistory === m.id ? 'selected' : ''}>
-          ${escapeHtml(m.name)} (${escapeHtml(m.role)})
+          ${escapeHtml(m.name)} (${m.gender === 'female' ? 'Nữ' : 'Nam'})
         </option>
       `)
     ].join('');
@@ -1528,7 +1526,7 @@
               ${renderMemberAvatarHtml(member, 'fh-table-member-avatar')}
               <div class="fh-table-member-text">
                 <strong>${escapeHtml(member.name)}</strong>
-                <small>${escapeHtml(member.role)}</small>
+                <small>${member.gender === 'female' ? 'Nữ' : 'Nam'}</small>
               </div>
             </div>
           </td>
@@ -1575,7 +1573,7 @@
           <div class="fh-hci-top">
             <div class="fh-hci-member">
               <strong>${escapeHtml(member.name)}</strong>
-              <span class="fh-member-role-badge">${escapeHtml(member.role)}</span>
+              <small style="font-size: 0.72rem; color: #94a3b8; font-weight: 500;">(${member.gender === 'female' ? 'Nữ' : 'Nam'})</small>
             </div>
             <div class="fh-hci-date-actions">
               <span class="fh-hci-date"><i class="fi fi-rr-calendar"></i> <span>${formatDateVi(log.measuredDate)}</span></span>
@@ -2076,21 +2074,6 @@
     event.target.value = '';
   }
 
-  function fhOnMemberRoleChange(role) {
-    if (currentEditingAvatarState.uploadedUrl) return;
-    let matchedPresetId = 'dad';
-    if (role.includes('Bố') || role.includes('Bác') || role.includes('Chú')) matchedPresetId = 'dad';
-    else if (role.includes('Mẹ') || role.includes('Cô') || role.includes('Dì')) matchedPresetId = 'mom';
-    else if (role.includes('Con gái')) matchedPresetId = 'daughter';
-    else if (role.includes('Con trai')) matchedPresetId = 'son';
-    else if (role.includes('Ông')) matchedPresetId = 'grandpa';
-    else if (role.includes('Bà')) matchedPresetId = 'grandma';
-    else if (role.includes('Em bé') || role.includes('Sơ sinh')) matchedPresetId = 'baby';
-    else if (role.includes('Bản thân')) matchedPresetId = 'happy';
-
-    fhSelectAvatarPreset(matchedPresetId);
-  }
-
   function openAddMemberModal(memberId = null) {
     state.activeEditingMemberId = memberId;
     const modal = document.getElementById('fhMemberModal');
@@ -2103,7 +2086,6 @@
       if (!member) return;
       if (titleEl) titleEl.innerText = 'Chỉnh Sửa Hồ Sơ Thành Viên';
       form.memberName.value = member.name || '';
-      form.memberRole.value = member.role || 'Bố';
       form.memberGender.value = member.gender || 'male';
       form.memberBirthDate.value = member.birthDate || '1990-01-01';
       form.memberNote.value = member.note || '';
@@ -2125,7 +2107,6 @@
       form.reset();
       form.memberBirthDate.value = '1990-01-01';
       form.memberGender.value = 'male';
-      form.memberRole.value = 'Bố';
 
       currentEditingAvatarState.uploadedUrl = null;
       currentEditingAvatarState.selectedPresetId = 'dad';
@@ -2153,7 +2134,6 @@
     if (!form) return;
 
     const name = form.memberName.value.trim();
-    const role = form.memberRole.value.trim();
     const gender = form.memberGender.value;
     const birthDate = form.memberBirthDate.value;
     const note = form.memberNote.value.trim();
@@ -2174,7 +2154,6 @@
         state.members[index] = {
           ...state.members[index],
           name,
-          role,
           gender,
           birthDate,
           note,
@@ -2188,7 +2167,6 @@
       const newMember = {
         id: 'mem_' + Date.now(),
         name,
-        role,
         gender,
         birthDate,
         note,
@@ -2221,7 +2199,7 @@
     // Populate dropdown thành viên
     selectMember.innerHTML = state.members.map(m => `
       <option value="${m.id}" ${presetMemberId === m.id ? 'selected' : ''}>
-        ${escapeHtml(m.name)} (${escapeHtml(m.role)})
+        ${escapeHtml(m.name)} (${m.gender === 'female' ? 'Nữ' : 'Nam'})
       </option>
     `).join('');
 
@@ -2387,7 +2365,6 @@
   window.fhSelectAvatarPreset = fhSelectAvatarPreset;
   window.fhRemoveUploadedAvatar = fhRemoveUploadedAvatar;
   window.fhHandleAvatarFileSelect = fhHandleAvatarFileSelect;
-  window.fhOnMemberRoleChange = fhOnMemberRoleChange;
 
   // Auto load on init
   document.addEventListener('DOMContentLoaded', () => {

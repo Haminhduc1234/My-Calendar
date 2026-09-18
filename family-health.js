@@ -267,6 +267,42 @@
   const INITIAL_MEMBERS = [];
   const INITIAL_LOGS = [];
 
+  // Danh sách biểu tượng avatar mẫu mặc định
+  const FH_AVATAR_PRESETS = [
+    { id: 'dad', label: 'Bố', icon: 'fi-rr-user', color: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' },
+    { id: 'mom', label: 'Mẹ', icon: 'fi-rr-heart', color: 'linear-gradient(135deg, #ec4899, #be185d)' },
+    { id: 'son', label: 'Con trai', icon: 'fi-rr-smile', color: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
+    { id: 'daughter', label: 'Con gái', icon: 'fi-rr-flower', color: 'linear-gradient(135deg, #f59e0b, #d97706)' },
+    { id: 'baby', label: 'Em bé', icon: 'fi-rr-baby', color: 'linear-gradient(135deg, #10b981, #059669)' },
+    { id: 'grandpa', label: 'Ông', icon: 'fi-rr-glasses', color: 'linear-gradient(135deg, #64748b, #334155)' },
+    { id: 'grandma', label: 'Bà', icon: 'fi-rr-sparkles', color: 'linear-gradient(135deg, #a855f7, #7e22ce)' },
+    { id: 'fit', label: 'Vận động', icon: 'fi-rr-running', color: 'linear-gradient(135deg, #ef4444, #b91c1c)' },
+    { id: 'star', label: 'Ngôi sao', icon: 'fi-rr-star', color: 'linear-gradient(135deg, #eab308, #ca8a04)' },
+    { id: 'happy', label: 'Vui vẻ', icon: 'fi-rr-grin-stars', color: 'linear-gradient(135deg, #14b8a6, #0f766e)' }
+  ];
+
+  // Trạng thái chọn avatar khi thêm/sửa thành viên
+  let currentEditingAvatarState = {
+    selectedPresetId: 'dad',
+    uploadedUrl: null,
+    avatarIcon: 'fi-rr-user',
+    avatarColor: 'linear-gradient(135deg, #3b82f6, #1d4ed8)'
+  };
+
+  // Hàm render avatar thành viên thống nhất (ảnh upload hoặc preset icon)
+  function renderMemberAvatarHtml(member, className = 'fh-member-avatar') {
+    if (!member) return `<div class="${className}"><i class="fi fi-rr-user"></i></div>`;
+    const bgStyle = member.avatarColor || 'linear-gradient(135deg, #10b981, #059669)';
+    if (member.avatarUrl && typeof member.avatarUrl === 'string' && member.avatarUrl.trim() !== '') {
+      return `<div class="${className} has-image" style="background: ${bgStyle};">
+        <img src="${member.avatarUrl}" alt="${escapeHtml(member.name || '')}" class="fh-avatar-img" />
+      </div>`;
+    }
+    return `<div class="${className}" style="background: ${bgStyle};">
+      <i class="fi ${member.avatarIcon || 'fi-rr-user'}"></i>
+    </div>`;
+  }
+
   // --- STATE QUẢN LÝ ---
   let state = {
     members: [],
@@ -728,9 +764,7 @@
         return `
           <div class="fh-member-card">
             <div class="fh-card-header">
-              <div class="fh-member-avatar" style="background: ${member.avatarColor || 'linear-gradient(135deg, #10b981, #059669)'}">
-                <i class="fi ${member.avatarIcon || 'fi-rr-user'}"></i>
-              </div>
+              ${renderMemberAvatarHtml(member, 'fh-member-avatar')}
               <div class="fh-member-meta">
                 <div class="fh-member-name-row">
                   <h4 class="fh-member-name">${escapeHtml(member.name)}</h4>
@@ -796,9 +830,7 @@
         <div class="fh-member-card">
           <!-- Card Header -->
           <div class="fh-card-header">
-            <div class="fh-member-avatar" style="background: ${member.avatarColor || 'linear-gradient(135deg, #10b981, #059669)'}">
-              <i class="fi ${member.avatarIcon || 'fi-rr-user'}"></i>
-            </div>
+            ${renderMemberAvatarHtml(member, 'fh-member-avatar')}
             <div class="fh-member-meta">
               <div class="fh-member-name-row">
                 <h4 class="fh-member-name">${escapeHtml(member.name)}</h4>
@@ -965,9 +997,7 @@
         <button type="button" 
           class="fh-chart-member-pill ${isSelected ? 'active' : ''}" 
           onclick="window.fhOnChartMemberChange('${m.id}')">
-          <div class="fh-cmp-avatar" style="background: ${m.avatarColor || 'linear-gradient(135deg, #10b981, #059669)'}">
-            <i class="fi ${m.avatarIcon || 'fi-rr-user'}"></i>
-          </div>
+          ${renderMemberAvatarHtml(m, 'fh-cmp-avatar')}
           <div class="fh-cmp-info">
             <span class="fh-cmp-name">${escapeHtml(m.name)}</span>
             <span class="fh-cmp-sub">${escapeHtml(m.role)} • ${mAgeLabel}</span>
@@ -1495,8 +1525,11 @@
           </td>
           <td class="fh-td-member">
             <div class="fh-table-member-cell">
-              <strong>${escapeHtml(member.name)}</strong>
-              <small>${escapeHtml(member.role)}</small>
+              ${renderMemberAvatarHtml(member, 'fh-table-member-avatar')}
+              <div class="fh-table-member-text">
+                <strong>${escapeHtml(member.name)}</strong>
+                <small>${escapeHtml(member.role)}</small>
+              </div>
             </div>
           </td>
           <td class="fh-td-num"><strong>${log.heightCm}</strong> cm</td>
@@ -1948,7 +1981,116 @@
     }
   }
 
-  // --- MODAL THÊM / SỬA THÀNH VIÊN ---
+  // --- MODAL THÊM / SỬA THÀNH VIÊN & AVATAR PICKER ---
+  function updateMemberAvatarFormUI() {
+    const previewEl = document.getElementById('fhMemberAvatarPreview');
+    const removeBtn = document.getElementById('fhMemberAvatarRemoveBtn');
+    const gridEl = document.getElementById('fhAvatarPresetsGrid');
+
+    if (previewEl) {
+      if (currentEditingAvatarState.uploadedUrl) {
+        previewEl.style.background = '#1e293b';
+        previewEl.innerHTML = `<img src="${currentEditingAvatarState.uploadedUrl}" alt="Avatar" class="fh-avatar-img" />`;
+      } else {
+        previewEl.style.background = currentEditingAvatarState.avatarColor;
+        previewEl.innerHTML = `<i class="fi ${currentEditingAvatarState.avatarIcon}"></i>`;
+      }
+    }
+
+    if (removeBtn) {
+      removeBtn.style.display = currentEditingAvatarState.uploadedUrl ? 'inline-flex' : 'none';
+    }
+
+    if (gridEl) {
+      gridEl.innerHTML = FH_AVATAR_PRESETS.map(p => {
+        const isActive = !currentEditingAvatarState.uploadedUrl && currentEditingAvatarState.selectedPresetId === p.id;
+        return `
+          <button type="button" class="fh-preset-chip ${isActive ? 'active' : ''}" onclick="window.fhSelectAvatarPreset('${p.id}')" title="${p.label}">
+            <div class="fh-preset-icon" style="background: ${p.color};">
+              <i class="fi ${p.icon}"></i>
+            </div>
+            <span class="fh-preset-label">${p.label}</span>
+          </button>
+        `;
+      }).join('');
+    }
+  }
+
+  function fhSelectAvatarPreset(presetId) {
+    const preset = FH_AVATAR_PRESETS.find(p => p.id === presetId);
+    if (!preset) return;
+    currentEditingAvatarState.selectedPresetId = presetId;
+    currentEditingAvatarState.uploadedUrl = null;
+    currentEditingAvatarState.avatarIcon = preset.icon;
+    currentEditingAvatarState.avatarColor = preset.color;
+    updateMemberAvatarFormUI();
+  }
+
+  function fhRemoveUploadedAvatar() {
+    currentEditingAvatarState.uploadedUrl = null;
+    currentEditingAvatarState.selectedPresetId = 'dad';
+    const p = FH_AVATAR_PRESETS[0];
+    currentEditingAvatarState.avatarIcon = p.icon;
+    currentEditingAvatarState.avatarColor = p.color;
+    updateMemberAvatarFormUI();
+  }
+
+  function fhHandleAvatarFileSelect(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Vui lòng chọn file hình ảnh hợp lệ (JPG, PNG, WebP).');
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      alert('Ảnh có kích thước quá lớn, vui lòng chọn ảnh dưới 8MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const img = new Image();
+      img.onload = function () {
+        const maxDim = 240;
+        let w = img.width;
+        let h = img.height;
+        const minSide = Math.min(w, h);
+        const sx = (w - minSide) / 2;
+        const sy = (h - minSide) / 2;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = maxDim;
+        canvas.height = maxDim;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, maxDim, maxDim);
+
+        currentEditingAvatarState.uploadedUrl = canvas.toDataURL('image/jpeg', 0.85);
+        currentEditingAvatarState.selectedPresetId = null;
+        updateMemberAvatarFormUI();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  }
+
+  function fhOnMemberRoleChange(role) {
+    if (currentEditingAvatarState.uploadedUrl) return;
+    let matchedPresetId = 'dad';
+    if (role.includes('Bố') || role.includes('Bác') || role.includes('Chú')) matchedPresetId = 'dad';
+    else if (role.includes('Mẹ') || role.includes('Cô') || role.includes('Dì')) matchedPresetId = 'mom';
+    else if (role.includes('Con gái')) matchedPresetId = 'daughter';
+    else if (role.includes('Con trai')) matchedPresetId = 'son';
+    else if (role.includes('Ông')) matchedPresetId = 'grandpa';
+    else if (role.includes('Bà')) matchedPresetId = 'grandma';
+    else if (role.includes('Em bé') || role.includes('Sơ sinh')) matchedPresetId = 'baby';
+    else if (role.includes('Bản thân')) matchedPresetId = 'happy';
+
+    fhSelectAvatarPreset(matchedPresetId);
+  }
+
   function openAddMemberModal(memberId = null) {
     state.activeEditingMemberId = memberId;
     const modal = document.getElementById('fhMemberModal');
@@ -1965,14 +2107,33 @@
       form.memberGender.value = member.gender || 'male';
       form.memberBirthDate.value = member.birthDate || '1990-01-01';
       form.memberNote.value = member.note || '';
+
+      if (member.avatarUrl) {
+        currentEditingAvatarState.uploadedUrl = member.avatarUrl;
+        currentEditingAvatarState.selectedPresetId = null;
+        currentEditingAvatarState.avatarIcon = member.avatarIcon || 'fi-rr-user';
+        currentEditingAvatarState.avatarColor = member.avatarColor || 'linear-gradient(135deg, #10b981, #059669)';
+      } else {
+        currentEditingAvatarState.uploadedUrl = null;
+        const matched = FH_AVATAR_PRESETS.find(p => p.icon === member.avatarIcon) || FH_AVATAR_PRESETS[0];
+        currentEditingAvatarState.selectedPresetId = matched.id;
+        currentEditingAvatarState.avatarIcon = member.avatarIcon || matched.icon;
+        currentEditingAvatarState.avatarColor = member.avatarColor || matched.color;
+      }
     } else {
       if (titleEl) titleEl.innerText = 'Thêm Thành Viên Mới';
       form.reset();
       form.memberBirthDate.value = '1990-01-01';
       form.memberGender.value = 'male';
-      form.memberRole.value = 'Con trai';
+      form.memberRole.value = 'Bố';
+
+      currentEditingAvatarState.uploadedUrl = null;
+      currentEditingAvatarState.selectedPresetId = 'dad';
+      currentEditingAvatarState.avatarIcon = FH_AVATAR_PRESETS[0].icon;
+      currentEditingAvatarState.avatarColor = FH_AVATAR_PRESETS[0].color;
     }
 
+    updateMemberAvatarFormUI();
     modal.style.display = 'flex';
     modal.classList.add('active');
   }
@@ -2002,22 +2163,9 @@
       return;
     }
 
-    // Chọn avatar icon và màu tương ứng vai trò
-    let avatarIcon = 'fi-rr-user';
-    let avatarColor = 'linear-gradient(135deg, #10b981, #059669)';
-    if (role.includes('Bố') || role.includes('Ông')) {
-      avatarIcon = 'fi-rr-user';
-      avatarColor = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
-    } else if (role.includes('Mẹ') || role.includes('Bà')) {
-      avatarIcon = 'fi-rr-heart';
-      avatarColor = 'linear-gradient(135deg, #ec4899, #be185d)';
-    } else if (role.includes('Con gái')) {
-      avatarIcon = 'fi-rr-flower';
-      avatarColor = 'linear-gradient(135deg, #f59e0b, #d97706)';
-    } else if (role.includes('Con trai')) {
-      avatarIcon = 'fi-rr-smile';
-      avatarColor = 'linear-gradient(135deg, #06b6d4, #0891b2)';
-    }
+    const avatarUrl = currentEditingAvatarState.uploadedUrl || '';
+    const avatarIcon = currentEditingAvatarState.avatarIcon || 'fi-rr-user';
+    const avatarColor = currentEditingAvatarState.avatarColor || 'linear-gradient(135deg, #10b981, #059669)';
 
     if (state.activeEditingMemberId) {
       // Cập nhật
@@ -2030,6 +2178,7 @@
           gender,
           birthDate,
           note,
+          avatarUrl,
           avatarIcon,
           avatarColor
         };
@@ -2043,6 +2192,7 @@
         gender,
         birthDate,
         note,
+        avatarUrl,
         avatarIcon,
         avatarColor,
         createdAt: new Date().toISOString()
@@ -2234,6 +2384,10 @@
   window.fhOnQuickGenderChange = fhOnQuickGenderChange;
   window.fhDoQuickCalculate = fhDoQuickCalculate;
   window.fhResetQuickCalc = fhResetQuickCalc;
+  window.fhSelectAvatarPreset = fhSelectAvatarPreset;
+  window.fhRemoveUploadedAvatar = fhRemoveUploadedAvatar;
+  window.fhHandleAvatarFileSelect = fhHandleAvatarFileSelect;
+  window.fhOnMemberRoleChange = fhOnMemberRoleChange;
 
   // Auto load on init
   document.addEventListener('DOMContentLoaded', () => {

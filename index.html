@@ -3444,10 +3444,37 @@
           <input type="text" id="fhMemberName" name="memberName" class="fc-form-input" placeholder="Ví dụ: Bố Tuấn, Mẹ Hằng, Bé Bông..." required />
         </div>
 
+        <!-- Chọn Ảnh đại diện (Preset mặc định hoặc Tải ảnh từ máy) -->
+        <div class="fc-form-group">
+          <label class="fc-form-label">Ảnh đại diện thành viên</label>
+          <div class="fh-avatar-picker-box">
+            <div class="fh-avatar-picker-main">
+              <div class="fh-avatar-picker-preview" id="fhMemberAvatarPreview">
+                <i class="fi fi-rr-user"></i>
+              </div>
+              <div class="fh-avatar-picker-actions">
+                <div class="fh-avatar-btn-row">
+                  <button type="button" class="fh-btn fh-btn-secondary fh-btn-sm" onclick="document.getElementById('fhMemberAvatarFileInput').click()">
+                    <i class="fi fi-rr-camera"></i> <span>Tải ảnh từ máy</span>
+                  </button>
+                  <button type="button" class="fh-btn fh-btn-ghost fh-btn-sm" id="fhMemberAvatarRemoveBtn" style="display: none;" onclick="window.fhRemoveUploadedAvatar()">
+                    <i class="fi fi-rr-trash"></i> <span>Xóa ảnh tải lên</span>
+                  </button>
+                </div>
+                <input type="file" id="fhMemberAvatarFileInput" accept="image/*" style="display: none;" onchange="window.fhHandleAvatarFileSelect(event)" />
+                <span class="fh-avatar-picker-hint">Chọn biểu tượng mẫu bên dưới hoặc tải ảnh chụp cá nhân</span>
+              </div>
+            </div>
+
+            <div class="fh-avatar-presets-label">Hoặc chọn biểu tượng mặc định:</div>
+            <div class="fh-avatar-presets-grid" id="fhAvatarPresetsGrid"></div>
+          </div>
+        </div>
+
         <div class="fc-form-row">
           <div class="fc-form-group">
             <label class="fc-form-label" for="fhMemberRole">Quan hệ / Vai trò</label>
-            <select id="fhMemberRole" name="memberRole" class="fc-form-select">
+            <select id="fhMemberRole" name="memberRole" class="fc-form-select" onchange="window.fhOnMemberRoleChange(this.value)">
               <option value="Bố">Bố</option>
               <option value="Mẹ">Mẹ</option>
               <option value="Con trai">Con trai</option>

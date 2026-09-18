@@ -361,10 +361,17 @@
     return `${age.years} tuổi ${age.months > 0 ? age.months + ' tháng' : ''}`;
   }
 
+  // Tính chỉ số khối cơ thể BMI (Body Mass Index)
+  function calculateBMI(weightKg, heightCm) {
+    if (!weightKg || !heightCm || heightCm <= 0) return 0;
+    const hM = heightCm / 100;
+    return +(weightKg / (hM * hM)).toFixed(1);
+  }
+
   // Đánh giá và phân tích chỉ số sức khỏe theo chuẩn y tế (WHO Child Standards & WHO Asia-Pacific)
   function evaluateHealthStatus(heightCm, weightKg, birthDateStr, gender = 'male', targetDateStr) {
     const hM = heightCm / 100;
-    const bmi = +(weightKg / (hM * hM)).toFixed(1);
+    const bmi = calculateBMI(weightKg, heightCm);
     const age = calculateAge(birthDateStr, targetDateStr);
 
     // 1. Người trưởng thành (>= 19t) theo Chuẩn BMI Châu Á (WHO Asia-Pacific / Bộ Y Tế VN)
@@ -543,10 +550,10 @@
 
     // Hủy listeners cũ khi chuyển profile người dùng
     if (firebaseHealthMembersRef) {
-      try { firebaseHealthMembersRef.off(); } catch (e) {}
+      try { firebaseHealthMembersRef.off(); } catch (e) { }
     }
     if (firebaseHealthLogsRef) {
-      try { firebaseHealthLogsRef.off(); } catch (e) {}
+      try { firebaseHealthLogsRef.off(); } catch (e) { }
     }
 
     // Đọc cache từ LocalStorage trước để hiển thị tức thì không độ trễ
@@ -567,14 +574,14 @@
         state.members = membersList;
         // Dọn dẹp node mem_baby trên Firebase nếu còn lưu
         if (data.mem_baby || (Array.isArray(data) && data.some(m => m && m.id === 'mem_baby'))) {
-          try { firebaseHealthMembersRef.child('mem_baby').remove(); } catch (e) {}
+          try { firebaseHealthMembersRef.child('mem_baby').remove(); } catch (e) { }
         }
       } else {
         state.members = [];
       }
       try {
         localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(state.members));
-      } catch (e) {}
+      } catch (e) { }
       renderIfModalActive();
     });
 
@@ -589,7 +596,7 @@
         // Dọn dẹp logs của baby trên Firebase nếu có
         ['log_baby_0', 'log_baby_3', 'log_baby_6', 'log_baby_9', 'log_baby_12', 'log_baby_14'].forEach(id => {
           if (data[id]) {
-            try { firebaseHealthLogsRef.child(id).remove(); } catch (e) {}
+            try { firebaseHealthLogsRef.child(id).remove(); } catch (e) { }
           }
         });
       } else {
@@ -597,7 +604,7 @@
       }
       try {
         localStorage.setItem(STORAGE_KEYS.LOGS, JSON.stringify(state.logs));
-      } catch (e) {}
+      } catch (e) { }
       renderIfModalActive();
     });
   }
@@ -702,20 +709,56 @@
     renderCurrentTab();
   }
 
-  // Lấy số đo mới nhất của 1 thành viên
-  function getLatestLog(memberId) {
-    const memberLogs = state.logs
-      .filter(l => l.memberId === memberId)
-      .sort((a, b) => new Date(b.measuredDate) - new Date(a.measuredDate));
-    return memberLogs[0] || null;
+  // Trích xuất thời điểm ghi thực tế (timestamp) của bản ghi số đo
+  function getLogTimestamp(log) {
+    if (!log) return 0;
+    if (log.createdAt && typeof log.createdAt === 'number') return log.createdAt;
+    if (typeof log.id === 'string' && log.id.startsWith('log_')) {
+      const ts = parseInt(log.id.replace('log_', ''), 10);
+      if (!isNaN(ts) && ts > 1000000000000) return ts;
+    }
+    return 0;
   }
 
-  // Lấy số đo gần thứ 2 (để so sánh đà tăng giảm)
+  // Sắp xếp danh sách số đo giảm dần (bản ghi mới nhất lên đầu tiên)
+  // Ưu tiên ngày đo (measuredDate), nếu cùng ngày đo thì lấy theo thời điểm ghi thực tế (createdAt)
+  function sortLogsDesc(logs) {
+    return logs.slice().sort((a, b) => {
+      const timeA = new Date(a.measuredDate).getTime() || 0;
+      const timeB = new Date(b.measuredDate).getTime() || 0;
+      if (timeB !== timeA) {
+        return timeB - timeA;
+      }
+      return getLogTimestamp(b) - getLogTimestamp(a);
+    });
+  }
+
+  // Sắp xếp danh sách số đo tăng dần theo thời gian (dùng để vẽ biểu đồ đường cong tăng trưởng)
+  function sortLogsAsc(logs) {
+    return logs.slice().sort((a, b) => {
+      const timeA = new Date(a.measuredDate).getTime() || 0;
+      const timeB = new Date(b.measuredDate).getTime() || 0;
+      if (timeA !== timeB) {
+        return timeA - timeB;
+      }
+      return getLogTimestamp(a) - getLogTimestamp(b);
+    });
+  }
+
+  // Lấy số đo mới nhất của 1 thành viên theo thời gian đã ghi
+  function getLatestLog(memberId) {
+    const memberLogs = state.logs.filter(l => l.memberId === memberId);
+    if (memberLogs.length === 0) return null;
+    const sorted = sortLogsDesc(memberLogs);
+    return sorted[0] || null;
+  }
+
+  // Lấy số đo gần thứ 2 (để so sánh đà tăng giảm với lần đo trước)
   function getPreviousLog(memberId) {
-    const memberLogs = state.logs
-      .filter(l => l.memberId === memberId)
-      .sort((a, b) => new Date(b.measuredDate) - new Date(a.measuredDate));
-    return memberLogs[1] || null;
+    const memberLogs = state.logs.filter(l => l.memberId === memberId);
+    if (memberLogs.length < 2) return null;
+    const sorted = sortLogsDesc(memberLogs);
+    return sorted[1] || null;
   }
 
   // Định dạng ngày Việt Nam
@@ -755,14 +798,15 @@
     let warningCount = 0;
     let totalMeasured = 0;
 
-    const cardsHtml = state.members.map(member => {
+    const cardsHtml = state.members.map((member, index) => {
+      const themeClass = `fh-card-theme-${(index % 6) + 1}`;
       const latest = getLatestLog(member.id);
       const prev = getPreviousLog(member.id);
       const ageLabel = formatAgeLabel(member.birthDate, latest ? latest.measuredDate : null);
 
       if (!latest) {
         return `
-          <div class="fh-member-card">
+          <div class="fh-member-card ${themeClass}">
             <div class="fh-card-header">
               ${renderMemberAvatarHtml(member, 'fh-member-avatar')}
               <div class="fh-member-meta">
@@ -826,7 +870,7 @@
       }
 
       return `
-        <div class="fh-member-card">
+        <div class="fh-member-card ${themeClass}">
           <!-- Card Header -->
           <div class="fh-card-header">
             ${renderMemberAvatarHtml(member, 'fh-member-avatar')}
@@ -979,12 +1023,17 @@
 
     const currentAge = calculateAge(currentMember.birthDate);
     const isChild = currentAge.years < 19;
-    const metric = state.selectedMetricForChart || 'weight'; // 'weight' | 'height' | 'bmi'
+    const isChildUnder30M = currentAge.totalMonths <= 30; // Trẻ nhỏ <= 30 tháng tuổi
 
-    // Lấy tất cả số đo của thành viên này, sắp xếp tăng dần theo ngày đo
-    const memberLogs = state.logs
-      .filter(l => l.memberId === currentMember.id)
-      .sort((a, b) => new Date(a.measuredDate) - new Date(b.measuredDate));
+    // Đối với người lớn (hoặc người > 30 tháng tuổi), chỉ theo dõi biểu đồ chỉ số BMI
+    let metric = state.selectedMetricForChart || (isChildUnder30M ? 'weight' : 'bmi');
+    if (!isChildUnder30M) {
+      metric = 'bmi';
+      state.selectedMetricForChart = 'bmi';
+    }
+
+    // Lấy tất cả số đo của thành viên này, sắp xếp tăng dần theo ngày đo và thời gian ghi
+    const memberLogs = sortLogsAsc(state.logs.filter(l => l.memberId === currentMember.id));
 
     // 1. Render Member Selector Pills
     const memberSelectorHtml = state.members.map(m => {
@@ -1005,7 +1054,9 @@
     }).join('');
 
     // 2. Render Metric Switcher Buttons
-    const metricButtonsHtml = `
+    // Trẻ em <= 30 tháng tuổi: theo dõi cả Cân nặng, Chiều cao, BMI
+    // Người lớn: chỉ theo dõi biểu đồ Chỉ số BMI (ẩn hoàn toàn thanh tab chọn metric)
+    const metricButtonsHtml = isChildUnder30M ? `
       <div class="fh-chart-metric-bar">
         <button type="button" 
           class="fh-chart-metric-btn ${metric === 'weight' ? 'active' : ''}" 
@@ -1026,7 +1077,7 @@
           <span>Chỉ số BMI</span>
         </button>
       </div>
-    `;
+    ` : '';
 
     // 3. Chuẩn bị dữ liệu vẽ SVG
     let chartContentHtml = '';
@@ -1464,7 +1515,7 @@
     if (state.selectedMemberIdForHistory !== 'all') {
       filteredLogs = filteredLogs.filter(l => l.memberId === state.selectedMemberIdForHistory);
     }
-    filteredLogs.sort((a, b) => new Date(b.measuredDate) - new Date(a.measuredDate));
+    filteredLogs = sortLogsDesc(filteredLogs);
 
     const memberFilterOptions = [
       `<option value="all" ${state.selectedMemberIdForHistory === 'all' ? 'selected' : ''}>Tất cả thành viên (${state.members.length})</option>`,
@@ -2209,14 +2260,22 @@
 
     // Điền số đo cũ (nếu có) để người dùng tiện chỉnh sửa
     const targetMemberId = presetMemberId || state.members[0].id;
-    const latest = getLatestLog(targetMemberId);
-    if (latest) {
-      form.logHeight.value = latest.heightCm;
-      form.logWeight.value = latest.weightKg;
-    } else {
-      form.logHeight.value = '165';
-      form.logWeight.value = '55';
+    function populateMemberInputs(id) {
+      const latest = getLatestLog(id);
+      if (latest) {
+        form.logHeight.value = latest.heightCm;
+        form.logWeight.value = latest.weightKg;
+      } else {
+        form.logHeight.value = '165';
+        form.logWeight.value = '55';
+      }
     }
+
+    selectMember.onchange = function () {
+      populateMemberInputs(selectMember.value);
+    };
+
+    populateMemberInputs(targetMemberId);
     form.logNotes.value = '';
 
     modal.style.display = 'flex';
@@ -2247,16 +2306,19 @@
       return;
     }
 
+    const nowTs = Date.now();
     const newLog = {
-      id: 'log_' + Date.now(),
+      id: 'log_' + nowTs,
       memberId,
       measuredDate,
       heightCm,
       weightKg,
-      notes
+      notes,
+      createdAt: nowTs
     };
 
-    state.logs.push(newLog);
+    // Đưa bản ghi vừa ghi lên đầu mảng để luôn ưu tiên hiển thị mới nhất
+    state.logs.unshift(newLog);
     saveLogs();
     closeLogModal();
     renderCurrentTab();
@@ -2347,13 +2409,36 @@
   };
   window.fhViewMemberChart = function (memberId) {
     state.selectedMemberIdForChart = memberId;
+    const member = state.members.find(m => m.id === memberId);
+    if (member) {
+      const age = calculateAge(member.birthDate);
+      if (age.totalMonths > 30) {
+        state.selectedMetricForChart = 'bmi';
+      }
+    }
     switchHealthTab('chart');
   };
   window.fhOnChartMemberChange = function (memberId) {
     state.selectedMemberIdForChart = memberId;
+    const member = state.members.find(m => m.id === memberId);
+    if (member) {
+      const age = calculateAge(member.birthDate);
+      if (age.totalMonths > 30) {
+        state.selectedMetricForChart = 'bmi';
+      }
+    }
     renderChartTab();
   };
   window.fhOnChartMetricChange = function (metricName) {
+    const currentMember = state.members.find(m => m.id === state.selectedMemberIdForChart);
+    if (currentMember) {
+      const age = calculateAge(currentMember.birthDate);
+      if (age.totalMonths > 30) {
+        state.selectedMetricForChart = 'bmi';
+        renderChartTab();
+        return;
+      }
+    }
     state.selectedMetricForChart = metricName;
     renderChartTab();
   };

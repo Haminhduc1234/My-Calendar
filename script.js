@@ -2408,6 +2408,7 @@ function showCloudSyncedBadge() {
   badge.classList.add("visible");
   _cloudSyncedTimer = setTimeout(() => badge.classList.remove("visible"), 2200);
 }
+window.showCloudSyncedBadge = showCloudSyncedBadge;
 
 function escapeCsvValue(value) {
   const text = String(value ?? "");
@@ -3330,6 +3331,14 @@ async function initFirebaseRealtime() {
     initCookbookFirebase(firebaseDb, userProfileKey);
   }
 
+  // Family Health Tracker
+  if (typeof initFamilyHealthFirebase === "function") {
+    initFamilyHealthFirebase(firebaseDb, userProfileKey);
+  }
+
+  window.firebaseDb = firebaseDb;
+  window.userProfileKey = userProfileKey;
+
   console.log("[Firebase] Đã khởi tạo thành công, firebaseDb:", !!firebaseDb);
 
   // Lắng nghe sự thay đổi của Translate History
@@ -3692,6 +3701,11 @@ async function reloadFirebaseForUser() {
   // Family Cookbook & Dietary Notes
   if (typeof initCookbookFirebase === "function") {
     initCookbookFirebase(firebaseDb, userProfileKey);
+  }
+
+  // Family Health Tracker
+  if (typeof initFamilyHealthFirebase === "function") {
+    initFamilyHealthFirebase(firebaseDb, userProfileKey);
   }
 
   // Track first Firebase data load for this user

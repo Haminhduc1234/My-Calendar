@@ -100,6 +100,8 @@ const FILES_TO_CACHE = [
     "./style.css",
     "./family-cookbook.css",
     "./family-cookbook.js",
+    "./family-health.css",
+    "./family-health.js",
     "./senior-mode.js",
     "./learn-en-data.js",
     "./learn-zh-data.js",

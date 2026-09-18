@@ -131,6 +131,22 @@
         ".read": "auth != null",
         ".write": "auth != null"
       }
+    },
+    "familyHealth": {
+      "$profileKey": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "members": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          ".indexOn": ["role", "gender"]
+        },
+        "logs": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          ".indexOn": ["memberId", "measuredDate"]
+        }
+      }
     }
   }
 }

@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons/css/all/all.css" />
   <link rel="stylesheet" href="style.css?v=20260917_cute_meal_card" />
   <link rel="stylesheet" href="family-cookbook.css?v=20260917_search_pos" />
+  <link rel="stylesheet" href="family-health.css?v=20260918_icon_only_tabs" />
   <link rel="icon" type="image/png" href="public/favicon.png" />
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -240,6 +241,11 @@
             onclick="event.stopPropagation(); openFamilyCookbookModal(); closeMoreMenu();" role="menuitem">
             <span class="menu-icon-wrap" style="color: #f59e0b;"><i class="fi fi-rr-hat-chef"></i></span>
             <span>Thực Đơn Gia Đình</span>
+          </button>
+          <button class="dropdown-item item-health"
+            onclick="event.stopPropagation(); openFamilyHealthModal(); closeMoreMenu();" role="menuitem">
+            <span class="menu-icon-wrap" style="color: #10b981;"><i class="fi fi-rr-heart-rate"></i></span>
+            <span>Sức Khỏe Gia Đình</span>
           </button>
           <button class="dropdown-item item-senior-settings" onclick="openSeniorSettingsModal(); closeMoreMenu();"
             role="menuitem">
@@ -2923,7 +2929,8 @@
   <script src="learn-zh-data.js"></script>
   <script src="senior-mode.js?v=20260916"></script>
   <script src="family-cookbook.js?v=20260917_search_pos"></script>
-  <script src="script.js?v=20260917_cute_meal_card"></script>
+  <script src="family-health.js?v=20260918_firebase_sync"></script>
+  <script src="script.js?v=20260918_firebase_sync"></script>
   <!-- <script src="MapSearch.js"></script> -->
 
   <!-- <script>
@@ -3355,6 +3362,187 @@
   <div id="cookbookAssignMealModal" class="modal fc-modal" style="display: none;"
     onclick="if(event.target===this) closeAssignMealModal()">
     <!-- Content injected dynamically -->
+  </div>
+
+  <!-- ==========================================================================
+       FAMILY HEALTH TRACKER MODALS (SỨC KHỎE GIA ĐÌNH)
+       ========================================================================== -->
+  <!-- 1. Main Modal (Toàn màn hình theo GEMINI.md) -->
+  <div id="familyHealthModal" class="modal fh-modal" style="display: none;"
+    onclick="if(event.target===this) closeFamilyHealthModal()">
+    <div class="fh-modal-dialog">
+      <!-- Header -->
+      <div class="fh-header">
+        <div class="fh-header-title-box">
+          <div class="fh-header-icon"><i class="fi fi-rr-heart-rate"></i></div>
+          <div class="fh-header-text">
+            <h3 class="fh-header-title">
+              <span>Sức Khỏe Gia Đình</span>
+            </h3>
+            <div class="fh-header-sub">Chuẩn BMI Châu Á & Tăng trưởng WHO Trẻ em</div>
+          </div>
+        </div>
+
+        <div class="fh-header-actions">
+          <button type="button" class="fh-btn fh-btn-secondary fh-btn-header-action" onclick="window.fhOpenAddMemberModal()" title="Thêm thành viên">
+            <i class="fi fi-rr-user-add"></i> <span class="fh-btn-text">Thêm Thành Viên</span>
+          </button>
+          <button type="button" class="fh-btn fh-btn-primary fh-btn-header-action" onclick="window.fhOpenAddLogModal()" title="Ghi số đo mới">
+            <i class="fi fi-rr-plus"></i> <span class="fh-btn-text">Ghi Số Đo</span>
+          </button>
+          <button type="button" class="fh-btn-close" onclick="closeFamilyHealthModal()" aria-label="Đóng">
+            <i class="fi fi-rr-cross"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Nav Sub-tabs (Icon-Only Segmented Pill) -->
+      <div class="fh-nav-tabs">
+        <button type="button" class="fh-tab-btn active" data-tab="overview" onclick="switchHealthTab('overview')" title="Tổng Quan Gia Đình" aria-label="Tổng Quan Gia Đình">
+          <i class="fi fi-rr-apps"></i>
+        </button>
+        <button type="button" class="fh-tab-btn" data-tab="chart" onclick="switchHealthTab('chart')" title="Biểu Đồ Tăng Trưởng" aria-label="Biểu Đồ Tăng Trưởng">
+          <i class="fi fi-rr-chart-line-up"></i>
+        </button>
+        <button type="button" class="fh-tab-btn" data-tab="history" onclick="switchHealthTab('history')" title="Nhật Ký & Lịch Sử Đo" aria-label="Nhật Ký & Lịch Sử Đo">
+          <i class="fi fi-rr-time-past"></i>
+        </button>
+        <button type="button" class="fh-tab-btn" data-tab="calculator" onclick="switchHealthTab('calculator')" title="Máy Tính Đo Nhanh" aria-label="Máy Tính Đo Nhanh">
+          <i class="fi fi-rr-calculator"></i>
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div id="fhTabContent" class="fh-body">
+        <!-- Rendered dynamically by family-health.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Member Form Modal (Đồng bộ CSS kiểu family-cookbook) -->
+  <div id="fhMemberModal" class="modal fc-modal fh-submodal" style="display: none;"
+    onclick="if(event.target===this) fhCloseMemberModal()">
+    <div class="fc-modal-dialog fh-submodal-dialog" style="max-width: 580px;">
+      <div class="fc-header">
+        <div class="fc-header-title-box">
+          <div class="fc-header-icon" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #10b981;">
+            <i class="fi fi-rr-user"></i>
+          </div>
+          <div class="fc-header-text">
+            <h3 class="fc-header-title" id="fhMemberModalTitle">Thêm Thành Viên Mới</h3>
+            <div class="fc-header-sub">Thiết lập hồ sơ sức khỏe & theo dõi thể trạng chuẩn</div>
+          </div>
+        </div>
+        <button type="button" class="fc-btn-close" onclick="fhCloseMemberModal()" aria-label="Đóng">
+          <i class="fi fi-rr-cross"></i>
+        </button>
+      </div>
+
+      <form id="fhMemberForm" onsubmit="fhHandleSaveMemberForm(event)" class="fc-body fh-submodal-body">
+        <div class="fc-form-group">
+          <label class="fc-form-label" for="fhMemberName">Họ và tên (*)</label>
+          <input type="text" id="fhMemberName" name="memberName" class="fc-form-input" placeholder="Ví dụ: Bố Tuấn, Mẹ Hằng, Bé Bông..." required />
+        </div>
+
+        <div class="fc-form-row">
+          <div class="fc-form-group">
+            <label class="fc-form-label" for="fhMemberRole">Quan hệ / Vai trò</label>
+            <select id="fhMemberRole" name="memberRole" class="fc-form-select">
+              <option value="Bố">Bố</option>
+              <option value="Mẹ">Mẹ</option>
+              <option value="Con trai">Con trai</option>
+              <option value="Con gái">Con gái</option>
+              <option value="Ông">Ông</option>
+              <option value="Bà">Bà</option>
+              <option value="Bản thân">Bản thân</option>
+              <option value="Người thân khác">Người thân khác</option>
+            </select>
+          </div>
+
+          <div class="fc-form-group">
+            <label class="fc-form-label" for="fhMemberGender">Giới tính (*)</label>
+            <select id="fhMemberGender" name="memberGender" class="fc-form-select">
+              <option value="male">Nam / Bé trai</option>
+              <option value="female">Nữ / Bé gái</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="fc-form-group">
+          <label class="fc-form-label" for="fhMemberBirthDate">Ngày sinh (để tính chuẩn độ tuổi y tế) (*)</label>
+          <input type="date" id="fhMemberBirthDate" name="memberBirthDate" class="fc-form-input" required />
+        </div>
+
+        <div class="fc-form-group">
+          <label class="fc-form-label" for="fhMemberNote">Ghi chú sức khỏe (thói quen, tiền sử, tập luyện...)</label>
+          <textarea id="fhMemberNote" name="memberNote" class="fc-form-textarea" rows="2" placeholder="Ví dụ: Đang tập chạy bộ mỗi sáng, cần chú ý tăng cân..."></textarea>
+        </div>
+
+        <div class="fc-header" style="padding: 14px 0 0 0; justify-content: flex-end; gap: 10px; background: transparent; border-top: 1px solid rgba(255,255,255,0.08);">
+          <button type="button" class="fc-btn fc-btn-secondary" onclick="fhCloseMemberModal()">Hủy Bỏ</button>
+          <button type="submit" class="fc-btn fc-btn-primary" style="background: #10b981; color: #042f2e; border-color: #10b981;">
+            <i class="fi fi-rr-disk"></i> <span>Lưu Hồ Sơ</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Health Log Entry Modal (Đồng bộ CSS kiểu family-cookbook) -->
+  <div id="fhLogModal" class="modal fc-modal fh-submodal" style="display: none;"
+    onclick="if(event.target===this) fhCloseLogModal()">
+    <div class="fc-modal-dialog fh-submodal-dialog" style="max-width: 580px;">
+      <div class="fc-header">
+        <div class="fc-header-title-box">
+          <div class="fc-header-icon" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #10b981;">
+            <i class="fi fi-rr-scale"></i>
+          </div>
+          <div class="fc-header-text">
+            <h3 class="fc-header-title">Ghi Nhận Số Đo Mới</h3>
+            <div class="fc-header-sub">Cập nhật chiều cao, cân nặng định kỳ theo dõi thể trạng</div>
+          </div>
+        </div>
+        <button type="button" class="fc-btn-close" onclick="fhCloseLogModal()" aria-label="Đóng">
+          <i class="fi fi-rr-cross"></i>
+        </button>
+      </div>
+
+      <form id="fhLogForm" onsubmit="fhHandleSaveLogForm(event)" class="fc-body fh-submodal-body">
+        <div class="fc-form-group">
+          <label class="fc-form-label" for="logMemberSelect">Chọn thành viên (*)</label>
+          <select id="logMemberSelect" name="logMemberSelect" class="fc-form-select"></select>
+        </div>
+
+        <div class="fc-form-group">
+          <label class="fc-form-label" for="logMeasuredDate">Ngày đo (*)</label>
+          <input type="date" id="logMeasuredDate" name="logMeasuredDate" class="fc-form-input" required />
+        </div>
+
+        <div class="fc-form-row">
+          <div class="fc-form-group">
+            <label class="fc-form-label" for="logHeight">Chiều cao (cm) (*)</label>
+            <input type="number" id="logHeight" name="logHeight" class="fc-form-input" step="0.5" min="40" max="230" placeholder="cm" required />
+          </div>
+
+          <div class="fc-form-group">
+            <label class="fc-form-label" for="logWeight">Cân nặng (kg) (*)</label>
+            <input type="number" id="logWeight" name="logWeight" class="fc-form-input" step="0.1" min="2" max="200" placeholder="kg" required />
+          </div>
+        </div>
+
+        <div class="fc-form-group">
+          <label class="fc-form-label" for="logNotes">Ghi chú lần đo</label>
+          <input type="text" id="logNotes" name="logNotes" class="fc-form-input" placeholder="Ví dụ: Đo buổi sáng sau ngủ dậy, vừa hồi phục sau ốm..." />
+        </div>
+
+        <div class="fc-header" style="padding: 14px 0 0 0; justify-content: flex-end; gap: 10px; background: transparent; border-top: 1px solid rgba(255,255,255,0.08);">
+          <button type="button" class="fc-btn fc-btn-secondary" onclick="fhCloseLogModal()">Hủy Bỏ</button>
+          <button type="submit" class="fc-btn fc-btn-primary" style="background: #10b981; color: #042f2e; border-color: #10b981;">
+            <i class="fi fi-rr-disk"></i> <span>Lưu Số Đo</span>
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 </body>
 

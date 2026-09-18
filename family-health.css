@@ -1,0 +1,2541 @@
+/* ==========================================================================
+   FAMILY HEALTH TRACKER - STYLESHEET
+   Theo dõi sức khỏe gia đình, chuẩn BMI Châu Á & Tăng trưởng WHO
+   Tuân thủ nghiêm ngặt quy tắc GEMINI.md
+   ========================================================================== */
+
+:root {
+  --fh-primary: #10b981;
+  --fh-primary-hover: #059669;
+  --fh-primary-light: rgba(16, 185, 129, 0.15);
+  --fh-accent-blue: #0ea5e9;
+  --fh-accent-amber: #f59e0b;
+  --fh-accent-rose: #f43f5e;
+  --fh-accent-purple: #8b5cf6;
+
+  --fh-status-normal-bg: rgba(16, 185, 129, 0.15);
+  --fh-status-normal-border: rgba(16, 185, 129, 0.35);
+  --fh-status-normal-text: #34d399;
+
+  --fh-status-warning-bg: rgba(245, 158, 11, 0.15);
+  --fh-status-warning-border: rgba(245, 158, 11, 0.35);
+  --fh-status-warning-text: #fbbf24;
+
+  --fh-status-caution-bg: rgba(249, 115, 22, 0.15);
+  --fh-status-caution-border: rgba(249, 115, 22, 0.35);
+  --fh-status-caution-text: #fb923c;
+
+  --fh-status-danger-bg: rgba(239, 68, 68, 0.15);
+  --fh-status-danger-border: rgba(239, 68, 68, 0.35);
+  --fh-status-danger-text: #f87171;
+
+  --fh-card-bg: rgba(18, 28, 56, 0.85);
+  --fh-card-border: rgba(255, 255, 255, 0.08);
+  --fh-card-hover-border: rgba(16, 185, 129, 0.35);
+  --fh-text-primary: #f1f5f9;
+  --fh-text-secondary: #94a3b8;
+  --fh-text-muted: #64748b;
+  --fh-radius-sm: 8px;
+  --fh-radius-md: 14px;
+  --fh-radius-lg: 20px;
+}
+
+/* ==========================================================================
+   1. QUY TẮC CĂN CHỈNH QUANG HỌC CHÍNH TÂM CHO ICON & TEXT
+   Đảm bảo tất cả icon nằm chính giữa trục chữ (center-aligned) tuyệt đối trong
+   tất cả các modal chính và modal con của Sức Khỏe Gia Đình
+   ========================================================================== */
+#familyHealthModal i[class*="fi-"],
+#familyHealthModal i.fi,
+#fhMemberModal i[class*="fi-"],
+#fhMemberModal i.fi,
+#fhLogModal i[class*="fi-"],
+#fhLogModal i.fi,
+.fh-modal i[class*="fi-"],
+.fh-modal i.fi,
+.fh-submodal i[class*="fi-"],
+.fh-submodal i.fi {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+  flex-shrink: 0 !important;
+  position: static !important;
+  top: 0 !important;
+  margin: 0 !important;
+}
+
+/* Các nút bấm (Header action, footer action, form submit...) */
+.fh-btn,
+.fc-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px;
+  line-height: 1 !important;
+}
+
+.fh-btn i,
+.fc-btn i {
+  font-size: 14px;
+}
+
+.fh-btn span,
+.fc-btn span {
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1 !important;
+}
+
+/* Sub-tabs điều hướng (Icon-Only) */
+.fh-tab-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+.fh-tab-btn i {
+  font-size: 18px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  position: static !important;
+  top: 0 !important;
+}
+
+/* Radio pills trong tab Máy tính */
+.fh-radio-pill span {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px;
+  line-height: 1 !important;
+}
+
+.fh-radio-pill span i {
+  font-size: 14px;
+}
+
+.fh-radio-pill span span {
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1 !important;
+}
+
+/* Thẻ thành viên: dòng tuổi */
+.fh-member-age {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px;
+  line-height: 1 !important;
+}
+
+.fh-member-age i {
+  font-size: 13px;
+}
+
+.fh-member-age span {
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1 !important;
+}
+
+/* Thẻ thành viên: banner trạng thái */
+.fh-status-banner {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.fh-status-left {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px;
+  line-height: 1 !important;
+}
+
+.fh-status-left i {
+  font-size: 14px;
+}
+
+.fh-status-left span {
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1 !important;
+  font-weight: 700;
+}
+
+/* Mục tiêu chỉ số chuẩn */
+.fh-advice-target,
+.fh-target-indicator {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px;
+  line-height: 1.2 !important;
+}
+
+.fh-advice-target i,
+.fh-target-indicator i {
+  font-size: 13px;
+  position: relative;
+  top: 1px;
+}
+
+.fh-advice-target span,
+.fh-target-indicator span {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px;
+  line-height: 1.2 !important;
+}
+
+/* Đà tăng giảm (Trend) */
+.fh-trend {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px;
+  line-height: 1 !important;
+}
+
+.fh-trend i {
+  font-size: 11px;
+}
+
+/* Tab Lịch sử: Badge ngày đo & ghi chú */
+.fh-td-date-badge,
+.fh-hci-date,
+.fh-hci-note {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px;
+  line-height: 1 !important;
+}
+
+.fh-td-date-badge i,
+.fh-hci-date i,
+.fh-hci-note i {
+  font-size: 13px;
+}
+
+.fh-td-date-badge span,
+.fh-hci-date span,
+.fh-hci-note span {
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1 !important;
+}
+
+/* Bộ lọc lịch sử */
+.fh-filter-wrap label {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px;
+  line-height: 1 !important;
+}
+
+.fh-filter-wrap label i {
+  font-size: 13px;
+}
+
+/* Thẻ kết quả máy tính */
+.fh-result-badge-top {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px;
+  line-height: 1 !important;
+}
+
+.fh-result-badge-top i {
+  font-size: 14px;
+}
+
+/* Khuyến nghị máy tính */
+.fh-rec-item {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px;
+}
+
+.fh-rec-item i {
+  font-size: 16px;
+  position: relative !important;
+  top: 2px !important;
+}
+
+/* Các icon độc lập (nút tròn, nút đóng, avatar) giữ căn giữa tâm tuyệt đối */
+.fh-btn-close i,
+.fc-btn-close i,
+.fh-header-icon i,
+.fc-header-icon i,
+.fh-member-avatar i,
+.fh-icon-btn i,
+.fh-calc-header-icon i,
+.fh-hero-stat-icon i {
+  position: static !important;
+  top: 0 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+/* ==========================================================================
+   2. QUY TẮC MODAL CHÍNH TOÀN MÀN HÌNH (GEMINI.md - Rule 2)
+   100vw × 100vh / 100dvh, border-radius: 0px, border: none
+   ========================================================================== */
+.fh-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background: rgba(8, 14, 28, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 10050 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.fh-modal-dialog {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-width: 100vw;
+  max-height: 100vh;
+  background: #0f172a;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* Sticky Header */
+.fh-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fh-header-title-box {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.fh-header-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2));
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #10b981;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fh-header-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fh-header-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+.fh-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Nút đóng chuẩn 34px × 34px, bo góc 9px */
+.fh-btn-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.fh-btn-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  /* NO transform */
+}
+
+/* ==========================================================================
+   SUB-TABS: SEGMENTED PILL (GEMINI.md - Rule 2)
+   Lề ngang: 24px trên Desktop, 14px trên Mobile
+   ========================================================================= */
+.fh-nav-tabs {
+  position: sticky;
+  top: 76px;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.fh-nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.fh-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 42px;
+  min-width: 44px;
+  padding: 0;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fh-tab-btn i {
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: static;
+  top: 0;
+}
+
+.fh-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.16);
+  /* Không dùng transform */
+}
+
+.fh-tab-btn.active {
+  background: #10b981;
+  color: #042f2e;
+  border-color: #10b981;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+}
+
+.fh-tab-btn.active:hover {
+  background: #059669;
+}
+
+/* ==========================================================================
+   3. QUY TẮC HIỆU ỨNG HOVER (GEMINI.md - Rule 3)
+   Tuyệt đối không dùng transform: translateY/scale trên :hover
+   ========================================================================== */
+
+/* Nút bấm tổng quát */
+.fh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: var(--fh-radius-sm);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+}
+
+.fh-btn-sm {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+}
+
+.fh-btn-primary {
+  background: #10b981;
+  color: #042f2e;
+  border-color: #10b981;
+}
+
+.fh-btn-primary:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+.fh-btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.fh-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.fh-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.fh-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+}
+
+.fh-icon-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+
+/* ==========================================================================
+   BODY CONTENT AREA
+   ========================================================================== */
+.fh-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.05), transparent 400px),
+              #0b1120;
+}
+
+/* ==========================================================================
+   TAB 1: TỔNG QUAN GIA ĐÌNH (OVERVIEW)
+   ========================================================================== */
+
+/* Top Stats Hero */
+.fh-overview-hero {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.fh-hero-stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: rgba(18, 28, 56, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--fh-radius-md);
+}
+
+.fh-hero-stat-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.fh-hero-stat-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.fh-hero-stat-title {
+  font-size: 0.8rem;
+  color: var(--fh-text-secondary);
+}
+
+.fh-hero-stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--fh-text-primary);
+  margin-top: 2px;
+}
+
+.fh-hero-stat-value small {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--fh-text-muted);
+}
+
+/* Members Grid */
+.fh-members-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+/* Member Card */
+.fh-member-card {
+  background: var(--fh-card-bg);
+  border: 1px solid var(--fh-card-border);
+  border-radius: var(--fh-radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.fh-member-card:hover {
+  border-color: var(--fh-card-hover-border);
+  /* Tuyệt đối không transform */
+}
+
+.fh-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.fh-member-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 20px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.fh-member-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.fh-member-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fh-member-name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--fh-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fh-member-role-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fh-member-age {
+  font-size: 0.78rem;
+  color: var(--fh-text-muted);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Status Banner */
+.fh-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  border-radius: var(--fh-radius-md);
+  font-size: 0.82rem;
+  border: 1px solid transparent;
+}
+
+.fh-status-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fh-status-diff-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Status Classes */
+.fh-status-normal {
+  background: var(--fh-status-normal-bg);
+  border-color: var(--fh-status-normal-border);
+  color: var(--fh-status-normal-text);
+}
+.fh-status-normal-text { color: var(--fh-status-normal-text); }
+
+.fh-status-warning {
+  background: var(--fh-status-warning-bg);
+  border-color: var(--fh-status-warning-border);
+  color: var(--fh-status-warning-text);
+}
+.fh-status-warning-text { color: var(--fh-status-warning-text); }
+
+.fh-status-caution {
+  background: var(--fh-status-caution-bg);
+  border-color: var(--fh-status-caution-border);
+  color: var(--fh-status-caution-text);
+}
+.fh-status-caution-text { color: var(--fh-status-caution-text); }
+
+.fh-status-danger {
+  background: var(--fh-status-danger-bg);
+  border-color: var(--fh-status-danger-border);
+  color: var(--fh-status-danger-text);
+}
+.fh-status-danger-text { color: var(--fh-status-danger-text); }
+
+/* Metrics Grid Inside Card */
+.fh-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: rgba(10, 16, 32, 0.6);
+  border-radius: var(--fh-radius-md);
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.fh-metric-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.fh-metric-label {
+  font-size: 0.72rem;
+  color: var(--fh-text-muted);
+}
+
+.fh-metric-val-row {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  margin: 2px 0;
+}
+
+.fh-metric-val {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--fh-text-primary);
+}
+
+.fh-metric-unit {
+  font-size: 0.75rem;
+  color: var(--fh-text-muted);
+}
+
+.fh-metric-sub {
+  font-size: 0.68rem;
+  color: var(--fh-text-muted);
+}
+
+.fh-trend {
+  font-size: 0.68rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+.fh-trend-up {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.fh-trend-down {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.fh-trend-neutral {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Card Target Bar (Chỉ số đạt chuẩn) */
+.fh-card-target-bar,
+.fh-card-advice {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--fh-radius-sm);
+  padding: 8px 12px;
+}
+
+.fh-target-indicator,
+.fh-advice-row {
+  display: flex;
+  align-items: center;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+}
+
+.fh-target-indicator strong,
+.fh-advice-target strong {
+  color: #34d399;
+  font-weight: 700;
+}
+
+/* Card Footer */
+.fh-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Empty State Card */
+.fh-card-no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 16px;
+  border-radius: var(--fh-radius-md);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  color: var(--fh-text-muted);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* Empty State General */
+.fh-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.fh-empty-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--fh-text-muted);
+  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.fh-empty-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--fh-text-primary);
+  margin: 0 0 6px;
+}
+
+.fh-empty-desc {
+  font-size: 0.85rem;
+  color: var(--fh-text-secondary);
+  max-width: 400px;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   TAB 2: LỊCH SỬ & NHẬT KÝ ĐO (HISTORY)
+   ========================================================================== */
+.fh-history-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.fh-filter-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: var(--fh-text-secondary);
+}
+
+.fh-select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  padding: 8px 12px;
+  border-radius: var(--fh-radius-sm);
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.fh-select:focus {
+  border-color: #10b981;
+}
+
+.fh-select option {
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+/* History Table */
+.fh-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--fh-radius-md);
+  border: 1px solid var(--fh-card-border);
+  background: var(--fh-card-bg);
+}
+
+.fh-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.fh-table th {
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--fh-text-secondary);
+  font-weight: 600;
+  border-bottom: 1px solid var(--fh-card-border);
+  white-space: nowrap;
+}
+
+.fh-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--fh-text-primary);
+  vertical-align: middle;
+}
+
+.fh-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.fh-td-date {
+  white-space: nowrap;
+  color: #cbd5e1;
+  font-weight: 500;
+}
+
+.fh-table-member-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.fh-table-member-cell small {
+  font-size: 0.72rem;
+  color: var(--fh-text-muted);
+}
+
+.fh-bmi-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 700;
+}
+
+.fh-status-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.fh-notes-text {
+  color: var(--fh-text-secondary);
+  font-size: 0.8rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   TAB 3: MÁY TÍNH THỂ TRẠNG NHANH (CALCULATOR)
+   ========================================================================== */
+.fh-calc-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.fh-calc-form-card,
+.fh-calc-result-card {
+  background: var(--fh-card-bg);
+  border: 1px solid var(--fh-card-border);
+  border-radius: var(--fh-radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.fh-calc-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.fh-calc-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.fh-calc-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--fh-text-primary);
+}
+
+.fh-calc-desc {
+  margin: 3px 0 0;
+  font-size: 0.78rem;
+  color: var(--fh-text-muted);
+  line-height: 1.4;
+}
+
+/* Radio Pills */
+.fh-radio-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fh-radio-pill {
+  flex: 1;
+  min-width: 130px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  margin: 0;
+}
+
+.fh-radio-pill input[type="radio"] {
+  display: none;
+}
+
+.fh-radio-pill span {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--fh-radius-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--fh-text-secondary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.fh-radio-pill input[type="radio"]:checked + span {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+  color: #34d399;
+}
+
+/* Form inputs */
+.fh-form-group {
+  margin-bottom: 16px;
+}
+
+.fh-form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--fh-text-secondary);
+  margin-bottom: 6px;
+}
+
+.fh-form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.fh-col-6 {
+  flex: 1;
+}
+
+.fh-input-with-unit {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.fh-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f1f5f9;
+  padding: 10px 42px 10px 14px;
+  border-radius: var(--fh-radius-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.fh-input:focus {
+  border-color: #10b981;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.fh-unit {
+  position: absolute;
+  right: 14px;
+  font-size: 0.8rem;
+  color: var(--fh-text-muted);
+  pointer-events: none;
+}
+
+.fh-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Result Box */
+.fh-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.fh-result-badge-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.fh-standard-tag {
+  font-size: 0.72rem;
+  color: var(--fh-text-muted);
+}
+
+.fh-result-big-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 14px;
+  background: rgba(10, 16, 32, 0.6);
+  border-radius: var(--fh-radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 20px;
+}
+
+.fh-big-label {
+  font-size: 0.78rem;
+  color: var(--fh-text-secondary);
+}
+
+.fh-big-val {
+  font-size: 2.8rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 4px 0;
+}
+
+.fh-big-diff {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+/* Thước đo BMI Gauge */
+.fh-bmi-gauge-wrap {
+  position: relative;
+  margin: 20px 0 24px;
+}
+
+.fh-bmi-scale-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 9999px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.fh-scale-seg {
+  flex: 1;
+}
+.fh-seg-under { background: #f59e0b; flex: 1.5; }
+.fh-seg-normal { background: #10b981; flex: 2; }
+.fh-seg-over { background: #f97316; flex: 1; }
+.fh-seg-obese { background: #ef4444; flex: 2; }
+
+.fh-bmi-pointer {
+  position: absolute;
+  top: -8px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.fh-pointer-arrow {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 7px solid #ffffff;
+}
+
+.fh-pointer-val {
+  margin-top: 15px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 1px 5px;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.fh-gauge-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18px;
+  font-size: 0.68rem;
+  color: var(--fh-text-muted);
+}
+
+/* Recommendations in result */
+.fh-result-recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.fh-rec-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--fh-radius-md);
+  padding: 12px 14px;
+}
+
+.fh-rec-item i {
+  color: #10b981;
+  font-size: 16px;
+  margin-top: 2px;
+}
+
+.fh-rec-item strong {
+  display: block;
+  font-size: 0.8rem;
+  color: #f1f5f9;
+  margin-bottom: 2px;
+}
+
+.fh-rec-item p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--fh-text-secondary);
+  line-height: 1.45;
+}
+
+/* ==========================================================================
+   4. MODAL PHỤ: THÊM THÀNH VIÊN & GHI SỐ ĐO
+   Đồng bộ 100% kiến trúc & visual design của các modal con trong Family Cookbook
+   ========================================================================== */
+div.fh-submodal,
+.fh-submodal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  z-index: 10060 !important; /* Luôn nổi trên modal chính 10050 */
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  background: rgba(4, 9, 20, 0.82) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  margin: 0 !important;
+}
+
+div.fh-submodal.active,
+.fh-submodal.active,
+div.fh-submodal[style*="display: flex"],
+.fh-submodal[style*="display: flex"] {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.fh-submodal-dialog {
+  background: linear-gradient(145deg, #0d1733 0%, #070d1e 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: var(--fc-radius-lg, 20px) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.3) !important;
+  width: 95vw !important;
+  max-width: 580px !important;
+  max-height: 90vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  position: relative !important;
+  margin: auto !important;
+  z-index: 10061 !important;
+  transform: none !important;
+}
+
+.fh-submodal .fc-header {
+  padding: 14px 22px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(15, 23, 42, 0.95) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  flex-shrink: 0 !important;
+}
+
+.fh-submodal-body {
+  padding: 18px 22px 24px 22px !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  background: transparent !important;
+}
+
+/* Form inputs đồng bộ với family-cookbook */
+.fh-submodal .fc-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.fh-submodal .fc-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 600px) {
+  .fh-submodal .fc-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.fh-submodal .fc-form-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.fh-submodal .fc-form-input,
+.fh-submodal .fc-form-select,
+.fh-submodal .fc-form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 0.88rem;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.fh-submodal .fc-form-input:focus,
+.fh-submodal .fc-form-select:focus,
+.fh-submodal .fc-form-textarea:focus {
+  outline: none;
+  border-color: #10b981;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.fh-submodal .fc-form-select option {
+  background: #0d1733;
+  color: #fff;
+}
+
+/* ==========================================================================
+   DISPLAY HELPERS & MOBILE CARD VIEW
+   ========================================================================== */
+.fh-tab-text-desktop {
+  display: inline;
+}
+
+.fh-tab-text-mobile {
+  display: none;
+}
+
+.fh-desktop-only {
+  display: block;
+}
+
+.fh-mobile-only {
+  display: none;
+}
+
+/* History Card Item for Mobile */
+.fh-history-cards-mobile {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fh-history-card-item {
+  background: var(--fh-card-bg);
+  border: 1px solid var(--fh-card-border);
+  border-radius: var(--fh-radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fh-hci-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fh-hci-member {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fh-hci-member strong {
+  font-size: 0.95rem;
+  color: var(--fh-text-primary);
+}
+
+.fh-hci-date-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fh-hci-date {
+  font-size: 0.75rem;
+  color: var(--fh-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fh-hci-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: rgba(10, 16, 32, 0.5);
+  border-radius: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.fh-hci-stat-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.fh-hci-stat-lbl {
+  font-size: 0.68rem;
+  color: var(--fh-text-muted);
+}
+
+.fh-hci-stat-val {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--fh-text-primary);
+  margin-top: 2px;
+}
+
+.fh-hci-stat-val small {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--fh-text-muted);
+}
+
+.fh-hci-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fh-hci-note {
+  font-size: 0.72rem;
+  color: var(--fh-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (MOBILE FIRST & TOUCH-FRIENDLY OPTIMIZATIONS)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .fh-header {
+    padding: 12px 16px;
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+
+  .fh-header-title {
+    font-size: 1.05rem;
+  }
+
+  .fh-nav-tabs {
+    padding: 8px 14px; /* GEMINI.md: 14px on Mobile */
+    top: 68px;
+  }
+
+  .fh-body {
+    padding: 14px 14px 28px 14px;
+    padding-bottom: max(28px, env(safe-area-inset-bottom));
+  }
+
+  .fh-members-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .fh-calc-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* ==========================================================================
+   TAB BIỂU ĐỒ TĂNG TRƯỞNG & SO SÁNH CHUẨN Y TẾ (GROWTH CURVE CHART)
+   ========================================================================== */
+.fh-chart-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Toolbar chọn thành viên và metric */
+.fh-chart-top-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.fh-chart-member-scroll-wrap {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+.fh-chart-member-scroll-wrap::-webkit-scrollbar {
+  display: none;
+}
+
+.fh-chart-member-list {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fh-chart-member-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px 8px 10px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: #94a3b8;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.fh-chart-member-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #f1f5f9;
+}
+
+.fh-chart-member-pill.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #f1f5f9;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
+}
+
+.fh-cmp-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #ffffff;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.fh-cmp-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.fh-cmp-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.fh-cmp-sub {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.fh-chart-member-pill.active .fh-cmp-sub {
+  color: #6ee7b7;
+}
+
+/* Metric Buttons Bar (Segmented Control) */
+.fh-chart-metric-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.7);
+  padding: 5px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fh-chart-metric-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  line-height: 1;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.fh-chart-metric-btn i {
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  position: static;
+  top: 0;
+}
+
+.fh-chart-metric-btn span {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.fh-chart-metric-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+}
+
+.fh-chart-metric-btn.active {
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3);
+}
+
+/* Main Graphic Card */
+.fh-chart-main-card {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.85), rgba(11, 19, 38, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.fh-chart-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.fh-chart-card-title-box {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.fh-chart-card-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.fh-chart-standard-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34d399;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.fh-chart-standard-badge i {
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  position: static;
+  top: 0;
+}
+
+/* Legend */
+.fh-chart-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.fh-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.fh-legend-swatch {
+  display: inline-block;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.fh-legend-band {
+  width: 16px;
+  height: 10px;
+  background: rgba(16, 185, 129, 0.25);
+  border: 1px dashed rgba(16, 185, 129, 0.6);
+}
+
+.fh-legend-median {
+  width: 16px;
+  height: 2px;
+  background: #10b981;
+}
+
+.fh-legend-actual {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #0ea5e9;
+  border: 2px solid #ffffff;
+}
+
+/* SVG Chart */
+.fh-svg-chart-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 4px 0;
+}
+
+.fh-svg-chart-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.fh-svg-chart {
+  width: 100%;
+  height: auto;
+  max-height: 380px;
+  min-height: 250px;
+  display: block;
+}
+
+.fh-svg-point-group {
+  cursor: pointer;
+}
+
+.fh-svg-point-dot {
+  transition: r 0.15s ease, stroke-width 0.15s ease;
+}
+
+.fh-svg-point-group:hover .fh-svg-point-dot,
+.fh-svg-point-group:focus .fh-svg-point-dot {
+  r: 7.5;
+  stroke-width: 3;
+}
+
+/* Detail Card Lần Đo Gần Nhất */
+.fh-chart-detail-card {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fh-cdc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fh-cdc-title-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #e2e8f0;
+}
+
+.fh-cdc-title-box i {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  position: static;
+  top: 0;
+}
+
+.fh-cdc-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.fh-cdc-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.fh-cdc-lbl {
+  font-size: 0.74rem;
+  color: #94a3b8;
+}
+
+.fh-cdc-val {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.fh-cdc-val small {
+  font-size: 0.76rem;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* Insight Box */
+.fh-chart-insight-box {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.06));
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fh-cib-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fh-cib-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.fh-cib-icon i {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  position: static;
+  top: 0;
+}
+
+.fh-cib-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.fh-cib-text {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+}
+
+.fh-cib-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.fh-cib-tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.fh-cib-tip-item i {
+  color: #34d399;
+  font-size: 14px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  position: static;
+  top: 0;
+}
+
+/* Bottom Action Bar */
+.fh-chart-bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+/* Empty chart state */
+.fh-chart-empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 20px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.fh-chart-empty-icon {
+  font-size: 42px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.fh-chart-empty-title {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #f1f5f9;
+}
+
+.fh-chart-empty-desc {
+  margin: 0 0 8px 0;
+  font-size: 0.84rem;
+  color: #94a3b8;
+  max-width: 420px;
+}
+
+@media (max-width: 640px) {
+  /* Header Compact */
+  .fh-header {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  .fh-header-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 17px;
+  }
+
+  .fh-header-title {
+    font-size: 0.98rem;
+  }
+
+  .fh-header-sub {
+    font-size: 0.72rem;
+  }
+
+  /* Biến các nút hành động trên Header thành Icon-only 34px × 34px */
+  .fh-btn-header-action {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    padding: 0 !important;
+    border-radius: 9px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .fh-btn-header-action .fh-btn-text {
+    display: none !important;
+  }
+
+  .fh-btn-header-action i {
+    font-size: 14px !important;
+    position: static !important;
+    top: 0 !important;
+  }
+
+  /* Sub-tabs Grid 4 Cột Icon-Only trên Mobile */
+  .fh-nav-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    padding: 6px 10px !important;
+    gap: 6px !important;
+    top: 56px !important;
+    background: rgba(15, 23, 42, 0.92) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-sizing: border-box !important;
+  }
+
+  .fh-tab-btn {
+    width: 100% !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    border-radius: 11px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    color: #94a3b8 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+  }
+
+  .fh-tab-btn.active {
+    background: #10b981 !important;
+    color: #042f2e !important;
+    border-color: #10b981 !important;
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.38) !important;
+  }
+
+  .fh-tab-btn i {
+    font-size: 18px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    position: static !important;
+    top: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Top Stats Hero: Grid 3 Cột Mini */
+  .fh-overview-hero {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .fh-hero-stat-card {
+    padding: 8px 4px !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 4px !important;
+    border-radius: 12px !important;
+  }
+
+  .fh-hero-stat-icon {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+  }
+
+  .fh-hero-stat-title {
+    font-size: 0.65rem !important;
+    line-height: 1.2 !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .fh-hero-stat-value {
+    font-size: 1.05rem !important;
+    margin-top: 0 !important;
+  }
+
+  .fh-hero-stat-value small {
+    display: none !important;
+  }
+
+  /* Member Card Footer: 2 nút chia 50-50 */
+  .fh-member-card {
+    padding: 14px !important;
+    border-radius: 16px !important;
+    gap: 12px !important;
+  }
+
+  .fh-member-avatar {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 12px !important;
+    font-size: 17px !important;
+  }
+
+  .fh-member-name {
+    font-size: 0.98rem !important;
+  }
+
+  .fh-card-footer {
+    display: flex !important;
+    gap: 8px !important;
+  }
+
+  .fh-card-footer .fh-btn-sm {
+    flex: 1 1 calc(50% - 4px) !important;
+    min-height: 38px !important;
+    font-size: 12px !important;
+    padding: 6px 8px !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  /* Tab Lịch Sử: Chuyển hoàn toàn sang Card List trên Mobile */
+  .fh-desktop-only {
+    display: none !important;
+  }
+
+  .fh-mobile-only {
+    display: flex !important;
+  }
+
+  .fh-history-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .fh-filter-wrap {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 4px !important;
+  }
+
+  .fh-filter-wrap label {
+    font-size: 0.78rem !important;
+  }
+
+  .fh-select {
+    width: 100% !important;
+    min-height: 38px !important;
+  }
+
+  .fh-toolbar-actions .fh-btn {
+    width: 100% !important;
+    min-height: 38px !important;
+    justify-content: center !important;
+  }
+
+  /* Tab Máy Tính Đo Nhanh trên Mobile */
+  .fh-calc-form-card,
+  .fh-calc-result-card {
+    padding: 16px 14px !important;
+    border-radius: 16px !important;
+  }
+
+  .fh-radio-pills {
+    gap: 8px !important;
+  }
+
+  .fh-radio-pill {
+    min-width: calc(50% - 4px) !important;
+    flex: 1 !important;
+  }
+
+  .fh-radio-pill span {
+    padding: 8px 6px !important;
+    font-size: 0.75rem !important;
+    min-height: 38px !important;
+  }
+
+  .fh-form-actions {
+    flex-direction: row !important;
+    gap: 8px !important;
+  }
+
+  .fh-form-actions .fh-btn-secondary {
+    flex: 1 !important;
+    min-height: 40px !important;
+  }
+
+  .fh-form-actions .fh-btn-primary {
+    flex: 2 !important;
+    min-height: 40px !important;
+  }
+
+  .fh-big-val {
+    font-size: 2.2rem !important;
+  }
+
+  /* Sub-modals trên Mobile: Đồng bộ chuẩn Family Cookbook */
+  div.fh-submodal,
+  .fh-submodal {
+    padding: 0 !important;
+    align-items: flex-end !important;
+  }
+
+  .fh-submodal-dialog {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    border-radius: 20px 20px 0 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    max-height: 88vh !important;
+  }
+
+  .fh-submodal .fc-header {
+    padding: 12px 16px !important;
+  }
+
+  .fh-submodal-body {
+    padding: 16px 16px 20px 16px !important;
+  }
+
+  .fh-submodal .fc-header[style*="justify-content: flex-end"] {
+    padding: 12px 0 0 0 !important;
+  }
+
+  .fh-submodal .fc-header[style*="justify-content: flex-end"] .fc-btn {
+    flex: 1 !important;
+    min-height: 40px !important;
+    justify-content: center !important;
+  }
+
+  /* Tab Biểu Đồ Tăng Trưởng trên Mobile */
+  .fh-chart-top-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .fh-chart-member-scroll-wrap {
+    width: 100% !important;
+    padding: 2px 0 6px 0 !important;
+  }
+
+  .fh-chart-member-pill {
+    padding: 6px 12px 6px 8px !important;
+    gap: 8px !important;
+  }
+
+  .fh-cmp-avatar {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 11px !important;
+  }
+
+  .fh-cmp-name {
+    font-size: 0.82rem !important;
+  }
+
+  .fh-cmp-sub {
+    font-size: 0.68rem !important;
+  }
+
+  .fh-chart-metric-bar {
+    width: 100% !important;
+    display: flex !important;
+    padding: 4px !important;
+  }
+
+  .fh-chart-metric-btn {
+    flex: 1 !important;
+    padding: 6px 4px !important;
+    font-size: 11px !important;
+    justify-content: center !important;
+    gap: 4px !important;
+  }
+
+  .fh-chart-metric-btn i {
+    font-size: 12px !important;
+  }
+
+  .fh-chart-main-card {
+    padding: 14px 12px !important;
+    border-radius: 16px !important;
+    gap: 12px !important;
+  }
+
+  .fh-chart-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .fh-chart-card-title {
+    font-size: 1.02rem !important;
+  }
+
+  .fh-chart-legend {
+    gap: 10px !important;
+  }
+
+  .fh-legend-item {
+    font-size: 0.72rem !important;
+  }
+
+  .fh-svg-chart {
+    min-height: 220px !important;
+  }
+
+  .fh-cdc-metrics-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .fh-cdc-item {
+    padding: 8px 10px !important;
+  }
+
+  .fh-cdc-val {
+    font-size: 1.02rem !important;
+  }
+
+  .fh-chart-insight-box {
+    padding: 14px 12px !important;
+    border-radius: 14px !important;
+    gap: 10px !important;
+  }
+
+  .fh-cib-title {
+    font-size: 0.88rem !important;
+  }
+
+  .fh-cib-text {
+    font-size: 0.82rem !important;
+  }
+
+  .fh-chart-bottom-actions {
+    flex-direction: column-reverse !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .fh-chart-bottom-actions .fh-btn {
+    width: 100% !important;
+    min-height: 40px !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .fh-header-sub {
+    display: none !important;
+  }
+
+  .fh-nav-tabs {
+    padding: 5px 6px !important;
+    gap: 4px !important;
+  }
+
+  .fh-tab-btn {
+    height: 38px !important;
+    min-height: 38px !important;
+    border-radius: 9px !important;
+  }
+
+  .fh-tab-btn i {
+    font-size: 17px !important;
+  }
+
+  .fh-gauge-labels {
+    font-size: 0.62rem !important;
+  }
+}
+
+@media (max-width: 330px) {
+  .fh-nav-tabs {
+    padding: 4px 4px !important;
+    gap: 3px !important;
+  }
+
+  .fh-tab-btn {
+    height: 36px !important;
+    min-height: 36px !important;
+    border-radius: 8px !important;
+  }
+
+  .fh-tab-btn i {
+    font-size: 16px !important;
+  }
+}
+

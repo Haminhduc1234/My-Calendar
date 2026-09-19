@@ -11615,14 +11615,62 @@ async function openCashflowModal() {
 }
 
 function closeCashflowModal() {
+  closeCashflowMoreMenu();
   resetCashflowForm();
   hideSkeleton('cashflowSkeleton');
+  closeCashflowCategoryModal();
   closeCashflowHistoryModal();
   closeCashflowSummaryModal();
   closeCashflowAnalysisModal();
   closeCashflowChartModal();
   document.getElementById("cashflowModal").style.display = "none";
 }
+
+function toggleCashflowMoreMenu(event) {
+  if (event) event.stopPropagation();
+  const menu = document.getElementById("cashflowMoreDropdown");
+  const btn = document.getElementById("cashflowMoreMenuBtn");
+  if (!menu) return;
+  const isOpen = menu.classList.toggle("is-open");
+  if (btn) {
+    btn.classList.toggle("is-active", isOpen);
+    btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  }
+}
+
+function closeCashflowMoreMenu() {
+  const menu = document.getElementById("cashflowMoreDropdown");
+  const btn = document.getElementById("cashflowMoreMenuBtn");
+  if (menu) menu.classList.remove("is-open");
+  if (btn) {
+    btn.classList.remove("is-active");
+    btn.setAttribute("aria-expanded", "false");
+  }
+}
+
+function handleCashflowMenuAction(actionFn) {
+  closeCashflowMoreMenu();
+  if (typeof actionFn === "function") {
+    actionFn();
+  }
+}
+
+// Tự động đóng menu 3 chấm khi click ra ngoài hoặc bấm Escape
+document.addEventListener("click", function (e) {
+  const dropdown = document.getElementById("cashflowMoreDropdown");
+  const btn = document.getElementById("cashflowMoreMenuBtn");
+  if (dropdown && dropdown.classList.contains("is-open")) {
+    if (!dropdown.contains(e.target) && (!btn || !btn.contains(e.target))) {
+      closeCashflowMoreMenu();
+    }
+  }
+});
+
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    closeCashflowMoreMenu();
+  }
+});
 
 function findCashflowEntryLocation(entryId) {
   const dateKeys = getAllDateKeysFromCache();

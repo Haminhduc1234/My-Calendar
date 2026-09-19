@@ -18,7 +18,7 @@
     rel="stylesheet" />
   <!-- Flaticon UIcons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons/css/all/all.css" />
-  <link rel="stylesheet" href="style.css?v=20260919_date_ios_align" />
+  <link rel="stylesheet" href="style.css?v=20260919_cat_menu_row" />
   <link rel="stylesheet" href="family-cookbook.css?v=20260917_search_pos" />
   <link rel="stylesheet" href="family-health.css?v=20260918_cards_layout" />
   <link rel="icon" type="image/png" href="public/favicon.png" />
@@ -1246,10 +1246,54 @@
             </div>
             <div class="cashflow-header-text">
               <h3 id="cashflowModalTitle">Quản lý thu chi</h3>
-              <p class="cashflow-header-sub">Ghi chép thu chi hằng ngày</p>
             </div>
           </div>
-          <button class="modal-close cashflow-modal-close" onclick="closeCashflowModal()" aria-label="Đóng">×</button>
+          <div class="cashflow-header-actions">
+            <button type="button" class="cashflow-header-action-btn" id="cashflowMoreMenuBtn" onclick="toggleCashflowMoreMenu(event)" aria-label="Báo cáo & Tiện ích" title="Báo cáo & Tiện ích" aria-expanded="false" aria-haspopup="true">
+              <i class="fi fi-rr-menu-dots-vertical"></i>
+            </button>
+            <button class="modal-close cashflow-modal-close" onclick="closeCashflowModal()" aria-label="Đóng">×</button>
+
+            <!-- Dropdown Menu nổi (Glassmorphism) -->
+            <div class="cashflow-more-dropdown" id="cashflowMoreDropdown" role="menu" aria-label="Menu báo cáo và tiện ích thu chi">
+              <div class="cashflow-more-dropdown-header">Báo cáo & Tiện ích</div>
+              <button type="button" class="cashflow-menu-item" role="menuitem" onclick="handleCashflowMenuAction(openCashflowCategoryModal)">
+                <span class="cashflow-menu-icon is-category"><i class="fi fi-rr-settings"></i></span>
+                <span class="cashflow-menu-text">
+                  <span class="cashflow-menu-title">Quản lý danh mục</span>
+                  <span class="cashflow-menu-desc">Thêm & chỉnh sửa nhóm thu chi</span>
+                </span>
+              </button>
+              <button type="button" class="cashflow-menu-item" role="menuitem" onclick="handleCashflowMenuAction(openCashflowHistoryModal)">
+                <span class="cashflow-menu-icon is-history"><i class="fi fi-rr-time-past"></i></span>
+                <span class="cashflow-menu-text">
+                  <span class="cashflow-menu-title">Lịch sử giao dịch</span>
+                  <span class="cashflow-menu-desc">Tra cứu & danh sách thu chi</span>
+                </span>
+              </button>
+              <button type="button" class="cashflow-menu-item" role="menuitem" onclick="handleCashflowMenuAction(openCashflowSummaryModal)">
+                <span class="cashflow-menu-icon is-summary"><i class="fi fi-rr-wallet"></i></span>
+                <span class="cashflow-menu-text">
+                  <span class="cashflow-menu-title">Tổng quan tài chính</span>
+                  <span class="cashflow-menu-desc">Số dư ví & dòng tiền tháng</span>
+                </span>
+              </button>
+              <button type="button" class="cashflow-menu-item" role="menuitem" onclick="handleCashflowMenuAction(openCashflowAnalysisModal)">
+                <span class="cashflow-menu-icon is-analysis"><i class="fi fi-rr-chart-pie"></i></span>
+                <span class="cashflow-menu-text">
+                  <span class="cashflow-menu-title">Cơ cấu danh mục</span>
+                  <span class="cashflow-menu-desc">Tỷ trọng các nhóm chi tiêu</span>
+                </span>
+              </button>
+              <button type="button" class="cashflow-menu-item" role="menuitem" onclick="handleCashflowMenuAction(openCashflowChartModal)">
+                <span class="cashflow-menu-icon is-chart"><i class="fi fi-rr-chart-histogram"></i></span>
+                <span class="cashflow-menu-text">
+                  <span class="cashflow-menu-title">Biểu đồ & Báo cáo</span>
+                  <span class="cashflow-menu-desc">Xu hướng chi tiêu theo kỳ</span>
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="cashflow-modal-body">
@@ -1300,55 +1344,41 @@
                 </div>
               </div>
 
-              <!-- 3. Danh mục -->
-              <div class="cashflow-input-item">
-                <div class="cashflow-label-with-action">
-                  <span>Danh mục</span>
-                  <button type="button" class="cashflow-category-manage-btn" onclick="openCashflowCategoryModal()"
-                    title="Quản lý danh mục thu/chi" aria-label="Quản lý danh mục thu chi">
-                    <i class="fi fi-rr-settings"></i>
-                  </button>
+              <!-- 3 & 4. Danh mục & Ngày giao dịch (Gộp trên 1 hàng) -->
+              <div class="cashflow-form-row">
+                <div class="cashflow-input-item">
+                  <div class="cashflow-field-wrap">
+                    <i class="fi fi-rr-folder cashflow-field-icon"></i>
+                    <select id="cashflowCategory" class="cashflow-custom-select" aria-label="Danh mục thu chi" title="Chọn danh mục thu chi"></select>
+                    <i class="fi fi-rr-angle-small-down cashflow-select-arrow"></i>
+                  </div>
                 </div>
-                <div class="cashflow-field-wrap">
-                  <i class="fi fi-rr-folder cashflow-field-icon"></i>
-                  <select id="cashflowCategory" class="cashflow-custom-select"></select>
-                  <i class="fi fi-rr-angle-small-down cashflow-select-arrow"></i>
+
+                <div class="cashflow-input-item">
+                  <div class="cashflow-field-wrap">
+                    <i class="fi fi-rr-calendar cashflow-field-icon"></i>
+                    <input type="date" id="cashflowDate" class="cashflow-custom-date" aria-label="Ngày giao dịch" title="Chọn ngày giao dịch" />
+                  </div>
                 </div>
               </div>
 
-              <!-- 4. Ngày giao dịch -->
+              <!-- 5. Ghi chú -->
               <div class="cashflow-input-item">
-                <div class="cashflow-label-with-action">
-                  <span>Ngày</span>
-                </div>
-                <div class="cashflow-field-wrap">
-                  <i class="fi fi-rr-calendar cashflow-field-icon"></i>
-                  <input type="date" id="cashflowDate" class="cashflow-custom-date" />
-                </div>
-              </div>
-
-              <!-- 4. Ghi chú -->
-              <div class="cashflow-input-item">
-                <div class="cashflow-label-with-action">
-                  <span>Ghi chú</span>
-                </div>
                 <div class="cashflow-field-wrap">
                   <i class="fi fi-rr-edit cashflow-field-icon"></i>
-                  <input type="text" id="cashflowNote" class="cashflow-custom-input" placeholder="Nhập..."
-                    maxlength="120" />
+                  <input type="text" id="cashflowNote" class="cashflow-custom-input" placeholder="Nhập ghi chú chi tiêu..."
+                    maxlength="120" aria-label="Ghi chú chi tiêu" />
                 </div>
               </div>
 
-              <!-- 5. Ảnh đính kèm (Hiển thị riêng) -->
+              <!-- 6. Ảnh đính kèm (Hiển thị riêng) -->
               <div class="cashflow-input-item">
-                <div class="cashflow-label-with-action">
-                  <span>Ảnh mô tả</span>
-                </div>
                 <div class="cashflow-image-upload-area" id="cashflowImageUploadArea">
                   <input type="file" id="cashflowImageInput" accept="image/*"
                     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2;" />
                   <div class="cashflow-image-placeholder" id="cashflowImagePlaceholder">
                     <i class="fi fi-rr-camera"></i>
+                    <span>Chạm để thêm ảnh mô tả / hóa đơn</span>
                   </div>
                   <div class="cashflow-image-preview" id="cashflowImagePreview" style="display: none">
                     <img id="cashflowImageImg" src="" alt="Ảnh mô tả" />
@@ -1361,30 +1391,6 @@
               </div>
             </section>
 
-            <!-- Visual Action Grid for Cashflow Features (1 hàng, chỉ chứa icon) -->
-            <div class="cashflow-features-section">
-              <div class="cashflow-features-grid">
-                <button type="button" class="cashflow-feature-card is-history" onclick="openCashflowHistoryModal()"
-                  title="Lịch sử giao dịch" aria-label="Lịch sử giao dịch">
-                  <i class="fi fi-rr-time-past"></i>
-                </button>
-
-                <button type="button" class="cashflow-feature-card is-summary" onclick="openCashflowSummaryModal()"
-                  title="Tổng quan tài chính" aria-label="Tổng quan tài chính">
-                  <i class="fi fi-rr-wallet"></i>
-                </button>
-
-                <button type="button" class="cashflow-feature-card is-analysis" onclick="openCashflowAnalysisModal()"
-                  title="Cơ cấu danh mục" aria-label="Cơ cấu danh mục">
-                  <i class="fi fi-rr-chart-pie"></i>
-                </button>
-
-                <button type="button" class="cashflow-feature-card is-chart" onclick="openCashflowChartModal()"
-                  title="Biểu đồ & Báo cáo" aria-label="Biểu đồ & Báo cáo">
-                  <i class="fi fi-rr-chart-histogram"></i>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
 

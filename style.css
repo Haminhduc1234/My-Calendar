@@ -5305,12 +5305,67 @@ body::before {
   text-overflow: ellipsis;
 }
 
+/* Header Actions & 3-Dots More Menu */
+.cashflow-header-actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.cashflow-header-action-btn {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 9px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #94a3b8 !important;
+  font-size: 15px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  line-height: 1 !important;
+}
+
+.cashflow-header-action-btn i {
+  position: static !important;
+  top: 0 !important;
+  font-size: 15px !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.cashflow-header-action-btn:hover {
+  background: rgba(143, 184, 255, 0.16) !important;
+  border-color: rgba(143, 184, 255, 0.35) !important;
+  color: #93c5fd !important;
+}
+
+.cashflow-header-action-btn.is-active {
+  background: rgba(99, 102, 241, 0.25) !important;
+  border-color: rgba(99, 102, 241, 0.55) !important;
+  color: #a5b4fc !important;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.25) !important;
+}
+
 /* Close button: 34px x 34px, radius 9px, static top 0 */
 .cashflow-modal-close {
   position: static !important;
   top: auto !important;
   right: auto !important;
-  margin-left: auto !important;
+  margin-left: 0 !important;
   width: 34px !important;
   height: 34px !important;
   border-radius: 9px !important;
@@ -5331,6 +5386,149 @@ body::before {
   background: rgba(239, 68, 68, 0.2) !important;
   border-color: rgba(239, 68, 68, 0.4) !important;
   color: #f87171 !important;
+}
+
+/* Glassmorphism Dropdown Menu */
+.cashflow-more-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 256px;
+  background: rgba(13, 22, 44, 0.96);
+  border: 1px solid rgba(143, 184, 255, 0.2);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 6px;
+  display: none;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 100;
+  box-sizing: border-box;
+  animation: cashflowMenuFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cashflow-more-dropdown.is-open {
+  display: flex;
+}
+
+@keyframes cashflowMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cashflow-more-dropdown-header {
+  padding: 8px 10px 6px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(148, 163, 184, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 3px;
+}
+
+.cashflow-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.cashflow-menu-item:hover {
+  background: rgba(143, 184, 255, 0.1);
+  border-color: rgba(143, 184, 255, 0.18);
+}
+
+.cashflow-menu-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+
+.cashflow-menu-icon i {
+  position: static !important;
+  top: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+.cashflow-menu-icon.is-category {
+  color: #c084fc;
+  background: rgba(168, 85, 247, 0.14);
+  border: 1px solid rgba(168, 85, 247, 0.28);
+}
+
+.cashflow-menu-icon.is-history {
+  color: #818cf8;
+  background: rgba(99, 102, 241, 0.14);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+}
+
+.cashflow-menu-icon.is-summary {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.cashflow-menu-icon.is-analysis {
+  color: #f472b6;
+  background: rgba(236, 72, 153, 0.14);
+  border: 1px solid rgba(236, 72, 153, 0.28);
+}
+
+.cashflow-menu-icon.is-chart {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.cashflow-menu-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.cashflow-menu-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cashflow-menu-desc {
+  font-size: 10.5px;
+  color: rgba(148, 163, 184, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Optical Icon Alignment */
@@ -5716,34 +5914,12 @@ body::before {
   min-width: 0;
 }
 
-.cashflow-label-with-action {
-  display: flex;
-  align-items: center;
-  font-size: 11.5px;
-  gap: 4px;
-  font-weight: 600;
-  color: #cadcfb;
-}
-
-.cashflow-category-manage-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  padding: 0;
-  border-radius: 5px;
-  border: 1px solid rgba(143, 184, 255, 0.25);
-  background: rgba(143, 184, 255, 0.1);
-  color: #8fb8ff;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 0.18s ease, color 0.18s ease;
-}
-
-.cashflow-category-manage-btn:hover {
-  background: rgba(143, 184, 255, 0.22);
-  color: #fff;
+.cashflow-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .cashflow-field-wrap {
@@ -5818,7 +5994,7 @@ body::before {
 .cashflow-custom-select {
   appearance: none;
   -webkit-appearance: none;
-  padding-right: 18px !important;
+  padding-right: 22px !important;
 }
 
 /* Ngăn triệt để việc chữ trong ô chọn ngày bị xuống dòng & căn đều quang học chuẩn iOS */
@@ -5947,7 +6123,7 @@ input[type="date"].cashflow-custom-date::-webkit-calendar-picker-indicator:hover
 .cashflow-image-upload-area {
   position: relative;
   width: 100%;
-  min-height: 98px;
+  min-height: 76px;
   background: rgba(9, 19, 40, 0.75);
   border: 1.5px dashed rgba(143, 184, 255, 0.25);
   border-radius: 12px;
@@ -5993,6 +6169,9 @@ input[type="date"].cashflow-custom-date::-webkit-calendar-picker-indicator:hover
   color: #7dd3fc;
   position: relative;
   top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
 }
 
@@ -7196,16 +7375,14 @@ input[type="datetime-local"] {
 }
 
 @media (max-width: 540px) {
-  .cashflow-features-grid {
+  .cashflow-header-actions {
     gap: 6px;
   }
 
-  .cashflow-feature-card {
-    height: 42px;
-  }
-
-  .cashflow-feature-card i {
-    font-size: 18px;
+  .cashflow-more-dropdown {
+    width: calc(100vw - 28px);
+    max-width: 250px;
+    right: 0;
   }
 
   .cashflow-field-wrap {
@@ -7242,14 +7419,19 @@ input[type="datetime-local"] {
     white-space: nowrap !important;
   }
 
+  .cashflow-form-row {
+    gap: 8px;
+    grid-template-columns: 1fr 1fr !important;
+  }
+
   #cashflowModal .cashflow-custom-select,
   .cashflow-custom-select {
     font-size: 13px !important;
-    padding-right: 14px !important;
+    padding-right: 20px !important;
   }
 
   .cashflow-select-arrow {
-    right: 8px;
+    right: 7px;
     font-size: 11px;
   }
 
@@ -8970,100 +9152,7 @@ input[type="datetime-local"] {
   color: #ffb3b3;
 }
 
-/* ── Cashflow Features Bar (1 hàng ngang gộp 4 nút icon) ── */
-.cashflow-features-section {
-  margin-top: 2px;
-  padding-top: 0;
-  border-top: none;
-}
 
-.cashflow-features-grid {
-  display: grid !important;
-  grid-template-columns: repeat(4, 1fr) !important;
-  gap: 6px !important;
-  padding: 4px;
-  background: rgba(8, 16, 34, 0.85);
-  box-sizing: border-box;
-}
-
-.cashflow-feature-card {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 42px;
-  padding: 0;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  background: transparent;
-  cursor: pointer;
-  width: 100%;
-  color: inherit;
-  font-family: inherit;
-  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
-  box-sizing: border-box;
-}
-
-.cashflow-feature-card i {
-  position: static;
-  top: 0;
-  font-size: 18px;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cashflow-feature-card.is-history {
-  color: #818cf8;
-  background: rgba(99, 102, 241, 0.12);
-  border-color: rgba(99, 102, 241, 0.28);
-}
-
-.cashflow-feature-card.is-history:hover {
-  background: rgba(99, 102, 241, 0.22);
-  border-color: rgba(99, 102, 241, 0.55);
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
-  color: #a5b4fc;
-}
-
-.cashflow-feature-card.is-summary {
-  color: #34d399;
-  background: rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.28);
-}
-
-.cashflow-feature-card.is-summary:hover {
-  background: rgba(16, 185, 129, 0.22);
-  border-color: rgba(16, 185, 129, 0.55);
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
-  color: #6ee7b7;
-}
-
-.cashflow-feature-card.is-analysis {
-  color: #fbbf24;
-  background: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.28);
-}
-
-.cashflow-feature-card.is-analysis:hover {
-  background: rgba(245, 158, 11, 0.22);
-  border-color: rgba(245, 158, 11, 0.55);
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
-  color: #fde68a;
-}
-
-.cashflow-feature-card.is-chart {
-  color: #38bdf8;
-  background: rgba(56, 189, 248, 0.12);
-  border-color: rgba(56, 189, 248, 0.28);
-}
-
-.cashflow-feature-card.is-chart:hover {
-  background: rgba(56, 189, 248, 0.22);
-  border-color: rgba(56, 189, 248, 0.55);
-  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.25);
-  color: #bae6fd;
-}
 
 /* ── Cashflow Sub-Modals ── */
 .cashflow-submodal {

@@ -5773,6 +5773,10 @@ body::before {
   margin-right: 9px;
   position: relative;
   top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
   pointer-events: none;
 }
 
@@ -5817,48 +5821,85 @@ body::before {
   padding-right: 18px !important;
 }
 
-/* Ngăn triệt để việc chữ trong ô chọn ngày bị xuống dòng */
+/* Ngăn triệt để việc chữ trong ô chọn ngày bị xuống dòng & căn đều quang học chuẩn iOS */
 .cashflow-custom-date,
 input[type="date"].cashflow-custom-date,
 #cashflowDate {
   -webkit-appearance: none;
   appearance: none;
-  font-size: 12.5px !important;
+  font-size: 13px !important;
   white-space: nowrap !important;
   line-height: normal !important;
   text-overflow: ellipsis !important;
   min-width: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  align-self: center !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
 }
 
 .cashflow-custom-date::-webkit-date-and-time-value,
 input[type="date"].cashflow-custom-date::-webkit-date-and-time-value,
 #cashflowDate::-webkit-date-and-time-value {
-  margin: 0 !important;
+  margin: auto 0 !important;
   padding: 0 !important;
-  min-height: unset !important;
+  min-height: 1.2em !important;
+  height: auto !important;
   line-height: normal !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   text-align: left !important;
-  display: block !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  vertical-align: middle !important;
   font-size: inherit !important;
+  font-family: inherit !important;
+  color: inherit !important;
 }
 
 .cashflow-custom-date::-webkit-datetime-edit,
 input[type="date"].cashflow-custom-date::-webkit-datetime-edit,
 #cashflowDate::-webkit-datetime-edit {
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 100% !important;
   padding: 0 !important;
   margin: 0 !important;
   white-space: nowrap !important;
   overflow: hidden !important;
+  vertical-align: middle !important;
+  line-height: normal !important;
 }
 
 .cashflow-custom-date::-webkit-datetime-edit-fields-wrapper,
 input[type="date"].cashflow-custom-date::-webkit-datetime-edit-fields-wrapper,
 #cashflowDate::-webkit-datetime-edit-fields-wrapper {
+  display: inline-flex !important;
+  align-items: center !important;
+  height: 100% !important;
   padding: 0 !important;
+  margin: 0 !important;
   white-space: nowrap !important;
+  line-height: normal !important;
+}
+
+.cashflow-custom-date::-webkit-datetime-edit-text,
+.cashflow-custom-date::-webkit-datetime-edit-month-field,
+.cashflow-custom-date::-webkit-datetime-edit-day-field,
+.cashflow-custom-date::-webkit-datetime-edit-year-field,
+input[type="date"].cashflow-custom-date::-webkit-datetime-edit-text,
+input[type="date"].cashflow-custom-date::-webkit-datetime-edit-month-field,
+input[type="date"].cashflow-custom-date::-webkit-datetime-edit-day-field,
+input[type="date"].cashflow-custom-date::-webkit-datetime-edit-year-field,
+#cashflowDate::-webkit-datetime-edit-text,
+#cashflowDate::-webkit-datetime-edit-month-field,
+#cashflowDate::-webkit-datetime-edit-day-field,
+#cashflowDate::-webkit-datetime-edit-year-field {
+  padding: 0 !important;
+  line-height: normal !important;
+  vertical-align: middle !important;
 }
 
 .cashflow-custom-date::-webkit-calendar-picker-indicator,
@@ -5871,6 +5912,7 @@ input[type="date"].cashflow-custom-date::-webkit-calendar-picker-indicator,
   margin: 0 0 0 4px;
   width: 14px;
   height: 14px;
+  align-self: center;
   flex-shrink: 0;
   transition: opacity 0.18s ease;
 }
@@ -7174,6 +7216,12 @@ input[type="datetime-local"] {
   .cashflow-field-icon {
     font-size: 13px;
     margin-right: 8px;
+    position: relative;
+    top: 1px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
   }
 
   #cashflowModal .cashflow-custom-date,

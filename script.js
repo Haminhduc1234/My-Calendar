@@ -11642,6 +11642,7 @@ function setCashflowType(type) {
   const select = document.getElementById("cashflowType");
   const btnExpense = document.getElementById("cashflowTypeBtnExpense");
   const btnIncome = document.getElementById("cashflowTypeBtnIncome");
+  const container = document.getElementById("cashflowTypeSegmented");
 
   const normalized = type === "income" ? "income" : "expense";
   if (select) {
@@ -11650,6 +11651,10 @@ function setCashflowType(type) {
 
   if (btnExpense) btnExpense.classList.toggle("active", normalized === "expense");
   if (btnIncome) btnIncome.classList.toggle("active", normalized === "income");
+  if (container) {
+    container.classList.toggle("is-expense", normalized === "expense");
+    container.classList.toggle("is-income", normalized === "income");
+  }
 
   onCashflowTypeChange();
 }
@@ -12013,7 +12018,7 @@ function syncCashflowFormMode() {
   } else {
     if (submitBtn) submitBtn.innerText = "Thêm giao dịch";
     if (cancelBtn) cancelBtn.style.display = "none";
-    if (mobileAddBtn) mobileAddBtn.innerText = "Thêm thu chi";
+    if (mobileAddBtn) mobileAddBtn.innerText = "Lưu";
     if (mobileCloseBtn) {
       mobileCloseBtn.innerText = "Đóng";
       mobileCloseBtn.onclick = closeCashflowModal;

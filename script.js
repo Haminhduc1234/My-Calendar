@@ -170,18 +170,10 @@ function generateId() {
 
 // Lễ dương lịch
 const SOLAR_HOLIDAYS = {
-  "1-1": "Tết Dương",
-  "30-4": "30/4",
-  "1-5": "1/5",
-  "2-9": "Quốc khánh",
 };
 
 // Lễ âm lịch
 const LUNAR_HOLIDAYS = {
-  "1-1": "Tết Nguyên Đán",
-  "15-1": "Rằm tháng Giêng",
-  "10-3": "Giỗ Tổ",
-  "15-8": "Trung Thu",
 };
 
 /* ========================== HÀM HỖ TRỢ ========================== */

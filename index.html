@@ -18,7 +18,7 @@
     rel="stylesheet" />
   <!-- Flaticon UIcons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons/css/all/all.css" />
-  <link rel="stylesheet" href="style.css?v=20260919_cat_menu_row" />
+  <link rel="stylesheet" href="style.css?v=20260921_ios_zoom_fix" />
   <link rel="stylesheet" href="family-cookbook.css?v=20260917_search_pos" />
   <link rel="stylesheet" href="family-health.css?v=20260918_cards_layout" />
   <link rel="icon" type="image/png" href="public/favicon.png" />
@@ -1249,43 +1249,51 @@
             </div>
           </div>
           <div class="cashflow-header-actions">
-            <button type="button" class="cashflow-header-action-btn" id="cashflowMoreMenuBtn" onclick="toggleCashflowMoreMenu(event)" aria-label="Báo cáo & Tiện ích" title="Báo cáo & Tiện ích" aria-expanded="false" aria-haspopup="true">
+            <button type="button" class="cashflow-header-action-btn" id="cashflowMoreMenuBtn"
+              onclick="toggleCashflowMoreMenu(event)" aria-label="Báo cáo & Tiện ích" title="Báo cáo & Tiện ích"
+              aria-expanded="false" aria-haspopup="true">
               <i class="fi fi-rr-menu-dots-vertical"></i>
             </button>
             <button class="modal-close cashflow-modal-close" onclick="closeCashflowModal()" aria-label="Đóng">×</button>
 
             <!-- Dropdown Menu nổi (Glassmorphism) -->
-            <div class="cashflow-more-dropdown" id="cashflowMoreDropdown" role="menu" aria-label="Menu báo cáo và tiện ích thu chi">
+            <div class="cashflow-more-dropdown" id="cashflowMoreDropdown" role="menu"
+              aria-label="Menu báo cáo và tiện ích thu chi">
               <div class="cashflow-more-dropdown-header">Báo cáo & Tiện ích</div>
-              <button type="button" class="cashflow-menu-item" role="menuitem" onclick="handleCashflowMenuAction(openCashflowCategoryModal)">
-                <span class="cashflow-menu-icon is-category"><i class="fi fi-rr-settings"></i></span>
-                <span class="cashflow-menu-text">
-                  <span class="cashflow-menu-title">Quản lý danh mục</span>
-                  <span class="cashflow-menu-desc">Thêm & chỉnh sửa nhóm thu chi</span>
-                </span>
-              </button>
-              <button type="button" class="cashflow-menu-item" role="menuitem" onclick="handleCashflowMenuAction(openCashflowHistoryModal)">
+              <button type="button" class="cashflow-menu-item" role="menuitem"
+                onclick="handleCashflowMenuAction(openCashflowHistoryModal)">
                 <span class="cashflow-menu-icon is-history"><i class="fi fi-rr-time-past"></i></span>
                 <span class="cashflow-menu-text">
                   <span class="cashflow-menu-title">Lịch sử giao dịch</span>
                   <span class="cashflow-menu-desc">Tra cứu & danh sách thu chi</span>
                 </span>
               </button>
-              <button type="button" class="cashflow-menu-item" role="menuitem" onclick="handleCashflowMenuAction(openCashflowSummaryModal)">
+              <button type="button" class="cashflow-menu-item" role="menuitem"
+                onclick="handleCashflowMenuAction(openCashflowCategoryModal)">
+                <span class="cashflow-menu-icon is-category"><i class="fi fi-rr-settings"></i></span>
+                <span class="cashflow-menu-text">
+                  <span class="cashflow-menu-title">Quản lý danh mục</span>
+                  <span class="cashflow-menu-desc">Thêm & chỉnh sửa nhóm thu chi</span>
+                </span>
+              </button>
+              <button type="button" class="cashflow-menu-item" role="menuitem"
+                onclick="handleCashflowMenuAction(openCashflowSummaryModal)">
                 <span class="cashflow-menu-icon is-summary"><i class="fi fi-rr-wallet"></i></span>
                 <span class="cashflow-menu-text">
                   <span class="cashflow-menu-title">Tổng quan tài chính</span>
                   <span class="cashflow-menu-desc">Số dư ví & dòng tiền tháng</span>
                 </span>
               </button>
-              <button type="button" class="cashflow-menu-item" role="menuitem" onclick="handleCashflowMenuAction(openCashflowAnalysisModal)">
+              <button type="button" class="cashflow-menu-item" role="menuitem"
+                onclick="handleCashflowMenuAction(openCashflowAnalysisModal)">
                 <span class="cashflow-menu-icon is-analysis"><i class="fi fi-rr-chart-pie"></i></span>
                 <span class="cashflow-menu-text">
                   <span class="cashflow-menu-title">Cơ cấu danh mục</span>
                   <span class="cashflow-menu-desc">Tỷ trọng các nhóm chi tiêu</span>
                 </span>
               </button>
-              <button type="button" class="cashflow-menu-item" role="menuitem" onclick="handleCashflowMenuAction(openCashflowChartModal)">
+              <button type="button" class="cashflow-menu-item" role="menuitem"
+                onclick="handleCashflowMenuAction(openCashflowChartModal)">
                 <span class="cashflow-menu-icon is-chart"><i class="fi fi-rr-chart-histogram"></i></span>
                 <span class="cashflow-menu-text">
                   <span class="cashflow-menu-title">Biểu đồ & Báo cáo</span>
@@ -1349,7 +1357,8 @@
                 <div class="cashflow-input-item">
                   <div class="cashflow-field-wrap">
                     <i class="fi fi-rr-folder cashflow-field-icon"></i>
-                    <select id="cashflowCategory" class="cashflow-custom-select" aria-label="Danh mục thu chi" title="Chọn danh mục thu chi"></select>
+                    <select id="cashflowCategory" class="cashflow-custom-select" aria-label="Danh mục thu chi"
+                      title="Chọn danh mục thu chi"></select>
                     <i class="fi fi-rr-angle-small-down cashflow-select-arrow"></i>
                   </div>
                 </div>
@@ -1357,7 +1366,8 @@
                 <div class="cashflow-input-item">
                   <div class="cashflow-field-wrap">
                     <i class="fi fi-rr-calendar cashflow-field-icon"></i>
-                    <input type="date" id="cashflowDate" class="cashflow-custom-date" aria-label="Ngày giao dịch" title="Chọn ngày giao dịch" />
+                    <input type="date" id="cashflowDate" class="cashflow-custom-date" aria-label="Ngày giao dịch"
+                      title="Chọn ngày giao dịch" />
                   </div>
                 </div>
               </div>
@@ -1366,8 +1376,8 @@
               <div class="cashflow-input-item">
                 <div class="cashflow-field-wrap">
                   <i class="fi fi-rr-edit cashflow-field-icon"></i>
-                  <input type="text" id="cashflowNote" class="cashflow-custom-input" placeholder="Nhập ghi chú chi tiêu..."
-                    maxlength="120" aria-label="Ghi chú chi tiêu" />
+                  <input type="text" id="cashflowNote" class="cashflow-custom-input"
+                    placeholder="Nhập ghi chú chi tiêu..." maxlength="120" aria-label="Ghi chú chi tiêu" />
                 </div>
               </div>
 
@@ -1691,7 +1701,7 @@
                   border-radius: 10px;
                   border: 1px solid #e5e7eb;
                   background: white;
-                  font-size: 14px;
+                  font-size: 16px;
                   cursor: pointer;
                 " onchange="renderCategoryList()">
               <option value="income">📈 Loại thu</option>
@@ -1732,7 +1742,7 @@
                   box-sizing: border-box;
                   border-radius: 10px;
                   border: 1px solid #e5e7eb;
-                  font-size: 14px;
+                  font-size: 16px;
                 " />
             <div style="display: flex; gap: 10px; justify-content: flex-end">
               <button onclick="cancelCategoryForm()" style="

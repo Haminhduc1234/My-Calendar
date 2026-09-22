@@ -1415,8 +1415,8 @@
               <div class="cashflow-input-item">
                 <div class="cashflow-field-wrap">
                   <i class="fi fi-rr-edit cashflow-field-icon"></i>
-                  <input type="text" id="cashflowNote" class="cashflow-custom-input"
-                    placeholder="Nhập ghi chú chi tiêu..." maxlength="120" aria-label="Ghi chú chi tiêu" />
+                  <input type="text" id="cashflowNote" class="cashflow-custom-input" placeholder="Ghi chú..."
+                    maxlength="120" aria-label="Ghi chú chi tiêu" />
                 </div>
               </div>
 
@@ -1427,7 +1427,6 @@
                     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2;" />
                   <div class="cashflow-image-placeholder" id="cashflowImagePlaceholder">
                     <i class="fi fi-rr-camera"></i>
-                    <span>Chạm để thêm ảnh mô tả / hóa đơn</span>
                   </div>
                   <div class="cashflow-image-preview" id="cashflowImagePreview" style="display: none">
                     <img id="cashflowImageImg" src="" alt="Ảnh mô tả" />
@@ -1437,6 +1436,16 @@
                     </button>
                   </div>
                 </div>
+              </div>
+
+              <!-- 7. Nút Lịch sử giao dịch ở cuối form nhập (đơn giản) -->
+              <div class="cashflow-form-history-box">
+                <button type="button" class="cashflow-form-simple-history-btn" onclick="openCashflowHistoryModal()"
+                  title="Xem lịch sử giao dịch" aria-label="Lịch sử giao dịch">
+                  <i class="fi fi-rr-time-past"
+                    style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>
+                  <span>Gần đây</span>
+                </button>
               </div>
             </section>
 

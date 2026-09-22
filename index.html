@@ -97,12 +97,42 @@
           </button>
         </div>
       </div>
-      <div class="today-date">
-        <div class="weekday" id="todayWeekday"></div>
-        <div class="date-number" id="todayDate"></div>
-        <div class="month-year" id="todayMonthYear"></div>
-        <div class="lunar-today" id="todayLunar"></div>
-        <div id="clock"></div>
+      <div id="todayEvents" class="today-events-panel" style="display: none"></div>
+      <div class="today-date today-twin-widgets">
+        <!-- Khối 1: Lịch Dương (Bên trái) -->
+        <div class="desk-calendar-card is-solar">
+          <div class="desk-calendar-rings" aria-hidden="true">
+            <span class="desk-calendar-ring"></span>
+            <span class="desk-calendar-ring"></span>
+          </div>
+          <div class="desk-calendar-header">
+            <span id="todayMonthBadge">THÁNG</span>
+          </div>
+          <div class="desk-calendar-body">
+            <div class="desk-calendar-date" id="todayDate"></div>
+            <div class="desk-calendar-subtext" id="todayWeekday"></div>
+          </div>
+        </div>
+
+        <!-- Khối 2: Lịch Âm (Bên phải - giống hệt lịch dương, khác màu) -->
+        <div class="desk-calendar-card is-lunar">
+          <div class="desk-calendar-rings" aria-hidden="true">
+            <span class="desk-calendar-ring"></span>
+            <span class="desk-calendar-ring"></span>
+          </div>
+          <div class="desk-calendar-header">
+            <span id="todayLunarMonthBadge">THÁNG</span>
+          </div>
+          <div class="desk-calendar-body">
+            <div class="desk-calendar-date" id="todayLunarDate"></div>
+            <div class="desk-calendar-subtext" id="todayLunarYear"></div>
+          </div>
+        </div>
+
+        <!-- Các phần tử ẩn để bảo toàn tương thích JavaScript cũ -->
+        <div id="clock" style="display: none;" aria-hidden="true"></div>
+        <div id="todayMonthYear" style="display: none;" aria-hidden="true"></div>
+        <div id="todayLunar" style="display: none;" aria-hidden="true"></div>
       </div>
       <!-- Countdown to target date -->
       <div id="countdownSection" class="countdown-section collapsed" style="display: none">
@@ -137,8 +167,6 @@
           </div>
         </div>
       </div>
-      <div id="todayEvents" class="today-events-panel" style="display: none"></div>
-
     </div>
     <div class="calendar-container">
       <div class="header">
@@ -1310,10 +1338,12 @@
               <!-- Banner thông báo khi đang chỉnh sửa giao dịch -->
               <div class="cashflow-edit-notice" id="cashflowEditNotice" style="display: none;">
                 <div class="cashflow-edit-notice-content">
-                  <i class="fi fi-rr-edit" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>
+                  <i class="fi fi-rr-edit"
+                    style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>
                   <span>Đang chỉnh sửa giao dịch</span>
                 </div>
-                <button type="button" class="cashflow-edit-notice-cancel" onclick="cancelCashflowEdit()">Hủy sửa</button>
+                <button type="button" class="cashflow-edit-notice-cancel" onclick="cancelCashflowEdit()">Hủy
+                  sửa</button>
               </div>
 
               <!-- 1. Segmented Switch: Khoản Chi / Khoản Thu -->

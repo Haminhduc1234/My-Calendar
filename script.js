@@ -9449,12 +9449,23 @@ function renderToday() {
     "Thứ Bảy",
   ];
 
-  document.getElementById("todayWeekday").innerText = weekdays[today.getDay()];
+  const weekdayEl = document.getElementById("todayWeekday");
+  if (weekdayEl) weekdayEl.innerText = weekdays[today.getDay()];
 
-  document.getElementById("todayDate").innerText = today.getDate();
+  const dateEl = document.getElementById("todayDate");
+  if (dateEl) dateEl.innerText = today.getDate();
 
-  document.getElementById("todayMonthYear").innerText =
-    `Tháng ${today.getMonth() + 1} năm ${today.getFullYear()}`;
+  const monthYearEl = document.getElementById("todayMonthYear");
+  if (monthYearEl) {
+    monthYearEl.innerText = `Tháng ${today.getMonth() + 1} năm ${today.getFullYear()}`;
+  }
+
+  const monthBadgeEl = document.getElementById("todayMonthBadge");
+  if (monthBadgeEl) {
+    monthBadgeEl.innerText = `THÁNG ${today.getMonth() + 1}`;
+  }
+
+  renderTodayLunar();
 }
 
 const vietnameseQuotes = [
@@ -10280,8 +10291,26 @@ function renderTodayLunar() {
 
   const canChiYear = getCanChiYear(lunar.lunarYear);
 
-  document.getElementById("todayLunar").innerText =
-    `Âm lịch: ${lunar.lunarDay} tháng ${lunar.lunarMonth} năm ${canChiYear}`;
+  const lunarEl = document.getElementById("todayLunar");
+  if (lunarEl) {
+    lunarEl.innerText =
+      `Âm lịch: ${lunar.lunarDay} tháng ${lunar.lunarMonth} năm ${canChiYear}`;
+  }
+
+  const lunarDateEl = document.getElementById("todayLunarDate");
+  if (lunarDateEl) {
+    lunarDateEl.innerText = lunar.lunarDay;
+  }
+
+  const lunarMonthBadgeEl = document.getElementById("todayLunarMonthBadge");
+  if (lunarMonthBadgeEl) {
+    lunarMonthBadgeEl.innerText = `THÁNG ${lunar.lunarMonth}`;
+  }
+
+  const lunarYearEl = document.getElementById("todayLunarYear");
+  if (lunarYearEl) {
+    lunarYearEl.innerText = canChiYear;
+  }
 }
 
 function updateClock() {
@@ -10291,7 +10320,10 @@ function updateClock() {
   const m = String(now.getMinutes()).padStart(2, "0");
   const s = String(now.getSeconds()).padStart(2, "0");
 
-  document.getElementById("clock").innerText = `${h}:${m}:${s}`;
+  const clockEl = document.getElementById("clock");
+  if (clockEl) {
+    clockEl.innerText = `${h}:${m}:${s}`;
+  }
 }
 
 function calcOvertimeSummary(viewYear, viewMonth) {

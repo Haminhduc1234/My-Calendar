@@ -5687,6 +5687,50 @@ body::before {
   box-sizing: border-box;
 }
 
+/* Banner thông báo chế độ chỉnh sửa giao dịch */
+.cashflow-edit-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(59, 130, 246, 0.14);
+  border: 1px solid rgba(147, 197, 253, 0.32);
+  border-radius: 12px;
+  color: #93c5fd;
+  font-size: 13px;
+  font-weight: 500;
+  box-sizing: border-box;
+}
+
+.cashflow-edit-notice-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #bfdbfe;
+}
+
+.cashflow-edit-notice-content i {
+  color: #60a5fa;
+  font-size: 15px;
+}
+
+.cashflow-edit-notice-cancel {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #f1f5f9;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.cashflow-edit-notice-cancel:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
 /* 1. Segmented Switch: Khoản Chi / Khoản Thu (Liền nhau, không border bọc, Nổi bật & Sắc nét) */
 .cashflow-type-segmented {
   position: relative;

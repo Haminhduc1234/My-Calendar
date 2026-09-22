@@ -1307,6 +1307,15 @@
         <div class="cashflow-modal-body">
           <div class="cashflow-content-wrap">
             <section class="cashflow-section cashflow-entry-section" id="cashflowEntrySection">
+              <!-- Banner thông báo khi đang chỉnh sửa giao dịch -->
+              <div class="cashflow-edit-notice" id="cashflowEditNotice" style="display: none;">
+                <div class="cashflow-edit-notice-content">
+                  <i class="fi fi-rr-edit" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>
+                  <span>Đang chỉnh sửa giao dịch</span>
+                </div>
+                <button type="button" class="cashflow-edit-notice-cancel" onclick="cancelCashflowEdit()">Hủy sửa</button>
+              </div>
+
               <!-- 1. Segmented Switch: Khoản Chi / Khoản Thu -->
               <div class="cashflow-type-segmented is-expense" id="cashflowTypeSegmented" role="tablist"
                 aria-label="Loại giao dịch">

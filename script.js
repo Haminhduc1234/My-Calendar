@@ -11615,6 +11615,8 @@ function closeCashflowModal() {
   closeCashflowSummaryModal();
   closeCashflowAnalysisModal();
   closeCashflowChartModal();
+  closeCashflowAllTransactionsModal();
+  closeCashflowQuickViewModal();
   document.getElementById("cashflowModal").style.display = "none";
 }
 
@@ -11863,16 +11865,40 @@ function addCashflowEntry() {
     }
   }
 
+  const wasEditing = Boolean(editingCashflowId);
+
   reloadCashflowEntriesFromCache();
 
   resetCashflowForm();
 
   renderCashflowDashboard();
+
+  if (wasEditing) {
+    showToast("Đã cập nhật giao dịch thành công!", 2500);
+  } else {
+    showToast("Đã thêm giao dịch mới!", 2500);
+  }
 }
 
 function startCashflowEdit(id) {
   const entry = cashflowEntries.find((item) => item.id === id);
   if (!entry) return;
+
+  // 1. Đóng toàn bộ action dropdown và các submodal danh sách giao dịch
+  closeCashflowActionDropdown();
+  closeCashflowQuickViewModal();
+  closeCashflowAllTransactionsModal();
+  closeCashflowHistoryModal();
+  closeCashflowSummaryModal();
+  closeCashflowAnalysisModal();
+  closeCashflowChartModal();
+  closeCashflowCategoryModal();
+
+  // 2. Đảm bảo modal chính hiển thị
+  const mainModal = document.getElementById("cashflowModal");
+  if (mainModal) {
+    mainModal.style.display = "flex";
+  }
 
   editingCashflowId = id;
 
@@ -11891,10 +11917,23 @@ function startCashflowEdit(id) {
 
   syncCashflowFormMode();
 
+  const body = document.querySelector(".cashflow-modal-body");
+  if (body) {
+    body.scrollTop = 0;
+  }
   const section = document.getElementById("cashflowEntrySection");
   if (section) {
     section.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+
+  const amountInput = document.getElementById("cashflowAmount");
+  if (amountInput) {
+    setTimeout(() => {
+      amountInput.focus();
+    }, 120);
+  }
+
+  showToast("Đang mở chỉnh sửa giao dịch", 2000);
 }
 
 function cancelCashflowEdit() {
@@ -12045,8 +12084,11 @@ function syncCashflowFormMode() {
   const cancelBtn = document.getElementById("cashflowCancelEditBtn");
   const mobileAddBtn = document.getElementById("cashflowMobileAddBtn");
   const mobileCloseBtn = document.querySelector(".cashflow-mobile-close-btn");
+  const modalTitle = document.getElementById("cashflowModalTitle");
+  const editNotice = document.getElementById("cashflowEditNotice");
 
   if (editingCashflowId) {
+    if (modalTitle) modalTitle.innerText = "Chỉnh sửa giao dịch";
     if (submitBtn) submitBtn.innerText = "Lưu chỉnh sửa";
     if (cancelBtn) cancelBtn.style.display = "block";
     if (mobileAddBtn) mobileAddBtn.innerText = "Lưu chỉnh sửa";
@@ -12055,7 +12097,9 @@ function syncCashflowFormMode() {
       mobileCloseBtn.onclick = cancelCashflowEdit;
       mobileCloseBtn.classList.add("is-cancel-mode");
     }
+    if (editNotice) editNotice.style.display = "flex";
   } else {
+    if (modalTitle) modalTitle.innerText = "Quản lý thu chi";
     if (submitBtn) submitBtn.innerText = "Thêm giao dịch";
     if (cancelBtn) cancelBtn.style.display = "none";
     if (mobileAddBtn) mobileAddBtn.innerText = "Lưu";
@@ -12064,6 +12108,7 @@ function syncCashflowFormMode() {
       mobileCloseBtn.onclick = closeCashflowModal;
       mobileCloseBtn.classList.remove("is-cancel-mode");
     }
+    if (editNotice) editNotice.style.display = "none";
   }
 }
 
@@ -12118,6 +12163,10 @@ function renderCashflowDashboard() {
   renderCashflowRecentList();
   renderCashflowPieCharts();
   renderCashflowChart();
+  const atModal = document.getElementById("cashflowAllTransactionsModal");
+  if (atModal && atModal.style.display === "flex") {
+    renderCashflowAllTransactionsList();
+  }
 }
 
 function setCashflowAnalyticsRange(range) {
@@ -12697,20 +12746,20 @@ function renderCashflowRecentList() {
 
     const editItem = document.createElement("button");
     editItem.className = "cashflow-action-item";
-    editItem.innerHTML = `<i class="fi fi-rr-pencil" style="margin-right: 6px;"></i> Sửa giao dịch`;
+    editItem.innerHTML = `<i class="fi fi-rr-pencil" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; margin-right: 6px;"></i> Sửa giao dịch`;
     editItem.addEventListener("click", (event) => {
       event.stopPropagation();
-      startCashflowEdit(entry.id);
       closeCashflowActionDropdown();
+      startCashflowEdit(entry.id);
     });
 
     const deleteItem = document.createElement("button");
     deleteItem.className = "cashflow-action-item danger";
-    deleteItem.innerHTML = `<i class="fi fi-rr-trash" style="margin-right: 6px;"></i> Xóa giao dịch`;
+    deleteItem.innerHTML = `<i class="fi fi-rr-trash" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; margin-right: 6px;"></i> Xóa giao dịch`;
     deleteItem.addEventListener("click", (event) => {
       event.stopPropagation();
-      removeCashflowEntry(entry.id);
       closeCashflowActionDropdown();
+      removeCashflowEntry(entry.id);
     });
 
     dropdownEl.appendChild(editItem);
@@ -12883,20 +12932,20 @@ function filterCashflowRecentList() {
 
     const editItem = document.createElement("button");
     editItem.className = "cashflow-action-item";
-    editItem.innerHTML = `<i class="fi fi-rr-pencil" style="margin-right: 6px;"></i> Sửa giao dịch`;
+    editItem.innerHTML = `<i class="fi fi-rr-pencil" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; margin-right: 6px;"></i> Sửa giao dịch`;
     editItem.addEventListener("click", (event) => {
       event.stopPropagation();
-      startCashflowEdit(entry.id);
       closeCashflowActionDropdown();
+      startCashflowEdit(entry.id);
     });
 
     const deleteItem = document.createElement("button");
     deleteItem.className = "cashflow-action-item danger";
-    deleteItem.innerHTML = `<i class="fi fi-rr-trash" style="margin-right: 6px;"></i> Xóa giao dịch`;
+    deleteItem.innerHTML = `<i class="fi fi-rr-trash" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; margin-right: 6px;"></i> Xóa giao dịch`;
     deleteItem.addEventListener("click", (event) => {
       event.stopPropagation();
-      removeCashflowEntry(entry.id);
       closeCashflowActionDropdown();
+      removeCashflowEntry(entry.id);
     });
 
     dropdownEl.appendChild(editItem);
@@ -13095,22 +13144,20 @@ function renderCashflowAllTransactionsList() {
 
     const editItem = document.createElement("button");
     editItem.className = "cashflow-action-item";
-    editItem.innerHTML = `<i class="fi fi-rr-pencil" style="margin-right: 6px;"></i> Sửa giao dịch`;
+    editItem.innerHTML = `<i class="fi fi-rr-pencil" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; margin-right: 6px;"></i> Sửa giao dịch`;
     editItem.addEventListener("click", (event) => {
       event.stopPropagation();
-      closeCashflowAllTransactionsModal();
-      startCashflowEdit(entry.id);
       closeCashflowActionDropdown();
+      startCashflowEdit(entry.id);
     });
 
     const deleteItem = document.createElement("button");
     deleteItem.className = "cashflow-action-item danger";
-    deleteItem.innerHTML = `<i class="fi fi-rr-trash" style="margin-right: 6px;"></i> Xóa giao dịch`;
+    deleteItem.innerHTML = `<i class="fi fi-rr-trash" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; margin-right: 6px;"></i> Xóa giao dịch`;
     deleteItem.addEventListener("click", (event) => {
       event.stopPropagation();
-      removeCashflowEntry(entry.id);
-      closeCashflowAllTransactionsModal();
       closeCashflowActionDropdown();
+      removeCashflowEntry(entry.id);
     });
 
     dropdownEl.appendChild(editItem);
@@ -13648,8 +13695,11 @@ function renderCashflowQuickView() {
       </div>
     </div>
     <div class="cashflow-quickview-actions" style="display: flex; gap: 10px; margin-top: 18px; justify-content: flex-end; align-items: center; flex-wrap: wrap;">
-      <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);" onclick="closeCashflowQuickViewModal(); openCashflowAllTransactionsModal();">
-        📋 Xem tất cả thu chi
+      <button type="button" class="cashflow-quickview-btn-secondary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #60a5fa; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 10px; cursor: pointer; transition: background 0.2s, border-color 0.2s;" onclick="startCashflowEdit('${entry.id}')">
+        <i class="fi fi-rr-pencil" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i> Sửa giao dịch
+      </button>
+      <button type="button" class="cashflow-quickview-btn-primary" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 16px; font-size: 13px; font-weight: 600; color: #ffffff !important; background: linear-gradient(135deg, #3b82f6, #2563eb); border: 1px solid rgba(147, 197, 253, 0.35); border-radius: 10px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3); cursor: pointer; transition: background 0.2s, border-color 0.2s;" onclick="closeCashflowQuickViewModal(); openCashflowAllTransactionsModal();">
+        <i class="fi fi-rr-list-check" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i> Xem tất cả thu chi
       </button>
     </div>
   `;

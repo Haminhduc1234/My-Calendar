@@ -2788,19 +2788,19 @@
       <div class="learn-tabs">
         <button class="learn-tab" id="learnBasicsTabBtn" onclick="switchLearnTab('basics')" data-tab="basics"
           style="display: none;">
-          <i class="fi fi-rr-school" style="margin-right: 6px;"></i>
+          <i class="fi fi-rr-school"></i>
           Nhập Môn
         </button>
         <button class="learn-tab active" onclick="switchLearnTab('vocabulary')" data-tab="vocabulary">
-          <i class="fi fi-rr-book-alt" style="margin-right: 6px;"></i>
+          <i class="fi fi-rr-book-alt"></i>
           Từ Vựng
         </button>
         <button class="learn-tab" onclick="switchLearnTab('grammar')" data-tab="grammar">
-          <i class="fi fi-rr-document-signed" style="margin-right: 6px;"></i>
+          <i class="fi fi-rr-document-signed"></i>
           Ngữ Pháp
         </button>
         <button class="learn-tab" onclick="switchLearnTab('phrases')" data-tab="phrases">
-          <i class="fi fi-rr-comments" style="margin-right: 6px;"></i>
+          <i class="fi fi-rr-comments"></i>
           Câu Giao Tiếp
         </button>
       </div>
@@ -3102,7 +3102,7 @@
   </div>
 
   <!-- Hanzi Writer Modal (Luyện viết chữ Hán) -->
-  <div id="hanziWriterModal" class="modal" style="display: none;">
+  <div id="hanziWriterModal" class="modal" style="display: none; width: 100vw;">
     <div class="hanzi-modal-content">
       <div class="hanzi-modal-header">
         <div class="hanzi-modal-header-left">
@@ -3139,7 +3139,11 @@
 
       <!-- Khung ô Mễ Tự Cách (米字格) của Hanzi Writer -->
       <div class="hanzi-canvas-wrapper">
-        <div class="hanzi-canvas-box" id="hanziCanvasBox">
+        <div class="hanzi-canvas-box is-writable" id="hanziCanvasBox">
+          <div class="hanzi-writable-indicator can-write" id="hanziWritableIndicator">
+            <span class="indicator-dot"></span>
+            <span>Có thể viết ngay</span>
+          </div>
           <div class="hanzi-grid-line line-h"></div>
           <div class="hanzi-grid-line line-v"></div>
           <div class="hanzi-grid-line line-d1"></div>
@@ -3151,7 +3155,8 @@
       <!-- Thanh thông báo trạng thái & Quiz feedback -->
       <div class="hanzi-status-banner" id="hanziStatusBanner">
         <span id="hanziStatusIcon">💡</span>
-        <span id="hanziStatusText">Bấm 'Xem nét bút' để quan sát hoặc 'Tự tập viết' để tô nét bằng chuột/ngón tay.</span>
+        <span id="hanziStatusText">Bấm 'Xem nét bút' để quan sát hoặc 'Tự tập viết' để tô nét bằng chuột/ngón
+          tay.</span>
       </div>
 
       <!-- Thanh công cụ điều khiển -->

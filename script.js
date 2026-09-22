@@ -19690,8 +19690,31 @@ function setHanziStatus(text, type = "normal", icon = "💡") {
   if (iconEl) iconEl.textContent = icon;
 }
 
-// Khởi tạo instance Hanzi Writer cho một chữ Hán
-function initHanziWriter(char) {
+// Cập nhật trạng thái viền và khả năng viết (Xanh lá: có thể viết; Đỏ: không thể viết)
+function setHanziWritableState(canWrite, message) {
+  const box = document.getElementById("hanziCanvasBox");
+  const indicator = document.getElementById("hanziWritableIndicator");
+  if (!box) return;
+
+  if (canWrite) {
+    box.classList.remove("is-locked");
+    box.classList.add("is-writable");
+    if (indicator) {
+      indicator.className = "hanzi-writable-indicator can-write";
+      indicator.innerHTML = `<span class="indicator-dot"></span><span>Có thể viết ngay</span>`;
+    }
+  } else {
+    box.classList.remove("is-writable");
+    box.classList.add("is-locked");
+    if (indicator) {
+      indicator.className = "hanzi-writable-indicator is-locked";
+      indicator.innerHTML = `<span class="indicator-dot"></span><span>${message || "Đang khóa viết"}</span>`;
+    }
+  }
+}
+
+// Khởi tạo instance Hanzi Writer cho một chữ Hán (mặc định autoStartQuiz = true để viết được ngay)
+function initHanziWriter(char, autoStartQuiz = true) {
   const target = document.getElementById("hanziTarget");
   if (!target) return;
   target.innerHTML = "";
@@ -19706,6 +19729,7 @@ function initHanziWriter(char) {
   isHanziQuizRunning = false;
   isHanziOutlineOn = true;
   updateOutlineBtnText();
+  setHanziWritableState(false, "Đang tải...");
 
   // Kiểm tra thư viện HanziWriter
   if (typeof HanziWriter === "undefined") {
@@ -19716,6 +19740,7 @@ function initHanziWriter(char) {
       </div>
     `;
     setHanziStatus("Chưa tải được thư viện Hanzi Writer.", "warning", "⚠️");
+    setHanziWritableState(false, "Lỗi thư viện");
     return;
   }
 
@@ -19738,13 +19763,21 @@ function initHanziWriter(char) {
       onLoadCharDataError: function (err) {
         console.warn("Lỗi tải dữ liệu nét bút cho chữ:", char, err);
         setHanziStatus(`Không tìm thấy dữ liệu nét bút cho chữ '${char}'.`, "warning", "⚠️");
+        setHanziWritableState(false, "Không có dữ liệu");
       }
     });
 
-    setHanziStatus(`Chữ '${char}': Bấm 'Xem nét bút' để quan sát hoặc 'Tự tập viết' để tô nét.`, "normal", "✍️");
+    if (autoStartQuiz) {
+      // Kích hoạt ngay chế độ tự tập viết để người dùng có thể viết ngay lập tức
+      startCurrentHanziQuiz();
+    } else {
+      setHanziStatus(`Chữ '${char}': Bấm 'Xem nét bút' để quan sát hoặc 'Tự tập viết' để tô nét.`, "normal", "✍️");
+      setHanziWritableState(false, "Chế độ xem");
+    }
   } catch (err) {
     console.error("Lỗi khởi tạo HanziWriter:", err);
     setHanziStatus("Không thể khởi tạo bộ tập viết chữ Hán.", "warning", "⚠️");
+    setHanziWritableState(false, "Lỗi khởi tạo");
   }
 }
 
@@ -19755,19 +19788,25 @@ function animateCurrentHanzi() {
     activeHanziWriter.cancelQuiz();
   } catch (e) { }
   isHanziQuizRunning = false;
+  setHanziWritableState(false, "Đang xem mẫu");
 
   setHanziStatus("Đang hiển thị hoạt họa thứ tự nét bút...", "animate", "🎬");
   activeHanziWriter.animateCharacter({
     onComplete: function () {
-      setHanziStatus("Đã chạy xong các nét! Bấm 'Tự tập viết' để thực hành tô nét.", "success", "✨");
+      setHanziStatus("Đã chạy xong các nét! Tự động bật chế độ tập viết cho bạn...", "success", "✨");
+      // Sau khi xem xong, tự động kích hoạt lại chế độ tập viết để thực hành ngay
+      setTimeout(() => {
+        startCurrentHanziQuiz();
+      }, 400);
     }
   });
 }
 
-// Bật chế độ tự tập viết (Quiz mode)
+// Bật chế độ tự tập viết (Quiz mode) - Viền chuyển sang XANH LÁ active
 function startCurrentHanziQuiz() {
   if (!activeHanziWriter) return;
   isHanziQuizRunning = true;
+  setHanziWritableState(true);
 
   setHanziStatus("Chế độ tự tập viết: Hãy dùng chuột hoặc ngón tay vẽ từng nét theo thứ tự.", "quiz", "✏️");
 
@@ -19781,8 +19820,9 @@ function startCurrentHanziQuiz() {
         setHanziStatus(`Chính xác nét ${strokeData.strokeNum + 1}! Hãy vẽ tiếp nét sau...`, "success", "👍");
       },
       onComplete: function (summaryData) {
+        setHanziWritableState(false, "Hoàn thành");
         setHanziStatus(
-          `🎉 Tuyệt vời! Bạn đã hoàn thành chữ với ${summaryData.totalMistakes} lần sai!`,
+          `🎉 Tuyệt vời! Bạn đã hoàn thành chữ với ${summaryData.totalMistakes} lần sai! Bấm 'Viết lại' để luyện tiếp.`,
           "complete",
           "🏆"
         );
@@ -19790,6 +19830,7 @@ function startCurrentHanziQuiz() {
     });
   } catch (err) {
     console.error("Lỗi start Hanzi quiz:", err);
+    setHanziWritableState(false, "Lỗi tập viết");
   }
 }
 
@@ -19813,10 +19854,11 @@ function updateOutlineBtnText() {
   }
 }
 
-// Viết lại từ đầu
+// Viết lại từ đầu: reset chữ và cho phép viết lại ngay tức thì với viền Xanh lá
 function resetCurrentHanzi() {
   if (!currentHanziCharList.length) return;
-  initHanziWriter(currentHanziCharList[currentHanziCharIndex] || "你");
+  const char = currentHanziCharList[currentHanziCharIndex] || "你";
+  initHanziWriter(char, true);
 }
 
 // Phát âm chữ Hán đang học
@@ -19870,7 +19912,7 @@ async function openHanziWriterFromInput() {
   const originalBtnHTML = btn ? btn.innerHTML : "";
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `<span class="basics-btn-spinner"></span> <span>Đang tìm...</span>`;
+    btn.innerHTML = `<span class="basics-btn-spinner"></span> <span class="basics-btn-text">Đang tìm...</span>`;
   }
 
   try {
@@ -20308,9 +20350,9 @@ function renderBasicsContentHTML() {
         <div class="basics-practice-input-label">Nhập tiếng Việt hoặc chữ Hán cần luyện viết:</div>
         <div class="basics-practice-input-row">
           <input type="text" id="basicsCustomHanziInput" class="basics-practice-input" placeholder="Ví dụ: sân bay, yêu, gia đình, hoặc 爱, 福, 龙..." maxlength="25" oninput="handleBasicsHanziSearchInput(this.value)" onkeyup="if(event.key==='Enter') openHanziWriterFromInput()" />
-          <button class="basics-practice-submit-btn" id="basicsPracticeSubmitBtn" onclick="openHanziWriterFromInput()">
+          <button class="basics-practice-submit-btn" id="basicsPracticeSubmitBtn" onclick="openHanziWriterFromInput()" title="Tập viết ngay" aria-label="Tập viết ngay">
             <i class="fi fi-rr-pencil"></i>
-            <span>Tập viết ngay</span>
+            <span class="basics-btn-text">Tập viết ngay</span>
           </button>
         </div>
         <div class="basics-practice-hint">

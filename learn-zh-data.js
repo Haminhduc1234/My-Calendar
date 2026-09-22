@@ -150,6 +150,24 @@ const ZH_BASICS_DATA = {
     { char: "目", name: "Bộ Mục", pinyin: "mù", meaning: "Liên quan đến mắt, nhìn ngắm", example: "看 (nhìn), 眼 (mắt), 睛 (tròng mắt)" },
     { char: "扌", name: "Bộ Thủ (tay)", pinyin: "shǒu", meaning: "Liên quan đến động tác của tay", example: "打 (đánh), 找 (tìm), 拿 (cầm)" },
     { char: "足 / 𧾷", name: "Bộ Túc (chân)", pinyin: "zú", meaning: "Liên quan đến bàn chân, bước chân", example: "跑 (chạy), 跳 (nhảy), 路 (đường)" }
+  ],
+
+  // Các chữ Hán tiêu biểu để luyện viết nét bút
+  practiceChars: [
+    { char: "你", pinyin: "nǐ", hanviet: "Nhĩ", meaning: "Bạn, anh, chị" },
+    { char: "好", pinyin: "hǎo", hanviet: "Hảo", meaning: "Tốt, đẹp, hay" },
+    { char: "我", pinyin: "wǒ", hanviet: "Ngã", meaning: "Tôi, mình, ta" },
+    { char: "中", pinyin: "zhōng", hanviet: "Trung", meaning: "Ở giữa, Trung Quốc" },
+    { char: "国", pinyin: "guó", hanviet: "Quốc", meaning: "Đất nước, quốc gia" },
+    { char: "爱", pinyin: "ài", hanviet: "Ái", meaning: "Yêu, thương" },
+    { char: "学", pinyin: "xué", hanviet: "Học", meaning: "Học tập" },
+    { char: "生", pinyin: "shēng", hanviet: "Sinh", meaning: "Học sinh, sinh sống" },
+    { char: "家", pinyin: "jiā", hanviet: "Gia", meaning: "Nhà, gia đình" },
+    { char: "福", pinyin: "fú", hanviet: "Phúc", meaning: "Phúc lành, may mắn" },
+    { char: "春", pinyin: "chūn", hanviet: "Xuân", meaning: "Mùa xuân" },
+    { char: "龙", pinyin: "lóng", hanviet: "Long", meaning: "Con rồng" },
+    { char: "茶", pinyin: "chá", hanviet: "Trà", meaning: "Trà, chè" },
+    { char: "心", pinyin: "xīn", hanviet: "Tâm", meaning: "Trái tim, tấm lòng" }
   ]
 };
 
@@ -684,6 +702,592 @@ const ZH_VOCABULARY_DATA = {
       examplePinyin: "Jiāo gěi wǒ bàn, qǐng nín fàngxīn!",
       exampleVi: "Giao cho tôi làm, xin ngài cứ yên tâm!",
     }
+  ],
+
+  // ==================== TỪ VỰNG HSK 3 (TRUNG CẤP NỀN TẢNG) ====================
+  travel: [
+    {
+      word: "机场",
+      phonetic: "jīchǎng",
+      hanviet: "Cơ trường",
+      level: "HSK 3",
+      meaning: "Sân bay, phi trường",
+      example: "我们必须提前两个小时到达机场。",
+      examplePinyin: "Wǒmen bìxū tíqián liǎng ge xiǎoshí dàodá jīchǎng.",
+      exampleVi: "Chúng ta phải đến sân bay trước hai tiếng đồng hồ."
+    },
+    {
+      word: "护照",
+      phonetic: "hùzhào",
+      hanviet: "Hộ chiếu",
+      level: "HSK 3",
+      meaning: "Hộ chiếu (Passport)",
+      example: "请出示您的护照和登机牌。",
+      examplePinyin: "Qǐng chūshì nín de hùzhào hé dēngjīpái.",
+      exampleVi: "Vui lòng xuất trình hộ chiếu và thẻ lên máy bay của quý khách."
+    },
+    {
+      word: "行李",
+      phonetic: "xíngli",
+      hanviet: "Hành lý",
+      level: "HSK 3",
+      meaning: "Hành lý, va-li mang theo",
+      example: "你的行李箱超重了，需要托运。",
+      examplePinyin: "Nǐ de xínglixiāng chāozhòng le, xūyào tuōyùn.",
+      exampleVi: "Va-li hành lý của bạn quá cân rồi, cần phải ký gửi."
+    },
+    {
+      word: "地铁",
+      phonetic: "dìtiě",
+      hanviet: "Địa thiết",
+      level: "HSK 3",
+      meaning: "Tàu điện ngầm",
+      example: "坐地铁去市中心既方便又快捷。",
+      examplePinyin: "Zuò dìtiě qù shìzhōngxīn jì fāngbiàn yòu kuàijié.",
+      exampleVi: "Đi tàu điện ngầm vào trung tâm thành phố vừa tiện vừa nhanh."
+    },
+    {
+      word: "出租车",
+      phonetic: "chūzūchē",
+      hanviet: "Xuất tô xa",
+      level: "HSK 3",
+      meaning: "Xe taxi",
+      example: "外面下大雨了，我们打出租车回家吧。",
+      examplePinyin: "Wàimiàn xià dàyǔ le, wǒmen dǎ chūzūchē huíjiā ba.",
+      exampleVi: "Bên ngoài mưa to rồi, chúng ta bắt taxi về nhà đi."
+    },
+    {
+      word: "宾馆",
+      phonetic: "bīnguǎn",
+      hanviet: "Tân quán",
+      level: "HSK 3",
+      meaning: "Khách sạn, nhà khách",
+      example: "我已经网上预订了这家五星级宾馆。",
+      examplePinyin: "Wǒ yǐjīng wǎngshang yùdìng le zhè jiā wǔxīngjí bīnguǎn.",
+      exampleVi: "Tôi đã đặt trước khách sạn 5 sao này trên mạng rồi."
+    },
+    {
+      word: "航班",
+      phonetic: "hángbān",
+      hanviet: "Hàng ban",
+      level: "HSK 3",
+      meaning: "Chuyến bay",
+      example: "因为天气原因，今天的航班延误了。",
+      examplePinyin: "Yīnwèi tiānqì yuányīn, jīntiān de hángbān yánwù le.",
+      exampleVi: "Vì nguyên nhân thời tiết, chuyến bay hôm nay đã bị hoãn."
+    },
+    {
+      word: "路线",
+      phonetic: "lùxiàn",
+      hanviet: "Lộ tuyến",
+      level: "HSK 3",
+      meaning: "Tuyến đường, lịch trình đi",
+      example: "请在手机地图上查看最佳旅游路线。",
+      examplePinyin: "Qǐng zài shǒujī dìtú shang chákàn zuì jiā lǚyóu lùxiàn.",
+      exampleVi: "Vui lòng xem lộ trình du lịch tối ưu nhất trên bản đồ điện thoại."
+    }
+  ],
+
+  study: [
+    {
+      word: "成绩",
+      phonetic: "chéngjì",
+      hanviet: "Thành tích",
+      level: "HSK 3",
+      meaning: "Thành tích, điểm số",
+      example: "他的汉语水平考试成绩非常优异。",
+      examplePinyin: "Tā de Hànyǔ shuǐpíng kǎoshì chéngjì fēicháng yōuyì.",
+      exampleVi: "Điểm thi HSK của cậu ấy vô cùng xuất sắc."
+    },
+    {
+      word: "考试",
+      phonetic: "kǎoshì",
+      hanviet: "Khảo thí",
+      level: "HSK 3",
+      meaning: "Thi cử, bài kiểm tra",
+      example: "下周一上午我们要进行期末考试。",
+      examplePinyin: "Xià zhōuyī shàngwǔ wǒmen yào jìnxíng qīmò kǎoshì.",
+      exampleVi: "Sáng thứ Hai tuần tới chúng ta sẽ thi học kỳ."
+    },
+    {
+      word: "复习",
+      phonetic: "fùxí",
+      hanviet: "Phục tập",
+      level: "HSK 3",
+      meaning: "Ôn tập bài học",
+      example: "每天睡觉前复习半小时生词。",
+      examplePinyin: "Měitiān shuìjiào qián fùxí bàn xiǎoshí shēngcí.",
+      exampleVi: "Mỗi ngày trước khi đi ngủ ôn tập từ mới nửa tiếng."
+    },
+    {
+      word: "简单",
+      phonetic: "jiǎndān",
+      hanviet: "Giản đơn",
+      level: "HSK 3",
+      meaning: "Đơn giản, dễ dàng",
+      example: "这道数学题其实并不简单。",
+      examplePinyin: "Zhè dào shùxuétí qíshí bìng bù jiǎndān.",
+      exampleVi: "Câu toán này thực ra không hề đơn giản chút nào."
+    },
+    {
+      word: "难",
+      phonetic: "nán",
+      hanviet: "Nan",
+      level: "HSK 3",
+      meaning: "Khó, phức tạp",
+      example: "学写汉字虽然有点难，但很有趣。",
+      examplePinyin: "Xué xiě hànzì suīrán yǒudiǎn nán, dàn hěn yǒuqù.",
+      exampleVi: "Học viết chữ Hán tuy hơi khó nhưng rất thú vị."
+    },
+    {
+      word: "提高",
+      phonetic: "tígāo",
+      hanviet: "Đề cao",
+      level: "HSK 3",
+      meaning: "Nâng cao, cải thiện",
+      example: "多听广播能快速提高中文听力水平。",
+      examplePinyin: "Duō tīng guǎngbō néng kuàisù tígāo Zhōngwén tīnglì shuǐpíng.",
+      exampleVi: "Nghe nhiều đài phát thanh giúp nâng cao trình độ nghe tiếng Trung nhanh chóng."
+    },
+    {
+      word: "练习",
+      phonetic: "liànxí",
+      hanviet: "Luyện tập",
+      level: "HSK 3",
+      meaning: "Luyện tập, bài tập rèn luyện",
+      example: "做完课后练习才能巩固知识。",
+      examplePinyin: "Zuò wán kèhòu liànxí cái néng gǒnggù zhīshi.",
+      exampleVi: "Làm xong bài tập sau giờ học mới củng cố được kiến thức."
+    },
+    {
+      word: "解决",
+      phonetic: "jiějué",
+      hanviet: "Giải quyết",
+      level: "HSK 3",
+      meaning: "Giải quyết (vấn đề, khó khăn)",
+      example: "老师耐心地帮我们解决语法难题。",
+      examplePinyin: "Lǎoshī nàixīn de bāng wǒmen jiějué yǔfǎ nántí.",
+      exampleVi: "Thầy giáo kiên nhẫn giúp chúng tôi giải quyết các bài toán ngữ pháp hóc búa."
+    }
+  ],
+
+  health_zh: [
+    {
+      word: "感冒",
+      phonetic: "gǎnmào",
+      hanviet: "Cảm mạo",
+      level: "HSK 3",
+      meaning: "Bị cảm lạnh, cảm cúm",
+      example: "天气突然变冷，我不小心感冒了。",
+      examplePinyin: "Tiānqì tūrán biàn lěng, wǒ bù xiǎoxīn gǎnmào le.",
+      exampleVi: "Thời tiết đột ngột trở lạnh, tôi vô tình bị cảm rồi."
+    },
+    {
+      word: "发烧",
+      phonetic: "fāshāo",
+      hanviet: "Phát thiêu",
+      level: "HSK 3",
+      meaning: "Bị sốt, phát sốt",
+      example: "他今天发烧到三十八度五，请假在家休息。",
+      examplePinyin: "Tā jīntiān fāshāo dào sānshíbā dù wǔ, qǐngjià zài jiā xiūxi.",
+      exampleVi: "Hôm nay cậu ấy sốt tới 38 độ 5, đã xin nghỉ ở nhà tịnh dưỡng."
+    },
+    {
+      word: "检查",
+      phonetic: "jiǎnchá",
+      hanviet: "Kiểm tra",
+      level: "HSK 3",
+      meaning: "Khám bệnh, kiểm tra",
+      example: "医生建议他每年去医院做一次全面体检。",
+      examplePinyin: "Yīshēng jiànyì tā měinián qù yīyuàn zuò yí cì quánmiàn tǐjiǎn.",
+      exampleVi: "Bác sĩ khuyên anh ấy mỗi năm nên đi bệnh viện khám sức khỏe tổng quát một lần."
+    },
+    {
+      word: "药",
+      phonetic: "yào",
+      hanviet: "Dược",
+      level: "HSK 3",
+      meaning: "Thuốc, viên thuốc",
+      example: "这种药一日三次，饭后温水送服。",
+      examplePinyin: "Zhè zhǒng yào yí rì sān cì, fànhòu wēnshuǐ sòng fú.",
+      exampleVi: "Loại thuốc này ngày uống ba lần, uống sau bữa ăn cùng nước ấm."
+    },
+    {
+      word: "身体",
+      phonetic: "shēntǐ",
+      hanviet: "Thân thể",
+      level: "HSK 3",
+      meaning: "Cơ thể, sức khỏe",
+      example: "祝您身体健康，万事如意！",
+      examplePinyin: "Zhù nín shēntǐ jiànkāng, wànshì rúyì!",
+      exampleVi: "Kính chúc ngài dồi dào sức khỏe, vạn sự như ý!"
+    },
+    {
+      word: "锻炼",
+      phonetic: "duànliàn",
+      hanviet: "Đoàn luyện",
+      level: "HSK 3",
+      meaning: "Rèn luyện thân thể, tập thể dục",
+      example: "坚持晨跑是锻炼身体的好方法。",
+      examplePinyin: "Jiānchí chénpǎo shì duànliàn shēntǐ de hǎo fāngfǎ.",
+      exampleVi: "Kiên trì chạy bộ buổi sáng là phương pháp rèn luyện sức khỏe rất tốt."
+    },
+    {
+      word: "舒服",
+      phonetic: "shūfu",
+      hanviet: "Thư phục",
+      level: "HSK 3",
+      meaning: "Dễ chịu, thoải mái",
+      example: "喝了一杯热茶，感觉舒服多了。",
+      examplePinyin: "Hē le yì bēi rèchá, gǎnjué shūfu duō le.",
+      exampleVi: "Uống một tách trà nóng, cảm thấy dễ chịu hơn nhiều rồi."
+    }
+  ],
+
+  environment: [
+    {
+      word: "环境",
+      phonetic: "huánjìng",
+      hanviet: "Hoàn cảnh",
+      level: "HSK 3",
+      meaning: "Môi trường sống, cảnh quan xung quanh",
+      example: "学校周围的环境非常安静优美。",
+      examplePinyin: "Xuéxiào zhōuwéi de huánjìng fēicháng ānjìng yōuměi.",
+      exampleVi: "Môi trường xung quanh trường học rất yên tĩnh và trong lành."
+    },
+    {
+      word: "空气",
+      phonetic: "kōngqì",
+      hanviet: "Không khí",
+      level: "HSK 3",
+      meaning: "Không khí, bầu khí quyển",
+      example: "森林里的空气十分清新。",
+      examplePinyin: "Sēnlín lǐ de kōngqì shífēn qīngxīn.",
+      exampleVi: "Không khí trong rừng cây vô cùng mát lành, tươi mới."
+    },
+    {
+      word: "刮风",
+      phonetic: "guāfēng",
+      hanviet: "Quát phong",
+      level: "HSK 3",
+      meaning: "Gió thổi, nổi gió",
+      example: "外面开始刮大风了，快关上窗户。",
+      examplePinyin: "Wàimiàn kāishǐ guā dàfēng le, kuài guānshang chuānghu.",
+      exampleVi: "Bên ngoài bắt đầu nổi gió lớn rồi, mau đóng cửa sổ lại."
+    },
+    {
+      word: "季节",
+      phonetic: "jìjié",
+      hanviet: "Quý tiết",
+      level: "HSK 3",
+      meaning: "Mùa trong năm",
+      example: "秋天是我最喜欢的季节，气候宜人。",
+      examplePinyin: "Qiūtiān shì wǒ zuì xǐhuan de jìjié, qìhòu yírén.",
+      exampleVi: "Mùa thu là mùa tôi thích nhất, khí hậu mát mẻ dễ chịu."
+    },
+    {
+      word: "干净",
+      phonetic: "gānjìng",
+      hanviet: "Can tịnh",
+      level: "HSK 3",
+      meaning: "Sạch sẽ, ngăn nắp",
+      example: "把房间收拾得干干净净。",
+      examplePinyin: "Bǎ fángjiān shōushi de gāngānjìngjìng.",
+      exampleVi: "Dọn dẹp phòng ốc sạch sẽ tinh tươm."
+    }
+  ],
+
+  // ==================== TỪ VỰNG HSK 4 (TRUNG CẤP CAO) ====================
+  career: [
+    {
+      word: "招聘",
+      phonetic: "zhāopìn",
+      hanviet: "Chiêu sính",
+      level: "HSK 4",
+      meaning: "Tuyển dụng nhân sự",
+      example: "我们公司正在招聘市场部经理。",
+      examplePinyin: "Wǒmen gōngsī zhèngzài zhāopìn shìchǎngbù jīnglǐ.",
+      exampleVi: "Công ty chúng tôi đang tuyển dụng trưởng phòng marketing."
+    },
+    {
+      word: "简历",
+      phonetic: "jiǎnlì",
+      hanviet: "Giản lịch",
+      level: "HSK 4",
+      meaning: "Sơ yếu lý lịch, CV xin việc",
+      example: "请将您的个人简历发送到人事部邮箱。",
+      examplePinyin: "Qǐng jiāng nín de gèrén jiǎnlì fāsòng dào rénshìbù yóuxiāng.",
+      exampleVi: "Vui lòng gửi CV cá nhân của bạn vào hòm thư phòng nhân sự."
+    },
+    {
+      word: "面试",
+      phonetic: "miànshì",
+      hanviet: "Diện thí",
+      level: "HSK 4",
+      meaning: "Phỏng vấn trực tiếp",
+      example: "他在面试中的表现给考官留下了深刻印象。",
+      examplePinyin: "Tā zài miànshì zhōng de biǎoxiàn gěi kǎoguān liúxià le shēnkè yìnxiàng.",
+      exampleVi: "Biểu hiện trong buổi phỏng vấn của anh ấy để lại ấn tượng sâu sắc cho người phỏng vấn."
+    },
+    {
+      word: "薪水",
+      phonetic: "xīnshui",
+      hanviet: "Tân thủy",
+      level: "HSK 4",
+      meaning: "Mức lương, tiền lương đãi ngộ",
+      example: "这份工作的薪水待遇符合我的期望。",
+      examplePinyin: "Zhè fèn gōngzuò de xīnshui dàiyù fúhé wǒ de qīwàng.",
+      exampleVi: "Chế độ đãi ngộ tiền lương của công việc này đáp ứng đúng kỳ vọng của tôi."
+    },
+    {
+      word: "经验",
+      phonetic: "jīngyàn",
+      hanviet: "Kinh nghiệm",
+      level: "HSK 4",
+      meaning: "Kinh nghiệm thực tiễn",
+      example: "积累丰富的工作经验对未来发展非常关键。",
+      examplePinyin: "Jīlěi fēngfù de gōngzuò jīngyàn duì wèilái fāzhǎn fēicháng guānjiàn.",
+      exampleVi: "Tích lũy kinh nghiệm làm việc phong phú là điều then chốt cho sự phát triển tương lai."
+    },
+    {
+      word: "责任",
+      phonetic: "zérèn",
+      hanviet: "Trách nhiệm",
+      level: "HSK 4",
+      meaning: "Trách nhiệm, bổn phận",
+      example: "作为项目负责人，他做事认真有责任心。",
+      examplePinyin: "Zuòwéi xiàngmù fùzérén, tā zuòshì rènzhēn yǒu zérènxīn.",
+      exampleVi: "Với tư cách là người phụ trách dự án, anh ấy làm việc rất cẩn thận và có tinh thần trách nhiệm."
+    },
+    {
+      word: "专业",
+      phonetic: "zhuānyè",
+      hanviet: "Chuyên nghiệp",
+      level: "HSK 4",
+      meaning: "Chuyên ngành, tính chuyên nghiệp",
+      example: "他在大学学的是国际经济与贸易专业。",
+      examplePinyin: "Tā zài dàxué xué de shì guójì jīngjì yǔ màoyì zhuānyè.",
+      exampleVi: "Chuyên ngành đại học của anh ấy là Kinh tế và Thương mại Quốc tế."
+    },
+    {
+      word: "优秀",
+      phonetic: "yōuxiù",
+      hanviet: "Ưu tú",
+      level: "HSK 4",
+      meaning: "Xuất sắc, ưu tú",
+      example: "他是我们团队中最优秀的软件工程师之一。",
+      examplePinyin: "Tā shì wǒmen tuánduì zhōng zuì yōuxiù de ruǎnjiàn gōngchéngshī zhīyī.",
+      exampleVi: "Anh ấy là một trong những kỹ sư phần mềm xuất sắc nhất trong đội ngũ của chúng tôi."
+    }
+  ],
+
+  business: [
+    {
+      word: "合同",
+      phonetic: "hétong",
+      hanviet: "Hợp đồng",
+      level: "HSK 4",
+      meaning: "Bản hợp đồng thương mại",
+      example: "双方代表在友好的气氛中签署了合作合同。",
+      examplePinyin: "Shuāngfāng dàibiǎo zài yǒuhǎo de qìfēn zhōng qiānshǔ le hézuò hétong.",
+      exampleVi: "Đại diện hai bên đã ký kết hợp đồng hợp tác trong bầu không khí thân thiện."
+    },
+    {
+      word: "谈判",
+      phonetic: "tánpàn",
+      hanviet: "Đàm phán",
+      level: "HSK 4",
+      meaning: "Đàm phán, thương lượng",
+      example: "经过艰苦的商业谈判，我们终于达成了共识。",
+      examplePinyin: "Jīngguò jiānkǔ de shāngyè tánpàn, wǒmen zhōngyú dáchéng le gòngshí.",
+      exampleVi: "Trải qua quá trình đàm phán thương mại gian nan, chúng tôi cuối cùng đã đạt được đồng thuận chung."
+    },
+    {
+      word: "顺利",
+      phonetic: "shùnlì",
+      hanviet: "Thuận lợi",
+      level: "HSK 4",
+      meaning: "Suôn sẻ, thuận buồm xuôi gió",
+      example: "祝愿我们的合作一切顺利，互利共赢！",
+      examplePinyin: "Zhùyuàn wǒmen de hézuò yíqiè shùnlì, hùlì gòngyíng!",
+      exampleVi: "Chúc sự hợp tác của chúng ta mọi bề thuận lợi, đôi bên cùng có lợi!"
+    },
+    {
+      word: "客户",
+      phonetic: "kèhù",
+      hanviet: "Khách hộ",
+      level: "HSK 4",
+      meaning: "Khách hàng, đối tác tiêu dùng",
+      example: "维护良好的客户关系是企业成功的基石。",
+      examplePinyin: "Wéihù liánghǎo de kèhù guānxì shì qǐyè chénggōng de jīshí.",
+      exampleVi: "Duy trì mối quan hệ khách hàng tốt đẹp là nền tảng thành công của doanh nghiệp."
+    },
+    {
+      word: "质量",
+      phonetic: "zhìliàng",
+      hanviet: "Chất lượng",
+      level: "HSK 4",
+      meaning: "Chất lượng sản phẩm / dịch vụ",
+      example: "产品质量是赢得市场信赖的第一要素。",
+      examplePinyin: "Chǎnpǐn zhìliàng shì yíngdé shìchǎng xìnlài de dì yī yàosù.",
+      exampleVi: "Chất lượng sản phẩm là yếu tố đầu tiên để giành lấy niềm tin của thị trường."
+    },
+    {
+      word: "投资",
+      phonetic: "tóuzī",
+      hanviet: "Đầu tư",
+      level: "HSK 4",
+      meaning: "Đầu tư vốn kinh doanh",
+      example: "这家科技公司获得了五千万元的战略投资。",
+      examplePinyin: "Zhè jiā kējì gōngsī huòdé le wǔqiān wàn yuán de zhànlüè tóuzī.",
+      exampleVi: "Công ty công nghệ này đã nhận được khoản đầu tư chiến lược trị giá 50 triệu nhân dân tệ."
+    },
+    {
+      word: "按照",
+      phonetic: "ànzhào",
+      hanviet: "Án chiếu",
+      level: "HSK 4",
+      meaning: "Căn cứ theo, dựa theo kế hoạch",
+      example: "请按照合同条款严格执行项目进度。",
+      examplePinyin: "Qǐng ànzhào hétong tiáokuǎn yángé zhíxíng xiàngmù jìndù.",
+      exampleVi: "Vui lòng tuân thủ nghiêm ngặt tiến độ dự án theo các điều khoản hợp đồng."
+    }
+  ],
+
+  society: [
+    {
+      word: "礼貌",
+      phonetic: "lǐmào",
+      hanviet: "Lễ mạo",
+      level: "HSK 4",
+      meaning: "Lịch sự, lễ phép",
+      example: "与人交往时，礼貌得体的言行令人感到愉悦。",
+      examplePinyin: "Yǔ rén jiāowǎng shí, lǐmào détǐ de yánxíng lìng rén gǎndào yúyuè.",
+      exampleVi: "Khi giao tiếp với người khác, lời ăn tiếng nói lịch thiệp khiến mọi người cảm thấy thoải mái."
+    },
+    {
+      word: "幽默",
+      phonetic: "yōumò",
+      hanviet: "U mặc",
+      level: "HSK 4",
+      meaning: "Hài hước, dí dỏm",
+      example: "他说话幽默风趣，总能逗大家开心笑。",
+      examplePinyin: "Tā shuōhuà yōumò fēngqù, zǒng néng dòu dàjiā kāixīn xiào.",
+      exampleVi: "Anh ấy ăn nói hài hước dí dỏm, luôn làm mọi người bật cười sảng khoái."
+    },
+    {
+      word: "严格",
+      phonetic: "yángé",
+      hanviet: "Nghiêm cách",
+      level: "HSK 4",
+      meaning: "Nghiêm khắc, khắt khe",
+      example: "王老师对学术研究的要求一贯非常严格。",
+      examplePinyin: "Wáng lǎoshī duì xuéshù yánjiū de yāoqiú yíguàn fēicháng yángé.",
+      exampleVi: "Thầy Vương xưa nay luôn có yêu cầu vô cùng nghiêm khắc đối với nghiên cứu học thuật."
+    },
+    {
+      word: "诚实",
+      phonetic: "chéngshí",
+      hanviet: "Thành thực",
+      level: "HSK 4",
+      meaning: "Trung thực, thật thà",
+      example: "诚实守信是做人立身的最崇高品质。",
+      examplePinyin: "Chéngshí shǒuxìn shì zuòrén lìshēn de zuì chónggāo pǐnzhì.",
+      exampleVi: "Trung thực giữ chữ tín là phẩm chất cao đẹp nhất để làm người."
+    },
+    {
+      word: "互相",
+      phonetic: "hùxiāng",
+      hanviet: "Hỗ tương",
+      level: "HSK 4",
+      meaning: "Lẫn nhau, qua lại",
+      example: "同事之间应当互相支持、互相学习。",
+      examplePinyin: "Tóngshì zhījiān yīngdāng hùxiāng zhīchí, hùxiāng xuéxí.",
+      exampleVi: "Giữa các đồng nghiệp với nhau nên tương trợ và học hỏi lẫn nhau."
+    },
+    {
+      word: "尊重",
+      phonetic: "zūnzhòng",
+      hanviet: "Tôn trọng",
+      level: "HSK 4",
+      meaning: "Tôn trọng, kính trọng",
+      example: "每个人都渴望得到他人的尊重与认可。",
+      examplePinyin: "Měi ge rén dōu kěwàng dédào tārén de zūnzhòng yǔ rènkě.",
+      exampleVi: "Mỗi người đều khao khát nhận được sự tôn trọng và công nhận từ người khác."
+    },
+    {
+      word: "关键",
+      phonetic: "guānjiàn",
+      hanviet: "Quan kiện",
+      level: "HSK 4",
+      meaning: "Then chốt, mấu chốt quyết định",
+      example: "坚持不懈才是取得最终成功的关键所在。",
+      examplePinyin: "Jiānchí bú xiè cái shì qǔdé zuìzhōng chénggōng de guānjiàn suǒzài.",
+      exampleVi: "Kiên trì không bỏ cuộc mới chính là chìa khóa then chốt dẫn tới thành công cuối cùng."
+    }
+  ],
+
+  emotions_adv: [
+    {
+      word: "骄傲",
+      phonetic: "jiāo'ào",
+      hanviet: "Kiêu ngạo",
+      level: "HSK 4",
+      meaning: "Tự hào, kiêu hãnh (hoặc kiêu ngạo)",
+      example: "父母为孩子取得的优异成绩感到无比骄傲。",
+      examplePinyin: "Fùmǔ wèi háizi qǔdé de yōuyì chéngjì gǎndào wúbǐ jiāo'ào.",
+      exampleVi: "Cha mẹ cảm thấy vô cùng tự hào về thành tích xuất sắc mà con mình đạt được."
+    },
+    {
+      word: "害羞",
+      phonetic: "hàixiū",
+      hanviet: "Hại tu",
+      level: "HSK 4",
+      meaning: "Ngượng ngùng, e thẹn",
+      example: "那个小女孩第一次上台演讲有点害羞。",
+      examplePinyin: "Nà ge xiǎo nǚhái dì yī cì shàngtái yǎnjiǎng yǒudiǎn hàixiū.",
+      exampleVi: "Cô bé ấy lần đầu lên sân khấu thuyết trình nên có chút bẽn lẽn ngượng ngùng."
+    },
+    {
+      word: "紧张",
+      phonetic: "jǐnzhāng",
+      hanviet: "Khẩn trương",
+      level: "HSK 4",
+      meaning: "Hồi hộp, căng thẳng",
+      example: "考试前深呼吸可以缓解心理紧张。",
+      examplePinyin: "Kǎoshì qián shēn hūxī kěyǐ huǎnjiě xīnlǐ jǐnzhāng.",
+      exampleVi: "Hít thở sâu trước giờ thi có thể xoa dịu sự căng thẳng tâm lý."
+    },
+    {
+      word: "兴奋",
+      phonetic: "xīngfèn",
+      hanviet: "Hưng phấn",
+      level: "HSK 4",
+      meaning: "Hào hứng, phấn khích",
+      example: "得知中奖的喜讯，大家都兴奋得欢呼起来。",
+      examplePinyin: "Dédi zhī zhōngjiǎng de xǐxùn, dàjiā dōu xīngfèn de huānhū qǐlái.",
+      exampleVi: "Hay tin vui trúng giải, mọi người ai nấy đều phấn khích reo hò."
+    },
+    {
+      word: "轻松",
+      phonetic: "qīngsōng",
+      hanviet: "Khinh tùng",
+      level: "HSK 4",
+      meaning: "Nhẹ nhõm, thư thái",
+      example: "交完项目报告后，整个人都觉得轻松了。",
+      examplePinyin: "Jiāo wán xiàngmù bàogào hòu, zhěng ge rén dōu juéde qīngsōng le.",
+      exampleVi: "Sau khi nộp xong báo cáo dự án, cả người tôi cảm thấy nhẹ nhõm hẳn."
+    },
+    {
+      word: "后悔",
+      phonetic: "hòuhuǐ",
+      hanviet: "Hậu hối",
+      level: "HSK 4",
+      meaning: "Hối hận, ân hận",
+      example: "世上没有后悔药，做事必须深思熟虑。",
+      examplePinyin: "Shìshang méiyǒu hòuhuǐyào, zuòshì bìxū shēnsī shúlǜ.",
+      exampleVi: "Trên đời không có thuốc chữa hối hận, làm việc gì cũng phải suy nghĩ chín chắn."
+    }
   ]
 };
 
@@ -969,6 +1573,14 @@ const ZH_VOCAB_CATEGORIES = {
   shopping: "Mua Sắm & Giá Cả",
   office: "Công Sở & Văn Phòng",
   feelings: "Cảm Xúc & Đời Sống",
+  travel: "Du Lịch & Di Chuyển (HSK 3)",
+  study: "Học Tập & Thi Cử (HSK 3)",
+  health_zh: "Sức Khỏe & Y Tế (HSK 3)",
+  environment: "Tự Nhiên & Thời Tiết (HSK 3)",
+  career: "Nghề Nghiệp & Tuyển Dụng (HSK 4)",
+  business: "Thương Mại & Hợp Tác (HSK 4)",
+  society: "Xã Hội & Giao Tiếp (HSK 4)",
+  emotions_adv: "Tâm Lý & Cảm Xúc (HSK 4)",
 };
 
 const ZH_GRAMMAR_CATEGORIES = {

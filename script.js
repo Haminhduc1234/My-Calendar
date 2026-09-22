@@ -18934,6 +18934,159 @@ function initVocabSearchResultsCollapsed() {
   arrowEl.classList.toggle("collapsed", isCollapsed);
 }
 
+/* ==================== CHINESE TO VIETNAMESE READING CONVERTER ==================== */
+// Bảng ánh xạ nhanh cho các từ vựng và chữ Hán thông dụng nhất
+const ZH_VI_READING_DICT = {
+  "你好": "nỉ hảo", "好": "hảo", "你": "nỉ", "我": "ủa", "他": "tha", "她": "tha", "它": "tha",
+  "我们": "ủa mân", "你们": "nỉ mân", "他们": "tha mân", "她们": "tha mân",
+  "谁": "suấy", "什么": "sẩn mơ", "哪儿": "nả(r)", "哪里": "nả lỉ", "这": "trơ", "那": "na",
+  "几个": "chỉ cơ", "多少": "tua xảo", "多少钱": "tua xảo chiền",
+  "爸爸": "pa pa", "妈妈": "ma ma", "哥哥": "cơ cơ", "姐姐": "chiê chiê", "弟弟": "ti ti", "妹妹": "mây mây",
+  "儿子": "ở chư", "女儿": "nủy ơ(r)", "朋友": "phấng dâu", "老师": "lảo sư", "学生": "xuyê sâng", "同学": "thúng xuyê",
+  "医生": "i sâng", "中国": "trung quó", "北京": "pây tinh", "汉语": "hán dủy", "中文": "trung uấn", "英语": "ing dủy",
+  "字": "chư", "名字": "mính chư", "猫": "meo", "狗": "cẩu", "水": "suẩy", "茶": "trá", "米饭": "mỉ phan", "菜": "thái",
+  "苹果": "phính cua", "杯子": "pây chư", "钱": "chiền", "飞机": "phây chi", "出租车": "chu chu trơ", "火车": "huổ trơ",
+  "地铁": "ti thiể", "高铁": "cao thiể", "机场": "chi trảng", "车站": "trơ tran", "饭店": "phan tiên", "学校": "xuyê xeo",
+  "医院": "i doan", "商店": "sang tiên", "家": "chia", "年": "niên", "月": "duyê", "日": "rư", "星期": "xing chi",
+  "点": "tiển", "分钟": "phân trung", "现在": "xiên chai", "今天": "chin thiên", "明天": "mính thiên", "昨天": "chuố thiên",
+  "早上": "chảo sang", "中午": "trung ủ", "晚上": "uản sang", "上午": "sang ủ", "下午": "xia ủ",
+  "上": "sang", "下": "xia", "前": "chiển", "后": "hâu", "左": "chuổ", "右": "dâu", "里": "lỉ", "外": "oai",
+  "吃": "trư", "吃饭": "trư phan", "喝": "hơ", "喝水": "hơ suẩy", "说": "sua", "听": "thinh", "读": "tú", "写": "xiể",
+  "看": "khan", "见": "chiên", "买": "mải", "卖": "mại", "开": "khai", "坐": "chua", "住": "tru", "来": "lái",
+  "去": "chuy", "回": "huấy", "想": "xiảng", "要": "deo", "会": "huây", "能": "nấng", "爱": "ại", "喜欢": "xỉ hoan",
+  "认识": "rân sư", "叫": "cheo", "是": "sư", "有": "dẩu", "工作": "cung chua", "学习": "xuyê xí", "睡觉": "suây cheo",
+  "大": "ta", "小": "xiẻo", "多": "tua", "少": "xảo", "冷": "lẩng", "热": "rơ", "高兴": "cao xinh", "漂亮": "pheo liang",
+  "不": "pu", "没": "mấy", "很": "hẩn", "太": "thai", "都": "tâu", "一点儿": "y tiển(r)", "和": "hứa", "在": "chai",
+  "的": "tơ", "了": "lơ", "吗": "ma", "呢": "nơ", "吧": "pa", "喂": "uây", "谢谢": "xiê xiê", "不客气": "pú khơ chi",
+  "再见": "chai chiên", "对不起": "tuây pu chỉ", "没关系": "mấy quan xi", "请问": "chỉnh uân", "欢迎": "hoan dính",
+  "行李": "xíng lỉ", "护照": "hu trạo", "宾馆": "pin quản", "航班": "háng pan", "路线": "lu xiên",
+  "成绩": "trấng chi", "考试": "khảo sư", "复习": "phu xí", "简单": "chiển tan", "练习": "liên xí",
+  "感冒": "cảm mao", "发烧": "pha sao", "检查": "chiển trá", "药": "deo", "身体": "sơn thỉ", "锻炼": "toan liên",
+  "舒服": "su phu", "环境": "hoán tinh", "空气": "khung chi", "干净": "can tinh", "招聘": "trao phin",
+  "简历": "chiển li", "面试": "miên sư", "薪水": "xin suẩy", "经验": "chin diên", "责任": "chơ rân",
+  "优秀": "dô xiêu", "合同": "hứa thúng", "谈判": "thán phan", "客户": "khơ hu", "顺利": "suân li",
+  "礼貌": "lỉ mạo", "幽默": "iâu mơ", "互相": "hu xiang", "尊重": "chuân trung", "紧张": "chỉn trang",
+  "兴奋": "xing phơn", "轻松": "ching sung", "后悔": "hâu huẩy"
+};
+
+// Hàm chuyển đổi âm tiết Pinyin sang phát âm tiếng Việt bồi tự nhiên
+function convertPinyinToVietnamesePhonics(pinyinStr) {
+  if (!pinyinStr) return "";
+  const syllables = pinyinStr.replace(/[,/]/g, " ").trim().split(/\s+/);
+
+  const SYLLABLE_BASE_MAP = {
+    "zhi": "trư", "chi": "trư", "shi": "sư", "ri": "rư", "zi": "chư", "ci": "thư", "si": "xư",
+    "zha": "tra", "zhe": "trơ", "zhu": "tru", "zhai": "trai", "zhei": "trây", "zhao": "trao", "zhou": "trâu", "zhan": "tran", "zhen": "trân", "zhang": "trang", "zheng": "trâng", "zhong": "trung",
+    "zhua": "troa", "zhuo": "trua", "zhuai": "troai", "zhui": "truây", "zhuan": "troan", "zhun": "truân", "zhuang": "troang",
+    "cha": "tra", "che": "trơ", "chu": "tru", "chai": "trai", "chao": "trao", "chou": "trâu", "chan": "tran", "chen": "trân", "chang": "trang", "cheng": "trâng", "chong": "trung",
+    "chua": "troa", "chuo": "trua", "chuai": "troai", "chui": "truây", "chuan": "troan", "chun": "truân", "chuang": "troang",
+    "sha": "sa", "she": "sơ", "shu": "su", "shai": "sai", "shei": "sây", "shao": "sao", "shou": "sâu", "shan": "san", "shen": "sân", "shang": "sang", "sheng": "sâng",
+    "shua": "soa", "shuo": "sua", "shuai": "soai", "shui": "suây", "shuan": "soan", "shun": "suân", "shuang": "soang",
+    "re": "rơ", "ru": "ru", "rao": "rao", "rou": "râu", "ran": "ran", "ren": "rân", "rang": "rang", "reng": "râng", "rong": "rung",
+    "ruo": "rua", "rui": "ruây", "ruan": "roan", "run": "ruân",
+    "za": "cha", "ze": "chơ", "zu": "chu", "zai": "chai", "zei": "chây", "zao": "chao", "zou": "châu", "zan": "chan", "zen": "chân", "zang": "chang", "zeng": "châng", "zong": "chung",
+    "zuo": "chua", "zui": "chuây", "zuan": "choan", "zun": "chuân",
+    "ca": "tha", "ce": "thơ", "cu": "thu", "cai": "thai", "cao": "thao", "cou": "thâu", "can": "than", "cen": "thân", "cang": "thang", "ceng": "thâng", "cong": "thung",
+    "cuo": "thua", "cui": "thuây", "cuan": "thoan", "cun": "thuân",
+    "sa": "xa", "se": "xơ", "su": "xu", "sai": "xai", "sao": "xao", "sou": "xâu", "san": "xan", "sen": "xân", "sang": "xang", "seng": "xâng", "song": "xung",
+    "suo": "xua", "sui": "xuây", "suan": "xoan", "sun": "xuân",
+    "ji": "chi", "jia": "chia", "jie": "chiê", "jiao": "chieo", "jiu": "chiêu", "jian": "chiên", "jin": "chin", "jiang": "chiang", "jing": "chinh", "jiong": "chiung",
+    "ju": "chuy", "jue": "chuyê", "juan": "chuyên", "jun": "chuyn",
+    "qi": "chi", "qia": "chia", "qie": "chiê", "qiao": "chieo", "qiu": "chiêu", "qian": "chiên", "qin": "chin", "qiang": "chiang", "qing": "chinh", "qiong": "chiung",
+    "qu": "chuy", "que": "chuyê", "quan": "chuyên", "qun": "chuyn",
+    "xi": "xi", "xia": "xia", "xie": "xiê", "xiao": "xieo", "xiu": "xiêu", "xian": "xiên", "xin": "xin", "xiang": "xiang", "xing": "xinh", "xiong": "xiung",
+    "xu": "xuy", "xue": "xuyê", "xuan": "xuyên", "xun": "xuyn",
+    "ba": "pa", "bo": "pua", "bai": "pai", "bei": "pây", "bao": "pao", "ban": "pan", "ben": "pân", "bang": "pang", "beng": "pâng", "bi": "pi", "bie": "piê", "biao": "pieo", "bian": "piên", "bin": "pin", "bing": "pinh", "bu": "pu",
+    "pa": "pha", "po": "phua", "pai": "phai", "pei": "phây", "pao": "phao", "pou": "phâu", "pan": "phan", "pen": "phân", "pang": "phang", "peng": "phâng", "pi": "phi", "pie": "phiê", "piao": "phieo", "pian": "phiên", "pin": "phin", "ping": "phinh", "pu": "phu",
+    "ma": "ma", "mo": "mua", "me": "mơ", "mai": "mai", "mei": "mây", "mao": "mao", "mou": "mâu", "man": "man", "men": "mân", "mang": "mang", "meng": "mâng", "mi": "mi", "mie": "miê", "miao": "mieo", "miu": "miêu", "mian": "miên", "min": "min", "ming": "minh", "mu": "mu",
+    "fa": "pha", "fo": "phua", "fei": "phây", "fou": "phâu", "fan": "phan", "fen": "phân", "fang": "phang", "feng": "phâng", "fu": "phu",
+    "da": "ta", "de": "tơ", "dai": "tai", "dei": "tây", "dao": "tao", "dou": "tâu", "dan": "tan", "den": "tân", "dang": "tang", "deng": "tâng", "dong": "tung", "di": "ti", "die": "tiê", "diao": "tieo", "diu": "tiêu", "dian": "tiên", "ding": "tinh", "du": "tu", "duo": "tua", "dui": "tuây", "duan": "toan", "dun": "tuân",
+    "ta": "tha", "te": "thơ", "tai": "thai", "tao": "thao", "tou": "thâu", "tan": "than", "tang": "thang", "teng": "thâng", "tong": "thung", "ti": "thi", "tie": "thiê", "tiao": "thieo", "tian": "thiên", "ting": "thinh", "tu": "thu", "tuo": "thua", "tui": "thuây", "tuan": "thoan", "tun": "thuân",
+    "na": "na", "ne": "nơ", "nai": "nai", "nei": "nây", "nao": "nao", "nou": "nâu", "nan": "nan", "nen": "nân", "nang": "nang", "neng": "nâng", "nong": "nung", "ni": "ni", "nie": "niê", "niao": "nieo", "niu": "niêu", "nian": "niên", "nin": "nin", "niang": "niang", "ning": "ninh", "nu": "nu", "nuo": "nua", "nuan": "noan", "nü": "nuy", "nüe": "nuyê",
+    "la": "la", "le": "lơ", "lai": "lai", "lei": "lây", "lao": "lao", "lou": "lâu", "lan": "lan", "lang": "lang", "leng": "lâng", "long": "lung", "li": "li", "lia": "lia", "lie": "liê", "liao": "lieo", "liu": "liêu", "lian": "liên", "lin": "lin", "liang": "liang", "ling": "linh", "lu": "lu", "luo": "lua", "luan": "loan", "lun": "luân", "lü": "luy", "lüe": "luyê",
+    "ga": "ca", "ge": "cơ", "gai": "cai", "gei": "cây", "gao": "cao", "gou": "câu", "gan": "can", "gen": "cân", "gang": "cang", "geng": "câng", "gong": "cung", "gu": "cu", "gua": "coa", "guo": "cua", "guai": "coai", "gui": "cuây", "guan": "coan", "gun": "cuân", "guang": "coang",
+    "ka": "kha", "ke": "khơ", "kai": "khai", "kei": "khây", "kao": "khao", "kou": "khâu", "kan": "khan", "ken": "khân", "kang": "khang", "keng": "khâng", "kong": "khung", "ku": "khu", "kua": "khoa", "kuo": "khua", "kuai": "khoai", "kui": "khuây", "kuan": "khoan", "kun": "khuân", "kuang": "khoang",
+    "ha": "ha", "he": "hơ", "hai": "hai", "hei": "hây", "hao": "hao", "hou": "hâu", "han": "han", "hen": "hân", "hang": "hang", "heng": "hâng", "hong": "hung", "hu": "hu", "hua": "hoa", "huo": "hua", "huai": "hoai", "hui": "huây", "huan": "hoan", "hun": "huân", "huang": "hoang",
+    "yi": "i", "ya": "da", "ye": "diê", "yao": "dieo", "you": "dâu", "yan": "diên", "yin": "in", "yang": "diang", "ying": "inh", "yong": "dung",
+    "yu": "duy", "yue": "duyê", "yuan": "duyên", "yun": "duyn",
+    "wu": "u", "wa": "oa", "wo": "ua", "wai": "oai", "wei": "uây", "wan": "oan", "wen": "uân", "wang": "oang", "weng": "uâng",
+    "a": "a", "o": "ô", "e": "ơ", "ai": "ai", "ei": "ây", "ao": "ao", "ou": "âu", "an": "an", "en": "ân", "ang": "ang", "eng": "âng", "er": "ơ(r)"
+  };
+
+  const converted = syllables.map((syl) => {
+    let tone = 0;
+    let clean = syl.toLowerCase();
+
+    if (/[āēīōūǖ]/.test(clean)) { tone = 1; clean = clean.replace(/ā/g, "a").replace(/ē/g, "e").replace(/ī/g, "i").replace(/ō/g, "o").replace(/ū/g, "u").replace(/ǖ/g, "ü"); }
+    else if (/[áéíóúǘ]/.test(clean)) { tone = 2; clean = clean.replace(/á/g, "a").replace(/é/g, "e").replace(/í/g, "i").replace(/ó/g, "o").replace(/ú/g, "u").replace(/ǘ/g, "ü"); }
+    else if (/[ǎěǐǒǔǚ]/.test(clean)) { tone = 3; clean = clean.replace(/ǎ/g, "a").replace(/ě/g, "e").replace(/ǐ/g, "i").replace(/ǒ/g, "o").replace(/ǔ/g, "u").replace(/ǚ/g, "ü"); }
+    else if (/[àèìòùǜ]/.test(clean)) { tone = 4; clean = clean.replace(/à/g, "a").replace(/è/g, "e").replace(/ì/g, "i").replace(/ò/g, "o").replace(/ù/g, "u").replace(/ǜ/g, "ü"); }
+
+    clean = clean.replace(/[^a-zü]/g, "");
+    if (!clean) return "";
+
+    const base = SYLLABLE_BASE_MAP[clean] || clean;
+    return applyVietnameseTone(base, tone);
+  });
+
+  return converted.filter(Boolean).join(" ");
+}
+
+// Gắn dấu thanh tiếng Việt phù hợp (tone 1: ngang, 2: sắc, 3: hỏi, 4: nặng/huyền)
+function applyVietnameseTone(word, tone) {
+  if (tone === 1 || tone === 0) return word;
+
+  const toneMap = {
+    2: { "a": "á", "ă": "ắ", "â": "ấ", "e": "é", "ê": "ế", "i": "í", "o": "ó", "ô": "ố", "ơ": "ớ", "u": "ú", "ư": "ứ", "y": "ý" },
+    3: { "a": "ả", "ă": "ẳ", "â": "ẩ", "e": "ẻ", "ê": "ể", "i": "ỉ", "o": "ỏ", "ô": "ổ", "ơ": "ở", "u": "ủ", "ư": "ử", "y": "ỷ" },
+    4: { "a": "ạ", "ă": "ặ", "â": "ậ", "e": "ẹ", "ê": "ệ", "i": "ị", "o": "ọ", "ô": "ộ", "ơ": "ợ", "u": "ụ", "ư": "ự", "y": "ỵ" }
+  };
+
+  const map = toneMap[tone];
+  if (!map) return word;
+
+  const chars = word.split("");
+  const vowels = "êôơưâăaeoiuy";
+  let targetIdx = -1;
+
+  for (const v of vowels) {
+    targetIdx = chars.findIndex((c) => c.toLowerCase() === v);
+    if (targetIdx !== -1) break;
+  }
+
+  if (targetIdx !== -1) {
+    const orig = chars[targetIdx];
+    const toned = map[orig.toLowerCase()];
+    if (toned) {
+      chars[targetIdx] = toned;
+      return chars.join("");
+    }
+  }
+
+  return word;
+}
+
+// Hàm lấy cách đọc phiên âm tiếng Việt tổng thể
+function getChineseVietnameseReading(word, pinyinText) {
+  const cleanWord = (word || "").trim();
+  if (cleanWord && ZH_VI_READING_DICT[cleanWord]) {
+    return ZH_VI_READING_DICT[cleanWord];
+  }
+
+  if (cleanWord.length > 1) {
+    const chars = cleanWord.split("");
+    if (chars.every((ch) => ZH_VI_READING_DICT[ch])) {
+      return chars.map((ch) => ZH_VI_READING_DICT[ch]).join(" ");
+    }
+  }
+
+  if (pinyinText) {
+    return convertPinyinToVietnamesePhonics(pinyinText);
+  }
+
+  return "";
+}
+
 // ==================== VOCABULARY API SEARCH ====================
 async function searchVocabFromAPI() {
   const input = document.getElementById("vocabSearchInput");
@@ -18973,8 +19126,10 @@ async function searchVocabFromAPI() {
       const transResult = await fetchTranslationCustom(query, langPair);
 
       if (transResult) {
-        const chineseWord = isVietnamese ? transResult : query;
+        const rawWord = isVietnamese ? transResult : query;
         const vietnameseMeaning = isVietnamese ? query : transResult;
+        const zhMatch = rawWord.match(/[\u4e00-\u9fa5]+/g);
+        const chineseWord = zhMatch && zhMatch.length > 0 ? zhMatch.join("") : rawWord;
 
         // Try to generate Pinyin for the Chinese word
         let pinyinText = "";
@@ -18992,14 +19147,28 @@ async function searchVocabFromAPI() {
           console.warn("Pinyin conversion error:", e);
         }
 
+        const viReading = getChineseVietnameseReading(chineseWord, pinyinText);
+
         resultsContainer.innerHTML = `
           <div class="learn-search-result-item">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-              <div class="learn-search-result-word learn-card-word-zh" style="font-size: 24px;">${chineseWord}</div>
-              <button class="learn-card-example-speak-btn" onclick="speakChinese('${escapeHtml(chineseWord)}')" title="Nghe phát âm" style="font-size: 18px; padding: 4px 8px; background: rgba(168, 85, 247, 0.15); border-radius: 50%;">🔊</button>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <div class="learn-search-result-word learn-card-word-zh" style="font-size: 24px;">${escapeHtml(chineseWord)}</div>
+              <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                <button class="learn-search-practice-btn" onclick="openHanziWriterModal({ word: '${escapeHtml(chineseWord)}', phonetic: '${escapeHtml(pinyinText || '')}', meaning: '${escapeHtml(vietnameseMeaning || '')}' })" title="Tập viết chữ này">
+                  <i class="fi fi-rr-pencil"></i>
+                  <span>Tập viết</span>
+                </button>
+                <button class="learn-card-example-speak-btn" onclick="speakChinese('${escapeHtml(chineseWord)}')" title="Nghe phát âm" style="font-size: 16px;">🔊</button>
+              </div>
             </div>
-            ${pinyinText ? `<div class="learn-search-result-phonetic" style="color: #38bdf8; font-weight: 500; font-family: 'Fira Code', monospace; margin: 4px 0 6px;">${pinyinText}</div>` : ""}
-            <div class="learn-search-result-meaning" style="font-size: 15px; font-weight: 600; color: var(--text);">${vietnameseMeaning}</div>
+            ${pinyinText ? `<div class="learn-search-result-phonetic" style="color: #38bdf8; font-weight: 500; font-family: 'Fira Code', monospace; margin: 4px 0 2px;">${escapeHtml(pinyinText)}</div>` : ""}
+            ${viReading ? `
+              <div class="learn-search-result-vi-reading">
+                <span class="learn-reading-label">🗣️ Đọc:</span>
+                <span class="learn-reading-val">${escapeHtml(viReading)}</span>
+              </div>
+            ` : ""}
+            <div class="learn-search-result-meaning" style="font-size: 15px; font-weight: 600; color: var(--text); margin-top: 4px;">${escapeHtml(vietnameseMeaning)}</div>
           </div>
         `;
       } else {
@@ -19098,15 +19267,13 @@ function selectLearnLanguageAndOpen(lang) {
   modal.style.display = "flex";
   document.body.style.overflow = "hidden";
 
-  // Reset to vocabulary tab
-  document.querySelectorAll(".learn-tab").forEach((t) => t.classList.remove("active"));
-  document.querySelectorAll(".learn-tab-content").forEach((c) => c.classList.remove("active"));
-  document.querySelector('.learn-tab[data-tab="vocabulary"]').classList.add("active");
-  document.getElementById("learnVocabularyTab").classList.add("active");
-  initVocabSearchResultsCollapsed();
-
-  // Apply chosen language
+  // Apply chosen language (cập nhật giao diện, hiển thị nút tab Nhập môn nếu là tiếng Trung)
   switchLearnLanguage(lang);
+
+  // Mặc định active tab đầu tiên: 'basics' (Nhập môn) cho Tiếng Trung, 'vocabulary' (Từ vựng) cho Tiếng Anh
+  const defaultTab = lang === "zh" ? "basics" : "vocabulary";
+  switchLearnTab(defaultTab);
+  initVocabSearchResultsCollapsed();
 }
 
 // Back button inside learn modal → close learn modal, reopen picker
@@ -19184,21 +19351,38 @@ async function displayLocalVocabularyResults(results, translatedQuery = null) {
     headerHtml +
     results
       .map(
-        (item) => `
+        (item) => {
+          const viReading = isZh ? getChineseVietnameseReading(item.word, item.phonetic) : "";
+          return `
     <div class="learn-search-result-item">
-      <div style="display: flex; align-items: center; justify-content: space-between;">
-        <div class="learn-search-result-word ${isZh ? "learn-card-word-zh" : ""}" style="font-size: 22px;">${item.word}</div>
-        <button class="learn-card-example-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.word)}')` : `speakEnglish('${escapeHtml(item.word)}')`}" title="Nghe phát âm" style="font-size: 16px;">🔊</button>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div class="learn-search-result-word ${isZh ? "learn-card-word-zh" : ""}" style="font-size: 22px;">${escapeHtml(item.word)}</div>
+        <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+          ${isZh ? `
+            <button class="learn-search-practice-btn" onclick="openHanziWriterModal({ word: '${escapeHtml(item.word)}', phonetic: '${escapeHtml(item.phonetic || '')}', hanviet: '${escapeHtml(item.hanviet || '')}', meaning: '${escapeHtml(item.meaning || '')}' })" title="Tập viết chữ '${escapeHtml(item.word)}'">
+              <i class="fi fi-rr-pencil"></i>
+              <span>Tập viết</span>
+            </button>
+          ` : ""}
+          <button class="learn-card-example-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.word)}')` : `speakEnglish('${escapeHtml(item.word)}')`}" title="Nghe phát âm" style="font-size: 16px;">🔊</button>
+        </div>
       </div>
       <div class="learn-search-result-phonetic" style="color: #38bdf8; font-weight: 500;">
-        ${item.phonetic || ""} ${item.hanviet ? `<span style="color: #a78bfa; margin-left: 6px;">[${item.hanviet}]</span>` : ""}
+        ${item.phonetic ? escapeHtml(item.phonetic) : ""} ${item.hanviet ? `<span style="color: #a78bfa; margin-left: 6px;">[Hán-Việt: ${escapeHtml(item.hanviet)}]</span>` : ""}
       </div>
-      <div class="learn-search-result-meaning" style="font-weight: 600; margin-top: 4px;">${item.meaning}</div>
-      ${item.example ? `<div class="learn-search-result-example" style="font-style: normal; color: var(--accent-strong);">${item.example}</div>` : ""}
-      ${item.examplePinyin ? `<div style="font-size: 12px; color: #38bdf8; font-style: italic;">${item.examplePinyin}</div>` : ""}
-      ${item.exampleVi ? `<div class="learn-search-result-example" style="color: var(--muted);">${item.exampleVi}</div>` : ""}
+      ${viReading ? `
+        <div class="learn-search-result-vi-reading">
+          <span class="learn-reading-label">🗣️ Đọc:</span>
+          <span class="learn-reading-val">${escapeHtml(viReading)}</span>
+        </div>
+      ` : ""}
+      <div class="learn-search-result-meaning" style="font-weight: 600; margin-top: 4px;">${escapeHtml(item.meaning || "")}</div>
+      ${item.example ? `<div class="learn-search-result-example" style="font-style: normal; color: var(--accent-strong);">${escapeHtml(item.example)}</div>` : ""}
+      ${item.examplePinyin ? `<div style="font-size: 12px; color: #38bdf8; font-style: italic;">${escapeHtml(item.examplePinyin)}</div>` : ""}
+      ${item.exampleVi ? `<div class="learn-search-result-example" style="color: var(--muted);">${escapeHtml(item.exampleVi)}</div>` : ""}
     </div>
-  `,
+  `;
+        }
       )
       .join("");
 }
@@ -19380,6 +19564,581 @@ function speakEnglish(text) {
   window.speechSynthesis.speak(utterance);
 }
 
+/* ==================== HANZI WRITER CONTROLLER ==================== */
+let activeHanziWriter = null;
+let currentHanziWordData = null;
+let currentHanziCharList = [];
+let currentHanziCharIndex = 0;
+let isHanziOutlineOn = true;
+let isHanziQuizRunning = false;
+
+// Mở modal tập viết cho từ vựng hiện tại trên Flashcard
+function openHanziWriterForCurrentVocab() {
+  if (!currentVocabList || !currentVocabList.length) return;
+  const item = currentVocabList[currentVocabIndex];
+  if (!item) return;
+  openHanziWriterModal(item);
+}
+
+// Mở modal tập viết chữ Hán
+function openHanziWriterModal(itemOrWord) {
+  const modal = document.getElementById("hanziWriterModal");
+  if (!modal) return;
+
+  // Chuẩn hóa dữ liệu đầu vào (object hoặc string)
+  if (typeof itemOrWord === "string") {
+    currentHanziWordData = {
+      word: itemOrWord,
+      phonetic: "",
+      hanviet: "",
+      meaning: "Tập viết chữ Hán"
+    };
+  } else {
+    currentHanziWordData = {
+      word: itemOrWord.word || "",
+      phonetic: itemOrWord.phonetic || "",
+      hanviet: itemOrWord.hanviet || "",
+      meaning: itemOrWord.meaning || "Tập viết chữ Hán"
+    };
+  }
+
+  // Tách tất cả các chữ Hán CJK Unicode (\u4e00-\u9fa5)
+  const matchedChars = (currentHanziWordData.word || "").match(/[\u4e00-\u9fa5]/g);
+  currentHanziCharList = matchedChars && matchedChars.length > 0 ? matchedChars : [currentHanziWordData.word.charAt(0) || "你"];
+  currentHanziCharIndex = 0;
+
+  // Cập nhật card thông tin
+  const wordEl = document.getElementById("hanziInfoWord");
+  const pinyinEl = document.getElementById("hanziInfoPinyin");
+  const hanvietEl = document.getElementById("hanziInfoHanviet");
+  const meaningEl = document.getElementById("hanziInfoMeaning");
+
+  if (wordEl) wordEl.textContent = currentHanziWordData.word;
+  if (pinyinEl) pinyinEl.textContent = currentHanziWordData.phonetic || "";
+  if (hanvietEl) {
+    if (currentHanziWordData.hanviet) {
+      hanvietEl.textContent = `[Hán-Việt: ${currentHanziWordData.hanviet}]`;
+      hanvietEl.style.display = "inline";
+    } else {
+      hanvietEl.style.display = "none";
+    }
+  }
+
+  const readingEl = document.getElementById("hanziInfoReading");
+  const modalViReading = getChineseVietnameseReading(currentHanziWordData.word, currentHanziWordData.phonetic);
+  if (readingEl) {
+    if (modalViReading) {
+      readingEl.textContent = `🗣️ Đọc: ${modalViReading}`;
+      readingEl.style.display = "inline";
+    } else {
+      readingEl.style.display = "none";
+    }
+  }
+
+  if (meaningEl) meaningEl.textContent = currentHanziWordData.meaning;
+
+  // Tạo tabs chọn chữ nếu từ ghép từ 2 chữ trở lên
+  const tabsWrap = document.getElementById("hanziCharTabsWrap");
+  const tabsContainer = document.getElementById("hanziCharTabs");
+  if (tabsWrap && tabsContainer) {
+    if (currentHanziCharList.length > 1) {
+      tabsWrap.style.display = "flex";
+      tabsContainer.innerHTML = currentHanziCharList
+        .map(
+          (char, idx) => `
+        <button class="hanzi-char-tab-btn ${idx === 0 ? "active" : ""}" onclick="switchHanziChar(${idx})">
+          Chữ ${idx + 1}: ${char}
+        </button>
+      `
+        )
+        .join("");
+    } else {
+      tabsWrap.style.display = "none";
+      tabsContainer.innerHTML = "";
+    }
+  }
+
+  modal.style.display = "flex";
+  document.body.style.overflow = "hidden";
+
+  // Khởi tạo chữ đầu tiên
+  initHanziWriter(currentHanziCharList[0]);
+}
+
+// Chuyển sang chữ Hán khác trong từ ghép
+function switchHanziChar(index) {
+  if (index < 0 || index >= currentHanziCharList.length) return;
+  currentHanziCharIndex = index;
+
+  document.querySelectorAll(".hanzi-char-tab-btn").forEach((btn, idx) => {
+    btn.classList.toggle("active", idx === index);
+  });
+
+  initHanziWriter(currentHanziCharList[index]);
+}
+
+// Cập nhật trạng thái và lời nhắc trong modal
+function setHanziStatus(text, type = "normal", icon = "💡") {
+  const banner = document.getElementById("hanziStatusBanner");
+  const textEl = document.getElementById("hanziStatusText");
+  const iconEl = document.getElementById("hanziStatusIcon");
+
+  if (banner) {
+    banner.className = `hanzi-status-banner status-${type}`;
+  }
+  if (textEl) textEl.textContent = text;
+  if (iconEl) iconEl.textContent = icon;
+}
+
+// Khởi tạo instance Hanzi Writer cho một chữ Hán
+function initHanziWriter(char) {
+  const target = document.getElementById("hanziTarget");
+  if (!target) return;
+  target.innerHTML = "";
+
+  if (activeHanziWriter) {
+    try {
+      activeHanziWriter.cancelQuiz();
+    } catch (e) { }
+    activeHanziWriter = null;
+  }
+
+  isHanziQuizRunning = false;
+  isHanziOutlineOn = true;
+  updateOutlineBtnText();
+
+  // Kiểm tra thư viện HanziWriter
+  if (typeof HanziWriter === "undefined") {
+    target.innerHTML = `
+      <div style="text-align:center; padding: 40px 10px; color: var(--muted); font-size: 13px;">
+        <i class="fi fi-rr-exclamation" style="font-size: 32px; color: #f59e0b; display: block; margin-bottom: 8px;"></i>
+        Đang tải thư viện nét bút... Vui lòng kiểm tra kết nối mạng.
+      </div>
+    `;
+    setHanziStatus("Chưa tải được thư viện Hanzi Writer.", "warning", "⚠️");
+    return;
+  }
+
+  try {
+    const isMobile = window.innerWidth <= 480;
+    const boxSize = isMobile ? 220 : 250;
+
+    activeHanziWriter = HanziWriter.create("hanziTarget", char, {
+      width: boxSize,
+      height: boxSize,
+      padding: 15,
+      showOutline: isHanziOutlineOn,
+      strokeAnimationSpeed: 1.2,
+      delayBetweenStrokes: 220,
+      strokeColor: "#38bdf8", // Màu nét chạy động
+      outlineColor: "rgba(255, 255, 255, 0.18)", // Nét mờ chỉ dẫn
+      drawingColor: "#f43f5e", // Màu mực khi vẽ
+      drawingWidth: 20,
+      showCharacter: false,
+      onLoadCharDataError: function (err) {
+        console.warn("Lỗi tải dữ liệu nét bút cho chữ:", char, err);
+        setHanziStatus(`Không tìm thấy dữ liệu nét bút cho chữ '${char}'.`, "warning", "⚠️");
+      }
+    });
+
+    setHanziStatus(`Chữ '${char}': Bấm 'Xem nét bút' để quan sát hoặc 'Tự tập viết' để tô nét.`, "normal", "✍️");
+  } catch (err) {
+    console.error("Lỗi khởi tạo HanziWriter:", err);
+    setHanziStatus("Không thể khởi tạo bộ tập viết chữ Hán.", "warning", "⚠️");
+  }
+}
+
+// Chạy hoạt họa từng nét
+function animateCurrentHanzi() {
+  if (!activeHanziWriter) return;
+  try {
+    activeHanziWriter.cancelQuiz();
+  } catch (e) { }
+  isHanziQuizRunning = false;
+
+  setHanziStatus("Đang hiển thị hoạt họa thứ tự nét bút...", "animate", "🎬");
+  activeHanziWriter.animateCharacter({
+    onComplete: function () {
+      setHanziStatus("Đã chạy xong các nét! Bấm 'Tự tập viết' để thực hành tô nét.", "success", "✨");
+    }
+  });
+}
+
+// Bật chế độ tự tập viết (Quiz mode)
+function startCurrentHanziQuiz() {
+  if (!activeHanziWriter) return;
+  isHanziQuizRunning = true;
+
+  setHanziStatus("Chế độ tự tập viết: Hãy dùng chuột hoặc ngón tay vẽ từng nét theo thứ tự.", "quiz", "✏️");
+
+  try {
+    activeHanziWriter.quiz({
+      showOutline: isHanziOutlineOn,
+      onMistake: function (strokeData) {
+        setHanziStatus(`Sai nét thứ ${strokeData.strokeNum + 1} rồi, hãy thử vẽ lại nhé!`, "warning", "❌");
+      },
+      onCorrectStroke: function (strokeData) {
+        setHanziStatus(`Chính xác nét ${strokeData.strokeNum + 1}! Hãy vẽ tiếp nét sau...`, "success", "👍");
+      },
+      onComplete: function (summaryData) {
+        setHanziStatus(
+          `🎉 Tuyệt vời! Bạn đã hoàn thành chữ với ${summaryData.totalMistakes} lần sai!`,
+          "complete",
+          "🏆"
+        );
+      }
+    });
+  } catch (err) {
+    console.error("Lỗi start Hanzi quiz:", err);
+  }
+}
+
+// Bật / tắt nét mờ gợi ý
+function toggleCurrentHanziOutline() {
+  if (!activeHanziWriter) return;
+  isHanziOutlineOn = !isHanziOutlineOn;
+  updateOutlineBtnText();
+
+  if (isHanziOutlineOn) {
+    activeHanziWriter.showOutline();
+  } else {
+    activeHanziWriter.hideOutline();
+  }
+}
+
+function updateOutlineBtnText() {
+  const textEl = document.getElementById("hanziOutlineText");
+  if (textEl) {
+    textEl.textContent = isHanziOutlineOn ? "Ẩn nét mờ" : "Hiện nét mờ";
+  }
+}
+
+// Viết lại từ đầu
+function resetCurrentHanzi() {
+  if (!currentHanziCharList.length) return;
+  initHanziWriter(currentHanziCharList[currentHanziCharIndex] || "你");
+}
+
+// Phát âm chữ Hán đang học
+function speakCurrentHanzi() {
+  if (currentHanziWordData && currentHanziWordData.word) {
+    speakChinese(currentHanziWordData.word);
+  } else if (currentHanziCharList.length) {
+    speakChinese(currentHanziCharList[currentHanziCharIndex]);
+  }
+}
+
+// Đóng modal tập viết
+function closeHanziWriterModal() {
+  const modal = document.getElementById("hanziWriterModal");
+  if (modal) modal.style.display = "none";
+  document.body.style.overflow = "";
+
+  if (activeHanziWriter) {
+    try {
+      activeHanziWriter.cancelQuiz();
+    } catch (e) { }
+    activeHanziWriter = null;
+  }
+  isHanziQuizRunning = false;
+}
+
+// Mở tập viết từ ô input trong tab Nhập môn (hỗ trợ cả Tiếng Việt và Chữ Hán)
+async function openHanziWriterFromInput() {
+  const input = document.getElementById("basicsCustomHanziInput");
+  const btn = document.getElementById("basicsPracticeSubmitBtn");
+  if (!input) return;
+  const val = input.value.trim();
+  if (!val) {
+    alert("Vui lòng nhập từ tiếng Việt hoặc chữ Hán để tập viết!");
+    return;
+  }
+
+  // 1. Trường hợp người dùng nhập trực tiếp chữ Hán CJK
+  if (/[\u4e00-\u9fa5]/.test(val)) {
+    const allVocab = getAllVocabulary();
+    const localMatch = allVocab.find((v) => v.word === val || v.word.includes(val));
+    if (localMatch) {
+      openHanziWriterModal(localMatch);
+    } else {
+      openHanziWriterModal(val);
+    }
+    return;
+  }
+
+  // 2. Trường hợp người dùng nhập Tiếng Việt / Latin -> Tìm chữ Hán tương ứng
+  const originalBtnHTML = btn ? btn.innerHTML : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<span class="basics-btn-spinner"></span> <span>Đang tìm...</span>`;
+  }
+
+  try {
+    const queryLower = val.toLowerCase();
+    const allVocab = getAllVocabulary();
+
+    // Bước 2.1: Tra cứu trong kho từ vựng tiếng Trung có sẵn
+    let matchedItem = allVocab.find((v) => {
+      const m = (v.meaning || "").toLowerCase();
+      const hv = (v.hanviet || "").toLowerCase();
+      return m === queryLower || hv === queryLower;
+    });
+
+    if (!matchedItem) {
+      matchedItem = allVocab.find((v) => {
+        const m = (v.meaning || "").toLowerCase();
+        const hv = (v.hanviet || "").toLowerCase();
+        return m.includes(queryLower) || hv.includes(queryLower);
+      });
+    }
+
+    if (matchedItem) {
+      openHanziWriterModal(matchedItem);
+      return;
+    }
+
+    // Bước 2.2: Nếu không có sẵn trong kho local -> Dịch tiếng Việt sang tiếng Trung qua MyMemory API
+    const transResult = await fetchTranslationCustom(val, "vi|zh-CN");
+    if (transResult) {
+      const zhChars = transResult.match(/[\u4e00-\u9fa5]+/g);
+      if (zhChars && zhChars.length > 0) {
+        const zhWord = zhChars.join("");
+
+        // Sinh phiên âm Pinyin nếu có thể
+        let pinyinText = "";
+        try {
+          if (typeof pinyinPro !== "undefined" && pinyinPro.pinyin) {
+            pinyinText = pinyinPro.pinyin(zhWord, { toneType: "symbol" });
+          } else if (typeof getBasicPinyin === "function") {
+            const basicResults = getBasicPinyin(zhWord);
+            if (basicResults && basicResults.length > 0) {
+              pinyinText = basicResults[0].pinyin;
+            }
+          }
+        } catch (e) {
+          console.warn("Pinyin error:", e);
+        }
+
+        openHanziWriterModal({
+          word: zhWord,
+          phonetic: pinyinText,
+          hanviet: "",
+          meaning: `Nghĩa: "${val}"`
+        });
+        return;
+      }
+    }
+
+    alert(`Không tìm thấy chữ Hán tương ứng cho từ "${val}". Vui lòng thử từ khóa tiếng Việt khác hoặc nhập trực tiếp chữ Hán!`);
+  } catch (err) {
+    console.error("Lỗi tìm chữ Hán từ tiếng Việt:", err);
+    alert("Đã xảy ra lỗi khi tra cứu chữ Hán. Vui lòng thử lại!");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalBtnHTML;
+    }
+  }
+}
+
+/* ==================== BASICS HANZI LAZY LIVE SEARCH ==================== */
+let basicsHanziSearchTimer = null;
+let lastBasicsSearchQuery = "";
+let currentBasicsSearchMatches = [];
+
+// Xử lý sự kiện khi gõ vào ô tìm kiếm: debounce khi ngừng nhập (lazy loading)
+function handleBasicsHanziSearchInput(query) {
+  clearTimeout(basicsHanziSearchTimer);
+  const q = (query || "").trim();
+  const resultsContainer = document.getElementById("basicsHanziSearchResults");
+
+  if (!q) {
+    lastBasicsSearchQuery = "";
+    currentBasicsSearchMatches = [];
+    if (resultsContainer) {
+      resultsContainer.style.display = "none";
+      resultsContainer.innerHTML = "";
+    }
+    return;
+  }
+
+  // Hiển thị trạng thái đang tải ngay khi người dùng bắt đầu nhập
+  if (resultsContainer) {
+    resultsContainer.style.display = "block";
+    resultsContainer.innerHTML = `
+      <div class="basics-search-loading">
+        <span class="basics-btn-spinner"></span>
+        <span>Đang tìm chữ Hán cho "<strong>${escapeHtml(q)}</strong>"...</span>
+      </div>
+    `;
+  }
+
+  // Debounce 300ms sau khi ngừng gõ để tìm kiếm và hiển thị kết quả ngay
+  basicsHanziSearchTimer = setTimeout(() => {
+    performBasicsHanziLiveSearch(q);
+  }, 300);
+}
+
+// Thực hiện tìm kiếm và hiển thị danh sách kết quả trực tiếp
+async function performBasicsHanziLiveSearch(query) {
+  const resultsContainer = document.getElementById("basicsHanziSearchResults");
+  if (!resultsContainer) return;
+  lastBasicsSearchQuery = query;
+
+  const queryLower = query.toLowerCase();
+  const allVocab = getAllVocabulary();
+  let matches = [];
+
+  const isChinese = /[\u4e00-\u9fa5]/.test(query);
+
+  if (isChinese) {
+    // Tìm các từ chứa chữ Hán này
+    matches = allVocab.filter((v) => (v.word || "").includes(query));
+    if (!matches.some((v) => v.word === query)) {
+      matches.unshift({
+        word: query,
+        phonetic: "",
+        hanviet: "",
+        meaning: `Chữ Hán: "${query}"`
+      });
+    }
+  } else {
+    // Tìm trong kho từ vựng theo nghĩa hoặc âm Hán-Việt
+    matches = allVocab.filter((v) => {
+      const m = (v.meaning || "").toLowerCase();
+      const hv = (v.hanviet || "").toLowerCase();
+      return m.includes(queryLower) || hv.includes(queryLower);
+    });
+
+    matches = matches.slice(0, 6);
+
+    // Nếu không khớp từ nào hoặc ít kết quả, gọi API dịch tự động sang chữ Hán
+    if (matches.length === 0 || !matches.some((v) => (v.meaning || "").toLowerCase() === queryLower)) {
+      try {
+        const transResult = await fetchTranslationCustom(query, "vi|zh-CN");
+        if (lastBasicsSearchQuery !== query) return;
+
+        if (transResult) {
+          const zhChars = transResult.match(/[\u4e00-\u9fa5]+/g);
+          if (zhChars && zhChars.length > 0) {
+            const zhWord = zhChars.join("");
+            if (!matches.some((v) => v.word === zhWord)) {
+              let pinyinText = "";
+              try {
+                if (typeof pinyinPro !== "undefined" && pinyinPro.pinyin) {
+                  pinyinText = pinyinPro.pinyin(zhWord, { toneType: "symbol" });
+                } else if (typeof getBasicPinyin === "function") {
+                  const b = getBasicPinyin(zhWord);
+                  if (b && b[0]) pinyinText = b[0].pinyin;
+                }
+              } catch (e) {}
+
+              matches.unshift({
+                word: zhWord,
+                phonetic: pinyinText,
+                hanviet: "",
+                meaning: query,
+                isApiResult: true
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Lỗi dịch live search:", err);
+      }
+    }
+  }
+
+  if (lastBasicsSearchQuery !== query) return;
+  currentBasicsSearchMatches = matches;
+
+  if (matches.length === 0) {
+    resultsContainer.style.display = "block";
+    resultsContainer.innerHTML = `
+      <div class="basics-search-empty">
+        <i class="fi fi-rr-info" style="color: #f59e0b; margin-right: 6px;"></i>
+        Không tìm thấy chữ Hán nào cho "<strong>${escapeHtml(query)}</strong>". Bạn có thể bấm nút <em>"Tập viết ngay"</em> để dịch tự động!
+      </div>
+    `;
+    return;
+  }
+
+  resultsContainer.style.display = "block";
+  resultsContainer.innerHTML = `
+    <div class="basics-search-header">
+      <span>Kết quả gợi ý (${matches.length})</span>
+      <button class="basics-search-close-btn" onclick="closeBasicsHanziSearchResults()" title="Đóng">✕</button>
+    </div>
+    <div class="basics-search-list">
+      ${matches
+        .map(
+          (item, idx) => {
+            const viReading = getChineseVietnameseReading(item.word, item.phonetic);
+            return `
+        <div class="basics-search-item" onclick="selectBasicsHanziSearchResultIndex(${idx})" title="Bấm để tập viết chữ '${escapeHtml(item.word)}'">
+          <div class="basics-search-item-left">
+            <span class="basics-search-item-word">${escapeHtml(item.word)}</span>
+            <div class="basics-search-item-meta">
+              <div class="basics-search-item-row">
+                ${item.phonetic ? `<span class="basics-search-item-pinyin">${escapeHtml(item.phonetic)}</span>` : ""}
+                ${item.hanviet ? `<span class="basics-search-item-hanviet">[${escapeHtml(item.hanviet)}]</span>` : ""}
+                ${viReading ? `<span class="basics-search-item-reading">🗣️ ${escapeHtml(viReading)}</span>` : ""}
+                ${item.level ? `<span class="learn-card-level-badge">${escapeHtml(item.level)}</span>` : ""}
+                ${item.isApiResult ? `<span class="basics-search-item-api-badge">Dịch tự động</span>` : ""}
+              </div>
+              <div class="basics-search-item-meaning">${escapeHtml(item.meaning || "")}</div>
+            </div>
+          </div>
+          <button class="basics-search-item-btn" type="button" tabindex="-1">
+            ✍️ Tập viết
+          </button>
+        </div>
+      `;
+          }
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+// Khi người dùng bấm vào một kết quả trong danh sách gợi ý
+function selectBasicsHanziSearchResultIndex(idx) {
+  const item = currentBasicsSearchMatches[idx];
+  if (!item) return;
+
+  // Đồng bộ chữ Hán vào ô input để người dùng thấy rõ
+  const input = document.getElementById("basicsCustomHanziInput");
+  if (input) input.value = item.word;
+
+  closeBasicsHanziSearchResults();
+  openHanziWriterModal({
+    word: item.word,
+    phonetic: item.phonetic,
+    hanviet: item.hanviet,
+    meaning: item.meaning
+  });
+}
+
+// Đóng khung kết quả tìm kiếm
+function closeBasicsHanziSearchResults() {
+  const resultsContainer = document.getElementById("basicsHanziSearchResults");
+  if (resultsContainer) {
+    resultsContainer.style.display = "none";
+    resultsContainer.innerHTML = "";
+  }
+}
+
+// Tự động đóng dropdown khi click ra ngoài vùng nhập
+document.addEventListener("click", function (event) {
+  const card = document.querySelector(".basics-practice-input-card");
+  const resultsContainer = document.getElementById("basicsHanziSearchResults");
+  if (card && resultsContainer && resultsContainer.style.display !== "none") {
+    if (!card.contains(event.target)) {
+      closeBasicsHanziSearchResults();
+    }
+  }
+});
+
 // Switch Learn Tab
 function switchLearnTab(tab) {
   document
@@ -19540,6 +20299,46 @@ function renderBasicsContentHTML() {
         .join("")}
       </div>
     `;
+  } else if (currentBasicsSubTab === "practice") {
+    html += `
+      <div class="basics-grid-intro">
+        ✍️ <strong>Tập viết Hán tự tương tác:</strong> Nhập bất kỳ chữ Hán nào hoặc chọn các chữ mẫu bên dưới để xem hoạt họa nét thuận và tự tập tô chữ trực tiếp bằng chuột hoặc ngón tay!
+      </div>
+      <div class="basics-practice-input-card">
+        <div class="basics-practice-input-label">Nhập tiếng Việt hoặc chữ Hán cần luyện viết:</div>
+        <div class="basics-practice-input-row">
+          <input type="text" id="basicsCustomHanziInput" class="basics-practice-input" placeholder="Ví dụ: sân bay, yêu, gia đình, hoặc 爱, 福, 龙..." maxlength="25" oninput="handleBasicsHanziSearchInput(this.value)" onkeyup="if(event.key==='Enter') openHanziWriterFromInput()" />
+          <button class="basics-practice-submit-btn" id="basicsPracticeSubmitBtn" onclick="openHanziWriterFromInput()">
+            <i class="fi fi-rr-pencil"></i>
+            <span>Tập viết ngay</span>
+          </button>
+        </div>
+        <div class="basics-practice-hint">
+          💡 Nhập đến đâu hệ thống sẽ tự động tìm kiếm kết quả gợi ý bên dưới!
+        </div>
+        <!-- Vùng hiển thị kết quả tìm kiếm trực tiếp (Lazy Live Search) -->
+        <div id="basicsHanziSearchResults" class="basics-hanzi-search-results" style="display: none;"></div>
+      </div>
+      <div class="basics-practice-heading">
+        <span>Chữ Hán mẫu thông dụng</span>
+        <span class="basics-practice-badge">Bấm để tập viết</span>
+      </div>
+      <div class="basics-practice-grid">
+        ${(ZH_BASICS_DATA.practiceChars || [])
+        .map(
+          (item) => `
+          <div class="basics-practice-card" onclick="openHanziWriterModal({ word: '${escapeHtml(item.char)}', phonetic: '${escapeHtml(item.pinyin)}', hanviet: '${escapeHtml(item.hanviet)}', meaning: '${escapeHtml(item.meaning)}' })" title="Bấm để tập viết chữ '${item.char}'">
+            <div class="basics-practice-char">${item.char}</div>
+            <div class="basics-practice-pinyin">${item.pinyin}</div>
+            <div class="basics-practice-hanviet">[${item.hanviet}]</div>
+            <div class="basics-practice-meaning">${item.meaning}</div>
+            <button class="basics-practice-card-btn">✍️ Luyện viết</button>
+          </div>
+        `
+        )
+        .join("")}
+      </div>
+    `;
   }
 
   return html;
@@ -19556,13 +20355,10 @@ function renderBasicsSection() {
     { key: "tones", label: "4 Thanh Điệu & Biến Điệu", icon: "📈" },
     { key: "strokes", label: "8 Nét & Bút Thuận", icon: "✍️" },
     { key: "radicals", label: "20+ Bộ Thủ Thường Gặp", icon: "🧱" },
+    { key: "practice", label: "Luyện Viết Nét Bút", icon: "🖌️" },
   ];
 
   container.innerHTML = `
-    <div class="basics-header-card">
-      <div class="basics-header-title">🇨🇳 Nền Tảng Tiếng Trung Dành Cho Người Mới</div>
-      <div class="basics-header-desc">Học chắc Bảng chữ cái Pinyin, 4 Thanh điệu và Các bộ thủ cốt lõi để phát âm chuẩn và nhớ chữ Hán siêu tốc.</div>
-    </div>
     <div class="basics-subtab-bar">
       ${subTabs
       .map(
@@ -19661,11 +20457,19 @@ function renderVocabCard() {
   container.innerHTML = `
     <div class="learn-card ${isZh ? "learn-card-zh" : ""}">
       <div class="learn-card-top-row">
-        <div class="learn-card-category">${getCategoryName(currentVocabCategory)}</div>
-        <button class="learn-card-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.word)}')` : `speakEnglish('${escapeHtml(item.word)}')`}" title="Nghe phát âm">
-          <i class="fi fi-rr-volume" style="font-size: 16px; margin-right: 4px;"></i>
-          Phát âm
-        </button>
+        <div class="learn-card-category">${getCategoryName(currentVocabCategory)} ${item.level ? `<span class="learn-card-level-badge">${item.level}</span>` : ""}</div>
+        <div class="learn-card-top-actions" style="display: flex; align-items: center; gap: 8px;">
+          ${isZh ? `
+          <button class="learn-card-practice-btn" onclick="openHanziWriterForCurrentVocab()" title="Tập viết chữ Hán">
+            <i class="fi fi-rr-pencil" style="font-size: 14px; margin-right: 4px;"></i>
+            Tập viết
+          </button>
+          ` : ""}
+          <button class="learn-card-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.word)}')` : `speakEnglish('${escapeHtml(item.word)}')`}" title="Nghe phát âm">
+            <i class="fi fi-rr-volume" style="font-size: 16px; margin-right: 4px;"></i>
+            Phát âm
+          </button>
+        </div>
       </div>
 
       <div class="learn-card-word ${isZh ? "learn-card-word-zh" : ""}">${item.word}</div>
@@ -19674,6 +20478,12 @@ function renderVocabCard() {
         <div class="learn-card-phonetic-badge">
           <span class="learn-card-phonetic">${item.phonetic}</span>
           ${item.hanviet ? `<span class="learn-card-hanviet">[Hán-Việt: ${item.hanviet}]</span>` : ""}
+        </div>
+      ` : ""}
+      ${isZh && getChineseVietnameseReading(item.word, item.phonetic) ? `
+        <div class="learn-card-reading-row">
+          <span class="learn-reading-label">🗣️ Đọc:</span>
+          <span class="learn-reading-val">${escapeHtml(getChineseVietnameseReading(item.word, item.phonetic))}</span>
         </div>
       ` : ""}
 

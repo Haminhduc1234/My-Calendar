@@ -254,9 +254,9 @@
         <span class="nav-label">Thu Chi</span>
       </button>
 
-      <button class="nav-item translate-fab" onclick="openTranslateModal()" aria-label="Mở công cụ translate">
-        <i class="fi fi-rr-language"></i>
-        <span class="nav-label">Dịch</span>
+      <button class="nav-item learn-fab" onclick="openLearnModal()" aria-label="Mở công cụ học tiếng">
+        <i class="fi fi-rr-graduation-cap"></i>
+        <span class="nav-label">Học Tiếng</span>
       </button>
 
       <div class="nav-more-wrapper">
@@ -306,9 +306,9 @@
             <span class="menu-icon-wrap"><i class="fi fi-rr-newspaper"></i></span>
             <span>Tin Tức</span>
           </button>
-          <button class="dropdown-item item-learn" onclick="openLearnModal(); closeMoreMenu();" role="menuitem">
-            <span class="menu-icon-wrap"><i class="fi fi-rr-graduation-cap"></i></span>
-            <span>Học Tiếng</span>
+          <button class="dropdown-item item-translate" onclick="openTranslateModal(); closeMoreMenu();" role="menuitem">
+            <span class="menu-icon-wrap"><i class="fi fi-rr-language"></i></span>
+            <span>Dịch</span>
           </button>
           <!-- <button class="dropdown-item item-music" onclick="openMyMusicModal(); closeMoreMenu();" role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-music-note"></i></span>
@@ -2788,7 +2788,7 @@
       <div class="learn-tabs">
         <button class="learn-tab" id="learnBasicsTabBtn" onclick="switchLearnTab('basics')" data-tab="basics"
           style="display: none;">
-          <i class="fi fi-rr-shapes" style="margin-right: 6px;"></i>
+          <i class="fi fi-rr-school" style="margin-right: 6px;"></i>
           Nhập Môn
         </button>
         <button class="learn-tab active" onclick="switchLearnTab('vocabulary')" data-tab="vocabulary">
@@ -3101,6 +3101,81 @@
     </div>
   </div>
 
+  <!-- Hanzi Writer Modal (Luyện viết chữ Hán) -->
+  <div id="hanziWriterModal" class="modal" style="display: none;">
+    <div class="hanzi-modal-content">
+      <div class="hanzi-modal-header">
+        <div class="hanzi-modal-header-left">
+          <span class="hanzi-header-badge">✍️ Luyện Viết</span>
+          <h3 id="hanziModalTitle">Tập Viết Chữ Hán</h3>
+        </div>
+        <button class="modal-close" onclick="closeHanziWriterModal()">×</button>
+      </div>
+
+      <!-- Thông tin từ vựng / chữ Hán đang học -->
+      <div class="hanzi-info-card" id="hanziInfoCard">
+        <div class="hanzi-info-main">
+          <span class="hanzi-info-word" id="hanziInfoWord">你</span>
+          <div class="hanzi-info-meta">
+            <div class="hanzi-info-pinyin-row">
+              <span class="hanzi-info-pinyin" id="hanziInfoPinyin">nǐ</span>
+              <span class="hanzi-info-hanviet" id="hanziInfoHanviet">[Hán-Việt: Nhĩ]</span>
+              <span class="hanzi-info-reading" id="hanziInfoReading" style="display: none;"></span>
+            </div>
+            <div class="hanzi-info-meaning" id="hanziInfoMeaning">Bạn, anh, chị</div>
+          </div>
+        </div>
+        <button class="hanzi-info-speak-btn" id="hanziInfoSpeakBtn" onclick="speakCurrentHanzi()" title="Nghe phát âm">
+          <i class="fi fi-rr-volume"></i>
+          <span>Phát âm</span>
+        </button>
+      </div>
+
+      <!-- Tabs chọn chữ Hán nếu từ vựng ghép từ 2 chữ trở lên -->
+      <div class="hanzi-char-tabs-wrap" id="hanziCharTabsWrap" style="display: none;">
+        <div class="hanzi-char-tabs-label">Chọn chữ để luyện viết:</div>
+        <div class="hanzi-char-tabs" id="hanziCharTabs"></div>
+      </div>
+
+      <!-- Khung ô Mễ Tự Cách (米字格) của Hanzi Writer -->
+      <div class="hanzi-canvas-wrapper">
+        <div class="hanzi-canvas-box" id="hanziCanvasBox">
+          <div class="hanzi-grid-line line-h"></div>
+          <div class="hanzi-grid-line line-v"></div>
+          <div class="hanzi-grid-line line-d1"></div>
+          <div class="hanzi-grid-line line-d2"></div>
+          <div id="hanziTarget"></div>
+        </div>
+      </div>
+
+      <!-- Thanh thông báo trạng thái & Quiz feedback -->
+      <div class="hanzi-status-banner" id="hanziStatusBanner">
+        <span id="hanziStatusIcon">💡</span>
+        <span id="hanziStatusText">Bấm 'Xem nét bút' để quan sát hoặc 'Tự tập viết' để tô nét bằng chuột/ngón tay.</span>
+      </div>
+
+      <!-- Thanh công cụ điều khiển -->
+      <div class="hanzi-controls-bar">
+        <button class="hanzi-ctrl-btn primary" id="hanziAnimateBtn" onclick="animateCurrentHanzi()">
+          <i class="fi fi-rr-play"></i>
+          <span>Xem nét bút</span>
+        </button>
+        <button class="hanzi-ctrl-btn accent" id="hanziQuizBtn" onclick="startCurrentHanziQuiz()">
+          <i class="fi fi-rr-pencil"></i>
+          <span>Tự tập viết</span>
+        </button>
+        <button class="hanzi-ctrl-btn secondary" id="hanziOutlineBtn" onclick="toggleCurrentHanziOutline()">
+          <i class="fi fi-rr-eye"></i>
+          <span id="hanziOutlineText">Nét mờ</span>
+        </button>
+        <button class="hanzi-ctrl-btn secondary" id="hanziResetBtn" onclick="resetCurrentHanzi()">
+          <i class="fi fi-rr-refresh"></i>
+          <span>Viết lại</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <footer class="app-footer">
     <div class="footer-content">
       © <span id="year"></span> <strong>Lịch Việt</strong> · Made with ❤️ by
@@ -3115,6 +3190,8 @@
   <script src="public/my-music-library.js"></script>
   <script src="learn-en-data.js"></script>
   <script src="learn-zh-data.js"></script>
+  <!-- Hanzi Writer for Interactive Chinese Stroke Animation & Practice -->
+  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
   <script src="senior-mode.js?v=20260916"></script>
   <script src="family-cookbook.js?v=20260917_search_pos"></script>
   <script src="family-health.js?v=20260918_latest_log_sync"></script>

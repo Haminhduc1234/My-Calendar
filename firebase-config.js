@@ -1,5 +1,6 @@
 self.FIREBASE_EVENTS_PATH = "calendarEvents";
 self.FIREBASE_TRANSLATE_HISTORY_PATH = "translateHistory";
+self.FIREBASE_SRS_PROGRESS_PATH = "srsProgress";
 self.FIREBASE_WEB_CONFIG = {
   apiKey: "AIzaSyBI7-9FIE2Ox9nleAE3j7hjWkzeuKevm9Q",
   authDomain: "calendar-ac2fa.firebaseapp.com",

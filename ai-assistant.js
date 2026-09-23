@@ -2,7 +2,7 @@
 
 // AI State
 let aiApiKey = localStorage.getItem("aiApiKey") || "";
-let aiModel = localStorage.getItem("aiModel") || "llama-3.3-70b-versatile";
+let aiModel = localStorage.getItem("aiModel") || "openai/gpt-oss-120b";
 let aiConversationHistory = [];
 let aiPendingAction = null;
 let aiRetryTimeout = null;

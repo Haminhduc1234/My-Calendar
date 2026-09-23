@@ -168,6 +168,41 @@ const ZH_BASICS_DATA = {
     { char: "龙", pinyin: "lóng", hanviet: "Long", meaning: "Con rồng" },
     { char: "茶", pinyin: "chá", hanviet: "Trà", meaning: "Trà, chè" },
     { char: "心", pinyin: "xīn", hanviet: "Tâm", meaning: "Trái tim, tấm lòng" }
+  ],
+
+  // Các cặp âm dễ nhầm lẫn cho người Việt (Confusion Pairs)
+  confusionPairs: [
+    {
+      groupName: "Âm bật hơi vs Không bật hơi (送气 vs 不送气)",
+      groupTip: "Đặt tay trước miệng khi phát âm: âm bật hơi sẽ có luồng gió mạnh thổi vào lòng bàn tay, âm không bật hơi thì không có.",
+      pairs: [
+        { left: "b [p]", right: "p [pʰ]", leftDesc: "Không bật hơi", rightDesc: "Bật hơi mạnh", leftExample: "八 bā (tám)", rightExample: "怕 pà (sợ)", leftAudio: "八", rightAudio: "怕", tip: "'b' đọc giống 'p' tiếng Việt (nhẹ, không gió). 'p' bật hơi mạnh hơn nhiều." },
+        { left: "d [t]", right: "t [tʰ]", leftDesc: "Không bật hơi", rightDesc: "Bật hơi mạnh", leftExample: "大 dà (to)", rightExample: "他 tā (anh ấy)", leftAudio: "大", rightAudio: "他", tip: "'d' đọc giống 't' tiếng Việt (nhẹ). 't' bật luồng gió mạnh giống 'th' tiếng Việt." },
+        { left: "g [k]", right: "k [kʰ]", leftDesc: "Không bật hơi", rightDesc: "Bật hơi mạnh", leftExample: "高 gāo (cao)", rightExample: "看 kàn (xem)", leftAudio: "高", rightAudio: "看", tip: "'g' đọc giống 'c/k' tiếng Việt (nhẹ). 'k' bật hơi mạnh giống 'kh' bật gió." },
+        { left: "j [tɕ]", right: "q [tɕʰ]", leftDesc: "Không bật hơi", rightDesc: "Bật hơi mạnh", leftExample: "家 jiā (nhà)", rightExample: "去 qù (đi)", leftAudio: "家", rightAudio: "去", tip: "'j' mặt lưỡi áp nhẹ ngạc. 'q' vị trí giống 'j' nhưng bật gió cực mạnh." },
+        { left: "z [ts]", right: "c [tsʰ]", leftDesc: "Không bật hơi", rightDesc: "Bật hơi mạnh", leftExample: "早 zǎo (sớm)", rightExample: "菜 cài (rau)", leftAudio: "早", rightAudio: "菜", tip: "'z' đầu lưỡi chạm răng, không gió. 'c' bật hơi mạnh như tiếng xì." },
+        { left: "zh [ʈʂ]", right: "ch [ʈʂʰ]", leftDesc: "Không bật hơi", rightDesc: "Bật hơi mạnh", leftExample: "中 zhōng (giữa)", rightExample: "吃 chī (ăn)", leftAudio: "中", rightAudio: "吃", tip: "Cả 2 đều uốn lưỡi. 'zh' không bật hơi giống 'tr'. 'ch' bật hơi rất mạnh." }
+      ]
+    },
+    {
+      groupName: "Âm uốn lưỡi vs Âm bẹt lưỡi (翘舌音 vs 平舌音)",
+      groupTip: "Âm uốn lưỡi (zh, ch, sh, r): đầu lưỡi uốn cong lên chạm ngạc cứng. Âm bẹt lưỡi (z, c, s): đầu lưỡi để thẳng chạm mặt sau răng trên.",
+      pairs: [
+        { left: "zh [ʈʂ]", right: "z [ts]", leftDesc: "Uốn lưỡi", rightDesc: "Bẹt lưỡi", leftExample: "知 zhī (biết)", rightExample: "字 zì (chữ)", leftAudio: "知道", rightAudio: "字", tip: "'zh': uốn cong đầu lưỡi lên ngạc cứng. 'z': đầu lưỡi thẳng chạm mặt sau răng trên." },
+        { left: "ch [ʈʂʰ]", right: "c [tsʰ]", leftDesc: "Uốn lưỡi", rightDesc: "Bẹt lưỡi", leftExample: "吃 chī (ăn)", rightExample: "次 cì (lần)", leftAudio: "吃", rightAudio: "次", tip: "'ch': uốn lưỡi + bật hơi. 'c': lưỡi thẳng + bật hơi. Vị trí lưỡi là khác biệt chính." },
+        { left: "sh [ʂ]", right: "s [s]", leftDesc: "Uốn lưỡi", rightDesc: "Bẹt lưỡi", leftExample: "书 shū (sách)", rightExample: "四 sì (bốn)", leftAudio: "书", rightAudio: "四", tip: "'sh': uốn cong lưỡi, âm dày hơn. 's': lưỡi thẳng sát răng, đọc như 'x' tiếng Việt." },
+        { left: "r [ʐ]", right: "l [l]", leftDesc: "Uốn lưỡi rung", rightDesc: "Âm bên", leftExample: "人 rén (người)", rightExample: "冷 lěng (lạnh)", leftAudio: "人", rightAudio: "冷", tip: "'r': uốn cong lưỡi rung nhẹ. 'l': đầu lưỡi chạm lợi trên, giống 'l' tiếng Việt." }
+      ]
+    },
+    {
+      groupName: "Âm mũi cuối -n vs -ng (前鼻音 vs 后鼻音)",
+      groupTip: "'-n': đầu lưỡi chạm lợi trên (giống 'n' tiếng Việt). '-ng': cuống lưỡi nâng lên chạm ngạc mềm (giống 'ng' tiếng Việt).",
+      pairs: [
+        { left: "an [an]", right: "ang [aŋ]", leftDesc: "Mũi trước -n", rightDesc: "Mũi sau -ng", leftExample: "看 kàn (xem)", rightExample: "忙 máng (bận)", leftAudio: "看", rightAudio: "忙", tip: "'an': miệng mở, kết thúc bằng đầu lưỡi chạm lợi. 'ang': miệng mở rộng hơn, kết thúc bằng cuống lưỡi." },
+        { left: "en [ən]", right: "eng [əŋ]", leftDesc: "Mũi trước -n", rightDesc: "Mũi sau -ng", leftExample: "门 mén (cửa)", rightExample: "冷 lěng (lạnh)", leftAudio: "门", rightAudio: "冷", tip: "'en': đọc giống 'ân' tiếng Việt. 'eng': đọc giống 'âng' tiếng Việt." },
+        { left: "in [in]", right: "ing [iŋ]", leftDesc: "Mũi trước -n", rightDesc: "Mũi sau -ng", leftExample: "心 xīn (tim)", rightExample: "听 tīng (nghe)", leftAudio: "心", rightAudio: "听", tip: "'in': đọc giống 'in' tiếng Việt. 'ing': đọc giống 'inh' tiếng Việt, ngân dài hơn." }
+      ]
+    }
   ]
 };
 
@@ -1399,6 +1434,79 @@ const ZH_GRAMMAR_DATA = {
       exampleVi: "Tôi từng đọc cuốn sách này rồi, hiện giờ đang viết tóm tắt đây.",
       note: "'了' biểu thị hành động hoàn tất; '着' biểu thị trạng thái duy trì; '过' biểu thị kinh nghiệm từng trải qua."
     }
+  ],
+
+  // ==================== NGỮ PHÁP TRUNG CẤP (HSK 3-4) ====================
+  complement_result: [
+    {
+      title: "Bổ ngữ kết quả (结果补语)",
+      formula: "Động từ + Bổ ngữ kết quả (完/好/到/见/懂/清楚/干净...)",
+      usage: "Bổ ngữ kết quả đứng ngay sau động từ, biểu thị kết quả mà hành động đạt được. Phủ định: 没 + Động từ + Bổ ngữ.",
+      example: "这本书我看完了，但是没看懂。",
+      examplePinyin: "Zhè běn shū wǒ kànwán le, dànshì méi kàndǒng.",
+      exampleVi: "Quyển sách này tôi đã đọc xong rồi, nhưng không hiểu.",
+      note: "Các bổ ngữ kết quả thông dụng: 完 (xong), 好 (xong/tốt), 到 (được/đến), 见 (thấy), 懂 (hiểu), 清楚 (rõ ràng), 干净 (sạch). VD: 听懂 (nghe hiểu), 做好 (làm xong tốt), 找到 (tìm thấy)."
+    }
+  ],
+
+  complement_direction: [
+    {
+      title: "Bổ ngữ xu hướng (趋向补语)",
+      formula: "Động từ + 上/下/进/出/回/过/起 + 来/去",
+      usage: "Biểu thị phương hướng di chuyển hoặc trạng thái biến đổi của hành động. '来' hướng về phía người nói, '去' hướng ra xa người nói.",
+      example: "他从楼上跑下来了，又跑出去买东西。",
+      examplePinyin: "Tā cóng lóu shàng pǎo xiàlái le, yòu pǎo chūqù mǎi dōngxi.",
+      exampleVi: "Anh ấy từ trên lầu chạy xuống rồi, lại chạy ra ngoài mua đồ.",
+      note: "Bổ ngữ xu hướng phức hợp (2 thành phần): 上来/上去, 下来/下去, 进来/进去, 出来/出去, 回来/回去, 过来/过去, 起来. Nghĩa mở rộng: 想起来 (nhớ ra), 看出来 (nhận ra), 冷下来 (lạnh dần đi)."
+    }
+  ],
+
+  complement_degree: [
+    {
+      title: "Bổ ngữ trạng thái / Mức độ (状态补语 - 得)",
+      formula: "Động từ + 得 + Tính từ / Cụm từ mô tả",
+      usage: "Biểu thị mức độ, trạng thái, hoặc đánh giá cách thức hành động diễn ra. '得' là cầu nối giữa động từ và phần mô tả.",
+      example: "她汉语说得非常流利，写得也很漂亮。",
+      examplePinyin: "Tā Hànyǔ shuō de fēicháng liúlì, xiě de yě hěn piàoliang.",
+      exampleVi: "Cô ấy nói tiếng Trung rất lưu loát, viết cũng rất đẹp.",
+      note: "Phủ định: 动词 + 得 + 不 + Tính từ (说得不好 - nói không tốt). Lưu ý phân biệt 3 chữ 'de': 的 (bổ nghĩa danh từ), 地 (bổ nghĩa động từ phía trước), 得 (bổ nghĩa động từ phía sau)."
+    }
+  ],
+
+  complement_potential: [
+    {
+      title: "Bổ ngữ khả năng (可能补语)",
+      formula: "Khẳng định: Động từ + 得 + Bổ ngữ | Phủ định: Động từ + 不 + Bổ ngữ",
+      usage: "Biểu thị khả năng hoặc không thể thực hiện/đạt được kết quả nào đó. Chèn '得' (khẳng định) hoặc '不' (phủ định) giữa động từ và bổ ngữ.",
+      example: "这个箱子太重了，我搬不动。你听得懂她说什么吗？",
+      examplePinyin: "Zhè ge xiāngzi tài zhòng le, wǒ bān bú dòng. Nǐ tīng de dǒng tā shuō shénme ma?",
+      exampleVi: "Chiếc thùng này nặng quá, tôi khiêng không nổi. Bạn có nghe hiểu cô ấy nói gì không?",
+      note: "Cấu trúc phổ biến: 看得见/看不见 (nhìn thấy/không thấy), 听得懂/听不懂 (nghe hiểu/không hiểu), 吃得完/吃不完 (ăn hết/ăn không hết), 做得到/做不到 (làm được/không làm được)."
+    }
+  ],
+
+  conjunctions: [
+    {
+      title: "Liên từ ghép đôi (关联词语)",
+      formula: "虽然A...但是B / 因为A...所以B / 不但A...而且B / 如果A...就B",
+      usage: "Liên từ luôn đi thành cặp, nối hai vế câu biểu thị quan hệ logic: nhượng bộ, nhân quả, tăng tiến, giả thiết.",
+      example: "虽然今天下雨，但是我们还是决定出发。因为准备得很充分，所以结果非常成功。",
+      examplePinyin: "Suīrán jīntiān xià yǔ, dànshì wǒmen háishi juédìng chūfā. Yīnwèi zhǔnbèi de hěn chōngfèn, suǒyǐ jiéguǒ fēicháng chénggōng.",
+      exampleVi: "Mặc dù hôm nay mưa, nhưng chúng tôi vẫn quyết định khởi hành. Vì chuẩn bị rất đầy đủ, nên kết quả rất thành công.",
+      note: "Các cặp quan trọng: 虽然...但是/可是... (tuy...nhưng), 因为...所以... (vì...nên), 不但...而且... (không chỉ...mà còn), 如果/要是...就... (nếu...thì), 只要...就... (chỉ cần...thì), 无论/不管...都... (bất kể...đều)."
+    }
+  ],
+
+  comparison_adv: [
+    {
+      title: "Cấu trúc so sánh nâng cao (高级比较句)",
+      formula: "A + 跟/和 + B + 一样 + Adj | A + 没有 + B + (那么) + Adj | 越来越 + Adj",
+      usage: "Mở rộng so sánh ngoài câu chữ '比': so sánh bằng (一样), so sánh kém (没有...那么), và mức độ tăng dần (越来越).",
+      example: "他跟他哥哥一样高。我的汉语没有你的那么好。天气越来越冷了。",
+      examplePinyin: "Tā gēn tā gēge yíyàng gāo. Wǒ de Hànyǔ méiyǒu nǐ de nàme hǎo. Tiānqì yuèláiyuè lěng le.",
+      exampleVi: "Anh ấy cao bằng anh trai. Tiếng Trung của tôi không tốt bằng bạn. Thời tiết ngày càng lạnh.",
+      note: "Bổ sung cấu trúc: 越A越B (càng A càng B): 越吃越胖 (càng ăn càng béo). A + 比 + B + Adj + 多了/得多/一点儿 (mức chênh lệch): 他比我大三岁 (Anh ấy lớn hơn tôi 3 tuổi)."
+    }
   ]
 };
 
@@ -1594,6 +1702,12 @@ const ZH_GRAMMAR_CATEGORIES = {
   bei_sentence: "Câu chữ 被",
   bijiao_sentence: "Câu chữ 比",
   aspect_particles: "Trợ từ 了/着/过",
+  complement_result: "Bổ ngữ Kết quả (HSK 3)",
+  complement_direction: "Bổ ngữ Xu hướng (HSK 3)",
+  complement_degree: "Bổ ngữ Trạng thái 得 (HSK 3)",
+  complement_potential: "Bổ ngữ Khả năng (HSK 4)",
+  conjunctions: "Liên từ Ghép đôi (HSK 3-4)",
+  comparison_adv: "So sánh Nâng cao (HSK 4)",
 };
 
 const ZH_PHRASE_CATEGORIES = {
@@ -1605,3 +1719,627 @@ const ZH_PHRASE_CATEGORIES = {
   work: "Công Việc & Họp Hành",
   thanks: "Cảm Ơn & Nhờ Vả",
 };
+
+// =========================================================================
+// PHASE 2.1: SENTENCE BUILDER DATA (RÁP CÂU TIẾNG TRUNG THEO TRẬT TỰ CHUẨN)
+// =========================================================================
+const ZH_SENTENCE_BUILDER_DATA = [
+  // --- HSK 1 ---
+  {
+    id: 1,
+    level: "HSK 1",
+    pattern: "Chủ ngữ + Thời gian + Động từ + Tân ngữ",
+    words: ["我", "明天", "去", "学校"],
+    correctOrder: ["我", "明天", "去", "学校"],
+    fullSentence: "我明天去学校。",
+    fullPinyin: "Wǒ míngtiān qù xuéxiào.",
+    translation: "Ngày mai tôi đi đến trường.",
+    explanation: "Trật tự thời gian trong tiếng Trung: Trạng ngữ chỉ thời gian (明天) đứng sau chủ ngữ hoặc đầu câu, trước động từ."
+  },
+  {
+    id: 2,
+    level: "HSK 1",
+    pattern: "Chủ ngữ + Ở đâu (在...) + Làm gì",
+    words: ["他", "在", "图书馆", "看书"],
+    correctOrder: ["他", "在", "图书馆", "看书"],
+    fullSentence: "他在图书馆看书。",
+    fullPinyin: "Tā zài túshūguǎn kànshū.",
+    translation: "Anh ấy đọc sách ở thư viện.",
+    explanation: "Quy tắc 'ở đâu làm gì': Cụm giới từ địa điểm [在 + Nơi chốn] luôn đứng TRƯỚC hành động, ngược với tiếng Việt."
+  },
+  {
+    id: 3,
+    level: "HSK 1",
+    pattern: "Chủ ngữ + Năng nguyện từ + Động từ + Tân ngữ",
+    words: ["我", "想", "喝", "一杯", "茶"],
+    correctOrder: ["我", "想", "喝", "一杯", "茶"],
+    fullSentence: "我想喝一杯茶。",
+    fullPinyin: "Wǒ xiǎng hē yì bēi chá.",
+    translation: "Tôi muốn uống một tách trà.",
+    explanation: "Động từ năng nguyện '想' (muốn) đứng trước động từ chính '喝'."
+  },
+  {
+    id: 4,
+    level: "HSK 1",
+    pattern: "Định ngữ + 的 + Trung tâm ngữ",
+    words: ["这", "是", "我", "的", "汉语", "老师"],
+    correctOrder: ["这", "是", "我", "的", "汉语", "老师"],
+    fullSentence: "这是我的汉语老师。",
+    fullPinyin: "Zhè shì wǒ de Hànyǔ lǎoshī.",
+    translation: "Đây là giáo viên tiếng Trung của tôi.",
+    explanation: "Định ngữ đứng trước danh từ chính: '我的' (của tôi) bổ nghĩa cho '汉语老师' (giáo viên tiếng Trung)."
+  },
+  {
+    id: 5,
+    level: "HSK 1",
+    pattern: "Chủ ngữ + Thời gian + Phó từ + Vị ngữ",
+    words: ["爸爸", "今天", "不", "回家", "吃饭"],
+    correctOrder: ["爸爸", "今天", "不", "回家", "吃饭"],
+    fullSentence: "爸爸今天不回家吃饭。",
+    fullPinyin: "Bàba jīntiān bù huíjiā chīfàn.",
+    translation: "Hôm nay bố không về nhà ăn cơm.",
+    explanation: "Phó từ phủ định '不' đứng trước liên động từ '回家吃饭'."
+  },
+  {
+    id: 6,
+    level: "HSK 1",
+    pattern: "Đại từ nghi vấn hỏi số lượng / thời gian",
+    words: ["你", "昨天", "几点", "睡觉？"],
+    correctOrder: ["你", "昨天", "几点", "睡觉？"],
+    fullSentence: "你昨天几点睡觉？",
+    fullPinyin: "Nǐ zuótiān jǐdiǎn shuìjiào?",
+    translation: "Hôm qua bạn mấy giờ đi ngủ?",
+    explanation: "Từ để hỏi '几点' (mấy giờ) thay thế đúng vào vị trí trạng ngữ thời gian trong câu trần thuật."
+  },
+  {
+    id: 7,
+    level: "HSK 1",
+    pattern: "Cùng ai làm gì: 跟...一起 + Động từ",
+    words: ["我", "跟", "朋友", "一起", "去", "商店"],
+    correctOrder: ["我", "跟", "朋友", "一起", "去", "商店"],
+    fullSentence: "我跟朋友一起去商店。",
+    fullPinyin: "Wǒ gēn péngyou yìqǐ qù shāngdiàn.",
+    translation: "Tôi cùng bạn bè đi đến cửa hàng.",
+    explanation: "Cấu trúc '跟 / 和 + Ai + 一起 + Động từ' biểu thị cùng ai làm việc gì đó."
+  },
+
+  // --- HSK 2 ---
+  {
+    id: 8,
+    level: "HSK 2",
+    pattern: "So sánh chữ 比: A + 比 + B + Tính từ + Mức chênh lệch",
+    words: ["我", "比", "弟弟", "大", "两岁"],
+    correctOrder: ["我", "比", "弟弟", "大", "两岁"],
+    fullSentence: "我比弟弟大两岁。",
+    fullPinyin: "Wǒ bǐ dìdi dà liǎng suì.",
+    translation: "Tôi lớn hơn em trai hai tuổi.",
+    explanation: "Số lượng chênh lệch cụ thể (两岁) phải đứng SAU tính từ (大)."
+  },
+  {
+    id: 9,
+    level: "HSK 2",
+    pattern: "Câu chữ 把: Chủ ngữ + 把 + Tân ngữ + Động từ + Thành phần khác",
+    words: ["请", "你", "把", "门", "关上"],
+    correctOrder: ["请", "你", "把", "门", "关上"],
+    fullSentence: "请你把门关上。",
+    fullPinyin: "Qǐng nǐ bǎ mén guān shàng.",
+    translation: "Xin bạn hãy đóng cửa lại.",
+    explanation: "Câu chữ 把 dùng khi muốn tác động lên tân ngữ (门) và tạo ra kết quả/trạng thái mới (关上)."
+  },
+  {
+    id: 10,
+    level: "HSK 2",
+    pattern: "Bổ ngữ trạng thái: Động từ + 得 + Tính từ mô tả",
+    words: ["她", "汉字", "写", "得", "非常", "漂亮"],
+    correctOrder: ["她", "汉字", "写", "得", "非常", "漂亮"],
+    fullSentence: "她汉字写得非常漂亮。",
+    fullPinyin: "Tā Hànzì xiě de fēicháng piàoliang.",
+    translation: "Cô ấy viết chữ Hán rất đẹp.",
+    explanation: "Dùng '得' để nối giữa động từ '写' và mức độ đánh giá '非常漂亮'."
+  },
+  {
+    id: 11,
+    level: "HSK 2",
+    pattern: "Cặp liên từ: 虽然...但是... (Tuy...nhưng...)",
+    words: ["虽然", "今天", "很冷", "但是", "他", "还是", "去", "跑步"],
+    correctOrder: ["虽然", "今天", "很冷", "但是", "他", "还是", "去", "跑步"],
+    fullSentence: "虽然今天很冷，但是他还是去跑步。",
+    fullPinyin: "Suīrán jīntiān hěn lěng, dànshì tā háishi qù pǎobù.",
+    translation: "Tuy hôm nay rất lạnh, nhưng anh ấy vẫn đi chạy bộ.",
+    explanation: "'虽然' mở đầu vế nhượng bộ, '但是' mở đầu vế chính kết hợp '还是' (vẫn)."
+  },
+  {
+    id: 12,
+    level: "HSK 2",
+    pattern: "Thời lượng: Động từ + Thời lượng + Tân ngữ",
+    words: ["我", "学", "了", "一年", "汉语"],
+    correctOrder: ["我", "学", "了", "一年", "汉语"],
+    fullSentence: "我学了一年汉语。",
+    fullPinyin: "Wǒ xué le yì nián Hànyǔ.",
+    translation: "Tôi đã học tiếng Trung được một năm.",
+    explanation: "Bổ ngữ thời lượng '一年' đứng giữa động từ mang '了' và tân ngữ '汉语'."
+  },
+  {
+    id: 13,
+    level: "HSK 2",
+    pattern: "Liên từ Vì...Nên...: 因为...所以...",
+    words: ["因为", "生病", "所以", "他", "没", "去", "上课"],
+    correctOrder: ["因为", "生病", "所以", "他", "没", "去", "上课"],
+    fullSentence: "因为生病，所以他没去上课。",
+    fullPinyin: "Yīnwèi shēngbìng, suǒyǐ tā méi qù shàngkè.",
+    translation: "Vì bị bệnh nên anh ấy đã không đi học.",
+    explanation: "Cặp liên từ chỉ nguyên nhân - kết quả: 因为 (Bởi vì) ... 所以 (Cho nên)."
+  },
+
+  // --- HSK 3 ---
+  {
+    id: 14,
+    level: "HSK 3",
+    pattern: "Câu chữ 把 + Bổ ngữ kết quả",
+    words: ["我", "把", "今天的", "作业", "做完", "了"],
+    correctOrder: ["我", "把", "今天的", "作业", "做完", "了"],
+    fullSentence: "我把今天的作业做完了。",
+    fullPinyin: "Wǒ bǎ jīntiān de zuòyè zuòwán le.",
+    translation: "Tôi đã làm xong bài tập của ngày hôm nay rồi.",
+    explanation: "Tân ngữ '今天的作业' được đưa lên trước động từ '做', kết quả là '完' + trợ từ '了'."
+  },
+  {
+    id: 15,
+    level: "HSK 3",
+    pattern: "Bổ ngữ xu hướng phức hợp: Từ đâu + Động từ + Bổ ngữ xu hướng",
+    words: ["他", "从", "房间", "里", "跑", "出来", "了"],
+    correctOrder: ["他", "从", "房间", "里", "跑", "出来", "了"],
+    fullSentence: "他从房间里跑出来了。",
+    fullPinyin: "Tā cóng fángjiān lǐ pǎo chūlái le.",
+    translation: "Anh ấy từ trong phòng chạy ra ngoài rồi.",
+    explanation: "Bổ ngữ xu hướng '出来' chỉ phương hướng di chuyển ra phía người quan sát."
+  },
+  {
+    id: 16,
+    level: "HSK 3",
+    pattern: "Bổ ngữ khả năng phủ định: Động từ + 不 + Bổ ngữ",
+    words: ["这个", "生词", "太难", "我", "记不住"],
+    correctOrder: ["这个", "生词", "太难", "我", "记不住"],
+    fullSentence: "这个生词太难，我记不住。",
+    fullPinyin: "Zhè ge shēngcí tài nán, wǒ jìbuzhù.",
+    translation: "Từ mới này khó quá, tôi không nhớ nổi.",
+    explanation: "Bổ ngữ khả năng '记不住' = không có năng lực ghi nhớ được."
+  },
+  {
+    id: 17,
+    level: "HSK 3",
+    pattern: "Cấu trúc tăng tiến: 不但...而且...",
+    words: ["他", "不但", "会", "汉语", "而且", "说得", "很流利"],
+    correctOrder: ["他", "不但", "会", "汉语", "而且", "说得", "很流利"],
+    fullSentence: "他不但会汉语，而且说得很流利。",
+    fullPinyin: "Tā búdàn huì Hànyǔ, érqiě shuō de hěn liúlì.",
+    translation: "Anh ấy không chỉ biết tiếng Trung, mà còn nói rất lưu loát.",
+    explanation: "Biểu thị quan hệ tăng tiến: không những biết (vế 1) mà còn đạt trình độ cao (vế 2)."
+  },
+  {
+    id: 18,
+    level: "HSK 3",
+    pattern: "Cấu trúc biến đổi: 越来越 + Tính từ / Tâm lý",
+    words: ["天气", "越", "来", "越", "冷", "了"],
+    correctOrder: ["天气", "越", "来", "越", "冷", "了"],
+    fullSentence: "天气越来越冷了。",
+    fullPinyin: "Tiānqì yuèláiyuè lěng le.",
+    translation: "Thời tiết càng ngày càng lạnh rồi.",
+    explanation: "'越来越...' biểu thị mức độ tính chất tăng dần theo thời gian."
+  },
+  {
+    id: 19,
+    level: "HSK 3",
+    pattern: "Câu bị động: Chủ ngữ + 被 + Người tác động + Động từ + Kết quả",
+    words: ["我的", "自行车", "被", "弟弟", "借走", "了"],
+    correctOrder: ["我的", "自行车", "被", "弟弟", "借走", "了"],
+    fullSentence: "我的自行车被弟弟借走了。",
+    fullPinyin: "Wǒ de zìxíngchē bèi dìdi jièzǒu le.",
+    translation: "Xe đạp của tôi đã bị em trai mượn đi rồi.",
+    explanation: "Câu chữ 被 nhấn mạnh đối tượng tiếp nhận hành động (自行车) chịu ảnh hưởng từ hành động của tác nhân (弟弟)."
+  },
+  {
+    id: 20,
+    level: "HSK 3",
+    pattern: "Cấu trúc giả thiết: 如果...就...",
+    words: ["如果", "明天", "不下雨", "我们", "就", "去", "爬山"],
+    correctOrder: ["如果", "明天", "不下雨", "我们", "就", "去", "爬山"],
+    fullSentence: "如果明天不下雨，我们就去爬山。",
+    fullPinyin: "Rúguǒ míngtiān bú xià yǔ, wǒmen jiù qù páshān.",
+    translation: "Nếu ngày mai trời không mưa, chúng ta sẽ đi leo núi.",
+    explanation: "Cặp liên từ giả thiết điều kiện: 如果 (Nếu) ở vế trước, 就 (Thì) đứng trước vị ngữ vế sau."
+  }
+];
+
+// =========================================================================
+// PHASE 2.3: ETYMOLOGY DATA (BÓC TÁCH CẤU TẠO CHỮ HÁN & GHI NHỚ MẸO)
+// =========================================================================
+const ZH_ETYMOLOGY_DATA = {
+  "休": {
+    char: "休",
+    pinyin: "xiū",
+    hanviet: "Hưu",
+    type: "Hội ý (会意)",
+    meaning: "Nghỉ ngơi, thôi, ngừng",
+    parts: [
+      { char: "亻", name: "Nhân đứng", role: "Biểu ý (Người)" },
+      { char: "木", name: "Mộc", role: "Biểu ý (Cây cối)" }
+    ],
+    story: "Hình ảnh một người (亻) đứng tựa lưng vào gốc cây (木) để bóng mát nghỉ ngơi sau giờ làm việc đồng áng mệt mỏi.",
+    mnemonic: "Người đứng cạnh Cây là đang Hưu trí (nghỉ ngơi)."
+  },
+  "妈": {
+    char: "妈",
+    pinyin: "mā",
+    hanviet: "Mã / Mẹ",
+    type: "Hình thanh (形声)",
+    meaning: "Mẹ, má",
+    parts: [
+      { char: "女", name: "Nữ", role: "Biểu ý (Phụ nữ)" },
+      { char: "马", name: "Mã", role: "Biểu âm (Đọc là mǎ)" }
+    ],
+    story: "Chữ hình thanh điển hình: Bộ Nữ (女) chỉ người mẹ là phụ nữ, chữ Mã (马 - mǎ) gợi âm đọc tương đồng thành 'mā'.",
+    mnemonic: "Người Phụ nữ (女) mượn âm Mã (马) đọc thành Mẹ (妈)."
+  },
+  "明": {
+    char: "明",
+    pinyin: "míng",
+    hanviet: "Minh",
+    type: "Hội ý (会意)",
+    meaning: "Sáng sủa, thông minh, ngày mai",
+    parts: [
+      { char: "日", name: "Nhật", role: "Biểu ý (Mặt trời)" },
+      { char: "月", name: "Nguyệt", role: "Biểu ý (Mặt trăng)" }
+    ],
+    story: "Mặt trời (日) là nguồn sáng ban ngày, Mặt trăng (月) là nguồn sáng ban đêm. Hai nguồn sáng hội tụ lại tạo nên sự sáng suốt, rực rỡ vô cùng.",
+    mnemonic: "Nhật (mặt trời) bên cạnh Nguyệt (mặt trăng) tạo nên ánh sáng Minh bạch."
+  },
+  "好": {
+    char: "好",
+    pinyin: "hǎo",
+    hanviet: "Hảo",
+    type: "Hội ý (会意)",
+    meaning: "Tốt, đẹp, hay",
+    parts: [
+      { char: "女", name: "Nữ", role: "Biểu ý (Người phụ nữ / Con gái)" },
+      { char: "子", name: "Tử", role: "Biểu ý (Đứa trẻ / Con trai)" }
+    ],
+    story: "Người phụ nữ (女) sinh được cả con trai lẫn con gái (子), gia đình có nếp có tẻ, là điều tốt đẹp và trọn vẹn nhất trong quan niệm xưa.",
+    mnemonic: "Người Mẹ (女) ôm đứa Con (子) là điều Tốt đẹp (Hảo) nhất."
+  },
+  "家": {
+    char: "家",
+    pinyin: "jiā",
+    hanviet: "Gia",
+    type: "Hội ý (会意)",
+    meaning: "Nhà, gia đình",
+    parts: [
+      { char: "宀", name: "Miên", role: "Biểu ý (Mái nhà)" },
+      { char: "豕", name: "Thỉ", role: "Biểu ý (Con lợn/heo)" }
+    ],
+    story: "Thời cổ đại, dưới mái nhà (宀) có nuôi một con lợn (豕) chứng tỏ gia đình no ấm, có của ăn của để, tạo nên tổ ấm thực sự.",
+    mnemonic: "Dưới Mái nhà (宀) có con Lợn (豕) tức là Gia đình sung túc."
+  },
+  "安": {
+    char: "安",
+    pinyin: "ān",
+    hanviet: "An",
+    type: "Hội ý (会意)",
+    meaning: "Bình an, yên ổn",
+    parts: [
+      { char: "宀", name: "Miên", role: "Biểu ý (Mái nhà)" },
+      { char: "女", name: "Nữ", role: "Biểu ý (Người phụ nữ)" }
+    ],
+    story: "Trong nhà (宀) có bàn tay chăm sóc, vun vén của người phụ nữ (女) thì trong ấm ngoài êm, gia đạo bình an.",
+    mnemonic: "Dưới mái nhà (宀) có người phụ nữ (女) thì lòng dạ bình An."
+  },
+  "森": {
+    char: "森",
+    pinyin: "sēn",
+    hanviet: "Sâm",
+    type: "Hội ý (会意)",
+    meaning: "Rừng rậm rạp",
+    parts: [
+      { char: "木", name: "Mộc", role: "Biểu ý (Cây)" },
+      { char: "林", name: "Lâm", role: "Biểu ý (Hai cây = Rừng thưa)" }
+    ],
+    story: "Một cây là Mộc (木), hai cây thành Rừng (林 - Lâm), ba cây tầng tầng lớp lớp tạo nên Rừng già rậm rạp (森 - Sâm).",
+    mnemonic: "Ba cây (木) chụm lại thành Rừng rậm bạt ngàn."
+  },
+  "看": {
+    char: "看",
+    pinyin: "kàn",
+    hanviet: "Khán",
+    type: "Hội ý (会意)",
+    meaning: "Xem, nhìn, đọc",
+    parts: [
+      { char: "手/龵", name: "Thủ", role: "Biểu ý (Bàn tay)" },
+      { char: "目", name: "Mục", role: "Biểu ý (Mắt)" }
+    ],
+    story: "Hình ảnh một người đưa bàn tay (手) lên che phía trên mắt (目) để chắn ánh nắng gắt mà nhìn xa trông rộng.",
+    mnemonic: "Lấy Tay (手) đặt trên Mắt (目) để Nhìn / Xem (看)."
+  },
+  "信": {
+    char: "信",
+    pinyin: "xìn",
+    hanviet: "Tín",
+    type: "Hội ý (会意)",
+    meaning: "Tin tưởng, thư từ, uy tín",
+    parts: [
+      { char: "亻", name: "Nhân", role: "Biểu ý (Con người)" },
+      { char: "言", name: "Ngôn", role: "Biểu ý (Lời nói)" }
+    ],
+    story: "Con người (亻) nói ra lời nào (言) thì phải giữ đúng lời ấy, tạo dựng lòng tin và chữ tín ở đời.",
+    mnemonic: "Lời nói (言) của Con người (亻) phải có Uy tín (信)."
+  },
+  "问": {
+    char: "问",
+    pinyin: "wèn",
+    hanviet: "Vấn",
+    type: "Hình thanh kiêm hội ý",
+    meaning: "Hỏi",
+    parts: [
+      { char: "门", name: "Môn", role: "Biểu âm (mén) & Cổng" },
+      { char: "口", name: "Khẩu", role: "Biểu ý (Cái miệng)" }
+    ],
+    story: "Đến trước cổng nhà (门), dùng miệng (口) cất tiếng gọi để hỏi thăm chủ nhà.",
+    mnemonic: "Đứng ở Cửa (门) mở Miệng (口) để Hỏi (问 - Vấn)."
+  },
+  "闻": {
+    char: "闻",
+    pinyin: "wén",
+    hanviet: "Văn",
+    type: "Hình thanh kiêm hội ý",
+    meaning: "Nghe thấy, ngửi, tin tức",
+    parts: [
+      { char: "门", name: "Môn", role: "Biểu âm (mén) & Cửa" },
+      { char: "耳", name: "Nhĩ", role: "Biểu ý (Tai)" }
+    ],
+    story: "Ghé tai (耳) sát vào cánh cửa (门) để nghe ngóng xem bên ngoài có động tĩnh tin tức gì.",
+    mnemonic: "Ghé Tai (耳) vào Cửa (门) để Nghe ngóng tin tức (Tân văn)."
+  },
+  "闷": {
+    char: "闷",
+    pinyin: "mèn",
+    hanviet: "Muộn",
+    type: "Hội ý (会意)",
+    meaning: "Buồn bực, ngột ngạt, bí bách",
+    parts: [
+      { char: "门", name: "Môn", role: "Biểu ý (Cánh cửa đóng kín)" },
+      { char: "心", name: "Tâm", role: "Biểu ý (Trái tim/tâm trạng)" }
+    ],
+    story: "Trái tim (心) bị nhốt kín bên trong cánh cửa (门) không thể giãi bày tâm sự, cảm thấy u sầu, ngột ngạt.",
+    mnemonic: "Tâm (心) bị đóng kín trong Cửa (门) sinh ra Muộn phiền (闷)."
+  },
+  "想": {
+    char: "想",
+    pinyin: "xiǎng",
+    hanviet: "Tưởng",
+    type: "Hình thanh (形声)",
+    meaning: "Nghĩ, nhớ, muốn",
+    parts: [
+      { char: "相", name: "Tương", role: "Biểu âm (xiāng/xiàng)" },
+      { char: "心", name: "Tâm", role: "Biểu ý (Trái tim, suy nghĩ)" }
+    ],
+    story: "Những hình ảnh (相) luôn đọng lại sâu đậm trong lòng dạ, trái tim (心), gợi nỗi tương tư, tưởng nhớ khôn nguôi.",
+    mnemonic: "Tâm (心) khắc ghi Tướng mạo (相) người thương là đang Tưởng nhớ (想)."
+  },
+  "忘": {
+    char: "忘",
+    pinyin: "wàng",
+    hanviet: "Vong",
+    type: "Hội ý kiêm hình thanh",
+    meaning: "Quên",
+    parts: [
+      { char: "亡", name: "Vong", role: "Biểu âm (wáng) & Mất đi" },
+      { char: "心", name: "Tâm", role: "Biểu ý (Tâm trí)" }
+    ],
+    story: "Trong tâm trí (心) mà ký ức bị tiêu biến, chết đi (亡) thì chính là đã lãng quên.",
+    mnemonic: "Tâm (心) đã Vong (亡 - mất) tức là Quên bẵng (忘)."
+  },
+  "意": {
+    char: "意",
+    pinyin: "yì",
+    hanviet: "Ý",
+    type: "Hội ý (会意)",
+    meaning: "Ý nghĩ, ý nghĩa, ý định",
+    parts: [
+      { char: "音", name: "Âm", role: "Biểu ý (Âm thanh)" },
+      { char: "心", name: "Tâm", role: "Biểu ý (Trái tim)" }
+    ],
+    story: "Âm thanh (音) phát ra từ tận sâu đáy lòng, đáy tim (心) chính là tâm ý, ý nghĩ chân thành nhất.",
+    mnemonic: "Âm thanh (音) từ cõi Lòng (心) biểu đạt Tâm ý (意)."
+  },
+  "男": {
+    char: "男",
+    pinyin: "nán",
+    hanviet: "Nam",
+    type: "Hội ý (会意)",
+    meaning: "Nam giới, con trai",
+    parts: [
+      { char: "田", name: "Điền", role: "Biểu ý (Ruộng đồng)" },
+      { char: "力", name: "Lực", role: "Biểu ý (Sức lực)" }
+    ],
+    story: "Người đem hết sức lực (力) cày cấy trên đồng ruộng (田) để nuôi sống gia đình trong xã hội nông nghiệp thời xưa chính là đàn ông con trai.",
+    mnemonic: "Dùng Sức (力) làm Ruộng (田) là người Nam nhi (男)."
+  },
+  "泪 / 淚": {
+    char: "泪",
+    pinyin: "lèi",
+    hanviet: "Lệ",
+    type: "Hội ý (会意)",
+    meaning: "Nước mắt",
+    parts: [
+      { char: "氵", name: "Thủy", role: "Biểu ý (Nước)" },
+      { char: "目", name: "Mục", role: "Biểu ý (Mắt)" }
+    ],
+    story: "Giọt nước (氵) trào ra từ khóe mắt (目) khi xúc động hay buồn bã chính là giọt nước mắt.",
+    mnemonic: "Nước (氵) chảy ra từ Mắt (目) là Nước mắt (Lệ - 泪)."
+  },
+  "语": {
+    char: "语",
+    pinyin: "yǔ",
+    hanviet: "Ngữ",
+    type: "Hình thanh (形声)",
+    meaning: "Ngôn ngữ, lời nói",
+    parts: [
+      { char: "讠", name: "Ngôn", role: "Biểu ý (Lời nói)" },
+      { char: "吾", name: "Ngô", role: "Biểu âm (wú) nghĩa là Ta/Tôi" }
+    ],
+    story: "Ngôn từ (讠) do chính bản thân mình (吾 - ta) nói ra tạo nên ngôn ngữ giao tiếp.",
+    mnemonic: "Ngôn (讠) của Ta (吾) là Ngôn ngữ (语)."
+  },
+  "饭": {
+    char: "饭",
+    pinyin: "fàn",
+    hanviet: "Phạn",
+    type: "Hình thanh (形声)",
+    meaning: "Cơm, bữa ăn",
+    parts: [
+      { char: "饣", name: "Thực", role: "Biểu ý (Thức ăn/ăn uống)" },
+      { char: "反", name: "Phản", role: "Biểu âm (fǎn)" }
+    ],
+    story: "Chữ thuộc bộ Thực (饣 - ăn uống), mượn âm của chữ Phản (反) biến âm thành fàn.",
+    mnemonic: "Thực phẩm (饣) mượn âm Phản (反) thành Cơm ăn (饭)."
+  },
+  "喝": {
+    char: "喝",
+    pinyin: "hē",
+    hanviet: "Hát",
+    type: "Hình thanh (形声)",
+    meaning: "Uống",
+    parts: [
+      { char: "口", name: "Khẩu", role: "Biểu ý (Cái miệng)" },
+      { char: "曷", name: "Hạt", role: "Biểu âm (hé)" }
+    ],
+    story: "Hành động uống cần dùng đến miệng (口), kết hợp với chữ 曷 làm phần biểu âm.",
+    mnemonic: "Dùng Miệng (口) để Uống (喝) nước giải khát."
+  }
+};
+
+// =========================================================================
+// PHASE 3.2: LISTENING CLOZE TEST DATA (NGHE ĐOÁN TỪ)
+// =========================================================================
+const ZH_LISTENING_CLOZE_DATA = [
+  {
+    id: 1,
+    level: "HSK 1",
+    audioSentence: "请问洗手间在哪儿？",
+    displaySentence: "请问____在哪儿？",
+    blankWord: "洗手间",
+    pinyin: "xǐshǒujiān",
+    translation: "Xin hỏi nhà vệ sinh ở đâu?",
+    options: ["洗手间", "图书馆", "飞机场", "火车站"]
+  },
+  {
+    id: 2,
+    level: "HSK 1",
+    audioSentence: "我想喝一杯热茶。",
+    displaySentence: "我想喝一杯____。",
+    blankWord: "热茶",
+    pinyin: "rè chá",
+    translation: "Tôi muốn uống một cốc trà nóng.",
+    options: ["热茶", "牛奶", "咖啡", "啤酒"]
+  },
+  {
+    id: 3,
+    level: "HSK 2",
+    audioSentence: "外面下雨了，你带雨伞了吗？",
+    displaySentence: "外面下雨了，你带____了吗？",
+    blankWord: "雨伞",
+    pinyin: "yǔsǎn",
+    translation: "Bên ngoài mưa rồi, bạn có mang ô (dù) không?",
+    options: ["雨伞", "钥匙", "钱包", "手机"]
+  },
+  {
+    id: 4,
+    level: "HSK 2",
+    audioSentence: "我今天太忙了，没有时间吃午饭。",
+    displaySentence: "我今天太____了，没有时间吃午饭。",
+    blankWord: "忙",
+    pinyin: "máng",
+    translation: "Hôm nay tôi bận quá, không có thời gian ăn trưa.",
+    options: ["忙", "累", "冷", "渴"]
+  },
+  {
+    id: 5,
+    level: "HSK 3",
+    audioSentence: "明天我们要去参加一个重要的会议。",
+    displaySentence: "明天我们要去参加一个重要的____。",
+    blankWord: "会议",
+    pinyin: "huìyì",
+    translation: "Ngày mai chúng tôi phải đi tham gia một cuộc họp quan trọng.",
+    options: ["会议", "比赛", "考试", "晚会"]
+  },
+  {
+    id: 6,
+    level: "HSK 3",
+    audioSentence: "这个汉语词典非常有用，推荐你买一本。",
+    displaySentence: "这个汉语____非常有用，推荐你买一本。",
+    blankWord: "词典",
+    pinyin: "cídiǎn",
+    translation: "Quyển từ điển tiếng Trung này rất hữu ích, khuyên bạn nên mua một cuốn.",
+    options: ["词典", "地图", "小说", "杂志"]
+  }
+];
+
+// =========================================================================
+// PHASE 4.1: CHENGYU DATA (THÀNH NGỮ 4 CHỮ BẢN ĐỊA HÓA)
+// =========================================================================
+const ZH_CHENGYU_DATA = [
+  {
+    chengyu: "画蛇添足",
+    pinyin: "Huà shé tiān zú",
+    hanviet: "Họa xà thiêm túc",
+    literal: "Vẽ rắn thêm chân",
+    meaning: "Làm chuyện thừa thãi, tự chuốc lấy thất bại",
+    origin: "Thời Chiến Quốc, nước Sở có người thi vẽ rắn, người xong trước vẽ thêm chân cho rắn nên bị xử thua.",
+    example: "写文章要简明扼要，千万不要画蛇添足。",
+    examplePinyin: "Xiě wénzhāng yào jiǎnmíng èyào, qiānwàn bú yào huàshétiānzú.",
+    exampleVi: "Viết văn cần ngắn gọn súc tích, tuyệt đối không được vẽ rắn thêm chân làm thừa thãi."
+  },
+  {
+    chengyu: "一石二鸟",
+    pinyin: "Yī shí èr niǎo",
+    hanviet: "Nhất thạch nhị điểu",
+    literal: "Một hòn đá bắn trúng hai con chim",
+    meaning: "Một mũi tên trúng hai đích, một hành động đạt hai mục đích tốt đẹp",
+    origin: "Tương đương thành ngữ phương Tây 'Kill two birds with one stone'.",
+    example: "学汉语既能了解中国文化，又能增加就业机会，真是一石二鸟。",
+    examplePinyin: "Xué Hànyǔ jì néng liǎojiě Zhōngguó wénhuà, yòu néng zēngjiā jiùyè jīhuì, zhēn shì yì shí èr niǎo.",
+    exampleVi: "Học tiếng Trung vừa hiểu được văn hóa, vừa tăng cơ hội việc làm, quả là một mũi tên trúng hai đích."
+  },
+  {
+    chengyu: "守株待兔",
+    pinyin: "Shǒu zhū dài tù",
+    hanviet: "Thủ chu đãi thố",
+    literal: "Ôm cây đợi thỏ",
+    meaning: "Trông chờ may mắn ngẫu nhiên, không chịu nỗ lực phấn đấu",
+    origin: "Người nước Tống thấy thỏ chạy va vào gốc cây chết, liền bỏ cày ruộng ngồi ôm cây chờ thỏ tiếp theo.",
+    example: "只有努力工作才能成功，守株待兔是不会有好结果的。",
+    examplePinyin: "Zhǐyǒu nǔlì gōngzuò cáinéng chénggōng, shǒuzhūdàitù shì bú huì yǒu hǎo jiéguǒ de.",
+    exampleVi: "Chỉ có chăm chỉ làm việc mới thành công, ôm cây đợi thỏ sẽ chẳng có kết quả tốt đâu."
+  },
+  {
+    chengyu: "半途而废",
+    pinyin: "Bàn tú ér fèi",
+    hanviet: "Bán đồ nhi phế",
+    literal: "Nửa đường bỏ dở",
+    meaning: "Bỏ cuộc giữa chừng, thiếu kiên trì bền bỉ",
+    origin: "Thầy Mạnh Tử dạy học trò: Học hành giống như dệt vải, bỏ dở giữa chừng thì vải hỏng việc hỏng.",
+    example: "学外语最怕半途而废，坚持下去才能看到进步。",
+    examplePinyin: "Xué wàiyǔ zuì pà bàntú'érfèi, jiānchí xiàqù cáinéng kàndào jìnbù.",
+    exampleVi: "Học ngoại ngữ sợ nhất là bỏ dở giữa chừng, kiên trì theo đuổi mới thấy sự tiến bộ."
+  },
+  {
+    chengyu: "入乡随俗",
+    pinyin: "Rù xiāng suí sú",
+    hanviet: "Nhập hương tùy tục",
+    literal: "Vào làng theo tục làng",
+    meaning: "Đến đâu phải tuân theo phong tục tập quán ở nơi đó (Nhập gia tùy tục)",
+    origin: "Lời răn người xưa khi đi xa quê hương cần tôn trọng văn hóa bản địa.",
+    example: "出国旅游应该入乡随俗，尊重当地的风俗习惯。",
+    examplePinyin: "Chūguó lǚyóu yīnggāi rùxiāngsuísú, zūnzhòng dāngdì de fēngsú xíguàn.",
+    exampleVi: "Đi du lịch nước ngoài nên nhập gia tùy tục, tôn trọng phong tục tập quán địa phương."
+  }
+];

@@ -52,6 +52,22 @@
         ".write": "auth != null"
       }
     },
+    "srsProgress": {
+      "$profileKey": {
+        ".read": true,
+        ".write": true,
+        "zh": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    },
+    "chineseTutor": {
+      "$profileKey": {
+        ".read": true,
+        ".write": true
+      }
+    },
     "aiSettings": {
       "$profileKey": {
         ".read": "auth != null",

@@ -2783,7 +2783,13 @@
           </button>
           <h3 id="learnModalTitle">Học Tiếng Anh</h3>
         </div>
-        <button class="modal-close" onclick="closeLearnModal()">×</button>
+        <div class="learn-header-right">
+          <button class="learn-pinyin-toggle-btn" id="learnPinyinToggleBtn" onclick="togglePinyinVisibility()" title="Ẩn/Hiện Pinyin" style="display: none;">
+            <i class="fi fi-rr-eye" id="pinyinToggleIcon"></i>
+            <span id="pinyinToggleLabel">Pinyin</span>
+          </button>
+          <button class="modal-close" onclick="closeLearnModal()">×</button>
+        </div>
       </div>
       <div class="learn-tabs">
         <button class="learn-tab" id="learnBasicsTabBtn" onclick="switchLearnTab('basics')" data-tab="basics"
@@ -2794,6 +2800,7 @@
         <button class="learn-tab active" onclick="switchLearnTab('vocabulary')" data-tab="vocabulary">
           <i class="fi fi-rr-book-alt"></i>
           Từ Vựng
+          <span class="srs-tab-badge" id="srsDueTabBadge" style="display: none;">0</span>
         </button>
         <button class="learn-tab" onclick="switchLearnTab('grammar')" data-tab="grammar">
           <i class="fi fi-rr-document-signed"></i>
@@ -2802,6 +2809,22 @@
         <button class="learn-tab" onclick="switchLearnTab('phrases')" data-tab="phrases">
           <i class="fi fi-rr-comments"></i>
           Câu Giao Tiếp
+        </button>
+        <button class="learn-tab" id="learnSentenceBuilderTabBtn" onclick="switchLearnTab('sentenceBuilder')" data-tab="sentenceBuilder" style="display: none;">
+          <i class="fi fi-rr-arrows-repeat"></i>
+          Ráp Câu
+        </button>
+        <button class="learn-tab" id="learnListeningTabBtn" onclick="switchLearnTab('listening')" data-tab="listening" style="display: none;">
+          <i class="fi fi-rr-headphones"></i>
+          Luyện Nghe
+        </button>
+        <button class="learn-tab" id="learnChengyuTabBtn" onclick="switchLearnTab('chengyu')" data-tab="chengyu" style="display: none;">
+          <i class="fi fi-rr-gem"></i>
+          Thành Ngữ
+        </button>
+        <button class="learn-tab" id="learnTutorTabBtn" onclick="switchLearnTab('tutor')" data-tab="tutor" style="display: none;">
+          <i class="fi fi-rr-comment-alt"></i>
+          Gia Sư AI
         </button>
       </div>
 
@@ -2917,6 +2940,22 @@
           <button class="learn-category-btn" onclick="selectVocabCategory('general')" data-cat="general">
             Tổng Quát
           </button>
+        </div>
+        <!-- SRS Spaced Repetition Bar for Chinese -->
+        <div class="srs-status-bar" id="srsStatusBar" style="display: none;">
+          <div class="srs-status-info">
+            <span class="srs-info-icon">🧠</span>
+            <span class="srs-info-text" id="srsDueText">Ôn tập ngắt quãng (SM-2): 0 từ cần ôn</span>
+          </div>
+          <div class="srs-filter-actions">
+            <button class="srs-filter-btn active" id="srsFilterAllBtn" onclick="setVocabSrsFilter('all')">Tất cả</button>
+            <button class="srs-filter-btn" id="srsFilterDueBtn" onclick="setVocabSrsFilter('due')">
+              <i class="fi fi-rr-clock"></i> Cần ôn (<span id="srsDueCountNum">0</span>)
+            </button>
+            <button class="srs-filter-btn" id="srsFilterMasteredBtn" onclick="setVocabSrsFilter('mastered')">
+              <i class="fi fi-rr-check-circle"></i> Đã thuộc (<span id="srsMasteredCountNum">0</span>)
+            </button>
+          </div>
         </div>
         <div id="vocabCardContainer" class="learn-card-container">
           <!-- Vocabulary cards will be loaded here -->
@@ -3060,6 +3099,173 @@
           </button>
         </div>
       </div>
+
+      <!-- Sentence Builder Section (Ráp Câu Tiếng Trung) -->
+      <div id="learnSentenceBuilderTab" class="learn-tab-content">
+        <div class="sb-container">
+          <div class="sb-header">
+            <div class="sb-level-pills">
+              <button class="sb-level-btn active" onclick="selectSentenceBuilderLevel('all')">Tất cả (20)</button>
+              <button class="sb-level-btn" onclick="selectSentenceBuilderLevel('HSK 1')">HSK 1</button>
+              <button class="sb-level-btn" onclick="selectSentenceBuilderLevel('HSK 2')">HSK 2</button>
+              <button class="sb-level-btn" onclick="selectSentenceBuilderLevel('HSK 3')">HSK 3</button>
+            </div>
+            <div class="sb-counter" id="sbCounter">Câu 1 / 20</div>
+          </div>
+
+          <div class="sb-card">
+            <div class="sb-card-top">
+              <div class="sb-pattern-badge" id="sbPatternBadge">Chủ ngữ + Thời gian + Động từ + Tân ngữ</div>
+              <button class="sb-hint-btn" onclick="toggleSentenceBuilderHint()" title="Xem gợi ý Pinyin">
+                <i class="fi fi-rr-bulb"></i> Gợi ý
+              </button>
+            </div>
+
+            <div class="sb-translation-row">
+              <span class="sb-translation-text" id="sbTranslation">Đang tải câu...</span>
+            </div>
+
+            <div class="sb-hint-box" id="sbHintBox" style="display: none;">
+              <span id="sbHintText"></span>
+            </div>
+
+            <!-- Vùng ráp câu (Drop/Selected Zone) -->
+            <div class="sb-zone-wrapper">
+              <div class="sb-zone-title">Câu của bạn (chạm vào từ để ráp theo thứ tự):</div>
+              <div class="sb-drop-zone" id="sbDropZone" ondragover="handleSbDragOver(event)" ondrop="handleSbDrop(event)">
+                <div class="sb-drop-placeholder" id="sbDropPlaceholder">Chạm hoặc kéo các từ bên dưới vào đây...</div>
+              </div>
+            </div>
+
+            <!-- Ngân hàng từ (Word Bank) -->
+            <div class="sb-zone-wrapper">
+              <div class="sb-zone-title">Ngân hàng từ:</div>
+              <div class="sb-word-bank" id="sbWordBank"></div>
+            </div>
+
+            <!-- Kết quả kiểm tra -->
+            <div class="sb-feedback-card" id="sbFeedbackCard" style="display: none;">
+              <div class="sb-feedback-icon" id="sbFeedbackIcon">🎉</div>
+              <div class="sb-feedback-info">
+                <div class="sb-feedback-title" id="sbFeedbackTitle">Chính xác!</div>
+                <div class="sb-feedback-pinyin" id="sbFeedbackPinyin"></div>
+                <div class="sb-feedback-expl" id="sbFeedbackExpl"></div>
+              </div>
+              <button class="sb-speak-btn" onclick="speakCurrentSentenceBuilder()" title="Nghe câu hoàn chỉnh">
+                <i class="fi fi-rr-volume"></i>
+              </button>
+            </div>
+
+            <!-- Nút điều khiển -->
+            <div class="sb-controls">
+              <button class="sb-ctrl-btn secondary" onclick="resetCurrentSentenceBuilder()">
+                <i class="fi fi-rr-refresh"></i> Xếp lại
+              </button>
+              <button class="sb-ctrl-btn primary" id="sbCheckBtn" onclick="checkCurrentSentenceBuilder()">
+                <i class="fi fi-rr-check"></i> Kiểm tra
+              </button>
+              <button class="sb-ctrl-btn accent" id="sbNextBtn" onclick="nextSentenceBuilder()" style="display: none;">
+                Câu tiếp theo <i class="fi fi-rr-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Listening Cloze Section (Nghe Điền Từ) -->
+      <div id="learnListeningTab" class="learn-tab-content">
+        <div class="cloze-container">
+          <div class="cloze-header">
+            <span class="cloze-title">🎧 Luyện Nghe Điền Từ HSK:</span>
+            <span class="cloze-counter" id="clozeCounter">Câu 1 / 6</span>
+          </div>
+
+          <div class="cloze-card">
+            <div class="cloze-audio-row">
+              <button class="cloze-play-btn" onclick="playCurrentClozeAudio(0.85)" title="Nghe tốc độ chuẩn">
+                <i class="fi fi-rr-play"></i> Nghe Audio chuẩn
+              </button>
+              <button class="cloze-slow-btn" onclick="playCurrentClozeAudio(0.6)" title="Nghe phát âm chậm">
+                🐢 Nghe chậm
+              </button>
+            </div>
+
+            <div class="cloze-sentence-display" id="clozeSentenceDisplay"></div>
+            <div class="cloze-translation" id="clozeTranslation"></div>
+
+            <div class="cloze-options-title">Chọn từ đúng nhất để điền vào ô trống:</div>
+            <div class="cloze-options-grid" id="clozeOptionsGrid"></div>
+
+            <div class="cloze-feedback-card" id="clozeFeedbackCard" style="display: none;"></div>
+
+            <div class="cloze-controls">
+              <button class="cloze-ctrl-btn accent" id="clozeNextBtn" onclick="nextClozeQuestion()" style="display: none;">
+                Câu tiếp theo <i class="fi fi-rr-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chengyu Section (Thành Ngữ 4 Chữ 成语) -->
+      <div id="learnChengyuTab" class="learn-tab-content">
+        <div class="chengyu-container">
+          <div class="chengyu-intro-banner">
+            ✨ <strong>Thành Ngữ Bốn Chữ (成语 Chéngyǔ):</strong> Tinh hoa văn hóa và tư duy người bản địa. Mỗi thành ngữ gắn liền với một điển cố, giúp bạn giao tiếp lưu loát và đạt điểm cao trong các bài thi HSK 5-6.
+          </div>
+
+          <div class="chengyu-card-container" id="chengyuCardContainer"></div>
+
+          <div class="learn-card-controls" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <button class="learn-nav-btn" onclick="prevChengyuCard()" aria-label="Thành ngữ trước">
+                <i class="fi fi-rr-angle-left"></i>
+              </button>
+              <span id="chengyuCardCounter" class="learn-card-counter">1 / 5</span>
+              <button class="learn-nav-btn" onclick="nextChengyuCard()" aria-label="Thành ngữ sau">
+                <i class="fi fi-rr-angle-right"></i>
+              </button>
+            </div>
+            <button class="learn-card-example-speak-btn" onclick="speakCurrentChengyu()" title="Nghe phát âm">
+              <i class="fi fi-rr-volume"></i> Phát âm
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chinese Tutor AI Section (Gia Sư AI Riêng Biệt) -->
+      <div id="learnTutorTab" class="learn-tab-content">
+        <div class="tutor-container">
+          <div class="tutor-scenario-bar">
+            <div class="tutor-scenario-bar-left">
+              <span class="tutor-bar-label">Chọn tình huống:</span>
+              <div class="tutor-scenario-pills" id="tutorScenarioPills"></div>
+            </div>
+            <div class="tutor-scenario-actions" style="display: flex; gap: 8px;">
+              <button class="tutor-key-btn" onclick="promptTutorApiKey()" title="Cài đặt Groq API Key">
+                <i class="fi fi-rr-key"></i>
+                <span>API Key</span>
+              </button>
+              <button class="tutor-clear-chat-btn" onclick="clearTutorCurrentHistory()" title="Xóa lịch sử & làm mới hội thoại">
+                <i class="fi fi-rr-trash"></i>
+                <span>Làm mới</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="tutor-chat-window" id="tutorChatMessages"></div>
+
+          <div class="tutor-input-bar">
+            <button class="tutor-voice-btn" id="tutorMicBtn" onclick="toggleTutorVoiceInput()" title="Bấm để nói tiếng Trung (Microphone)">
+              <i class="fi fi-rr-microphone"></i>
+            </button>
+            <textarea id="tutorChatInput" class="tutor-chat-textarea" placeholder="Nhập tiếng Trung hoặc tiếng Việt (Shift + Enter để xuống dòng)..." rows="1" onkeydown="handleTutorInputKeydown(event)"></textarea>
+            <button class="tutor-send-btn" onclick="sendTutorMessage()" title="Gửi tin nhắn">
+              <i class="fi fi-rr-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -3178,6 +3384,8 @@
           <span>Viết lại</span>
         </button>
       </div>
+      <!-- Bóc tách chữ Hán (Etymology Breakdown) -->
+      <div id="hanziEtymologySection" class="hanzi-etymology-section" style="display: none;"></div>
     </div>
   </div>
 
@@ -3195,6 +3403,7 @@
   <script src="public/my-music-library.js"></script>
   <script src="learn-en-data.js"></script>
   <script src="learn-zh-data.js"></script>
+  <script src="chinese-tutor.js"></script>
   <!-- Hanzi Writer for Interactive Chinese Stroke Animation & Practice -->
   <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
   <script src="senior-mode.js?v=20260916"></script>

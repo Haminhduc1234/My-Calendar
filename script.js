@@ -19,11 +19,17 @@ const LEGACY_CASHFLOW_STORAGE_KEY = "cashflowEntriesV1";
 const FIREBASE_CONFIG = self.FIREBASE_WEB_CONFIG || {};
 const FIREBASE_TRANSLATE_HISTORY_PATH =
   self.FIREBASE_TRANSLATE_HISTORY_PATH || "translateHistory";
+const FIREBASE_SRS_PROGRESS_PATH =
+  self.FIREBASE_SRS_PROGRESS_PATH || "srsProgress";
 const FIREBASE_NOTIFICATION_TOKENS_PATH = "notificationTokens";
 const FIREBASE_EVENT_NOTIFICATION_QUEUE_PATH = "eventNotificationQueue";
 const FIREBASE_EVENT_REMINDERS_PATH = "eventReminders";
 const FIREBASE_USER_NOTIFICATIONS_PATH = "userNotifications";
 const DEVICE_ID_STORAGE_KEY = "calendarDeviceId";
+
+let firebaseSrsRef = null;
+let srsProgressCache = {};
+let currentVocabSrsFilter = "all";
 
 let firebaseDb = null;
 let firebaseDatesRef = null;
@@ -3310,6 +3316,16 @@ async function initFirebaseRealtime() {
     `${FIREBASE_TRANSLATE_HISTORY_PATH}/${userProfileKey}`,
   );
 
+  // SRS Realtime Database Sync
+  if (typeof initSrsRealtimeSync === "function") {
+    initSrsRealtimeSync();
+  }
+
+  // Chinese Tutor AI Chat Firebase Sync
+  if (typeof initChineseTutorFirebase === "function") {
+    initChineseTutorFirebase(firebaseDb, userProfileKey);
+  }
+
   // Funds reference
   initFundsFirebase();
 
@@ -3723,6 +3739,16 @@ async function reloadFirebaseForUser() {
   // Family Health Tracker
   if (typeof initFamilyHealthFirebase === "function") {
     initFamilyHealthFirebase(firebaseDb, userProfileKey);
+  }
+
+  // Chinese SRS Progress Sync
+  if (typeof initSrsRealtimeSync === "function") {
+    initSrsRealtimeSync();
+  }
+
+  // Chinese Tutor AI Chat Firebase Sync
+  if (typeof initChineseTutorFirebase === "function") {
+    initChineseTutorFirebase(firebaseDb, userProfileKey);
   }
 
   // Track first Firebase data load for this user
@@ -18769,6 +18795,40 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Learning state variables
 let currentLearnLanguage = localStorage.getItem("learnSelectedLanguage") || "en";
+let isPinyinVisible = localStorage.getItem("learnPinyinVisible") !== "false";
+
+// Toggle Pinyin visibility
+function togglePinyinVisibility() {
+  isPinyinVisible = !isPinyinVisible;
+  localStorage.setItem("learnPinyinVisible", isPinyinVisible ? "true" : "false");
+  updatePinyinToggleUI();
+  // Re-render current tab cards
+  const activeTab = document.querySelector(".learn-tab-content.active");
+  if (activeTab) {
+    const tabId = activeTab.id;
+    if (tabId === "learnVocabularyTab") renderVocabCard();
+    else if (tabId === "learnGrammarTab") renderGrammarCard();
+    else if (tabId === "learnPhrasesTab") renderPhraseCard();
+  }
+}
+
+function updatePinyinToggleUI() {
+  const btn = document.getElementById("learnPinyinToggleBtn");
+  const icon = document.getElementById("pinyinToggleIcon");
+  const label = document.getElementById("pinyinToggleLabel");
+  if (!btn) return;
+  if (isPinyinVisible) {
+    btn.classList.remove("pinyin-hidden-state");
+    if (icon) icon.className = "fi fi-rr-eye";
+    if (label) label.textContent = "Pinyin";
+    btn.title = "Bấm để ẩn Pinyin (rèn nhận diện chữ Hán)";
+  } else {
+    btn.classList.add("pinyin-hidden-state");
+    if (icon) icon.className = "fi fi-rr-eye-crossed";
+    if (label) label.textContent = "Pinyin";
+    btn.title = "Bấm để hiện Pinyin";
+  }
+}
 let currentVocabCategory = "all";
 let currentVocabIndex = 0;
 let currentVocabList = [];
@@ -18838,10 +18898,44 @@ function switchLearnLanguage(lang) {
   if (enBtn) enBtn.classList.toggle("active", lang === "en");
   if (zhBtn) zhBtn.classList.toggle("active", lang === "zh");
 
-  // Show/Hide Basics Tab Button (Only for Chinese)
-  const basicsTabBtn = document.getElementById("learnBasicsTabBtn");
-  if (basicsTabBtn) {
-    basicsTabBtn.style.display = lang === "zh" ? "flex" : "none";
+  // Show/Hide Chinese specific Tab Buttons & Badges
+  const isZh = lang === "zh";
+  const zhTabBtnIds = [
+    "learnBasicsTabBtn",
+    "learnSentenceBuilderTabBtn",
+    "learnListeningTabBtn",
+    "learnChengyuTabBtn",
+    "learnTutorTabBtn"
+  ];
+  zhTabBtnIds.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.style.display = isZh ? "flex" : "none";
+  });
+
+  // Show/Hide Pinyin Toggle Button (Only for Chinese)
+  const pinyinToggleBtn = document.getElementById("learnPinyinToggleBtn");
+  if (pinyinToggleBtn) {
+    pinyinToggleBtn.style.display = isZh ? "inline-flex" : "none";
+  }
+  updatePinyinToggleUI();
+
+  // Update SRS UI if in Chinese mode
+  if (isZh) {
+    if (typeof updateSrsUI === "function") updateSrsUI();
+  } else {
+    const srsBar = document.getElementById("srsStatusBar");
+    if (srsBar) srsBar.style.display = "none";
+    const srsBadge = document.getElementById("srsDueTabBadge");
+    if (srsBadge) srsBadge.style.display = "none";
+  }
+
+  // If currently active tab is Chinese-only and user switched to English, switch back to vocabulary
+  const activeTabBtn = document.querySelector(".learn-tab.active");
+  if (!isZh && activeTabBtn) {
+    const currentTabName = activeTabBtn.dataset.tab;
+    if (["basics", "sentenceBuilder", "listening", "chengyu", "tutor"].includes(currentTabName)) {
+      switchLearnTab("vocabulary");
+    }
   }
 
   // Update modal title
@@ -19774,6 +19868,11 @@ function initHanziWriter(char, autoStartQuiz = true) {
       setHanziStatus(`Chữ '${char}': Bấm 'Xem nét bút' để quan sát hoặc 'Tự tập viết' để tô nét.`, "normal", "✍️");
       setHanziWritableState(false, "Chế độ xem");
     }
+
+    // Bóc tách chữ Hán (Etymology Breakdown)
+    if (typeof renderHanziEtymology === "function") {
+      renderHanziEtymology(char);
+    }
   } catch (err) {
     console.error("Lỗi khởi tạo HanziWriter:", err);
     setHanziStatus("Không thể khởi tạo bộ tập viết chữ Hán.", "warning", "⚠️");
@@ -20200,6 +20299,15 @@ function switchLearnTab(tab) {
   else if (tab === "vocabulary") selectVocabCategory("all");
   else if (tab === "grammar") selectGrammarCategory("all");
   else if (tab === "phrases") selectPhraseCategory("all");
+  else if (tab === "sentenceBuilder") {
+    if (typeof initSentenceBuilder === "function") initSentenceBuilder();
+  } else if (tab === "listening") {
+    if (typeof initListeningCloze === "function") initListeningCloze();
+  } else if (tab === "chengyu") {
+    if (typeof initChengyu === "function") initChengyu();
+  } else if (tab === "tutor") {
+    if (typeof initChineseTutor === "function") initChineseTutor();
+  }
 }
 
 // Render Chinese Basics (Pinyin, Vận mẫu, Thanh mẫu, Thanh điệu, Các nét, Bộ thủ)
@@ -20341,6 +20449,44 @@ function renderBasicsContentHTML() {
         .join("")}
       </div>
     `;
+  } else if (currentBasicsSubTab === "confusionPairs") {
+    html += `
+      <div class="basics-grid-intro">
+        🔀 <strong>Cặp âm dễ nhầm lẫn cho người Việt:</strong> Bấm vào nút 🔊 để nghe và so sánh sự khác biệt giữa hai âm. Chú ý vị trí lưỡi và luồng hơi khi phát âm.
+      </div>
+    `;
+    if (ZH_BASICS_DATA.confusionPairs) {
+      ZH_BASICS_DATA.confusionPairs.forEach((group) => {
+        html += `
+          <div class="confusion-group">
+            <div class="confusion-group-header">
+              <div class="confusion-group-title">${group.groupName}</div>
+              <div class="confusion-group-tip">${group.groupTip}</div>
+            </div>
+            <div class="confusion-pairs-list">
+              ${group.pairs.map((pair) => `
+                <div class="confusion-pair-row">
+                  <div class="confusion-pair-side confusion-pair-left">
+                    <div class="confusion-pair-char">${pair.left}</div>
+                    <div class="confusion-pair-desc">${pair.leftDesc}</div>
+                    <div class="confusion-pair-example">${pair.leftExample}</div>
+                    <button class="confusion-pair-audio-btn" onclick="event.stopPropagation(); speakChinese('${pair.leftAudio}')" title="Nghe âm ${pair.left}">🔊 Nghe</button>
+                  </div>
+                  <div class="confusion-pair-vs">VS</div>
+                  <div class="confusion-pair-side confusion-pair-right">
+                    <div class="confusion-pair-char">${pair.right}</div>
+                    <div class="confusion-pair-desc">${pair.rightDesc}</div>
+                    <div class="confusion-pair-example">${pair.rightExample}</div>
+                    <button class="confusion-pair-audio-btn" onclick="event.stopPropagation(); speakChinese('${pair.rightAudio}')" title="Nghe âm ${pair.right}">🔊 Nghe</button>
+                  </div>
+                </div>
+                <div class="confusion-pair-tip-row">💡 ${pair.tip}</div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      });
+    }
   } else if (currentBasicsSubTab === "practice") {
     html += `
       <div class="basics-grid-intro">
@@ -20395,6 +20541,7 @@ function renderBasicsSection() {
     { key: "initials", label: "23 Thanh Mẫu (Phụ âm)", icon: "🗣️" },
     { key: "finals", label: "36 Vận Mẫu (Nguyên âm)", icon: "🎵" },
     { key: "tones", label: "4 Thanh Điệu & Biến Điệu", icon: "📈" },
+    { key: "confusionPairs", label: "Cặp Âm Dễ Nhầm", icon: "🔀" },
     { key: "strokes", label: "8 Nét & Bút Thuận", icon: "✍️" },
     { key: "radicals", label: "20+ Bộ Thủ Thường Gặp", icon: "🧱" },
     { key: "practice", label: "Luyện Viết Nét Bút", icon: "🖌️" },
@@ -20517,13 +20664,13 @@ function renderVocabCard() {
       <div class="learn-card-word ${isZh ? "learn-card-word-zh" : ""}">${item.word}</div>
       
       ${item.phonetic ? `
-        <div class="learn-card-phonetic-badge">
+        <div class="learn-card-phonetic-badge pinyin-toggleable" ${isZh && !isPinyinVisible ? 'style="display:none"' : ''}>
           <span class="learn-card-phonetic">${item.phonetic}</span>
           ${item.hanviet ? `<span class="learn-card-hanviet">[Hán-Việt: ${item.hanviet}]</span>` : ""}
         </div>
       ` : ""}
       ${isZh && getChineseVietnameseReading(item.word, item.phonetic) ? `
-        <div class="learn-card-reading-row">
+        <div class="learn-card-reading-row pinyin-toggleable" ${!isPinyinVisible ? 'style="display:none"' : ''}>
           <span class="learn-reading-label">🗣️ Đọc:</span>
           <span class="learn-reading-val">${escapeHtml(getChineseVietnameseReading(item.word, item.phonetic))}</span>
         </div>
@@ -20539,12 +20686,13 @@ function renderVocabCard() {
           <button class="learn-card-example-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.example)}')` : `speakEnglish('${escapeHtml(item.example)}')`}" title="Nghe ví dụ"><i class="fi fi-rr-volume"></i></button>
         </div>
         <div class="learn-card-example-en ${isZh ? "learn-card-example-zh" : ""}">${item.example}</div>
-        ${item.examplePinyin ? `<div class="learn-card-example-pinyin">${item.examplePinyin}</div>` : ""}
+        ${item.examplePinyin ? `<div class="learn-card-example-pinyin pinyin-toggleable" ${isZh && !isPinyinVisible ? 'style="display:none"' : ''}>${item.examplePinyin}</div>` : ""}
         <div class="learn-card-example-vi">${item.exampleVi || ""}</div>
       </div>
       `
       : ""
     }
+      ${isZh && typeof renderVocabCardSrsSection === "function" ? renderVocabCardSrsSection(item) : ""}
     </div>
   `;
 }
@@ -20579,7 +20727,7 @@ function renderGrammarCard() {
           <button class="learn-card-example-speak-btn" onclick="${isZh ? `speakChinese('${escapeHtml(item.example)}')` : `speakEnglish('${escapeHtml(item.example)}')`}" title="Nghe ví dụ"><i class="fi fi-rr-volume"></i></button>
         </div>
         <div class="learn-card-example-en ${isZh ? "learn-card-example-zh" : ""}">${item.example}</div>
-        ${item.examplePinyin ? `<div class="learn-card-example-pinyin">${item.examplePinyin}</div>` : ""}
+        ${item.examplePinyin ? `<div class="learn-card-example-pinyin pinyin-toggleable" ${isZh && !isPinyinVisible ? 'style="display:none"' : ''}>${item.examplePinyin}</div>` : ""}
         <div class="learn-card-example-vi">${item.exampleVi || ""}</div>
       </div>
       ${item.note ? `<div class="learn-card-note"><i class="fi fi-rr-thumbtack" style="margin-right: 4px;"></i><strong>Lưu ý:</strong> ${item.note}</div>` : ""}
@@ -20613,7 +20761,7 @@ function renderPhraseCard() {
         </button>
       </div>
       <div class="learn-card-phrase ${isZh ? "learn-card-phrase-zh" : ""}">${item.phrase}</div>
-      ${item.phonetic ? `<div class="learn-card-example-pinyin" style="margin-bottom: 8px;">${item.phonetic}</div>` : ""}
+      ${item.phonetic ? `<div class="learn-card-example-pinyin pinyin-toggleable" style="margin-bottom: 8px;${isZh && !isPinyinVisible ? ' display:none' : ''}">${item.phonetic}</div>` : ""}
       <div class="learn-card-meaning">${item.meaning}</div>
     </div>
   `;
@@ -20873,6 +21021,640 @@ function escapeHtml(text) {
   const div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
+}
+
+/* ==================== CHINESE ENHANCEMENTS: SRS, ETYMOLOGY, SENTENCE BUILDER, LISTENING & CHENGYU ==================== */
+
+// ---------- SRS (Spaced Repetition SM-2 + Firebase) ----------
+function initSrsRealtimeSync() {
+  const pKey = userProfileKey || window.userProfileKey || localStorage.getItem("currentProfileKey") || "default";
+  if (firebaseDb && pKey) {
+    try {
+      firebaseSrsRef = firebaseDb.ref(`${FIREBASE_SRS_PROGRESS_PATH}/${pKey}/zh`);
+      firebaseSrsRef.on("value", (snap) => {
+        srsProgressCache = snap.val() || {};
+        updateSrsUI();
+      });
+    } catch (e) {
+      console.warn("[SRS] Firebase sync error:", e);
+      loadSrsFromLocalStorage();
+    }
+  } else {
+    loadSrsFromLocalStorage();
+  }
+}
+
+function loadSrsFromLocalStorage() {
+  try {
+    srsProgressCache = JSON.parse(localStorage.getItem("srsProgress_zh") || "{}");
+  } catch (e) {
+    srsProgressCache = {};
+  }
+  updateSrsUI();
+}
+
+function calculateSM2(quality, prevRecord) {
+  let easeFactor = prevRecord && typeof prevRecord.easeFactor === "number" ? prevRecord.easeFactor : 2.5;
+  let interval = prevRecord && typeof prevRecord.interval === "number" ? prevRecord.interval : 0;
+  let repetitions = prevRecord && typeof prevRecord.repetitions === "number" ? prevRecord.repetitions : 0;
+
+  if (quality >= 3) {
+    if (repetitions === 0) {
+      interval = 1;
+    } else if (repetitions === 1) {
+      interval = 3;
+    } else {
+      interval = Math.round(interval * easeFactor);
+    }
+    repetitions++;
+  } else {
+    repetitions = 0;
+    interval = 1;
+  }
+
+  easeFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
+  if (easeFactor < 1.3) easeFactor = 1.3;
+
+  const now = Date.now();
+  const nextReview = now + (interval * 24 * 60 * 60 * 1000);
+
+  return {
+    easeFactor: parseFloat(easeFactor.toFixed(2)),
+    interval,
+    repetitions,
+    lastReview: now,
+    nextReview,
+    quality
+  };
+}
+
+function markSrsCurrentWord(quality) {
+  if (!currentVocabList || !currentVocabList.length) return;
+  const currentItem = currentVocabList[currentVocabIndex];
+  if (!currentItem || !currentItem.word) return;
+
+  const wordKey = currentItem.word.replace(/[.#$/\[\]]/g, "_");
+  const prevRecord = srsProgressCache[wordKey] || null;
+  const updated = calculateSM2(quality, prevRecord);
+  updated.word = currentItem.word;
+  updated.phonetic = currentItem.phonetic || "";
+  updated.meaning = currentItem.meaning || "";
+
+  srsProgressCache[wordKey] = updated;
+
+  const pKey = userProfileKey || window.userProfileKey || localStorage.getItem("currentProfileKey") || "default";
+  if (!firebaseSrsRef && firebaseDb && pKey) {
+    try {
+      firebaseSrsRef = firebaseDb.ref(`${FIREBASE_SRS_PROGRESS_PATH}/${pKey}/zh`);
+    } catch (e) {}
+  }
+
+  // Save to Firebase or localStorage
+  if (firebaseSrsRef) {
+    firebaseSrsRef.child(wordKey).set(updated).catch(e => console.warn("[SRS] Save error:", e));
+  }
+  try {
+    localStorage.setItem("srsProgress_zh", JSON.stringify(srsProgressCache));
+  } catch (e) {}
+
+  updateSrsUI();
+  renderVocabCard();
+
+  if (currentVocabSrsFilter === "due" && currentVocabIndex < currentVocabList.length - 1) {
+    setTimeout(() => {
+      nextVocabCard();
+    }, 300);
+  }
+}
+
+function getDueSrsWords() {
+  const now = Date.now();
+  const allZhVocab = getAllVocabulary();
+  return allZhVocab.filter((item) => {
+    const wordKey = item.word.replace(/[.#$/\[\]]/g, "_");
+    const rec = srsProgressCache[wordKey];
+    if (!rec) return true; // Chưa học bao giờ
+    return rec.nextReview <= now;
+  });
+}
+
+function getMasteredSrsWords() {
+  const allZhVocab = getAllVocabulary();
+  return allZhVocab.filter((item) => {
+    const wordKey = item.word.replace(/[.#$/\[\]]/g, "_");
+    const rec = srsProgressCache[wordKey];
+    return rec && rec.repetitions >= 2;
+  });
+}
+
+function updateSrsUI() {
+  const isZh = currentLearnLanguage === "zh";
+  const dueList = getDueSrsWords();
+  const dueCount = dueList.length;
+  const masteredCount = getMasteredSrsWords().length;
+
+  const tabBadge = document.getElementById("srsDueTabBadge");
+  if (tabBadge) {
+    tabBadge.style.display = isZh && dueCount > 0 ? "inline-flex" : "none";
+    tabBadge.textContent = dueCount;
+  }
+
+  const srsStatusBar = document.getElementById("srsStatusBar");
+  if (srsStatusBar) {
+    srsStatusBar.style.display = isZh ? "flex" : "none";
+  }
+
+  const dueNumEl = document.getElementById("srsDueCountNum");
+  if (dueNumEl) dueNumEl.textContent = dueCount;
+
+  const masteredNumEl = document.getElementById("srsMasteredCountNum");
+  if (masteredNumEl) masteredNumEl.textContent = masteredCount;
+
+  const dueTextEl = document.getElementById("srsDueText");
+  if (dueTextEl) {
+    dueTextEl.textContent =
+      dueCount > 0
+        ? `Có ${dueCount} từ vựng cần ôn tập hôm nay (Chu kỳ SM-2)`
+        : `Xuất sắc! Bạn đã hoàn thành toàn bộ từ vựng cần ôn hôm nay.`;
+  }
+}
+
+function setVocabSrsFilter(filter) {
+  currentVocabSrsFilter = filter;
+  currentVocabIndex = 0;
+
+  ["all", "due", "mastered"].forEach((f) => {
+    const btn = document.getElementById(`srsFilter${f.charAt(0).toUpperCase() + f.slice(1)}Btn`);
+    if (btn) btn.classList.toggle("active", f === filter);
+  });
+
+  if (filter === "all") {
+    selectVocabCategory(currentVocabCategory || "all");
+    return;
+  } else if (filter === "due") {
+    currentVocabList = getDueSrsWords();
+  } else if (filter === "mastered") {
+    currentVocabList = getMasteredSrsWords();
+  }
+
+  renderVocabCard();
+}
+
+function renderVocabCardSrsSection(item) {
+  const wordKey = item.word.replace(/[.#$/\[\]]/g, "_");
+  const rec = srsProgressCache[wordKey];
+  const now = Date.now();
+
+  let statusBadge = "";
+  if (!rec) {
+    statusBadge = `<span class="srs-card-badge new">🆕 Từ mới</span>`;
+  } else if (rec.nextReview <= now) {
+    statusBadge = `<span class="srs-card-badge due">⏰ Cần ôn tập ngay (Cấp ${rec.repetitions})</span>`;
+  } else {
+    const daysLeft = Math.ceil((rec.nextReview - now) / 86400000);
+    statusBadge = `<span class="srs-card-badge mastered">✅ Đã thuộc · Ôn lại sau ${daysLeft} ngày</span>`;
+  }
+
+  return `
+    <div class="srs-card-footer">
+      <div class="srs-card-status-row">
+        <span class="srs-card-label">🧠 Tiến trình SRS (SM-2):</span>
+        ${statusBadge}
+      </div>
+      <div class="srs-card-action-btns">
+        <button class="srs-action-btn srs-unknown-btn" onclick="markSrsCurrentWord(1)" title="Chưa nhớ rõ hoặc hay nhầm">
+          <i class="fi fi-rr-cross"></i> Cần ôn lại
+        </button>
+        <button class="srs-action-btn srs-known-btn" onclick="markSrsCurrentWord(5)" title="Đã thuộc, phản xạ tốt">
+          <i class="fi fi-rr-check"></i> Đã nhớ rõ
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// ---------- Etymology Breakdown (Bóc tách chữ Hán) ----------
+function renderHanziEtymology(char) {
+  const section = document.getElementById("hanziEtymologySection");
+  if (!section) return;
+
+  const data = (typeof ZH_ETYMOLOGY_DATA !== "undefined" && ZH_ETYMOLOGY_DATA[char]) || null;
+  if (!data) {
+    section.style.display = "none";
+    section.innerHTML = "";
+    return;
+  }
+
+  section.style.display = "block";
+  section.innerHTML = `
+    <div class="etymology-box">
+      <div class="etymology-header">
+        <div class="etymology-title">
+          <span class="etymology-icon">🧩</span>
+          <span>Bóc Tách Cấu Tạo & Mẹo Nhớ Chữ Hán:</span>
+        </div>
+        <span class="etymology-type-tag">${escapeHtml(data.type)}</span>
+      </div>
+
+      <div class="etymology-parts-grid">
+        ${data.parts.map((part) => `
+          <div class="etymology-part-card">
+            <span class="etymology-part-char">${escapeHtml(part.char)}</span>
+            <span class="etymology-part-name">${escapeHtml(part.name)}</span>
+            <span class="etymology-part-role">${escapeHtml(part.role)}</span>
+          </div>
+        `).join("")}
+      </div>
+
+      <div class="etymology-story">
+        <strong>📖 Nguồn gốc chữ:</strong> ${escapeHtml(data.story)}
+      </div>
+
+      <div class="etymology-mnemonic">
+        <strong>💡 Mẹo nhớ nhanh:</strong> ${escapeHtml(data.mnemonic)}
+      </div>
+    </div>
+  `;
+}
+
+// ---------- Sentence Builder (Ráp Câu) ----------
+let currentSbLevel = "all";
+let currentSbIndex = 0;
+let currentSbList = [];
+let sbSelectedWords = [];
+let sbRemainingWords = [];
+let isSbHintVisible = false;
+
+function initSentenceBuilder() {
+  if (typeof ZH_SENTENCE_BUILDER_DATA === "undefined") return;
+  filterSentenceBuilderList();
+  currentSbIndex = 0;
+  loadSentenceBuilderQuestion();
+}
+
+function filterSentenceBuilderList() {
+  if (currentSbLevel === "all") {
+    currentSbList = [...ZH_SENTENCE_BUILDER_DATA];
+  } else {
+    currentSbList = ZH_SENTENCE_BUILDER_DATA.filter((item) => item.level === currentSbLevel);
+  }
+}
+
+function selectSentenceBuilderLevel(lvl) {
+  currentSbLevel = lvl;
+  document.querySelectorAll(".sb-level-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.textContent.includes(lvl) || (lvl === "all" && btn.textContent.includes("Tất cả")));
+  });
+  filterSentenceBuilderList();
+  currentSbIndex = 0;
+  loadSentenceBuilderQuestion();
+}
+
+function loadSentenceBuilderQuestion() {
+  if (!currentSbList.length) return;
+  const item = currentSbList[currentSbIndex];
+
+  const counterEl = document.getElementById("sbCounter");
+  if (counterEl) counterEl.textContent = `Câu ${currentSbIndex + 1} / ${currentSbList.length}`;
+
+  const patternBadge = document.getElementById("sbPatternBadge");
+  if (patternBadge) patternBadge.textContent = `${item.level} · ${item.pattern}`;
+
+  const translationEl = document.getElementById("sbTranslation");
+  if (translationEl) translationEl.textContent = item.translation;
+
+  const hintBox = document.getElementById("sbHintBox");
+  const hintText = document.getElementById("sbHintText");
+  isSbHintVisible = false;
+  if (hintBox) hintBox.style.display = "none";
+  if (hintText) hintText.textContent = `Pinyin: ${item.fullPinyin}`;
+
+  const feedbackCard = document.getElementById("sbFeedbackCard");
+  if (feedbackCard) feedbackCard.style.display = "none";
+
+  const nextBtn = document.getElementById("sbNextBtn");
+  if (nextBtn) nextBtn.style.display = "none";
+
+  const checkBtn = document.getElementById("sbCheckBtn");
+  if (checkBtn) {
+    checkBtn.style.display = "inline-flex";
+    checkBtn.disabled = false;
+  }
+
+  sbSelectedWords = [];
+  sbRemainingWords = shuffleArray(item.words).map((w, idx) => ({ word: w, originalIndex: idx }));
+
+  renderSbDropZone();
+  renderSbWordBank();
+}
+
+function renderSbDropZone() {
+  const dropZone = document.getElementById("sbDropZone");
+  if (!dropZone) return;
+
+  if (sbSelectedWords.length === 0) {
+    dropZone.innerHTML = `<div class="sb-drop-placeholder" id="sbDropPlaceholder">Chạm hoặc kéo các từ bên dưới vào đây...</div>`;
+    return;
+  }
+
+  dropZone.innerHTML = sbSelectedWords.map((item, idx) => `
+    <button class="sb-word-chip in-slot" onclick="removeSbWordFromSelected(${idx})" title="Bấm để đưa từ trở lại">
+      ${escapeHtml(item.word)}
+      <span class="sb-remove-icon">×</span>
+    </button>
+  `).join("");
+}
+
+function renderSbWordBank() {
+  const bank = document.getElementById("sbWordBank");
+  if (!bank) return;
+
+  if (sbRemainingWords.length === 0) {
+    bank.innerHTML = `<div class="sb-bank-empty">Đã chọn hết các từ! Bấm 'Kiểm tra' để xem kết quả.</div>`;
+    return;
+  }
+
+  bank.innerHTML = sbRemainingWords.map((item, idx) => `
+    <button class="sb-word-chip in-bank" onclick="addSbWordToSelected(${idx})" draggable="true" ondragstart="handleSbDragStart(event, ${idx})" title="Chạm để đưa vào câu">
+      ${escapeHtml(item.word)}
+    </button>
+  `).join("");
+}
+
+function addSbWordToSelected(bankIndex) {
+  if (bankIndex < 0 || bankIndex >= sbRemainingWords.length) return;
+  const wordObj = sbRemainingWords.splice(bankIndex, 1)[0];
+  sbSelectedWords.push(wordObj);
+  renderSbDropZone();
+  renderSbWordBank();
+}
+
+function removeSbWordFromSelected(selectedIndex) {
+  if (selectedIndex < 0 || selectedIndex >= sbSelectedWords.length) return;
+  const wordObj = sbSelectedWords.splice(selectedIndex, 1)[0];
+  sbRemainingWords.push(wordObj);
+  renderSbDropZone();
+  renderSbWordBank();
+}
+
+function toggleSentenceBuilderHint() {
+  const hintBox = document.getElementById("sbHintBox");
+  if (!hintBox) return;
+  isSbHintVisible = !isSbHintVisible;
+  hintBox.style.display = isSbHintVisible ? "block" : "none";
+}
+
+function handleSbDragStart(e, bankIndex) {
+  e.dataTransfer.setData("text/plain", bankIndex.toString());
+}
+
+function handleSbDragOver(e) {
+  e.preventDefault();
+}
+
+function handleSbDrop(e) {
+  e.preventDefault();
+  const bankIndexStr = e.dataTransfer.getData("text/plain");
+  const bankIndex = parseInt(bankIndexStr, 10);
+  if (!isNaN(bankIndex)) {
+    addSbWordToSelected(bankIndex);
+  }
+}
+
+function checkCurrentSentenceBuilder() {
+  if (!currentSbList.length) return;
+  const item = currentSbList[currentSbIndex];
+
+  const userSentence = sbSelectedWords.map((w) => w.word).join("");
+  const correctSentence = item.correctOrder.join("");
+
+  const feedbackCard = document.getElementById("sbFeedbackCard");
+  const feedbackIcon = document.getElementById("sbFeedbackIcon");
+  const feedbackTitle = document.getElementById("sbFeedbackTitle");
+  const feedbackPinyin = document.getElementById("sbFeedbackPinyin");
+  const feedbackExpl = document.getElementById("sbFeedbackExpl");
+  const checkBtn = document.getElementById("sbCheckBtn");
+  const nextBtn = document.getElementById("sbNextBtn");
+
+  if (!feedbackCard) return;
+
+  const isCorrect = userSentence === correctSentence;
+  feedbackCard.style.display = "flex";
+  feedbackCard.className = `sb-feedback-card ${isCorrect ? "success" : "error"}`;
+
+  if (isCorrect) {
+    feedbackIcon.textContent = "🎉";
+    feedbackTitle.textContent = "Chính xác tuyệt vời!";
+    feedbackPinyin.textContent = item.fullPinyin;
+    feedbackExpl.innerHTML = `<strong>${escapeHtml(item.fullSentence)}</strong><br>${escapeHtml(item.explanation)}`;
+    speakChinese(item.fullSentence);
+
+    if (checkBtn) checkBtn.style.display = "none";
+    if (nextBtn) nextBtn.style.display = "inline-flex";
+  } else {
+    feedbackIcon.textContent = "❌";
+    feedbackTitle.textContent = "Chưa đúng trật tự câu rồi!";
+    feedbackPinyin.textContent = "Hãy thử đổi lại vị trí các từ nhé:";
+    feedbackExpl.textContent = item.explanation;
+  }
+}
+
+function resetCurrentSentenceBuilder() {
+  loadSentenceBuilderQuestion();
+}
+
+function nextSentenceBuilder() {
+  if (currentSbIndex < currentSbList.length - 1) {
+    currentSbIndex++;
+  } else {
+    currentSbIndex = 0;
+  }
+  loadSentenceBuilderQuestion();
+}
+
+function speakCurrentSentenceBuilder() {
+  if (!currentSbList.length) return;
+  speakChinese(currentSbList[currentSbIndex].fullSentence);
+}
+
+// ---------- Listening Cloze (Luyện Nghe Điền Từ) ----------
+let currentClozeIndex = 0;
+let isClozeAnswered = false;
+
+function initListeningCloze() {
+  if (typeof ZH_LISTENING_CLOZE_DATA === "undefined") return;
+  currentClozeIndex = 0;
+  loadClozeQuestion();
+}
+
+function loadClozeQuestion() {
+  if (!ZH_LISTENING_CLOZE_DATA || !ZH_LISTENING_CLOZE_DATA.length) return;
+  const item = ZH_LISTENING_CLOZE_DATA[currentClozeIndex];
+  isClozeAnswered = false;
+
+  const counterEl = document.getElementById("clozeCounter");
+  if (counterEl) counterEl.textContent = `Câu ${currentClozeIndex + 1} / ${ZH_LISTENING_CLOZE_DATA.length}`;
+
+  const sentenceEl = document.getElementById("clozeSentenceDisplay");
+  if (sentenceEl) {
+    const formatted = item.displaySentence.replace(
+      "____",
+      `<span class="cloze-blank-box" id="clozeBlankBox">____</span>`
+    );
+    sentenceEl.innerHTML = formatted;
+  }
+
+  const transEl = document.getElementById("clozeTranslation");
+  if (transEl) transEl.textContent = item.translation;
+
+  const feedbackCard = document.getElementById("clozeFeedbackCard");
+  if (feedbackCard) feedbackCard.style.display = "none";
+
+  const nextBtn = document.getElementById("clozeNextBtn");
+  if (nextBtn) nextBtn.style.display = "none";
+
+  const grid = document.getElementById("clozeOptionsGrid");
+  if (grid) {
+    grid.innerHTML = item.options.map((opt) => `
+      <button class="cloze-option-btn" onclick="chooseClozeOption('${escapeHtml(opt)}')">
+        ${escapeHtml(opt)}
+      </button>
+    `).join("");
+  }
+
+  setTimeout(() => {
+    playCurrentClozeAudio(0.85);
+  }, 250);
+}
+
+function playCurrentClozeAudio(rate = 0.85) {
+  if (!ZH_LISTENING_CLOZE_DATA || !ZH_LISTENING_CLOZE_DATA.length) return;
+  const item = ZH_LISTENING_CLOZE_DATA[currentClozeIndex];
+  if (!window.speechSynthesis) return;
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(item.audioSentence);
+  utterance.lang = "zh-CN";
+  utterance.rate = rate;
+
+  const voices = window.speechSynthesis.getVoices();
+  const zhVoice = voices.find((v) => v.lang.startsWith("zh") || v.lang.includes("Chinese"));
+  if (zhVoice) utterance.voice = zhVoice;
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function chooseClozeOption(chosenWord) {
+  if (isClozeAnswered) return;
+  isClozeAnswered = true;
+
+  const item = ZH_LISTENING_CLOZE_DATA[currentClozeIndex];
+  const isCorrect = chosenWord === item.blankWord;
+
+  const blankBox = document.getElementById("clozeBlankBox");
+  if (blankBox) {
+    blankBox.textContent = item.blankWord;
+    blankBox.classList.add(isCorrect ? "correct" : "incorrect");
+  }
+
+  document.querySelectorAll(".cloze-option-btn").forEach((btn) => {
+    btn.disabled = true;
+    if (btn.textContent.trim() === item.blankWord) {
+      btn.classList.add("correct");
+    } else if (btn.textContent.trim() === chosenWord && !isCorrect) {
+      btn.classList.add("incorrect");
+    }
+  });
+
+  const feedbackCard = document.getElementById("clozeFeedbackCard");
+  if (feedbackCard) {
+    feedbackCard.style.display = "block";
+    feedbackCard.className = `cloze-feedback-card ${isCorrect ? "success" : "error"}`;
+    feedbackCard.innerHTML = isCorrect
+      ? `🎉 <strong>Chính xác!</strong> Từ cần điền là: <strong>${escapeHtml(item.blankWord)}</strong> (${escapeHtml(item.pinyin)}).`
+      : `❌ <strong>Chưa chính xác!</strong> Đáp án đúng là: <strong>${escapeHtml(item.blankWord)}</strong> (${escapeHtml(item.pinyin)}).`;
+  }
+
+  const nextBtn = document.getElementById("clozeNextBtn");
+  if (nextBtn) nextBtn.style.display = "inline-flex";
+}
+
+function nextClozeQuestion() {
+  if (currentClozeIndex < ZH_LISTENING_CLOZE_DATA.length - 1) {
+    currentClozeIndex++;
+  } else {
+    currentClozeIndex = 0;
+  }
+  loadClozeQuestion();
+}
+
+// ---------- Chengyu (Thành Ngữ 4 Chữ 成语) ----------
+let currentChengyuIndex = 0;
+
+function initChengyu() {
+  if (typeof ZH_CHENGYU_DATA === "undefined") return;
+  currentChengyuIndex = 0;
+  renderChengyuCard();
+}
+
+function renderChengyuCard() {
+  if (!ZH_CHENGYU_DATA || !ZH_CHENGYU_DATA.length) return;
+  const container = document.getElementById("chengyuCardContainer");
+  const counter = document.getElementById("chengyuCardCounter");
+  if (!container) return;
+
+  const item = ZH_CHENGYU_DATA[currentChengyuIndex];
+  if (counter) counter.textContent = `${currentChengyuIndex + 1} / ${ZH_CHENGYU_DATA.length}`;
+
+  container.innerHTML = `
+    <div class="chengyu-card">
+      <div class="chengyu-char-row">
+        <span class="chengyu-chars">${escapeHtml(item.chengyu)}</span>
+        <button class="chengyu-speak-icon-btn" onclick="speakCurrentChengyu()" title="Phát âm">
+          <i class="fi fi-rr-volume"></i>
+        </button>
+      </div>
+
+      <div class="chengyu-pinyin-row pinyin-toggleable" ${!isPinyinVisible ? 'style="display:none"' : ''}>
+        <span class="chengyu-pinyin">${escapeHtml(item.pinyin)}</span>
+        <span class="chengyu-hanviet">[Hán-Việt: ${escapeHtml(item.hanviet)}]</span>
+      </div>
+
+      <div class="chengyu-meaning-box">
+        <div class="chengyu-literal"><strong>Nghĩa đen:</strong> ${escapeHtml(item.literal)}</div>
+        <div class="chengyu-figurative"><strong>Nghĩa hàm ẩn:</strong> ${escapeHtml(item.meaning)}</div>
+      </div>
+
+      <div class="chengyu-origin-box">
+        <div class="chengyu-origin-title">📜 Điển cố / Nguồn gốc:</div>
+        <div class="chengyu-origin-text">${escapeHtml(item.origin)}</div>
+      </div>
+
+      <div class="chengyu-example-box">
+        <div class="chengyu-example-title">Ví dụ áp dụng:</div>
+        <div class="chengyu-example-zh">${escapeHtml(item.example)}</div>
+        <div class="chengyu-example-pinyin pinyin-toggleable" ${!isPinyinVisible ? 'style="display:none"' : ''}>${escapeHtml(item.examplePinyin)}</div>
+        <div class="chengyu-example-vi">${escapeHtml(item.exampleVi)}</div>
+      </div>
+    </div>
+  `;
+}
+
+function prevChengyuCard() {
+  if (currentChengyuIndex > 0) currentChengyuIndex--;
+  else currentChengyuIndex = ZH_CHENGYU_DATA.length - 1;
+  renderChengyuCard();
+}
+
+function nextChengyuCard() {
+  if (currentChengyuIndex < ZH_CHENGYU_DATA.length - 1) currentChengyuIndex++;
+  else currentChengyuIndex = 0;
+  renderChengyuCard();
+}
+
+function speakCurrentChengyu() {
+  if (!ZH_CHENGYU_DATA || !ZH_CHENGYU_DATA.length) return;
+  speakChinese(ZH_CHENGYU_DATA[currentChengyuIndex].chengyu);
 }
 
 /* ==================== COUNTDOWN ==================== */

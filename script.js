@@ -18874,10 +18874,21 @@ function getAllPhrases() {
   return Object.values(getActivePhrasesData()).flat();
 }
 
-// Render dynamic category pills
+// Render dynamic category pills or select options
 function renderCategoryButtons(containerId, categoriesObj, selectedCat, clickHandlerName) {
   const container = document.getElementById(containerId);
   if (!container) return;
+
+  if (container.tagName === "SELECT") {
+    container.innerHTML = Object.entries(categoriesObj)
+      .map(([catKey, catLabel]) => {
+        const selected = catKey === selectedCat ? " selected" : "";
+        return `<option value="${catKey}"${selected}>${catLabel}</option>`;
+      })
+      .join("");
+    return;
+  }
+
   container.innerHTML = Object.entries(categoriesObj)
     .map(([catKey, catLabel]) => {
       const activeClass = catKey === selectedCat ? " active" : "";
@@ -20172,7 +20183,7 @@ async function performBasicsHanziLiveSearch(query) {
                   const b = getBasicPinyin(zhWord);
                   if (b && b[0]) pinyinText = b[0].pinyin;
                 }
-              } catch (e) {}
+              } catch (e) { }
 
               matches.unshift({
                 word: zhWord,
@@ -20212,10 +20223,10 @@ async function performBasicsHanziLiveSearch(query) {
     </div>
     <div class="basics-search-list">
       ${matches
-        .map(
-          (item, idx) => {
-            const viReading = getChineseVietnameseReading(item.word, item.phonetic);
-            return `
+      .map(
+        (item, idx) => {
+          const viReading = getChineseVietnameseReading(item.word, item.phonetic);
+          return `
         <div class="basics-search-item" onclick="selectBasicsHanziSearchResultIndex(${idx})" title="Bấm để tập viết chữ '${escapeHtml(item.word)}'">
           <div class="basics-search-item-left">
             <span class="basics-search-item-word">${escapeHtml(item.word)}</span>
@@ -20235,9 +20246,9 @@ async function performBasicsHanziLiveSearch(query) {
           </button>
         </div>
       `;
-          }
-        )
-        .join("")}
+        }
+      )
+      .join("")}
     </div>
   `;
 }
@@ -20567,12 +20578,22 @@ function renderBasicsSection() {
 function selectVocabCategory(category) {
   currentVocabCategory = category;
   currentVocabIndex = 0;
+  currentVocabSrsFilter = "all";
+  const filterSelect = document.getElementById("vocabMasteredFilterSelect");
+  if (filterSelect) filterSelect.value = "all";
 
-  document
-    .querySelectorAll("#vocabCategorySelector .learn-category-btn")
-    .forEach((btn) => {
-      btn.classList.toggle("active", btn.dataset.cat === category);
-    });
+  const catSelect = document.getElementById("vocabCategorySelector");
+  if (catSelect && catSelect.tagName === "SELECT") {
+    if (catSelect.value !== category) {
+      catSelect.value = category;
+    }
+  } else {
+    document
+      .querySelectorAll("#vocabCategorySelector .learn-category-btn")
+      .forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.cat === category);
+      });
+  }
 
   const data = getActiveVocabularyData();
   if (category === "all") {
@@ -21053,52 +21074,30 @@ function loadSrsFromLocalStorage() {
   updateSrsUI();
 }
 
-function calculateSM2(quality, prevRecord) {
-  let easeFactor = prevRecord && typeof prevRecord.easeFactor === "number" ? prevRecord.easeFactor : 2.5;
-  let interval = prevRecord && typeof prevRecord.interval === "number" ? prevRecord.interval : 0;
-  let repetitions = prevRecord && typeof prevRecord.repetitions === "number" ? prevRecord.repetitions : 0;
-
-  if (quality >= 3) {
-    if (repetitions === 0) {
-      interval = 1;
-    } else if (repetitions === 1) {
-      interval = 3;
-    } else {
-      interval = Math.round(interval * easeFactor);
-    }
-    repetitions++;
-  } else {
-    repetitions = 0;
-    interval = 1;
-  }
-
-  easeFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-  if (easeFactor < 1.3) easeFactor = 1.3;
-
-  const now = Date.now();
-  const nextReview = now + (interval * 24 * 60 * 60 * 1000);
-
-  return {
-    easeFactor: parseFloat(easeFactor.toFixed(2)),
-    interval,
-    repetitions,
-    lastReview: now,
-    nextReview,
-    quality
-  };
+// Kiểm tra từ đã thuộc hay chưa (mặc định là false - chưa thuộc)
+function isWordMastered(word) {
+  if (!word) return false;
+  const wordKey = word.replace(/[.#$/\[\]]/g, "_");
+  const rec = srsProgressCache[wordKey];
+  if (!rec) return false;
+  if (typeof rec.mastered === "boolean") return rec.mastered;
+  if (typeof rec.repetitions === "number" && rec.repetitions >= 2) return true;
+  return false;
 }
 
-function markSrsCurrentWord(quality) {
+function setWordMasteredStatus(isMastered) {
   if (!currentVocabList || !currentVocabList.length) return;
   const currentItem = currentVocabList[currentVocabIndex];
   if (!currentItem || !currentItem.word) return;
 
   const wordKey = currentItem.word.replace(/[.#$/\[\]]/g, "_");
-  const prevRecord = srsProgressCache[wordKey] || null;
-  const updated = calculateSM2(quality, prevRecord);
-  updated.word = currentItem.word;
-  updated.phonetic = currentItem.phonetic || "";
-  updated.meaning = currentItem.meaning || "";
+  const updated = {
+    word: currentItem.word,
+    phonetic: currentItem.phonetic || "",
+    meaning: currentItem.meaning || "",
+    mastered: !!isMastered,
+    updatedAt: Date.now()
+  };
 
   srsProgressCache[wordKey] = updated;
 
@@ -21106,52 +21105,51 @@ function markSrsCurrentWord(quality) {
   if (!firebaseSrsRef && firebaseDb && pKey) {
     try {
       firebaseSrsRef = firebaseDb.ref(`${FIREBASE_SRS_PROGRESS_PATH}/${pKey}/zh`);
-    } catch (e) {}
+    } catch (e) { }
   }
 
   // Save to Firebase or localStorage
   if (firebaseSrsRef) {
-    firebaseSrsRef.child(wordKey).set(updated).catch(e => console.warn("[SRS] Save error:", e));
+    firebaseSrsRef.child(wordKey).set(updated).catch(e => console.warn("[Vocab] Save error:", e));
   }
   try {
     localStorage.setItem("srsProgress_zh", JSON.stringify(srsProgressCache));
-  } catch (e) {}
+  } catch (e) { }
 
   updateSrsUI();
   renderVocabCard();
 
-  if (currentVocabSrsFilter === "due" && currentVocabIndex < currentVocabList.length - 1) {
+  if (isMastered && currentVocabSrsFilter === "due" && currentVocabIndex < currentVocabList.length - 1) {
     setTimeout(() => {
       nextVocabCard();
-    }, 300);
+    }, 280);
   }
 }
 
+// Giữ lại hàm markSrsCurrentWord để tương thích ngược
+function markSrsCurrentWord(qualityOrMastered) {
+  const isMastered = typeof qualityOrMastered === "boolean" ? qualityOrMastered : qualityOrMastered >= 3;
+  setWordMasteredStatus(isMastered);
+}
+
 function getDueSrsWords() {
-  const now = Date.now();
   const allZhVocab = getAllVocabulary();
-  return allZhVocab.filter((item) => {
-    const wordKey = item.word.replace(/[.#$/\[\]]/g, "_");
-    const rec = srsProgressCache[wordKey];
-    if (!rec) return true; // Chưa học bao giờ
-    return rec.nextReview <= now;
-  });
+  return allZhVocab.filter((item) => !isWordMastered(item.word));
 }
 
 function getMasteredSrsWords() {
   const allZhVocab = getAllVocabulary();
-  return allZhVocab.filter((item) => {
-    const wordKey = item.word.replace(/[.#$/\[\]]/g, "_");
-    const rec = srsProgressCache[wordKey];
-    return rec && rec.repetitions >= 2;
-  });
+  return allZhVocab.filter((item) => isWordMastered(item.word));
 }
 
 function updateSrsUI() {
   const isZh = currentLearnLanguage === "zh";
+  const allZhVocab = getAllVocabulary();
+  const totalCount = allZhVocab.length;
   const dueList = getDueSrsWords();
   const dueCount = dueList.length;
-  const masteredCount = getMasteredSrsWords().length;
+  const masteredList = getMasteredSrsWords();
+  const masteredCount = masteredList.length;
 
   const tabBadge = document.getElementById("srsDueTabBadge");
   if (tabBadge) {
@@ -21161,7 +21159,7 @@ function updateSrsUI() {
 
   const srsStatusBar = document.getElementById("srsStatusBar");
   if (srsStatusBar) {
-    srsStatusBar.style.display = isZh ? "flex" : "none";
+    srsStatusBar.style.display = isZh ? "inline-flex" : "none";
   }
 
   const dueNumEl = document.getElementById("srsDueCountNum");
@@ -21170,18 +21168,27 @@ function updateSrsUI() {
   const masteredNumEl = document.getElementById("srsMasteredCountNum");
   if (masteredNumEl) masteredNumEl.textContent = masteredCount;
 
-  const dueTextEl = document.getElementById("srsDueText");
-  if (dueTextEl) {
-    dueTextEl.textContent =
-      dueCount > 0
-        ? `Có ${dueCount} từ vựng cần ôn tập hôm nay (Chu kỳ SM-2)`
-        : `Xuất sắc! Bạn đã hoàn thành toàn bộ từ vựng cần ôn hôm nay.`;
+  // Cập nhật nhãn và số lượng trong ô chọn Dropdown
+  const filterSelect = document.getElementById("vocabMasteredFilterSelect");
+  if (filterSelect) {
+    filterSelect.value = currentVocabSrsFilter || "all";
+    const optAll = filterSelect.querySelector('option[value="all"]');
+    const optDue = filterSelect.querySelector('option[value="due"]');
+    const optMastered = filterSelect.querySelector('option[value="mastered"]');
+    if (optAll) optAll.textContent = `Tất cả (${totalCount})`;
+    if (optDue) optDue.textContent = `Chưa thuộc (${dueCount})`;
+    if (optMastered) optMastered.textContent = `Đã thuộc (${masteredCount})`;
   }
 }
 
 function setVocabSrsFilter(filter) {
   currentVocabSrsFilter = filter;
   currentVocabIndex = 0;
+
+  const filterSelect = document.getElementById("vocabMasteredFilterSelect");
+  if (filterSelect && filterSelect.value !== filter) {
+    filterSelect.value = filter;
+  }
 
   ["all", "due", "mastered"].forEach((f) => {
     const btn = document.getElementById(`srsFilter${f.charAt(0).toUpperCase() + f.slice(1)}Btn`);
@@ -21200,35 +21207,23 @@ function setVocabSrsFilter(filter) {
   renderVocabCard();
 }
 
-function renderVocabCardSrsSection(item) {
-  const wordKey = item.word.replace(/[.#$/\[\]]/g, "_");
-  const rec = srsProgressCache[wordKey];
-  const now = Date.now();
+function toggleCurrentWordMastered() {
+  if (!currentVocabList || !currentVocabList.length) return;
+  const currentItem = currentVocabList[currentVocabIndex];
+  if (!currentItem || !currentItem.word) return;
+  const isMastered = isWordMastered(currentItem.word);
+  setWordMasteredStatus(!isMastered);
+}
 
-  let statusBadge = "";
-  if (!rec) {
-    statusBadge = `<span class="srs-card-badge new">🆕 Từ mới</span>`;
-  } else if (rec.nextReview <= now) {
-    statusBadge = `<span class="srs-card-badge due">⏰ Cần ôn tập ngay (Cấp ${rec.repetitions})</span>`;
-  } else {
-    const daysLeft = Math.ceil((rec.nextReview - now) / 86400000);
-    statusBadge = `<span class="srs-card-badge mastered">✅ Đã thuộc · Ôn lại sau ${daysLeft} ngày</span>`;
-  }
+function renderVocabCardSrsSection(item) {
+  const isMastered = isWordMastered(item.word);
 
   return `
     <div class="srs-card-footer">
-      <div class="srs-card-status-row">
-        <span class="srs-card-label">🧠 Tiến trình SRS (SM-2):</span>
-        ${statusBadge}
-      </div>
-      <div class="srs-card-action-btns">
-        <button class="srs-action-btn srs-unknown-btn" onclick="markSrsCurrentWord(1)" title="Chưa nhớ rõ hoặc hay nhầm">
-          <i class="fi fi-rr-cross"></i> Cần ôn lại
-        </button>
-        <button class="srs-action-btn srs-known-btn" onclick="markSrsCurrentWord(5)" title="Đã thuộc, phản xạ tốt">
-          <i class="fi fi-rr-check"></i> Đã nhớ rõ
-        </button>
-      </div>
+      <button class="srs-toggle-btn ${isMastered ? "mastered" : ""}" onclick="toggleCurrentWordMastered()" title="${isMastered ? "Đang là Đã thuộc. Bấm để đổi sang Chưa thuộc" : "Đang là Chưa thuộc. Bấm để đánh dấu Đã thuộc"}">
+        <i class="fi ${isMastered ? "fi-rr-check-circle" : "fi-rr-circle"}"></i>
+        <span>${isMastered ? "Đã thuộc" : "Chưa thuộc"}</span>
+      </button>
     </div>
   `;
 }

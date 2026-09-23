@@ -2860,107 +2860,49 @@
           </div>
           <div id="vocabSearchResults" class="learn-search-results"></div>
         </div>
-        <div class="learn-category-selector" id="vocabCategorySelector">
-          <button class="learn-category-btn active" onclick="selectVocabCategory('all')" data-cat="all">
-            Tất cả
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('email')" data-cat="email">
-            Email
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('meeting')" data-cat="meeting">
-            Họp Hành
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('presentation')" data-cat="presentation">
-            Thuyết Trình
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('negotiation')" data-cat="negotiation">
-            Đàm Phán
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('report')" data-cat="report">
-            Báo Cáo
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('marketing')" data-cat="marketing">
-            Marketing
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('it')" data-cat="it">
-            IT
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('finance')" data-cat="finance">
-            Tài Chính
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('hr')" data-cat="hr">
-            Nhân Sự
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('travel')" data-cat="travel">
-            Du Lịch
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('networking')" data-cat="networking">
-            Kết Nối
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('social')" data-cat="social">
-            Giao Tiếp
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('project')" data-cat="project">
-            Dự Án
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('customer')" data-cat="customer">
-            Khách Hàng
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('leadership')" data-cat="leadership">
-            Lãnh Đạo
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('legal')" data-cat="legal">
-            Pháp Lý
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('restaurant')" data-cat="restaurant">
-            Nhà Hàng
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('shopping')" data-cat="shopping">
-            Mua Sắm
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('directions')" data-cat="directions">
-            Chỉ Đường
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('health')" data-cat="health">
-            Sức Khỏe
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('hotel')" data-cat="hotel">
-            Khách Sạn
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('weather')" data-cat="weather">
-            Thời Tiết
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('time')" data-cat="time">
-            Thời Gian
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('numbers')" data-cat="numbers">
-            Số Đếm
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('feelings')" data-cat="feelings">
-            Cảm Xúc
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('family')" data-cat="family">
-            Gia Đình
-          </button>
-          <button class="learn-category-btn" onclick="selectVocabCategory('general')" data-cat="general">
-            Tổng Quát
-          </button>
-        </div>
-        <!-- SRS Spaced Repetition Bar for Chinese -->
-        <div class="srs-status-bar" id="srsStatusBar" style="display: none;">
-          <div class="srs-status-info">
-            <span class="srs-info-icon">🧠</span>
-            <span class="srs-info-text" id="srsDueText">Ôn tập ngắt quãng (SM-2): 0 từ cần ôn</span>
+        <!-- Row chứa 2 dropdown lọc danh mục & trạng thái trên cùng 1 hàng -->
+        <div class="vocab-filter-row">
+          <div class="vocab-dropdown-wrapper">
+            <i class="fi fi-rr-apps"></i>
+            <select id="vocabCategorySelector" class="vocab-filter-select" onchange="selectVocabCategory(this.value)" aria-label="Chọn danh mục từ vựng">
+              <option value="all" selected>Tất cả danh mục</option>
+              <option value="email">Email</option>
+              <option value="meeting">Họp Hành</option>
+              <option value="presentation">Thuyết Trình</option>
+              <option value="negotiation">Đàm Phán</option>
+              <option value="report">Báo Cáo</option>
+              <option value="marketing">Marketing</option>
+              <option value="it">IT</option>
+              <option value="finance">Tài Chính</option>
+              <option value="hr">Nhân Sự</option>
+              <option value="travel">Du Lịch</option>
+              <option value="networking">Kết Nối</option>
+              <option value="social">Giao Tiếp</option>
+              <option value="project">Dự Án</option>
+              <option value="customer">Khách Hàng</option>
+              <option value="leadership">Lãnh Đạo</option>
+              <option value="legal">Pháp Lý</option>
+              <option value="restaurant">Nhà Hàng</option>
+              <option value="shopping">Mua Sắm</option>
+              <option value="directions">Chỉ Đường</option>
+              <option value="health">Sức Khỏe</option>
+              <option value="hotel">Khách Sạn</option>
+              <option value="weather">Thời Tiết</option>
+              <option value="time">Thời Gian</option>
+              <option value="numbers">Số Đếm</option>
+              <option value="feelings">Cảm Xúc</option>
+              <option value="family">Gia Đình</option>
+              <option value="general">Tổng Quát</option>
+            </select>
           </div>
-          <div class="srs-filter-actions">
-            <button class="srs-filter-btn active" id="srsFilterAllBtn" onclick="setVocabSrsFilter('all')">Tất
-              cả</button>
-            <button class="srs-filter-btn" id="srsFilterDueBtn" onclick="setVocabSrsFilter('due')">
-              <i class="fi fi-rr-clock"></i> Cần ôn (<span id="srsDueCountNum">0</span>)
-            </button>
-            <button class="srs-filter-btn" id="srsFilterMasteredBtn" onclick="setVocabSrsFilter('mastered')">
-              <i class="fi fi-rr-check-circle"></i> Đã thuộc (<span id="srsMasteredCountNum">0</span>)
-            </button>
+
+          <div class="vocab-dropdown-wrapper" id="srsStatusBar" style="display: none;">
+            <i class="fi fi-rr-filter"></i>
+            <select id="vocabMasteredFilterSelect" class="vocab-filter-select" onchange="setVocabSrsFilter(this.value)" aria-label="Lọc trạng thái từ vựng">
+              <option value="all">Tất cả từ</option>
+              <option value="due">Chưa thuộc</option>
+              <option value="mastered">Đã thuộc</option>
+            </select>
           </div>
         </div>
         <div id="vocabCardContainer" class="learn-card-container">

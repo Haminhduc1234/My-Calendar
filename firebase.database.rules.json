@@ -58,14 +58,34 @@
         ".write": true,
         "zh": {
           ".read": true,
-          ".write": true
+          ".write": true,
+          ".indexOn": ["nextReview", "interval", "hskLevel", "updatedAt"]
+        },
+        "en": {
+          ".read": true,
+          ".write": true,
+          ".indexOn": ["nextReview", "interval", "updatedAt"]
         }
       }
     },
     "chineseTutor": {
       "$profileKey": {
         ".read": true,
-        ".write": true
+        ".write": true,
+        "settings": {
+          ".read": true,
+          ".write": true
+        },
+        "history": {
+          ".read": true,
+          ".write": true,
+          ".indexOn": ["timestamp", "scenario"]
+        },
+        "sessions": {
+          ".read": true,
+          ".write": true,
+          ".indexOn": ["updatedAt"]
+        }
       }
     },
     "aiSettings": {
@@ -84,7 +104,7 @@
       "$profileKey": {
         ".read": "auth != null",
         ".write": "auth != null",
-        ".indexOn": ["updatedAt"]
+        ".indexOn": ["updatedAt", "name", "order"]
       }
     },
     "notificationTokens": {
@@ -145,7 +165,21 @@
     "familyCookbook": {
       "$profileKey": {
         ".read": "auth != null",
-        ".write": "auth != null"
+        ".write": "auth != null",
+        "recipes": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          ".indexOn": ["title", "category", "createdAt", "updatedAt"]
+        },
+        "dietaryNotes": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        },
+        "calendarMeals": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          ".indexOn": ["date"]
+        }
       }
     },
     "familyHealth": {
@@ -155,12 +189,12 @@
         "members": {
           ".read": "auth != null",
           ".write": "auth != null",
-          ".indexOn": ["role", "gender"]
+          ".indexOn": ["role", "gender", "updatedAt"]
         },
         "logs": {
           ".read": "auth != null",
           ".write": "auth != null",
-          ".indexOn": ["memberId", "measuredDate"]
+          ".indexOn": ["memberId", "measuredDate", "createdAt"]
         }
       }
     }

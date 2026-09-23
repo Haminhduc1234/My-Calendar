@@ -1,91 +1,71 @@
-/* ==================== CHINESE TUTOR - AI GIA SƯ TIẾNG TRUNG RIÊNG BIỆT ==================== */
+/* ==================== CHINESE TUTOR - AI GIA SƯ TIẾNG TRUNG RIÊNG BIỆT (GOOGLE GEMINI) ==================== */
 
-// ==================== TUTOR AI PROVIDER CONFIGURATION ====================
-const TUTOR_AI_CONFIG = {
-  providers: {
-    gemini: {
-      id: "gemini",
-      name: "Google Gemini",
-      icon: "✨",
-      badgeClass: "provider-gemini",
-      storageKey: "geminiApiKey",
-      keyPrefix: "AIzaSy",
-      keyPlaceholder: "Dán Google Gemini API Key (bắt đầu bằng AIzaSy...)",
-      keyLabel: "Google Gemini API Key",
-      keyLink: "https://aistudio.google.com/app/apikey",
-      defaultModel: "gemini-3.6-flash",
-      models: [
-        { id: "gemini-3.6-flash", name: "Gemini 3.6 Flash", desc: "Mô hình mới nhất của Google, siêu thông minh & siêu tốc, phân tích Hán tự & ngữ pháp HSK xuất sắc (Khuyên dùng)" },
-        { id: "gemini-3.6-pro", name: "Gemini 3.6 Pro", desc: "Mô hình suy luận chuyên sâu thế hệ mới, giải nghĩa ngữ cảnh & thành ngữ nâng cao" },
-        { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", desc: "Thế hệ 2.0, phản hồi tức thì, chính xác và mượt mà" },
-        { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", desc: "Bản ổn định phổ biến từ Google AI Studio" }
-      ]
-    },
-    groq: {
-      id: "groq",
-      name: "Groq Cloud",
-      icon: "⚡",
-      badgeClass: "provider-groq",
-      storageKey: "groqApiKey",
-      keyPrefix: "gsk_",
-      keyPlaceholder: "Dán Groq API Key (bắt đầu bằng gsk_...)",
-      keyLabel: "Groq API Key",
-      keyLink: "https://console.groq.com/keys",
-      defaultModel: "deepseek-r1-distill-llama-70b",
-      models: [
-        { id: "deepseek-r1-distill-llama-70b", name: "DeepSeek R1 (Llama 70B)", desc: "Mô hình suy luận ngữ pháp tiếng Trung và sửa lỗi sâu sắc nhất trên Groq" },
-        { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B Versatile", desc: "Mô hình 70 tỷ tham số mới nhất của Meta, trò chuyện tự nhiên" },
-        { id: "llama-3.1-8b-instant", name: "Llama 3.1 8B Instant", desc: "Tốc độ cực nhanh, phản hồi siêu tốc" }
-      ]
-    }
-  }
-};
+// Predefined Google Gemini Models
+const GEMINI_TUTOR_MODELS = [
+  { id: "gemini-3.6-flash", name: "Gemini 3.6 Flash", desc: "Mô hình mới nhất của Google, siêu thông minh & siêu tốc, phân tích Hán tự & ngữ pháp HSK xuất sắc (Khuyên dùng)" },
+  { id: "gemini-3.6-pro", name: "Gemini 3.6 Pro", desc: "Mô hình suy luận chuyên sâu thế hệ mới, giải nghĩa ngữ cảnh & thành ngữ nâng cao" },
+  { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", desc: "Thế hệ 2.0, phản hồi tức thì, chính xác và mượt mà" },
+  { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", desc: "Bản ổn định phổ biến từ Google AI Studio" }
+];
+const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash";
 
-// Tutor State
-let currentTutorProvider = localStorage.getItem("tutorAiProvider") || "";
-let currentTutorModel = localStorage.getItem("tutorAiModel") || "";
-let tutorGeminiKey = localStorage.getItem("geminiApiKey") || "";
-let tutorGroqKey = localStorage.getItem("groqApiKey") || "";
-let tutorApiKey = localStorage.getItem("aiApiKey") || ""; // Generic fallback
-
-// Legacy sync check
-if (!tutorGeminiKey && tutorApiKey.startsWith("AIzaSy")) {
-  tutorGeminiKey = tutorApiKey;
-  localStorage.setItem("geminiApiKey", tutorApiKey);
-}
-if (!tutorGroqKey && tutorApiKey.startsWith("gsk_")) {
-  tutorGroqKey = tutorApiKey;
-  localStorage.setItem("groqApiKey", tutorApiKey);
-}
-
-// Auto-determine provider
-if (!currentTutorProvider) {
-  if (tutorGeminiKey) {
-    currentTutorProvider = "gemini";
-  } else if (tutorGroqKey) {
-    currentTutorProvider = "groq";
-  } else {
-    currentTutorProvider = "gemini";
-  }
-}
-
-// Auto migrate deprecated models
-if (currentTutorModel === "gemini-2.5-flash" || !currentTutorModel) {
-  currentTutorModel = "gemini-3.6-flash";
-  localStorage.setItem("tutorAiModel", "gemini-3.6-flash");
-}
-
-// Auto-determine model
-const initProvConfig = TUTOR_AI_CONFIG.providers[currentTutorProvider] || TUTOR_AI_CONFIG.providers.gemini;
-if (!currentTutorModel || !initProvConfig.models.some(m => m.id === currentTutorModel)) {
-  currentTutorModel = initProvConfig.defaultModel;
-}
-
+// Tutor State (Per Account)
+let currentTutorModel = DEFAULT_GEMINI_MODEL;
+let tutorGeminiKey = "";
 let tutorConversationHistory = [];
 let currentTutorScenario = "free";
 let isTutorSpeaking = false;
 let tutorRecognition = null;
 let isTutorListening = false;
+
+let firebaseTutorDb = null;
+let tutorProfileKey = "";
+let firebaseTutorRef = null;
+
+// Helper to get active user profile key
+function getActiveTutorProfileKey() {
+  return tutorProfileKey || window.userProfileKey || localStorage.getItem("currentProfileKey") || "default";
+}
+
+// Load Account-Specific Settings (from LocalStorage first, then Firebase)
+function loadTutorAccountSettings() {
+  const pKey = getActiveTutorProfileKey();
+  const savedKey = localStorage.getItem(`geminiApiKey_${pKey}`) || localStorage.getItem("geminiApiKey") || "";
+  const savedModel = localStorage.getItem(`tutorAiModel_${pKey}`) || localStorage.getItem("tutorAiModel") || DEFAULT_GEMINI_MODEL;
+
+  if (savedKey) {
+    tutorGeminiKey = savedKey;
+  }
+  if (savedModel && savedModel !== "gemini-2.5-flash" && GEMINI_TUTOR_MODELS.some(m => m.id === savedModel)) {
+    currentTutorModel = savedModel;
+  } else {
+    currentTutorModel = DEFAULT_GEMINI_MODEL;
+  }
+  updateTutorModelBadge();
+
+  // If Firebase ref exists, fetch remote settings
+  if (firebaseTutorRef) {
+    firebaseTutorRef.child("settings").once("value").then(snap => {
+      const data = snap.val();
+      if (data) {
+        if (data.geminiApiKey) {
+          tutorGeminiKey = data.geminiApiKey;
+          localStorage.setItem(`geminiApiKey_${pKey}`, data.geminiApiKey);
+          localStorage.setItem("geminiApiKey", data.geminiApiKey);
+        }
+        if (data.model && data.model !== "gemini-2.5-flash" && GEMINI_TUTOR_MODELS.some(m => m.id === data.model)) {
+          currentTutorModel = data.model;
+          localStorage.setItem(`tutorAiModel_${pKey}`, data.model);
+          localStorage.setItem("tutorAiModel", data.model);
+        }
+        updateTutorModelBadge();
+        console.log(`[Chinese Tutor] Loaded Gemini settings from Firebase for account ${pKey}`);
+      }
+    }).catch(err => {
+      console.warn("[Chinese Tutor] Could not load settings from Firebase:", err);
+    });
+  }
+}
 
 // Predefined Scenarios for Chinese Conversation Practice
 const CHINESE_TUTOR_SCENARIOS = {
@@ -201,10 +181,6 @@ const TUTOR_FALLBACK_RESPONSES = [
   }
 ];
 
-let firebaseTutorDb = null;
-let tutorProfileKey = "";
-let firebaseTutorRef = null;
-
 // Firebase initialization for Chinese Tutor
 function initChineseTutorFirebase(db, profileKey) {
   firebaseTutorDb = db || window.firebaseDb || null;
@@ -213,6 +189,7 @@ function initChineseTutorFirebase(db, profileKey) {
     try {
       firebaseTutorRef = firebaseTutorDb.ref(`chineseTutor/${tutorProfileKey}`);
       console.log("[Chinese Tutor] Firebase synced for profile:", tutorProfileKey);
+      loadTutorAccountSettings();
     } catch (e) {
       console.warn("[Chinese Tutor] Firebase ref init error:", e);
     }
@@ -227,6 +204,8 @@ function initChineseTutor() {
   }
   if (!firebaseTutorRef && (window.firebaseDb || firebaseTutorDb)) {
     initChineseTutorFirebase(window.firebaseDb || firebaseTutorDb, tutorProfileKey);
+  } else {
+    loadTutorAccountSettings();
   }
   renderTutorScenarioPills();
   updateTutorModelBadge();
@@ -399,13 +378,12 @@ function updateTutorModelBadge() {
   const badgeText = document.getElementById("tutorModelBadgeText");
   if (!badgeBtn || !badgeText) return;
 
-  const prov = TUTOR_AI_CONFIG.providers[currentTutorProvider] || TUTOR_AI_CONFIG.providers.gemini;
-  const modelObj = prov.models.find(m => m.id === currentTutorModel) || prov.models[0];
+  const modelObj = GEMINI_TUTOR_MODELS.find(m => m.id === currentTutorModel) || GEMINI_TUTOR_MODELS[0];
   const modelName = modelObj ? modelObj.name : currentTutorModel;
 
   badgeText.textContent = modelName;
-  badgeBtn.className = `tutor-model-badge-btn ${prov.badgeClass || ""}`;
-  badgeBtn.title = `Đang dùng: ${prov.name} (${modelName}). Bấm để cấu hình.`;
+  badgeBtn.className = "tutor-model-badge-btn provider-gemini";
+  badgeBtn.title = `Đang dùng: Google Gemini (${modelName}). Bấm để cài đặt API Key.`;
 }
 window.updateTutorModelBadge = updateTutorModelBadge;
 
@@ -429,13 +407,9 @@ async function sendTutorMessage() {
   showTutorTyping(true);
 
   const scenario = CHINESE_TUTOR_SCENARIOS[currentTutorScenario] || CHINESE_TUTOR_SCENARIOS.free;
-  const provId = currentTutorProvider || "gemini";
-  const provConfig = TUTOR_AI_CONFIG.providers[provId] || TUTOR_AI_CONFIG.providers.gemini;
-  const modelToUse = currentTutorModel || provConfig.defaultModel;
-
-  const activeKey = provId === "gemini" 
-    ? (tutorGeminiKey || localStorage.getItem("geminiApiKey") || (localStorage.getItem("aiApiKey")?.startsWith("AIzaSy") ? localStorage.getItem("aiApiKey") : ""))
-    : (tutorGroqKey || localStorage.getItem("groqApiKey") || (localStorage.getItem("aiApiKey")?.startsWith("gsk_") ? localStorage.getItem("aiApiKey") : ""));
+  const modelToUse = currentTutorModel || DEFAULT_GEMINI_MODEL;
+  const pKey = getActiveTutorProfileKey();
+  const activeKey = tutorGeminiKey || localStorage.getItem(`geminiApiKey_${pKey}`) || localStorage.getItem("geminiApiKey") || "";
 
   if (!activeKey) {
     // Show polite notification + fallback
@@ -447,20 +421,14 @@ async function sendTutorMessage() {
         zh: fallback.zh,
         pinyin: fallback.pinyin,
         vi: fallback.vi,
-        feedback: `${fallback.feedback}\n*(Chưa cài đặt API Key cho ${provConfig.name}. Bấm vào nút Model góc trên bên phải để nhập Key và trải nghiệm Gia sư AI thực thụ)*`
+        feedback: `${fallback.feedback}\n*(Chưa cài đặt Google Gemini API Key cho tài khoản này. Bấm vào nút Model góc trên bên phải để nhập Key và trải nghiệm Gia sư AI thực thụ)*`
       });
     }, 700);
     return;
   }
 
   try {
-    let rawAiReply = "";
-    if (provId === "gemini") {
-      rawAiReply = await callTutorGemini(activeKey, modelToUse, scenario, tutorConversationHistory, userText);
-    } else {
-      rawAiReply = await callTutorGroq(activeKey, modelToUse, scenario, tutorConversationHistory, userText);
-    }
-
+    const rawAiReply = await callTutorGemini(activeKey, modelToUse, scenario, tutorConversationHistory, userText);
     showTutorTyping(false);
 
     const parsed = parseTutorAiResponse(rawAiReply);
@@ -473,7 +441,7 @@ async function sendTutorMessage() {
     });
 
   } catch (err) {
-    console.warn(`[Chinese Tutor] API Call failed (${provId}):`, err);
+    console.warn("[Chinese Tutor] Gemini API Call failed:", err);
     showTutorTyping(false);
     const fallback = TUTOR_FALLBACK_RESPONSES[Math.floor(Math.random() * TUTOR_FALLBACK_RESPONSES.length)];
     appendTutorMessage({
@@ -481,7 +449,7 @@ async function sendTutorMessage() {
       zh: fallback.zh,
       pinyin: fallback.pinyin,
       vi: fallback.vi,
-      feedback: `${fallback.feedback}\n*(Lưu ý: Kết nối ${provConfig.name} gặp lỗi: ${err.message}. Đang hiển thị câu phản hồi mẫu)*`
+      feedback: `${fallback.feedback}\n*(Lưu ý: Kết nối Google Gemini gặp lỗi: ${err.message}. Đang hiển thị câu phản hồi mẫu)*`
     });
   }
 }
@@ -558,82 +526,29 @@ async function callTutorGemini(apiKey, model, scenario, history, userText) {
   return rawText;
 }
 
-// Call Groq API
-async function callTutorGroq(apiKey, model, scenario, history, userText) {
-  const endpoint = "https://api.groq.com/openai/v1/chat/completions";
-  const messages = [
-    { role: "system", content: scenario.systemPrompt },
-    ...history.slice(-8).map(msg => {
-      if (msg.role === "user") {
-        return { role: "user", content: msg.text };
-      } else {
-        return {
-          role: "assistant",
-          content: `[ZH]${msg.zh}[/ZH]\n[PINYIN]${msg.pinyin}[/PINYIN]\n[VI]${msg.vi}[/VI]${msg.feedback ? `\n[FEEDBACK]${msg.feedback}[/FEEDBACK]` : ""}`
-        };
-      }
-    }),
-    { role: "user", content: userText }
-  ];
-
-  let response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: model,
-      messages: messages,
-      temperature: 0.7,
-      max_tokens: 800
-    })
-  });
-
-  if (!response.ok && response.status === 404 && model !== "llama-3.3-70b-versatile") {
-    console.warn(`[Chinese Tutor] Groq model ${model} not available, falling back to llama-3.3-70b-versatile...`);
-    response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 800
-      })
-    });
-  }
-
-  if (!response.ok) {
-    let errorDetail = `Lỗi Groq API (${response.status})`;
-    try {
-      const errJson = await response.json();
-      if (errJson?.error?.message) errorDetail = errJson.error.message;
-    } catch (e) {}
-    throw new Error(errorDetail);
-  }
-
-  const data = await response.json();
-  const rawText = data.choices?.[0]?.message?.content || "";
-  if (!rawText) {
-    throw new Error("Không nhận được câu trả lời từ Groq API.");
-  }
-  return rawText;
-}
-
-// ==================== TUTOR AI SETTINGS MODAL ====================
-let selectedSettingsProvider = "gemini";
-
+// ==================== TUTOR AI SETTINGS MODAL (GEMINI ONLY) ====================
 function openTutorSettingsModal() {
   closeTutorMoreMenu();
   const modal = document.getElementById("tutorSettingsModal");
   if (!modal) return;
 
-  selectedSettingsProvider = currentTutorProvider || "gemini";
-  selectTutorProvider(selectedSettingsProvider, currentTutorModel);
+  const pKey = getActiveTutorProfileKey();
+  const modelSelect = document.getElementById("tutorModelSelect");
+  const keyInput = document.getElementById("tutorApiKeyInput");
+
+  if (modelSelect) {
+    if (GEMINI_TUTOR_MODELS.some(m => m.id === currentTutorModel)) {
+      modelSelect.value = currentTutorModel;
+    } else {
+      modelSelect.value = DEFAULT_GEMINI_MODEL;
+    }
+  }
+
+  if (keyInput) {
+    keyInput.value = tutorGeminiKey || localStorage.getItem(`geminiApiKey_${pKey}`) || localStorage.getItem("geminiApiKey") || "";
+  }
+
+  handleTutorModelChange();
   clearTutorStatus();
 
   modal.style.display = "flex";
@@ -653,65 +568,13 @@ function handleTutorModalBackdropClick(e) {
 }
 window.handleTutorModalBackdropClick = handleTutorModalBackdropClick;
 
-function selectTutorProvider(providerId, preferredModel) {
-  selectedSettingsProvider = providerId;
-
-  // Toggle active card styles
-  const geminiCard = document.getElementById("tutorProviderGeminiCard");
-  const groqCard = document.getElementById("tutorProviderGroqCard");
-  if (geminiCard) geminiCard.classList.toggle("active", providerId === "gemini");
-  if (groqCard) groqCard.classList.toggle("active", providerId === "groq");
-
-  const provConfig = TUTOR_AI_CONFIG.providers[providerId];
-  if (!provConfig) return;
-
-  // Populate Model Select
-  const modelSelect = document.getElementById("tutorModelSelect");
-  if (modelSelect) {
-    modelSelect.innerHTML = provConfig.models
-      .map(m => `<option value="${m.id}">${m.name}</option>`)
-      .join("");
-
-    if (preferredModel && provConfig.models.some(m => m.id === preferredModel)) {
-      modelSelect.value = preferredModel;
-    } else {
-      modelSelect.value = provConfig.defaultModel;
-    }
-  }
-
-  handleTutorModelChange();
-
-  // Populate Key Info
-  const keyLabel = document.getElementById("tutorApiKeyLabel");
-  const keyLink = document.getElementById("tutorGetKeyLink");
-  const keyInput = document.getElementById("tutorApiKeyInput");
-
-  if (keyLabel) keyLabel.textContent = provConfig.keyLabel;
-  if (keyLink) {
-    keyLink.href = provConfig.keyLink;
-    keyLink.innerHTML = `<span>Lấy ${provConfig.name} Key miễn phí</span> <i class="fi fi-rr-arrow-up-right"></i>`;
-  }
-  if (keyInput) {
-    keyInput.placeholder = provConfig.keyPlaceholder;
-    if (providerId === "gemini") {
-      keyInput.value = tutorGeminiKey || "";
-    } else {
-      keyInput.value = tutorGroqKey || "";
-    }
-  }
-}
-window.selectTutorProvider = selectTutorProvider;
-
 function handleTutorModelChange() {
   const modelSelect = document.getElementById("tutorModelSelect");
   const modelDesc = document.getElementById("tutorModelDesc");
   if (!modelSelect || !modelDesc) return;
 
-  const provConfig = TUTOR_AI_CONFIG.providers[selectedSettingsProvider];
-  if (!provConfig) return;
-
-  const found = provConfig.models.find(m => m.id === modelSelect.value);
-  modelDesc.textContent = found ? found.desc : "";
+  const found = GEMINI_TUTOR_MODELS.find(m => m.id === modelSelect.value);
+  modelDesc.textContent = found ? found.desc : "Mô hình trí tuệ nhân tạo từ Google.";
 }
 window.handleTutorModelChange = handleTutorModelChange;
 
@@ -752,84 +615,58 @@ function setTutorStatus(type, message) {
 }
 
 async function testTutorConnection() {
-  const provId = selectedSettingsProvider;
   const modelSelect = document.getElementById("tutorModelSelect");
   const keyInput = document.getElementById("tutorApiKeyInput");
-  const model = modelSelect ? modelSelect.value : "";
+  const model = modelSelect ? modelSelect.value : DEFAULT_GEMINI_MODEL;
   const apiKey = keyInput ? keyInput.value.trim() : "";
 
   if (!apiKey) {
-    setTutorStatus("error", "Vui lòng nhập API Key trước khi kiểm tra!");
+    setTutorStatus("error", "Vui lòng nhập Google Gemini API Key trước khi kiểm tra!");
     return;
   }
 
-  setTutorStatus("loading", `Đang kiểm tra kết nối với ${TUTOR_AI_CONFIG.providers[provId].name}...`);
+  setTutorStatus("loading", `Đang kiểm tra kết nối với Google Gemini (${model})...`);
 
   try {
-    if (provId === "gemini") {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: "Hello, reply with 1 word: OK" }] }]
-        })
-      });
-      if (!res.ok) {
-        let errDetail = `Mã lỗi ${res.status}`;
-        try {
-          const errData = await res.json();
-          if (errData?.error?.message) {
-            errDetail = errData.error.message;
-            // Auto-fallback check if model is deprecated
-            if (errDetail.includes("gemini-3.6-flash") && model !== "gemini-3.6-flash") {
-              console.log("[Chinese Tutor] Retrying test connection with gemini-3.6-flash...");
-              const retryEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
-              const retryRes = await fetch(retryEndpoint, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  contents: [{ role: "user", parts: [{ text: "Hello, reply with 1 word: OK" }] }]
-                })
-              });
-              if (retryRes.ok) {
-                if (modelSelect) modelSelect.value = "gemini-3.6-flash";
-                currentTutorModel = "gemini-3.6-flash";
-                localStorage.setItem("tutorAiModel", "gemini-3.6-flash");
-                handleTutorModelChange();
-                setTutorStatus("success", `✓ Đã tự động chuyển sang mô hình mới nhất: Gemini 3.6 Flash! Kết nối thành công.`);
-                return;
-              }
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: "Hello, reply with 1 word: OK" }] }]
+      })
+    });
+
+    if (!res.ok) {
+      let errDetail = `Mã lỗi ${res.status}`;
+      try {
+        const errData = await res.json();
+        if (errData?.error?.message) {
+          errDetail = errData.error.message;
+          // Auto-fallback nếu model yêu cầu gemini-3.6-flash
+          if (errDetail.includes("gemini-3.6-flash") && model !== "gemini-3.6-flash") {
+            console.log("[Chinese Tutor] Tự động thử lại với gemini-3.6-flash...");
+            const retryEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
+            const retryRes = await fetch(retryEndpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: "Hello, reply with 1 word: OK" }] }]
+              })
+            });
+            if (retryRes.ok) {
+              if (modelSelect) modelSelect.value = "gemini-3.6-flash";
+              currentTutorModel = "gemini-3.6-flash";
+              handleTutorModelChange();
+              setTutorStatus("success", `✓ Đã tự động chuyển sang mô hình mới nhất: Gemini 3.6 Flash! Kết nối thành công.`);
+              return;
             }
           }
-        } catch (e) {}
-        throw new Error(errDetail);
-      }
-      setTutorStatus("success", `✓ Kết nối Google Gemini (${model}) thành công! Sẵn sàng học tiếng Trung.`);
-    } else {
-      const endpoint = "https://api.groq.com/openai/v1/chat/completions";
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: [{ role: "user", content: "ping" }],
-          max_tokens: 5
-        })
-      });
-      if (!res.ok) {
-        let errDetail = `Mã lỗi ${res.status}`;
-        try {
-          const errData = await res.json();
-          if (errData?.error?.message) errDetail = errData.error.message;
-        } catch (e) {}
-        throw new Error(errDetail);
-      }
-      setTutorStatus("success", `✓ Kết nối Groq (${model}) thành công!`);
+        }
+      } catch (e) {}
+      throw new Error(errDetail);
     }
+    setTutorStatus("success", `✓ Kết nối Google Gemini (${model}) thành công! Sẵn sàng học tiếng Trung.`);
   } catch (err) {
     setTutorStatus("error", `Không thể kết nối: ${err.message}`);
   }
@@ -837,48 +674,83 @@ async function testTutorConnection() {
 window.testTutorConnection = testTutorConnection;
 
 function saveTutorSettings() {
-  const provId = selectedSettingsProvider;
   const modelSelect = document.getElementById("tutorModelSelect");
   const keyInput = document.getElementById("tutorApiKeyInput");
-  const model = modelSelect ? modelSelect.value : "";
+  const model = modelSelect ? modelSelect.value : DEFAULT_GEMINI_MODEL;
   const apiKey = keyInput ? keyInput.value.trim() : "";
 
-  currentTutorProvider = provId;
   currentTutorModel = model;
-  localStorage.setItem("tutorAiProvider", provId);
-  localStorage.setItem("tutorAiModel", model);
+  tutorGeminiKey = apiKey;
 
-  if (provId === "gemini") {
-    tutorGeminiKey = apiKey;
-    localStorage.setItem("geminiApiKey", apiKey);
-    if (!localStorage.getItem("aiApiKey") || localStorage.getItem("aiApiKey").startsWith("AIzaSy")) {
-      localStorage.setItem("aiApiKey", apiKey);
-    }
-  } else {
-    tutorGroqKey = apiKey;
-    localStorage.setItem("groqApiKey", apiKey);
-    if (!localStorage.getItem("aiApiKey") || localStorage.getItem("aiApiKey").startsWith("gsk_")) {
-      localStorage.setItem("aiApiKey", apiKey);
-    }
+  const pKey = getActiveTutorProfileKey();
+
+  // Lưu theo từng tài khoản vào LocalStorage
+  localStorage.setItem(`tutorAiModel_${pKey}`, model);
+  localStorage.setItem("tutorAiModel", model);
+  localStorage.setItem(`geminiApiKey_${pKey}`, apiKey);
+  localStorage.setItem("geminiApiKey", apiKey);
+
+  if (apiKey) {
+    localStorage.setItem("aiApiKey", apiKey);
   }
 
-  // Sync to Firebase if available
+  // Đồng bộ lên Firebase theo tài khoản đang đăng nhập
   if (firebaseTutorRef) {
     firebaseTutorRef.child("settings").update({
-      provider: provId,
+      geminiApiKey: apiKey,
       model: model,
       updatedAt: Date.now()
-    }).catch(e => console.warn("[Chinese Tutor] Firebase sync settings error:", e));
+    }).then(() => {
+      console.log(`[Chinese Tutor] Đã lưu cấu hình Gemini vào Firebase cho tài khoản: ${pKey}`);
+    }).catch(e => {
+      console.warn("[Chinese Tutor] Firebase sync settings error:", e);
+    });
   }
 
   updateTutorModelBadge();
   closeTutorSettingsModal();
 
   if (typeof showToast === "function") {
-    showToast(`Đã lưu cấu hình: ${TUTOR_AI_CONFIG.providers[provId].name} (${model})`);
+    showToast(`Đã lưu cấu hình Google Gemini (${model}) cho tài khoản này!`);
   }
 }
 window.saveTutorSettings = saveTutorSettings;
+
+// Khởi tạo Firebase cho Chinese Tutor theo tài khoản đăng nhập
+function initChineseTutorFirebase(firebaseDb, userProfileKey) {
+  if (!firebaseDb) return;
+  firebaseTutorDb = firebaseDb;
+  tutorProfileKey = userProfileKey || window.userProfileKey || "default";
+  firebaseTutorRef = firebaseTutorDb.ref(`chineseTutor/${tutorProfileKey}`);
+  console.log(`[Chinese Tutor] Khởi tạo Firebase cho tài khoản: ${tutorProfileKey}`);
+
+  // Tải cài đặt theo tài khoản
+  loadTutorAccountSettings();
+
+  // Lắng nghe cập nhật settings từ Firebase theo tài khoản
+  firebaseTutorRef.child("settings").on("value", snapshot => {
+    const data = snapshot.val();
+    if (data) {
+      let changed = false;
+      if (data.geminiApiKey !== undefined && data.geminiApiKey !== tutorGeminiKey) {
+        tutorGeminiKey = data.geminiApiKey || "";
+        localStorage.setItem(`geminiApiKey_${tutorProfileKey}`, tutorGeminiKey);
+        localStorage.setItem("geminiApiKey", tutorGeminiKey);
+        changed = true;
+      }
+      if (data.model && data.model !== "gemini-2.5-flash" && GEMINI_TUTOR_MODELS.some(m => m.id === data.model) && data.model !== currentTutorModel) {
+        currentTutorModel = data.model;
+        localStorage.setItem(`tutorAiModel_${tutorProfileKey}`, currentTutorModel);
+        localStorage.setItem("tutorAiModel", currentTutorModel);
+        changed = true;
+      }
+      if (changed) {
+        updateTutorModelBadge();
+      }
+    }
+  });
+}
+window.initChineseTutorFirebase = initChineseTutorFirebase;
 
 // Backward-compatible prompt wrapper
 function promptTutorApiKey() {
@@ -1102,7 +974,11 @@ document.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
+  loadTutorAccountSettings();
   updateTutorModelBadge();
+  if (window.firebaseDb && typeof initChineseTutorFirebase === "function") {
+    initChineseTutorFirebase(window.firebaseDb, window.userProfileKey);
+  }
 });
 
 window.toggleTutorMoreMenu = toggleTutorMoreMenu;

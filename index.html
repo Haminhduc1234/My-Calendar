@@ -2864,7 +2864,8 @@
         <div class="vocab-filter-row">
           <div class="vocab-dropdown-wrapper">
             <i class="fi fi-rr-apps"></i>
-            <select id="vocabCategorySelector" class="vocab-filter-select" onchange="selectVocabCategory(this.value)" aria-label="Chọn danh mục từ vựng">
+            <select id="vocabCategorySelector" class="vocab-filter-select" onchange="selectVocabCategory(this.value)"
+              aria-label="Chọn danh mục từ vựng">
               <option value="all" selected>Tất cả danh mục</option>
               <option value="email">Email</option>
               <option value="meeting">Họp Hành</option>
@@ -2898,7 +2899,8 @@
 
           <div class="vocab-dropdown-wrapper" id="srsStatusBar" style="display: none;">
             <i class="fi fi-rr-filter"></i>
-            <select id="vocabMasteredFilterSelect" class="vocab-filter-select" onchange="setVocabSrsFilter(this.value)" aria-label="Lọc trạng thái từ vựng">
+            <select id="vocabMasteredFilterSelect" class="vocab-filter-select" onchange="setVocabSrsFilter(this.value)"
+              aria-label="Lọc trạng thái từ vựng">
               <option value="all">Tất cả từ</option>
               <option value="due">Chưa thuộc</option>
               <option value="mastered">Đã thuộc</option>
@@ -3189,11 +3191,11 @@
         <div class="tutor-container">
           <div class="tutor-scenario-bar">
             <div class="tutor-scenario-bar-left">
-              <span class="tutor-bar-label">Chọn tình huống:</span>
               <div class="tutor-scenario-pills" id="tutorScenarioPills"></div>
             </div>
             <div class="tutor-scenario-bar-right">
-              <button class="tutor-model-badge-btn provider-gemini" id="tutorModelBadgeBtn" onclick="openTutorSettingsModal()" title="Cài đặt AI & Đổi Model">
+              <button class="tutor-model-badge-btn provider-gemini" id="tutorModelBadgeBtn"
+                onclick="openTutorSettingsModal()" title="Cài đặt AI & Đổi Model">
                 <i class="fi fi-rr-sparkles"></i>
                 <span id="tutorModelBadgeText">Gemini 3.6 Flash</span>
               </button>
@@ -3238,77 +3240,56 @@
     </div>
   </div>
 
-  <!-- Tutor AI Settings Modal (Cài Đặt Model & API Key) -->
-  <div id="tutorSettingsModal" class="tutor-settings-modal-backdrop" style="display: none;" onclick="handleTutorModalBackdropClick(event)">
+  <!-- Tutor AI Settings Modal (Cài Đặt Model & API Key Google Gemini) -->
+  <div id="tutorSettingsModal" class="tutor-settings-modal-backdrop" style="display: none;"
+    onclick="handleTutorModalBackdropClick(event)">
     <div class="tutor-settings-modal-card">
       <div class="tutor-settings-header">
         <div class="tutor-settings-title-group">
-          <div class="tutor-settings-title-icon"><i class="fi fi-rr-settings-sliders"></i></div>
+          <div class="tutor-settings-title-icon" style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc;">
+            <i class="fi fi-rr-sparkles"></i>
+          </div>
           <div>
-            <h3 class="tutor-settings-title">Cài Đặt Gia Sư AI</h3>
-            <p class="tutor-settings-subtitle">Tùy chọn mô hình AI & API Key cho Trợ lý tiếng Trung</p>
+            <h3 class="tutor-settings-title">Cài Đặt Gia Sư AI (Google Gemini)</h3>
+            <p class="tutor-settings-subtitle">Cấu hình mô hình & API Key đồng bộ theo tài khoản</p>
           </div>
         </div>
         <button class="modal-close" onclick="closeTutorSettingsModal()" aria-label="Đóng">×</button>
       </div>
 
       <div class="tutor-settings-body">
-        <!-- 1. Chọn Nhà Cung Cấp (Provider) -->
+        <!-- 1. Chọn Mô hình AI (Model) -->
         <div class="tutor-settings-field">
-          <label class="tutor-settings-label">Nhà cung cấp AI (Provider)</label>
-          <div class="tutor-provider-grid">
-            <button type="button" class="tutor-provider-card active" id="tutorProviderGeminiCard" onclick="selectTutorProvider('gemini')">
-              <div class="provider-radio-dot"></div>
-              <div class="provider-card-content">
-                <div class="provider-card-title">
-                  <span class="provider-emoji">✨</span>
-                  <span>Google Gemini</span>
-                  <span class="provider-badge-rec">Khuyên dùng</span>
-                </div>
-                <div class="provider-card-desc">Rất thông minh, phân tích ngữ pháp HSK, Hán tự và dịch nghĩa tiếng Việt tự nhiên</div>
-              </div>
-            </button>
-
-            <button type="button" class="tutor-provider-card" id="tutorProviderGroqCard" onclick="selectTutorProvider('groq')">
-              <div class="provider-radio-dot"></div>
-              <div class="provider-card-content">
-                <div class="provider-card-title">
-                  <span class="provider-emoji">⚡</span>
-                  <span>Groq Cloud</span>
-                  <span class="provider-badge-fast">Siêu tốc</span>
-                </div>
-                <div class="provider-card-desc">Tốc độ phản hồi cực nhanh (&lt;1s), miễn phí, tích hợp DeepSeek R1 & Llama 3.3 70B</div>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <!-- 2. Chọn Mô hình AI (Model) -->
-        <div class="tutor-settings-field">
-          <label class="tutor-settings-label" for="tutorModelSelect">Mô hình AI (Model)</label>
+          <label class="tutor-settings-label" for="tutorModelSelect">Mô hình Google Gemini (Model)</label>
           <select id="tutorModelSelect" class="tutor-settings-select" onchange="handleTutorModelChange()">
-            <!-- Dynamic options -->
+            <option value="gemini-3.6-flash">Gemini 3.6 Flash (Khuyên dùng • Mới nhất & Siêu nhanh)</option>
+            <option value="gemini-3.6-pro">Gemini 3.6 Pro (Suy luận ngữ pháp chuyên sâu)</option>
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Bản 2.0 tốc độ cao)</option>
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash (Bản ổn định phổ biến)</option>
           </select>
-          <div class="tutor-settings-hint" id="tutorModelDesc"></div>
+          <div class="tutor-settings-hint" id="tutorModelDesc">Mô hình mới nhất của Google, siêu thông minh & siêu tốc, phân tích Hán tự & ngữ pháp HSK xuất sắc.</div>
         </div>
 
-        <!-- 3. Nhập API Key -->
+        <!-- 2. Nhập API Key -->
         <div class="tutor-settings-field">
           <div class="tutor-settings-label-row">
             <label class="tutor-settings-label" id="tutorApiKeyLabel" for="tutorApiKeyInput">Google Gemini API Key</label>
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="tutor-get-key-link" id="tutorGetKeyLink">
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"
+              class="tutor-get-key-link" id="tutorGetKeyLink">
               <span>Lấy API Key miễn phí</span>
               <i class="fi fi-rr-arrow-up-right"></i>
             </a>
           </div>
           <div class="tutor-key-input-box">
-            <input type="password" id="tutorApiKeyInput" class="tutor-settings-input" placeholder="Dán API Key tại đây..." autocomplete="off" />
-            <button type="button" class="tutor-key-eye-btn" onclick="toggleTutorKeyVisibility()" title="Ẩn/Hiện API Key">
+            <input type="password" id="tutorApiKeyInput" class="tutor-settings-input"
+              placeholder="Dán Google Gemini API Key (bắt đầu bằng AIzaSy...)" autocomplete="off" />
+            <button type="button" class="tutor-key-eye-btn" onclick="toggleTutorKeyVisibility()"
+              title="Ẩn/Hiện API Key">
               <i class="fi fi-rr-eye" id="tutorEyeIcon"></i>
             </button>
           </div>
           <div class="tutor-settings-subhint" id="tutorKeySubhint">
-            API Key được lưu bảo mật trong trình duyệt của bạn (và đồng bộ qua tài khoản cá nhân).
+            API Key được lưu bảo mật theo tài khoản đăng nhập của bạn và tự động đồng bộ qua Firebase Database.
           </div>
         </div>
 
@@ -3323,7 +3304,7 @@
         </button>
         <button type="button" class="tutor-btn-primary" onclick="saveTutorSettings()">
           <i class="fi fi-rr-check"></i>
-          <span>Lưu cài đặt</span>
+          <span>Lưu vào tài khoản</span>
         </button>
       </div>
     </div>

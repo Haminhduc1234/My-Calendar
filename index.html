@@ -2784,7 +2784,8 @@
           <h3 id="learnModalTitle">Học Tiếng Anh</h3>
         </div>
         <div class="learn-header-right">
-          <button class="learn-pinyin-toggle-btn" id="learnPinyinToggleBtn" onclick="togglePinyinVisibility()" title="Ẩn/Hiện Pinyin" style="display: none;">
+          <button class="learn-pinyin-toggle-btn" id="learnPinyinToggleBtn" onclick="togglePinyinVisibility()"
+            title="Ẩn/Hiện Pinyin" style="display: none;">
             <i class="fi fi-rr-eye" id="pinyinToggleIcon"></i>
             <span id="pinyinToggleLabel">Pinyin</span>
           </button>
@@ -2810,19 +2811,23 @@
           <i class="fi fi-rr-comments"></i>
           Câu Giao Tiếp
         </button>
-        <button class="learn-tab" id="learnSentenceBuilderTabBtn" onclick="switchLearnTab('sentenceBuilder')" data-tab="sentenceBuilder" style="display: none;">
+        <button class="learn-tab" id="learnSentenceBuilderTabBtn" onclick="switchLearnTab('sentenceBuilder')"
+          data-tab="sentenceBuilder" style="display: none;">
           <i class="fi fi-rr-arrows-repeat"></i>
-          Ráp Câu
+          Ghép Câu
         </button>
-        <button class="learn-tab" id="learnListeningTabBtn" onclick="switchLearnTab('listening')" data-tab="listening" style="display: none;">
+        <button class="learn-tab" id="learnListeningTabBtn" onclick="switchLearnTab('listening')" data-tab="listening"
+          style="display: none;">
           <i class="fi fi-rr-headphones"></i>
           Luyện Nghe
         </button>
-        <button class="learn-tab" id="learnChengyuTabBtn" onclick="switchLearnTab('chengyu')" data-tab="chengyu" style="display: none;">
+        <button class="learn-tab" id="learnChengyuTabBtn" onclick="switchLearnTab('chengyu')" data-tab="chengyu"
+          style="display: none;">
           <i class="fi fi-rr-gem"></i>
           Thành Ngữ
         </button>
-        <button class="learn-tab" id="learnTutorTabBtn" onclick="switchLearnTab('tutor')" data-tab="tutor" style="display: none;">
+        <button class="learn-tab" id="learnTutorTabBtn" onclick="switchLearnTab('tutor')" data-tab="tutor"
+          style="display: none;">
           <i class="fi fi-rr-comment-alt"></i>
           Gia Sư AI
         </button>
@@ -2948,7 +2953,8 @@
             <span class="srs-info-text" id="srsDueText">Ôn tập ngắt quãng (SM-2): 0 từ cần ôn</span>
           </div>
           <div class="srs-filter-actions">
-            <button class="srs-filter-btn active" id="srsFilterAllBtn" onclick="setVocabSrsFilter('all')">Tất cả</button>
+            <button class="srs-filter-btn active" id="srsFilterAllBtn" onclick="setVocabSrsFilter('all')">Tất
+              cả</button>
             <button class="srs-filter-btn" id="srsFilterDueBtn" onclick="setVocabSrsFilter('due')">
               <i class="fi fi-rr-clock"></i> Cần ôn (<span id="srsDueCountNum">0</span>)
             </button>
@@ -3132,7 +3138,8 @@
             <!-- Vùng ráp câu (Drop/Selected Zone) -->
             <div class="sb-zone-wrapper">
               <div class="sb-zone-title">Câu của bạn (chạm vào từ để ráp theo thứ tự):</div>
-              <div class="sb-drop-zone" id="sbDropZone" ondragover="handleSbDragOver(event)" ondrop="handleSbDrop(event)">
+              <div class="sb-drop-zone" id="sbDropZone" ondragover="handleSbDragOver(event)"
+                ondrop="handleSbDrop(event)">
                 <div class="sb-drop-placeholder" id="sbDropPlaceholder">Chạm hoặc kéo các từ bên dưới vào đây...</div>
               </div>
             </div>
@@ -3199,7 +3206,8 @@
             <div class="cloze-feedback-card" id="clozeFeedbackCard" style="display: none;"></div>
 
             <div class="cloze-controls">
-              <button class="cloze-ctrl-btn accent" id="clozeNextBtn" onclick="nextClozeQuestion()" style="display: none;">
+              <button class="cloze-ctrl-btn accent" id="clozeNextBtn" onclick="nextClozeQuestion()"
+                style="display: none;">
                 Câu tiếp theo <i class="fi fi-rr-arrow-right"></i>
               </button>
             </div>
@@ -3211,7 +3219,8 @@
       <div id="learnChengyuTab" class="learn-tab-content">
         <div class="chengyu-container">
           <div class="chengyu-intro-banner">
-            ✨ <strong>Thành Ngữ Bốn Chữ (成语 Chéngyǔ):</strong> Tinh hoa văn hóa và tư duy người bản địa. Mỗi thành ngữ gắn liền với một điển cố, giúp bạn giao tiếp lưu loát và đạt điểm cao trong các bài thi HSK 5-6.
+            ✨ <strong>Thành Ngữ Bốn Chữ (成语 Chéngyǔ):</strong> Tinh hoa văn hóa và tư duy người bản địa. Mỗi thành ngữ
+            gắn liền với một điển cố, giúp bạn giao tiếp lưu loát và đạt điểm cao trong các bài thi HSK 5-6.
           </div>
 
           <div class="chengyu-card-container" id="chengyuCardContainer"></div>
@@ -3241,25 +3250,37 @@
               <span class="tutor-bar-label">Chọn tình huống:</span>
               <div class="tutor-scenario-pills" id="tutorScenarioPills"></div>
             </div>
-            <div class="tutor-scenario-actions" style="display: flex; gap: 8px;">
-              <button class="tutor-key-btn" onclick="promptTutorApiKey()" title="Cài đặt Groq API Key">
-                <i class="fi fi-rr-key"></i>
-                <span>API Key</span>
-              </button>
-              <button class="tutor-clear-chat-btn" onclick="clearTutorCurrentHistory()" title="Xóa lịch sử & làm mới hội thoại">
-                <i class="fi fi-rr-trash"></i>
-                <span>Làm mới</span>
-              </button>
-            </div>
           </div>
 
           <div class="tutor-chat-window" id="tutorChatMessages"></div>
 
           <div class="tutor-input-bar">
-            <button class="tutor-voice-btn" id="tutorMicBtn" onclick="toggleTutorVoiceInput()" title="Bấm để nói tiếng Trung (Microphone)">
+            <button class="tutor-voice-btn" id="tutorMicBtn" onclick="toggleTutorVoiceInput()"
+              title="Bấm để nói tiếng Trung (Microphone)">
               <i class="fi fi-rr-microphone"></i>
             </button>
-            <textarea id="tutorChatInput" class="tutor-chat-textarea" placeholder="Nhập tiếng Trung hoặc tiếng Việt (Shift + Enter để xuống dòng)..." rows="1" onkeydown="handleTutorInputKeydown(event)"></textarea>
+            <textarea id="tutorChatInput" class="tutor-chat-textarea"
+              placeholder="Nhập tiếng Trung hoặc tiếng Việt (Shift + Enter để xuống dòng)..." rows="1"
+              onkeydown="handleTutorInputKeydown(event)"></textarea>
+
+            <!-- Nút Action 3 chấm bên trái nút gửi -->
+            <div class="tutor-more-dropdown-wrapper" id="tutorMoreDropdownWrapper">
+              <button class="tutor-more-btn" id="tutorMoreBtn" onclick="toggleTutorMoreMenu(event)"
+                title="Tùy chọn khác">
+                <i class="fi fi-rr-menu-dots-vertical"></i>
+              </button>
+              <div class="tutor-more-menu" id="tutorMoreMenu">
+                <button class="tutor-menu-item" onclick="handleTutorMenuApiKey()">
+                  <i class="fi fi-rr-key"></i>
+                  <span>Cài đặt API Key</span>
+                </button>
+                <button class="tutor-menu-item danger" onclick="handleTutorMenuClear()">
+                  <i class="fi fi-rr-trash"></i>
+                  <span>Làm mới hội thoại</span>
+                </button>
+              </div>
+            </div>
+
             <button class="tutor-send-btn" onclick="sendTutorMessage()" title="Gửi tin nhắn">
               <i class="fi fi-rr-paper-plane"></i>
             </button>

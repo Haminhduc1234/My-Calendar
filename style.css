@@ -12513,7 +12513,19 @@ input[type="datetime-local"] {
   box-sizing: border-box !important;
 }
 
+.learn-header-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+}
+
 .learn-modal-header .modal-close {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  margin: 0 !important;
   width: 34px !important;
   height: 34px !important;
   border-radius: 9px !important;
@@ -12527,6 +12539,7 @@ input[type="datetime-local"] {
   color: #e2e8f0 !important;
   cursor: pointer !important;
   padding: 0 !important;
+  flex-shrink: 0 !important;
   transition: background 0.18s, border-color 0.18s !important;
 }
 
@@ -12726,7 +12739,7 @@ input[type="datetime-local"] {
   color: var(--muted, #94a3b8);
   font-size: 13.5px;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1;
   cursor: pointer;
   transition: background 0.18s, color 0.18s, border-color 0.18s;
   white-space: nowrap;
@@ -12735,7 +12748,7 @@ input[type="datetime-local"] {
 
 .learn-tab i {
   position: relative !important;
-  top: 1px !important;
+  top: -1.5px !important;
   font-size: 14px;
   display: inline-flex;
   align-items: center;
@@ -14754,17 +14767,22 @@ input[type="datetime-local"] {
 .learn-pinyin-toggle-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 6px 14px;
-  border-radius: 9999px;
+  height: 34px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border-radius: 9px;
   border: 1px solid rgba(56, 189, 248, 0.4);
   background: rgba(56, 189, 248, 0.1);
   color: #38bdf8;
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.18s, border-color 0.18s, color 0.18s;
   white-space: nowrap;
+  flex-shrink: 0;
+  position: static;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
 }
 
 .learn-pinyin-toggle-btn i {
@@ -14780,6 +14798,7 @@ input[type="datetime-local"] {
 .learn-pinyin-toggle-btn:hover {
   background: rgba(56, 189, 248, 0.2);
   border-color: #38bdf8;
+  transform: none;
 }
 
 .learn-pinyin-toggle-btn.pinyin-hidden-state {
@@ -14791,6 +14810,7 @@ input[type="datetime-local"] {
 .learn-pinyin-toggle-btn.pinyin-hidden-state:hover {
   background: rgba(245, 158, 11, 0.2);
   border-color: #f59e0b;
+  transform: none;
 }
 
 /* ===== Confusion Pairs (Cặp Âm Dễ Nhầm) ===== */
@@ -14954,7 +14974,7 @@ input[type="datetime-local"] {
   #learnChengyuTab,
   #learnTutorTab {
     padding: 12px 14px 24px;
-    max-height: calc(100vh - 115px);
+    max-height: calc(100vh - 100px);
   }
 }
 
@@ -16181,6 +16201,7 @@ input[type="datetime-local"] {
 }
 
 .tutor-voice-btn,
+.tutor-more-btn,
 .tutor-send-btn {
   width: 40px;
   height: 40px;
@@ -16191,7 +16212,7 @@ input[type="datetime-local"] {
   align-items: center;
   justify-content: center;
   font-size: 16px;
-  transition: background 0.18s;
+  transition: background 0.18s, color 0.18s;
   flex-shrink: 0;
 }
 
@@ -16199,6 +16220,120 @@ input[type="datetime-local"] {
 .tutor-send-btn i {
   position: relative;
   top: 1px;
+}
+
+.tutor-more-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text, #ccc);
+}
+
+.tutor-more-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  transform: none;
+}
+
+.tutor-more-btn.active {
+  background: rgba(56, 189, 248, 0.18);
+  color: #38bdf8;
+}
+
+.tutor-more-btn i {
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 16px;
+}
+
+/* Tutor More Dropdown Menu */
+.tutor-more-dropdown-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.tutor-more-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  min-width: 190px;
+  background: rgba(15, 23, 42, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tutor-more-menu.active {
+  display: flex;
+  animation: tutorMenuPop 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tutorMenuPop {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tutor-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.tutor-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  transform: none;
+}
+
+.tutor-menu-item i {
+  font-size: 14px;
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  width: 16px;
+}
+
+.tutor-menu-item.danger {
+  color: #f87171;
+}
+
+.tutor-menu-item.danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  transform: none;
 }
 
 .tutor-voice-btn {
@@ -16294,6 +16429,21 @@ input[type="datetime-local"] {
     padding: 10px 14px !important;
   }
 
+  .learn-header-right {
+    gap: 8px !important;
+  }
+
+  .learn-pinyin-toggle-btn {
+    height: 32px !important;
+    padding: 0 10px !important;
+    font-size: 11.5px !important;
+  }
+
+  .learn-modal-header .modal-close {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
   .learn-tabs {
     padding: 8px 14px !important;
     gap: 6px;
@@ -16304,6 +16454,7 @@ input[type="datetime-local"] {
     flex: 0 0 auto;
     padding: 6px 14px !important;
     font-size: 12.5px !important;
+    line-height: 1 !important;
     gap: 5px;
     border-radius: 9999px;
   }
@@ -16311,7 +16462,7 @@ input[type="datetime-local"] {
   .learn-tab i {
     font-size: 13px;
     position: relative !important;
-    top: 1px !important;
+    top: -1.5px !important;
   }
 
   .learn-tab-content {

@@ -690,3 +690,50 @@ function handleTutorInputKeydown(e) {
     sendTutorMessage();
   }
 }
+
+// 3-Dots Action Dropdown Menu
+function toggleTutorMoreMenu(event) {
+  if (event) event.stopPropagation();
+  const menu = document.getElementById("tutorMoreMenu");
+  const btn = document.getElementById("tutorMoreBtn");
+  if (!menu) return;
+  const isOpen = menu.classList.contains("active");
+  if (isOpen) {
+    menu.classList.remove("active");
+    if (btn) btn.classList.remove("active");
+  } else {
+    menu.classList.add("active");
+    if (btn) btn.classList.add("active");
+  }
+}
+
+function closeTutorMoreMenu() {
+  const menu = document.getElementById("tutorMoreMenu");
+  const btn = document.getElementById("tutorMoreBtn");
+  if (menu) menu.classList.remove("active");
+  if (btn) btn.classList.remove("active");
+}
+
+function handleTutorMenuApiKey() {
+  closeTutorMoreMenu();
+  promptTutorApiKey();
+}
+
+function handleTutorMenuClear() {
+  closeTutorMoreMenu();
+  clearTutorCurrentHistory();
+}
+
+// Close tutor action menu when clicking outside
+document.addEventListener("click", (e) => {
+  const wrapper = document.getElementById("tutorMoreDropdownWrapper");
+  if (wrapper && !wrapper.contains(e.target)) {
+    closeTutorMoreMenu();
+  }
+});
+
+window.toggleTutorMoreMenu = toggleTutorMoreMenu;
+window.closeTutorMoreMenu = closeTutorMoreMenu;
+window.handleTutorMenuApiKey = handleTutorMenuApiKey;
+window.handleTutorMenuClear = handleTutorMenuClear;
+

@@ -18861,7 +18861,18 @@ function getActivePhrasesData() {
 
 // Initialize all vocabulary
 function getAllVocabulary() {
-  return Object.values(getActiveVocabularyData()).flat();
+  const activeData = getActiveVocabularyData();
+  const all = Object.values(activeData).flat();
+  if (currentLearnLanguage === "zh") {
+    const seen = new Set();
+    return all.filter((item) => {
+      if (!item || !item.word) return false;
+      if (seen.has(item.word)) return false;
+      seen.add(item.word);
+      return true;
+    });
+  }
+  return all;
 }
 
 // Initialize all grammar
@@ -20600,6 +20611,19 @@ function selectVocabCategory(category) {
     currentVocabList = getAllVocabulary();
   } else {
     currentVocabList = data[category] || [];
+  }
+
+  // Tự động tải bất đồng bộ (Lazy Load) khi chọn cấp độ HSK chưa nạp
+  if (currentLearnLanguage === "zh" && typeof ZHDataLoader !== "undefined" && ZHDataLoader.levels.includes(category)) {
+    if (!ZHDataLoader.isLevelLoaded(category)) {
+      ZHDataLoader.loadHskLevel(category).then((words) => {
+        if (currentVocabCategory === category) {
+          currentVocabList = words || [];
+          renderVocabCard();
+          if (typeof updateSrsUI === "function") updateSrsUI();
+        }
+      });
+    }
   }
 
   renderVocabCard();

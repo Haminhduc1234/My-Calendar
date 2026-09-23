@@ -208,6 +208,10 @@ const ZH_BASICS_DATA = {
 
 // ==================== 2. KHO TỪ VỰNG TIẾNG TRUNG CHO NGƯỜI MỚI (HSK 1-2) ====================
 const ZH_VOCABULARY_DATA = {
+  hsk1: [],
+  hsk2: [],
+  hsk3: [],
+  hsk4: [],
   basics: [
     {
       word: "我",
@@ -1672,6 +1676,10 @@ const ZH_PHRASES_DATA = {
 // ==================== 5. DANH MỤC PHÂN LOẠI (CATEGORY MAPS) ====================
 const ZH_VOCAB_CATEGORIES = {
   all: "Tất cả",
+  hsk1: "HSK 1 (152 từ căn bản)",
+  hsk2: "HSK 2 (144 từ sơ cấp)",
+  hsk3: "HSK 3 (282 từ trung cấp 1)",
+  hsk4: "HSK 4 (362 từ trung cấp 2)",
   basics: "Đại Từ & Nhập Môn",
   greeting: "Chào Hỏi & Xã Giao",
   numbers: "Số Đếm & Số Lượng",

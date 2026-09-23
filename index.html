@@ -3192,6 +3192,12 @@
               <span class="tutor-bar-label">Chọn tình huống:</span>
               <div class="tutor-scenario-pills" id="tutorScenarioPills"></div>
             </div>
+            <div class="tutor-scenario-bar-right">
+              <button class="tutor-model-badge-btn provider-gemini" id="tutorModelBadgeBtn" onclick="openTutorSettingsModal()" title="Cài đặt AI & Đổi Model">
+                <i class="fi fi-rr-sparkles"></i>
+                <span id="tutorModelBadgeText">Gemini 3.6 Flash</span>
+              </button>
+            </div>
           </div>
 
           <div class="tutor-chat-window" id="tutorChatMessages"></div>
@@ -3212,9 +3218,9 @@
                 <i class="fi fi-rr-menu-dots-vertical"></i>
               </button>
               <div class="tutor-more-menu" id="tutorMoreMenu">
-                <button class="tutor-menu-item" onclick="handleTutorMenuApiKey()">
-                  <i class="fi fi-rr-key"></i>
-                  <span>Cài đặt API Key</span>
+                <button class="tutor-menu-item" onclick="openTutorSettingsModal()">
+                  <i class="fi fi-rr-settings-sliders"></i>
+                  <span>Cài đặt AI & Model</span>
                 </button>
                 <button class="tutor-menu-item danger" onclick="handleTutorMenuClear()">
                   <i class="fi fi-rr-trash"></i>
@@ -3228,6 +3234,97 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tutor AI Settings Modal (Cài Đặt Model & API Key) -->
+  <div id="tutorSettingsModal" class="tutor-settings-modal-backdrop" style="display: none;" onclick="handleTutorModalBackdropClick(event)">
+    <div class="tutor-settings-modal-card">
+      <div class="tutor-settings-header">
+        <div class="tutor-settings-title-group">
+          <div class="tutor-settings-title-icon"><i class="fi fi-rr-settings-sliders"></i></div>
+          <div>
+            <h3 class="tutor-settings-title">Cài Đặt Gia Sư AI</h3>
+            <p class="tutor-settings-subtitle">Tùy chọn mô hình AI & API Key cho Trợ lý tiếng Trung</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeTutorSettingsModal()" aria-label="Đóng">×</button>
+      </div>
+
+      <div class="tutor-settings-body">
+        <!-- 1. Chọn Nhà Cung Cấp (Provider) -->
+        <div class="tutor-settings-field">
+          <label class="tutor-settings-label">Nhà cung cấp AI (Provider)</label>
+          <div class="tutor-provider-grid">
+            <button type="button" class="tutor-provider-card active" id="tutorProviderGeminiCard" onclick="selectTutorProvider('gemini')">
+              <div class="provider-radio-dot"></div>
+              <div class="provider-card-content">
+                <div class="provider-card-title">
+                  <span class="provider-emoji">✨</span>
+                  <span>Google Gemini</span>
+                  <span class="provider-badge-rec">Khuyên dùng</span>
+                </div>
+                <div class="provider-card-desc">Rất thông minh, phân tích ngữ pháp HSK, Hán tự và dịch nghĩa tiếng Việt tự nhiên</div>
+              </div>
+            </button>
+
+            <button type="button" class="tutor-provider-card" id="tutorProviderGroqCard" onclick="selectTutorProvider('groq')">
+              <div class="provider-radio-dot"></div>
+              <div class="provider-card-content">
+                <div class="provider-card-title">
+                  <span class="provider-emoji">⚡</span>
+                  <span>Groq Cloud</span>
+                  <span class="provider-badge-fast">Siêu tốc</span>
+                </div>
+                <div class="provider-card-desc">Tốc độ phản hồi cực nhanh (&lt;1s), miễn phí, tích hợp DeepSeek R1 & Llama 3.3 70B</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Chọn Mô hình AI (Model) -->
+        <div class="tutor-settings-field">
+          <label class="tutor-settings-label" for="tutorModelSelect">Mô hình AI (Model)</label>
+          <select id="tutorModelSelect" class="tutor-settings-select" onchange="handleTutorModelChange()">
+            <!-- Dynamic options -->
+          </select>
+          <div class="tutor-settings-hint" id="tutorModelDesc"></div>
+        </div>
+
+        <!-- 3. Nhập API Key -->
+        <div class="tutor-settings-field">
+          <div class="tutor-settings-label-row">
+            <label class="tutor-settings-label" id="tutorApiKeyLabel" for="tutorApiKeyInput">Google Gemini API Key</label>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="tutor-get-key-link" id="tutorGetKeyLink">
+              <span>Lấy API Key miễn phí</span>
+              <i class="fi fi-rr-arrow-up-right"></i>
+            </a>
+          </div>
+          <div class="tutor-key-input-box">
+            <input type="password" id="tutorApiKeyInput" class="tutor-settings-input" placeholder="Dán API Key tại đây..." autocomplete="off" />
+            <button type="button" class="tutor-key-eye-btn" onclick="toggleTutorKeyVisibility()" title="Ẩn/Hiện API Key">
+              <i class="fi fi-rr-eye" id="tutorEyeIcon"></i>
+            </button>
+          </div>
+          <div class="tutor-settings-subhint" id="tutorKeySubhint">
+            API Key được lưu bảo mật trong trình duyệt của bạn (và đồng bộ qua tài khoản cá nhân).
+          </div>
+        </div>
+
+        <!-- Trạng thái kết nối / Test Key result -->
+        <div id="tutorConnectionStatus" class="tutor-connection-status" style="display: none;"></div>
+      </div>
+
+      <div class="tutor-settings-footer">
+        <button type="button" class="tutor-btn-secondary" id="tutorTestBtn" onclick="testTutorConnection()">
+          <i class="fi fi-rr-wifi"></i>
+          <span>Kiểm tra kết nối</span>
+        </button>
+        <button type="button" class="tutor-btn-primary" onclick="saveTutorSettings()">
+          <i class="fi fi-rr-check"></i>
+          <span>Lưu cài đặt</span>
+        </button>
       </div>
     </div>
   </div>

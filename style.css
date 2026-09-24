@@ -16916,13 +16916,14 @@ input[type="datetime-local"] {
 }
 
 /* Tutor Settings Modal Card */
-.tutor-settings-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.72);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  z-index: 100050;
+.tutor-settings-modal-backdrop,
+#tutorSettingsModal {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0, 0, 0, 0.78) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  z-index: 100200 !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26919,3 +26920,540 @@ div.fc-modal .fc-modal-dialog,
   line-height: 1 !important;
   margin: 0 !important;
 }
+
+/* ==================== FLOATING CHINESE TUTOR AI CHAT BUTTON ==================== */
+.tutor-floating-chat-btn {
+  position: fixed !important;
+  bottom: 26px !important;
+  right: 26px !important;
+  z-index: 99999 !important;
+  width: 58px !important;
+  height: 58px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+  background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%) !important;
+  box-shadow: 0 10px 25px -4px rgba(124, 58, 237, 0.6), 0 4px 12px -2px rgba(37, 99, 235, 0.45) !important;
+  color: #ffffff !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer !important;
+  outline: none !important;
+  padding: 0 !important;
+  transition: filter 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
+}
+
+.tutor-floating-chat-btn:hover {
+  filter: brightness(1.15) !important;
+  box-shadow: 0 12px 30px -3px rgba(124, 58, 237, 0.75), 0 6px 16px -2px rgba(37, 99, 235, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  transform: none !important; /* No hover jitter per GEMINI.md */
+}
+
+.tutor-floating-chat-btn:active {
+  filter: brightness(0.95) !important;
+  box-shadow: 0 6px 16px -2px rgba(124, 58, 237, 0.4) !important;
+  transform: none !important;
+}
+
+.tutor-fab-icon-wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tutor-fab-icon-wrap i {
+  position: static !important;
+  top: 0 !important;
+  font-size: 24px;
+  color: #ffffff;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tutor-fab-badge {
+  position: absolute;
+  bottom: -3px;
+  right: -3px;
+  background: #38bdf8;
+  color: #0b1120;
+  font-size: 9.5px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 9999px;
+  border: 2px solid #0b1120;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  line-height: 1.1;
+}
+
+.tutor-fab-notice-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #0b1120;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);
+  line-height: 1;
+}
+
+/* ==================== FULL-SCREEN CHINESE TUTOR MAIN MODAL ==================== */
+.chinese-tutor-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  z-index: 100060 !important;
+  background: rgba(11, 17, 32, 0.92) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: none;
+  justify-content: center;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+.chinese-tutor-modal.active {
+  display: flex !important;
+}
+
+.chinese-tutor-modal-dialog {
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: #090e17;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.chinese-tutor-header {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.chinese-tutor-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.chinese-tutor-header-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.25) 0%, rgba(59, 130, 246, 0.25) 100%);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.chinese-tutor-header-icon i {
+  position: static !important;
+  top: 0 !important;
+}
+
+.chinese-tutor-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.chinese-tutor-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chinese-tutor-header-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: -0.01em;
+}
+
+.chinese-tutor-model-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  color: #c084fc;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+  white-space: nowrap;
+}
+
+.chinese-tutor-model-tag:hover {
+  background: rgba(168, 85, 247, 0.28);
+  border-color: rgba(168, 85, 247, 0.6);
+  color: #e9d5ff;
+}
+
+.chinese-tutor-header-sub {
+  font-size: 12.5px;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chinese-tutor-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.chinese-tutor-header-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+}
+
+.chinese-tutor-header-settings-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: none;
+}
+
+.chinese-tutor-header-settings-btn i {
+  position: relative !important;
+  top: 1px !important;
+  line-height: 1 !important;
+  font-size: 14px;
+}
+
+.chinese-tutor-close-btn {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  border-radius: 9px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #cbd5e1 !important;
+  font-size: 20px !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: background 0.18s, color 0.18s, border-color 0.18s !important;
+}
+
+.chinese-tutor-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #fca5a5 !important;
+  transform: none !important;
+}
+
+.chinese-tutor-modal-body {
+  flex: 1 1 0%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 24px 20px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ==================== API KEY WARNING / NOTICE BANNER ==================== */
+.tutor-key-warning-banner {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.38);
+  border-radius: 12px;
+  padding: 12px 18px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.tutor-warning-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.tutor-warning-icon i {
+  position: static !important;
+  top: 0 !important;
+}
+
+.tutor-warning-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.tutor-warning-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fef3c7;
+  margin-bottom: 3px;
+}
+
+.tutor-warning-desc {
+  font-size: 12.5px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.tutor-warning-setup-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 9px;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #0b1120;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+  transition: filter 0.18s, box-shadow 0.18s;
+}
+
+.tutor-warning-setup-btn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5);
+  transform: none;
+}
+
+.tutor-warning-setup-btn i {
+  position: relative !important;
+  top: 1px !important;
+  font-size: 14px;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .chinese-tutor-header {
+    padding: 10px 14px;
+  }
+  .chinese-tutor-modal-body {
+    padding: 10px 12px 14px;
+  }
+  .chinese-tutor-header-title {
+    font-size: 15px;
+  }
+  .chinese-tutor-header-sub {
+    display: none;
+  }
+  .chinese-tutor-header-settings-btn span {
+    display: none;
+  }
+  .chinese-tutor-header-settings-btn {
+    padding: 7px 10px;
+  }
+  .tutor-key-warning-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px 14px;
+  }
+  .tutor-warning-setup-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .tutor-floating-chat-btn {
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+  }
+  .tutor-fab-icon-wrap i {
+    font-size: 21px;
+  }
+}
+
+/* ==================== TUTOR START SCREEN ==================== */
+.tutor-start-screen-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-height: 100%;
+  padding: 16px 10px;
+  box-sizing: border-box;
+}
+
+.tutor-welcome-start-card {
+  max-width: 440px;
+  width: 100%;
+  background: rgba(30, 41, 59, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 28px 24px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+}
+
+.tutor-start-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 12px;
+  border-radius: 9999px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  font-size: 11.5px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  letter-spacing: 0.02em;
+}
+
+.tutor-start-icon {
+  font-size: 44px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.tutor-start-title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.tutor-start-desc {
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.tutor-start-hints {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 20px;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.tutor-start-hint-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.tutor-start-hint-item i {
+  color: #a855f7;
+  font-size: 13px;
+  position: static !important;
+  top: 0 !important;
+  flex-shrink: 0;
+}
+
+.tutor-start-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 32px;
+  border-radius: 12px;
+  border: 1px solid rgba(168, 85, 247, 0.5);
+  background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+  color: #ffffff;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 22px -4px rgba(124, 58, 237, 0.55), 0 3px 8px -2px rgba(37, 99, 235, 0.4);
+  transition: filter 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.tutor-start-btn:hover {
+  filter: brightness(1.14);
+  box-shadow: 0 10px 26px -3px rgba(124, 58, 237, 0.7), 0 4px 12px -2px rgba(37, 99, 235, 0.5);
+  border-color: rgba(168, 85, 247, 0.8);
+  transform: none; /* No hover jitter per GEMINI.md */
+}
+
+.tutor-start-btn i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  font-size: 14px;
+}

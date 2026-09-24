@@ -27,6 +27,134 @@ function getActiveTutorProfileKey() {
   return tutorProfileKey || window.userProfileKey || localStorage.getItem("currentProfileKey") || "default";
 }
 
+// Helper to check if current account has configured Gemini API Key
+function hasTutorApiKey() {
+  const pKey = getActiveTutorProfileKey();
+  const key = tutorGeminiKey || localStorage.getItem(`geminiApiKey_${pKey}`) || localStorage.getItem("geminiApiKey") || "";
+  return !!(key && key.trim().length > 10);
+}
+window.hasTutorApiKey = hasTutorApiKey;
+
+// Update UI Notice (Banner & FAB Dot) based on whether API Key is configured
+function checkTutorApiKeyNotice() {
+  const banner = document.getElementById("tutorKeyWarningBanner");
+  const noticeDot = document.getElementById("tutorFabNoticeDot");
+  const hasKey = hasTutorApiKey();
+
+  if (banner) {
+    banner.style.display = hasKey ? "none" : "flex";
+  }
+  if (noticeDot) {
+    noticeDot.style.display = hasKey ? "none" : "flex";
+  }
+}
+window.checkTutorApiKeyNotice = checkTutorApiKeyNotice;
+
+// Show or hide Floating Chat Button
+function showTutorFloatingBtn(show) {
+  const btn = document.getElementById("tutorFloatingChatBtn");
+  if (!btn) return;
+  btn.style.display = show ? "flex" : "none";
+  checkTutorApiKeyNotice();
+}
+window.showTutorFloatingBtn = showTutorFloatingBtn;
+
+// Tự động kiểm tra và đồng bộ trạng thái hiển thị của nút Chatbox AI
+function initTutorFloatingAutoCheck() {
+  const checkAndShow = () => {
+    const learnModal = document.getElementById("learnModal");
+    const isLearnOpen = learnModal && (learnModal.style.display === "flex" || learnModal.style.display === "block" || (window.getComputedStyle && getComputedStyle(learnModal).display !== "none"));
+    const lang = window.currentLearnLanguage || localStorage.getItem("learnSelectedLanguage") || "en";
+    const btn = document.getElementById("tutorFloatingChatBtn");
+    if (btn) {
+      if (isLearnOpen && lang === "zh") {
+        btn.style.display = "flex";
+      } else {
+        btn.style.display = "none";
+      }
+    }
+    checkTutorApiKeyNotice();
+  };
+
+  const learnModal = document.getElementById("learnModal");
+  if (learnModal && window.MutationObserver) {
+    const observer = new MutationObserver(checkAndShow);
+    observer.observe(learnModal, { attributes: true, attributeFilter: ["style", "class"] });
+  }
+
+  // Chạy ngay kiểm tra
+  checkAndShow();
+}
+window.initTutorFloatingAutoCheck = initTutorFloatingAutoCheck;
+
+// Cuộn cửa sổ chat xuống tin nhắn mới nhất
+function scrollTutorToBottom() {
+  const container = document.getElementById("tutorChatMessages");
+  if (container) {
+    container.scrollTop = container.scrollHeight;
+  }
+}
+window.scrollTutorToBottom = scrollTutorToBottom;
+
+// Open Chinese Tutor Modal (Full Screen)
+function openChineseTutorModal() {
+  try {
+    const modal = document.getElementById("chineseTutorModal");
+    if (!modal) {
+      console.warn("[Chinese Tutor] Không tìm thấy modal #chineseTutorModal");
+      return;
+    }
+
+    // Khởi tạo kịch bản và dữ liệu gia sư AI
+    if (typeof initChineseTutor === "function") {
+      initChineseTutor();
+    } else {
+      if (typeof renderTutorScenarioPills === "function") renderTutorScenarioPills();
+      if (typeof loadTutorScenarioHistory === "function") loadTutorScenarioHistory(currentTutorScenario);
+    }
+
+    modal.style.display = "flex";
+    modal.classList.add("active");
+    document.body.style.overflow = "hidden";
+
+    updateTutorModelBadge();
+    checkTutorApiKeyNotice();
+    scrollTutorToBottom();
+
+    if (!hasTutorApiKey()) {
+      if (typeof showToast === "function") {
+        showToast("Chưa cài đặt Google Gemini API Key. Bấm vào banner để cài đặt miễn phí!", 4000);
+      }
+    } else {
+      setTimeout(() => {
+        const input = document.getElementById("tutorChatInput");
+        if (input) input.focus();
+      }, 200);
+    }
+  } catch (err) {
+    console.error("[Chinese Tutor] Lỗi khi mở modal chat:", err);
+  }
+}
+window.openChineseTutorModal = openChineseTutorModal;
+
+// Close Chinese Tutor Modal
+function closeChineseTutorModal() {
+  const modal = document.getElementById("chineseTutorModal");
+  if (modal) {
+    modal.style.display = "none";
+    modal.classList.remove("active");
+  }
+
+  // Restore scroll overflow for learnModal if still open
+  const learnModal = document.getElementById("learnModal");
+  if (learnModal && (learnModal.style.display === "flex" || (window.getComputedStyle && getComputedStyle(learnModal).display !== "none"))) {
+    document.body.style.overflow = "hidden";
+  } else {
+    document.body.style.overflow = "";
+  }
+}
+window.closeChineseTutorModal = closeChineseTutorModal;
+
 // Load Account-Specific Settings (from LocalStorage first, then Firebase)
 function loadTutorAccountSettings() {
   const pKey = getActiveTutorProfileKey();
@@ -42,6 +170,7 @@ function loadTutorAccountSettings() {
     currentTutorModel = DEFAULT_GEMINI_MODEL;
   }
   updateTutorModelBadge();
+  checkTutorApiKeyNotice();
 
   // If Firebase ref exists, fetch remote settings
   if (firebaseTutorRef) {
@@ -59,6 +188,7 @@ function loadTutorAccountSettings() {
           localStorage.setItem("tutorAiModel", data.model);
         }
         updateTutorModelBadge();
+        checkTutorApiKeyNotice();
         console.log(`[Chinese Tutor] Loaded Gemini settings from Firebase for account ${pKey}`);
       }
     }).catch(err => {
@@ -247,7 +377,7 @@ function loadTutorScenarioHistory(scenarioId) {
   try {
     const raw = localStorage.getItem(`chineseTutor_${pKey}_${scenarioId}`);
     if (raw) localData = JSON.parse(raw);
-  } catch (e) {}
+  } catch (e) { }
 
   if (firebaseTutorRef) {
     firebaseTutorRef.child(`scenarios/${scenarioId}/history`).once("value").then(snap => {
@@ -287,7 +417,7 @@ function saveTutorScenarioHistory(scenarioId) {
   const pKey = tutorProfileKey || window.userProfileKey || "default";
   try {
     localStorage.setItem(`chineseTutor_${pKey}_${scenarioId}`, JSON.stringify(tutorConversationHistory));
-  } catch (e) {}
+  } catch (e) { }
 
   if (!firebaseTutorRef && (window.firebaseDb || firebaseTutorDb)) {
     initChineseTutorFirebase(window.firebaseDb || firebaseTutorDb, pKey);
@@ -317,7 +447,7 @@ function clearTutorCurrentHistory() {
   tutorConversationHistory = [];
   try {
     localStorage.removeItem(`chineseTutor_${pKey}_${currentTutorScenario}`);
-  } catch (e) {}
+  } catch (e) { }
 
   if (firebaseTutorRef) {
     firebaseTutorRef.child(`scenarios/${currentTutorScenario}/history`).remove()
@@ -327,16 +457,55 @@ function clearTutorCurrentHistory() {
 }
 window.clearTutorCurrentHistory = clearTutorCurrentHistory;
 
-// Reset Conversation with Scenario Initial Message
-function resetTutorConversation() {
-  const scenario = CHINESE_TUTOR_SCENARIOS[currentTutorScenario];
-  tutorConversationHistory = [];
-
+// Hiển thị màn hình chờ với thông tin tình huống và nút Bắt đầu
+function renderTutorStartScreen() {
   const chatContainer = document.getElementById("tutorChatMessages");
   if (!chatContainer) return;
   chatContainer.innerHTML = "";
+  tutorConversationHistory = [];
 
-  // Add initial AI welcome message
+  const scenario = CHINESE_TUTOR_SCENARIOS[currentTutorScenario] || CHINESE_TUTOR_SCENARIOS.free;
+
+  const startCard = document.createElement("div");
+  startCard.className = "tutor-start-screen-wrapper";
+  startCard.innerHTML = `
+    <div class="tutor-welcome-start-card">
+      <div class="tutor-start-badge">${escapeHtml(scenario.level)}</div>
+      <div class="tutor-start-icon">${scenario.icon}</div>
+      <h4 class="tutor-start-title">${escapeHtml(scenario.name)}</h4>
+      <p class="tutor-start-desc">${escapeHtml(scenario.description)}</p>
+      
+      <div class="tutor-start-hints">
+        <div class="tutor-start-hint-item">
+          <i class="fi fi-rr-sparkles"></i>
+          <span>Gia sư AI phản hồi Hán tự, Pinyin và sửa ngữ pháp</span>
+        </div>
+        <div class="tutor-start-hint-item">
+          <i class="fi fi-rr-microphone"></i>
+          <span>Hỗ trợ luyện khẩu ngữ qua Microphone giọng nói</span>
+        </div>
+      </div>
+
+      <button type="button" class="tutor-start-btn" onclick="startCurrentTutorScenario()">
+        <i class="fi fi-rr-play"></i>
+        <span>Bắt đầu</span>
+      </button>
+    </div>
+  `;
+
+  chatContainer.appendChild(startCard);
+}
+window.renderTutorStartScreen = renderTutorStartScreen;
+
+// Bắt đầu hội thoại khi người dùng bấm nút Bắt đầu
+function startCurrentTutorScenario() {
+  const scenario = CHINESE_TUTOR_SCENARIOS[currentTutorScenario] || CHINESE_TUTOR_SCENARIOS.free;
+  const chatContainer = document.getElementById("tutorChatMessages");
+  if (!chatContainer) return;
+  chatContainer.innerHTML = "";
+  tutorConversationHistory = [];
+
+  // Gửi tin nhắn chào mừng ban đầu của Gia sư AI
   appendTutorMessage({
     role: "assistant",
     zh: scenario.initialMessage.zh,
@@ -344,6 +513,18 @@ function resetTutorConversation() {
     vi: scenario.initialMessage.vi,
     feedback: ""
   });
+
+  // Focus ô nhập
+  setTimeout(() => {
+    const input = document.getElementById("tutorChatInput");
+    if (input) input.focus();
+  }, 200);
+}
+window.startCurrentTutorScenario = startCurrentTutorScenario;
+
+// Reset Conversation to Start Screen (không tự động nạp tin nhắn chat)
+function resetTutorConversation() {
+  renderTutorStartScreen();
 }
 
 // Parse AI Raw Response
@@ -372,18 +553,23 @@ function parseTutorAiResponse(raw) {
   };
 }
 
-// Update active model badge in scenario bar
+// Update active model badge in scenario bar and modal header
 function updateTutorModelBadge() {
-  const badgeBtn = document.getElementById("tutorModelBadgeBtn");
-  const badgeText = document.getElementById("tutorModelBadgeText");
-  if (!badgeBtn || !badgeText) return;
-
   const modelObj = GEMINI_TUTOR_MODELS.find(m => m.id === currentTutorModel) || GEMINI_TUTOR_MODELS[0];
   const modelName = modelObj ? modelObj.name : currentTutorModel;
 
-  badgeText.textContent = modelName;
-  badgeBtn.className = "tutor-model-badge-btn provider-gemini";
-  badgeBtn.title = `Đang dùng: Google Gemini (${modelName}). Bấm để cài đặt API Key.`;
+  const badgeBtn = document.getElementById("tutorModelBadgeBtn");
+  const badgeText = document.getElementById("tutorModelBadgeText");
+  if (badgeBtn && badgeText) {
+    badgeText.textContent = modelName;
+    badgeBtn.className = "tutor-model-badge-btn provider-gemini";
+    badgeBtn.title = `Đang dùng: Google Gemini (${modelName}). Bấm để cài đặt API Key.`;
+  }
+
+  const headerTag = document.getElementById("tutorHeaderModelTag");
+  if (headerTag) {
+    headerTag.textContent = `✨ ${modelName}`;
+  }
 }
 window.updateTutorModelBadge = updateTutorModelBadge;
 
@@ -393,6 +579,19 @@ async function sendTutorMessage() {
   if (!inputEl) return;
   const userText = inputEl.value.trim();
   if (!userText) return;
+
+  const pKey = getActiveTutorProfileKey();
+  const activeKey = tutorGeminiKey || localStorage.getItem(`geminiApiKey_${pKey}`) || localStorage.getItem("geminiApiKey") || "";
+
+  // Nếu tài khoản chưa cài đặt API Key: thông báo rõ ràng và mở modal hướng dẫn cài đặt
+  if (!activeKey) {
+    if (typeof showToast === "function") {
+      showToast("Vui lòng cài đặt Google Gemini API Key để trò chuyện cùng Gia sư AI!", 4500);
+    }
+    checkTutorApiKeyNotice();
+    openTutorSettingsModal();
+    return;
+  }
 
   inputEl.value = "";
   inputEl.style.height = "auto";
@@ -408,24 +607,6 @@ async function sendTutorMessage() {
 
   const scenario = CHINESE_TUTOR_SCENARIOS[currentTutorScenario] || CHINESE_TUTOR_SCENARIOS.free;
   const modelToUse = currentTutorModel || DEFAULT_GEMINI_MODEL;
-  const pKey = getActiveTutorProfileKey();
-  const activeKey = tutorGeminiKey || localStorage.getItem(`geminiApiKey_${pKey}`) || localStorage.getItem("geminiApiKey") || "";
-
-  if (!activeKey) {
-    // Show polite notification + fallback
-    setTimeout(() => {
-      showTutorTyping(false);
-      const fallback = TUTOR_FALLBACK_RESPONSES[Math.floor(Math.random() * TUTOR_FALLBACK_RESPONSES.length)];
-      appendTutorMessage({
-        role: "assistant",
-        zh: fallback.zh,
-        pinyin: fallback.pinyin,
-        vi: fallback.vi,
-        feedback: `${fallback.feedback}\n*(Chưa cài đặt Google Gemini API Key cho tài khoản này. Bấm vào nút Model góc trên bên phải để nhập Key và trải nghiệm Gia sư AI thực thụ)*`
-      });
-    }, 700);
-    return;
-  }
 
   try {
     const rawAiReply = await callTutorGemini(activeKey, modelToUse, scenario, tutorConversationHistory, userText);
@@ -514,7 +695,7 @@ async function callTutorGemini(apiKey, model, scenario, history, userText) {
     try {
       const errJson = await response.json();
       if (errJson?.error?.message) errorDetail = errJson.error.message;
-    } catch (e) {}
+    } catch (e) { }
     throw new Error(errorDetail);
   }
 
@@ -551,6 +732,7 @@ function openTutorSettingsModal() {
   handleTutorModelChange();
   clearTutorStatus();
 
+  modal.style.zIndex = "100200";
   modal.style.display = "flex";
 }
 window.openTutorSettingsModal = openTutorSettingsModal;
@@ -663,10 +845,10 @@ async function testTutorConnection() {
             }
           }
         }
-      } catch (e) {}
+      } catch (e) { }
       throw new Error(errDetail);
     }
-    setTutorStatus("success", `✓ Kết nối Google Gemini (${model}) thành công! Sẵn sàng học tiếng Trung.`);
+    setTutorStatus("success", `Kết nối Google Gemini (${model}) thành công! Sẵn sàng học tiếng Trung.`);
   } catch (err) {
     setTutorStatus("error", `Không thể kết nối: ${err.message}`);
   }
@@ -708,6 +890,7 @@ function saveTutorSettings() {
   }
 
   updateTutorModelBadge();
+  checkTutorApiKeyNotice();
   closeTutorSettingsModal();
 
   if (typeof showToast === "function") {
@@ -746,6 +929,7 @@ function initChineseTutorFirebase(firebaseDb, userProfileKey) {
       }
       if (changed) {
         updateTutorModelBadge();
+        checkTutorApiKeyNotice();
       }
     }
   });
@@ -976,10 +1160,16 @@ document.addEventListener("keydown", (e) => {
 document.addEventListener("DOMContentLoaded", () => {
   loadTutorAccountSettings();
   updateTutorModelBadge();
+  initTutorFloatingAutoCheck();
   if (window.firebaseDb && typeof initChineseTutorFirebase === "function") {
     initChineseTutorFirebase(window.firebaseDb, window.userProfileKey);
   }
 });
+
+// Gọi ngay nếu script load sau DOMContentLoaded
+if (document.readyState === "interactive" || document.readyState === "complete") {
+  initTutorFloatingAutoCheck();
+}
 
 window.toggleTutorMoreMenu = toggleTutorMoreMenu;
 window.closeTutorMoreMenu = closeTutorMoreMenu;

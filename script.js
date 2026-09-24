@@ -18934,6 +18934,11 @@ function switchLearnLanguage(lang) {
     if (btn) btn.style.display = isZh ? "flex" : "none";
   });
 
+  // Show/Hide Floating Chatbox AI Button for Chinese mode
+  if (typeof showTutorFloatingBtn === "function") {
+    showTutorFloatingBtn(isZh);
+  }
+
   // Show/Hide Pinyin Toggle Button (Only for Chinese)
   const pinyinToggleBtn = document.getElementById("learnPinyinToggleBtn");
   if (pinyinToggleBtn) {
@@ -19395,6 +19400,8 @@ function selectLearnLanguageAndOpen(lang) {
 // Back button inside learn modal → close learn modal, reopen picker
 function backToLearnLangPicker() {
   document.getElementById("learnModal").style.display = "none";
+  if (typeof showTutorFloatingBtn === "function") showTutorFloatingBtn(false);
+  if (typeof closeChineseTutorModal === "function") closeChineseTutorModal();
   const picker = document.getElementById("learnLangPickerModal");
   picker.style.display = "flex";
 }
@@ -19402,6 +19409,8 @@ function backToLearnLangPicker() {
 // Close Learn Modal
 function closeLearnModal() {
   document.getElementById("learnModal").style.display = "none";
+  if (typeof showTutorFloatingBtn === "function") showTutorFloatingBtn(false);
+  if (typeof closeChineseTutorModal === "function") closeChineseTutorModal();
   document.body.style.overflow = "";
 }
 
@@ -20328,7 +20337,12 @@ function switchLearnTab(tab) {
   } else if (tab === "chengyu") {
     if (typeof initChengyu === "function") initChengyu();
   } else if (tab === "tutor") {
-    if (typeof initChineseTutor === "function") initChineseTutor();
+    if (typeof openChineseTutorModal === "function") openChineseTutorModal();
+  }
+
+  // Đảm bảo nút Chatbox AI luôn hiển thị khi ở phần học tiếng Trung
+  if (typeof showTutorFloatingBtn === "function") {
+    showTutorFloatingBtn(currentLearnLanguage === "zh");
   }
 }
 

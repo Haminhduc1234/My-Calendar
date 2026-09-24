@@ -61,11 +61,209 @@ function checkTutorApiKeyNotice() {
 }
 window.checkTutorApiKeyNotice = checkTutorApiKeyNotice;
 
+// ==================== DRAGGABLE & EDGE-SNAPPING FLOATING CHAT BUTTON ====================
+let _tutorFabDragInitialized = false;
+
+function applyTutorFabPosition() {
+  const btn = document.getElementById("tutorFloatingChatBtn");
+  if (!btn) return;
+
+  const btnW = btn.offsetWidth || 58;
+  const btnH = btn.offsetHeight || 58;
+  const isMobile = window.innerWidth < 640;
+  const sideMargin = isMobile ? 12 : 20;
+  const minY = isMobile ? 54 : 64;
+  const maxY = window.innerHeight - btnH - (isMobile ? 18 : 24);
+  const usableH = Math.max(1, maxY - minY);
+
+  let pos = null;
+  try {
+    const raw = localStorage.getItem("tutorFabPosition");
+    if (raw) pos = JSON.parse(raw);
+  } catch (e) {}
+
+  const isLeft = pos && pos.side === "left";
+  const topRatio = (pos && typeof pos.topRatio === "number" && !isNaN(pos.topRatio)) ? pos.topRatio : 0.85;
+
+  const targetLeft = isLeft ? sideMargin : Math.max(sideMargin, window.innerWidth - btnW - sideMargin);
+  const targetTop = Math.max(minY, Math.min(minY + topRatio * usableH, maxY));
+
+  btn.style.left = targetLeft + "px";
+  btn.style.top = targetTop + "px";
+  btn.style.right = "auto";
+  btn.style.bottom = "auto";
+}
+window.applyTutorFabPosition = applyTutorFabPosition;
+
+function initTutorFloatingChatDrag() {
+  const btn = document.getElementById("tutorFloatingChatBtn");
+  if (!btn || _tutorFabDragInitialized) return;
+  _tutorFabDragInitialized = true;
+
+  // Thiết lập vị trí ban đầu từ cache hoặc mặc định
+  applyTutorFabPosition();
+
+  let isDragging = false;
+  let hasMoved = false;
+  let wasDragged = false;
+  let startPointerX = 0;
+  let startPointerY = 0;
+  let initialLeft = 0;
+  let initialTop = 0;
+  let activePointerId = null;
+
+  const onPointerDown = (e) => {
+    // Chỉ kích hoạt bằng chuột trái hoặc touch/pen
+    if (e.button !== undefined && e.button !== 0) return;
+
+    isDragging = true;
+    hasMoved = false;
+    wasDragged = false;
+    startPointerX = e.clientX;
+    startPointerY = e.clientY;
+    activePointerId = e.pointerId;
+
+    const rect = btn.getBoundingClientRect();
+    initialLeft = rect.left;
+    initialTop = rect.top;
+
+    btn.classList.remove("is-snapping");
+    btn.classList.add("is-dragging");
+    btn.style.transition = "none";
+
+    try {
+      if (btn.setPointerCapture && e.pointerId !== undefined) {
+        btn.setPointerCapture(e.pointerId);
+      }
+    } catch (err) {}
+  };
+
+  const onPointerMove = (e) => {
+    if (!isDragging) return;
+
+    const dx = e.clientX - startPointerX;
+    const dy = e.clientY - startPointerY;
+
+    if (!hasMoved) {
+      if (Math.hypot(dx, dy) > 6) {
+        hasMoved = true;
+        wasDragged = true;
+      } else {
+        return;
+      }
+    }
+
+    const btnW = btn.offsetWidth || 58;
+    const btnH = btn.offsetHeight || 58;
+    const isMobile = window.innerWidth < 640;
+    const minX = 4;
+    const maxX = window.innerWidth - btnW - 4;
+    const minY = isMobile ? 50 : 58;
+    const maxY = window.innerHeight - btnH - 14;
+
+    let curLeft = initialLeft + dx;
+    let curTop = initialTop + dy;
+
+    // Giới hạn trong khung nhìn màn hình khi kéo
+    curLeft = Math.max(minX, Math.min(curLeft, maxX));
+    curTop = Math.max(minY, Math.min(curTop, maxY));
+
+    btn.style.left = curLeft + "px";
+    btn.style.top = curTop + "px";
+    btn.style.right = "auto";
+    btn.style.bottom = "auto";
+  };
+
+  const onPointerUp = (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+
+    btn.classList.remove("is-dragging");
+
+    try {
+      if (btn.releasePointerCapture && activePointerId !== null) {
+        btn.releasePointerCapture(activePointerId);
+      }
+    } catch (err) {}
+    activePointerId = null;
+
+    if (hasMoved) {
+      wasDragged = true;
+
+      // Tính cạnh gần nhất để hút (fix vào mép trái hoặc mép phải màn hình)
+      const btnW = btn.offsetWidth || 58;
+      const btnH = btn.offsetHeight || 58;
+      const isMobile = window.innerWidth < 640;
+      const sideMargin = isMobile ? 12 : 20;
+      const minY = isMobile ? 54 : 64;
+      const maxY = window.innerHeight - btnH - (isMobile ? 18 : 24);
+      const usableH = Math.max(1, maxY - minY);
+
+      const rect = btn.getBoundingClientRect();
+      const btnCenterX = rect.left + btnW / 2;
+      const isLeft = btnCenterX < (window.innerWidth / 2);
+
+      const targetLeft = isLeft ? sideMargin : Math.max(sideMargin, window.innerWidth - btnW - sideMargin);
+      const targetTop = Math.max(minY, Math.min(rect.top, maxY));
+      const topRatio = Math.max(0, Math.min(1, (targetTop - minY) / usableH));
+
+      // Hiệu ứng hút vào mép màn hình mượt mà
+      btn.classList.add("is-snapping");
+      btn.style.left = targetLeft + "px";
+      btn.style.top = targetTop + "px";
+      btn.style.right = "auto";
+      btn.style.bottom = "auto";
+
+      // Lưu vị trí vào localStorage
+      try {
+        localStorage.setItem("tutorFabPosition", JSON.stringify({
+          side: isLeft ? "left" : "right",
+          topRatio: topRatio
+        }));
+      } catch (err) {}
+
+      setTimeout(() => {
+        btn.classList.remove("is-snapping");
+        // Giữ wasDragged thêm một nhịp ngắn để chặn click event
+        setTimeout(() => { wasDragged = false; }, 60);
+      }, 280);
+    } else {
+      wasDragged = false;
+    }
+  };
+
+  btn.addEventListener("pointerdown", onPointerDown, { passive: false });
+  btn.addEventListener("pointermove", onPointerMove, { passive: false });
+  btn.addEventListener("pointerup", onPointerUp);
+  btn.addEventListener("pointercancel", onPointerUp);
+
+  // Chặn mở modal khi người dùng vừa thực hiện kéo thả nút
+  btn.addEventListener("click", (e) => {
+    if (wasDragged) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      wasDragged = false;
+      return false;
+    }
+  }, true); // Bắt ở capture phase để chặn trước onclick inline
+
+  // Cập nhật lại vị trí cạnh mép khi xoay màn hình hoặc đổi cỡ cửa sổ
+  window.addEventListener("resize", () => {
+    applyTutorFabPosition();
+  });
+}
+window.initTutorFloatingChatDrag = initTutorFloatingChatDrag;
+
 // Show or hide Floating Chat Button
 function showTutorFloatingBtn(show) {
   const btn = document.getElementById("tutorFloatingChatBtn");
   if (!btn) return;
   btn.style.display = show ? "flex" : "none";
+  if (show) {
+    applyTutorFabPosition();
+    initTutorFloatingChatDrag();
+  }
   checkTutorApiKeyNotice();
 }
 window.showTutorFloatingBtn = showTutorFloatingBtn;
@@ -80,6 +278,8 @@ function initTutorFloatingAutoCheck() {
     if (btn) {
       if (isLearnOpen && lang === "zh") {
         btn.style.display = "flex";
+        applyTutorFabPosition();
+        initTutorFloatingChatDrag();
       } else {
         btn.style.display = "none";
       }
@@ -1595,6 +1795,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadTutorAccountSettings();
   updateTutorModelBadge();
   initTutorFloatingAutoCheck();
+  initTutorFloatingChatDrag();
   if (window.firebaseDb && typeof initChineseTutorFirebase === "function") {
     initChineseTutorFirebase(window.firebaseDb, window.userProfileKey);
   }
@@ -1603,6 +1804,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Gọi ngay nếu script load sau DOMContentLoaded
 if (document.readyState === "interactive" || document.readyState === "complete") {
   initTutorFloatingAutoCheck();
+  initTutorFloatingChatDrag();
 }
 
 window.toggleTutorMoreMenu = toggleTutorMoreMenu;

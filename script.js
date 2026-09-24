@@ -20809,7 +20809,6 @@ function renderVocabCard() {
   container.innerHTML = `
     <div class="learn-card ${isZh ? "learn-card-zh" : ""}">
       <div class="learn-card-top-row">
-        <div class="learn-card-category">${getCategoryName(currentVocabCategory)} ${item.level ? `<span class="learn-card-level-badge">${item.level}</span>` : ""}</div>
         <div class="learn-card-top-actions" style="display: flex; align-items: center; gap: 8px;">
           ${isZh ? `
           <button class="learn-card-practice-btn" onclick="openHanziWriterForCurrentVocab()" title="Tập viết chữ Hán">

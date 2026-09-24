@@ -13779,6 +13779,15 @@ input[type="datetime-local"] {
 }
 
 /* ========================== QUIZ MODAL ========================== */
+#quizModal {
+  z-index: 100070 !important;
+  background: rgba(7, 13, 30, 0.75) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 .quiz-modal-content {
   background: var(--bg-2);
   border-radius: 16px;
@@ -14015,6 +14024,15 @@ input[type="datetime-local"] {
 }
 
 /* Hanzi Writer Modal */
+#hanziWriterModal {
+  z-index: 100070 !important;
+  background: rgba(7, 13, 30, 0.75) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
 .hanzi-modal-content {
   background: var(--bg-2);
   border-radius: 18px;
@@ -27009,8 +27027,8 @@ div.fc-modal .fc-modal-dialog,
 /* ==================== FLOATING CHINESE TUTOR AI CHAT BUTTON ==================== */
 .tutor-floating-chat-btn {
   position: fixed !important;
-  bottom: 26px !important;
-  right: 26px !important;
+  right: 26px;
+  bottom: 26px;
   z-index: 99999 !important;
   width: 58px !important;
   height: 58px !important;
@@ -27022,10 +27040,25 @@ div.fc-modal .fc-modal-dialog,
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer !important;
+  cursor: grab !important;
   outline: none !important;
   padding: 0 !important;
+  touch-action: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
   transition: filter 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
+}
+
+.tutor-floating-chat-btn.is-dragging {
+  cursor: grabbing !important;
+  transition: none !important;
+  box-shadow: 0 16px 36px -2px rgba(124, 58, 237, 0.85), 0 8px 20px -2px rgba(37, 99, 235, 0.65) !important;
+  filter: brightness(1.2) !important;
+  transform: none !important;
+}
+
+.tutor-floating-chat-btn.is-snapping {
+  transition: left 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), top 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), filter 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
 }
 
 .tutor-floating-chat-btn:hover {
@@ -27047,6 +27080,10 @@ div.fc-modal .fc-modal-dialog,
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.tutor-floating-chat-btn > * {
+  pointer-events: none !important;
 }
 
 .tutor-fab-icon-wrap i {
@@ -27409,10 +27446,8 @@ div.fc-modal .fc-modal-dialog,
     justify-content: center;
   }
   .tutor-floating-chat-btn {
-    bottom: 20px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
+    width: 50px !important;
+    height: 50px !important;
   }
   .tutor-fab-icon-wrap i {
     font-size: 21px;

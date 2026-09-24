@@ -977,7 +977,10 @@ function appendTutorMessage(msg, skipSave) {
     const escapedZh = escapeHtml(msg.zh || "");
     const escapedPinyin = escapeHtml(msg.pinyin || "");
     const escapedVi = escapeHtml(msg.vi || "");
-    const escapedFeedback = msg.feedback ? escapeHtml(msg.feedback) : "";
+    let cleanFeedback = (msg.feedback || "").trim();
+    cleanFeedback = cleanFeedback.replace(/^(\s*💡\s*)?(Nhận xét\s*(&\s*Hướng dẫn)?|Góp ý|Feedback)[:：]?\s*/i, "").trim();
+    cleanFeedback = cleanFeedback.replace(/\n{3,}/g, "\n\n");
+    const escapedFeedback = cleanFeedback ? escapeHtml(cleanFeedback) : "";
     const escapedExtra = msg.extra ? escapeHtml(msg.extra) : "";
     const msgId = "tutor_resp_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6);
 
@@ -999,15 +1002,7 @@ function appendTutorMessage(msg, skipSave) {
         </div>
         ${escapedPinyin ? `<div class="tutor-pinyin-text">${escapedPinyin}</div>` : ""}
         ${escapedVi ? `<div class="tutor-vi-text">${escapedVi}</div>` : ""}
-        ${escapedFeedback ? `
-          <div class="tutor-feedback-box">
-            <div class="tutor-feedback-header">
-              <i class="fi fi-rr-bulb"></i>
-              <span>Nhận xét & Hướng dẫn</span>
-            </div>
-            <div class="tutor-feedback-content">${escapedFeedback}</div>
-          </div>
-        ` : ""}
+        ${escapedFeedback ? `<div class="tutor-feedback-box"><div class="tutor-feedback-header"><i class="fi fi-rr-bulb"></i><span>Nhận xét & Hướng dẫn</span></div><div class="tutor-feedback-content">${escapedFeedback}</div></div>` : ""}
       </div>
     `;
     tutorConversationHistory.push({

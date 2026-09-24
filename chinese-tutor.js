@@ -201,7 +201,7 @@ function loadTutorAccountSettings() {
   }
 }
 
-// Predefined Scenarios for Chinese Conversation Practice
+// Trò chuyện tự do duy nhất (đã loại bỏ hệ thống chọn chủ đề để đơn giản hóa & tiết kiệm API quota)
 const CHINESE_TUTOR_SCENARIOS = {
   free: {
     id: "free",
@@ -224,130 +224,8 @@ Nhiệm vụ của bạn:
    [FEEDBACK] 💡 Nhận xét: Sửa lỗi và giải thích ngắn gọn bằng tiếng Việt [/FEEDBACK]
 3. Đặt một câu hỏi mở ngắn gọn ở cuối để khuyến khích học viên tiếp tục hội thoại.
 4. Trình độ ngôn ngữ: Tùy chỉnh tương ứng HSK 1-4, từ ngữ phổ thông, dễ hiểu.`
-  },
-  greeting: {
-    id: "greeting",
-    name: "Chào hỏi & Làm quen",
-    icon: "👋",
-    level: "HSK 1",
-    description: "Giao tiếp cơ bản: chào hỏi, giới thiệu tên tuổi, quê quán, nghề nghiệp và sở thích.",
-    initialMessage: {
-      zh: "你好！很高兴认识你。我叫李明，是你的中文朋友。你叫什么名字？你是哪国人？",
-      pinyin: "Nǐ hǎo! Hěn gāoxìng rènshí nǐ. Wǒ jiào Lǐ Míng, shì nǐ de Zhōngwén péngyou. Nǐ jiào shénme míngzi? Nǐ shì nǎ guó rén?",
-      vi: "Xin chào! Rất vui được làm quen với bạn. Tôi tên là Lý Minh, là người bạn tiếng Trung của bạn. Bạn tên là gì? Bạn là người nước nào?"
-    },
-    systemPrompt: `Bạn là Lý Minh (李明), một người bạn Trung Quốc thân thiện đang làm quen với học viên.
-Nhiệm vụ: Giao tiếp làm quen cấp độ HSK 1, hỏi tên, tuổi, công việc, sở thích, hướng dẫn học viên trả lời tự nhiên. Cấu trúc: [ZH], [PINYIN], [VI], [FEEDBACK].`
-  },
-  dining: {
-    id: "dining",
-    name: "Gọi món nhà hàng",
-    icon: "🍜",
-    level: "HSK 1-2",
-    description: "Nhập vai phục vụ nhà hàng Trung Quốc: gọi món, hỏi khẩu vị độ cay, thanh toán hóa đơn.",
-    initialMessage: {
-      zh: "您好，欢迎光临！请问几位？这边有空位，请坐。这是菜单，您想吃点什么？",
-      pinyin: "Nín hǎo, huānyíng guānglín! Qǐngwèn jǐ wèi? Zhè biān yǒu kòng wèi, qǐng zuò. Zhè shì càidān, nín xiǎng chī diǎn shénme?",
-      vi: "Kính chào quý khách! Xin hỏi quý khách đi mấy người ạ? Bên này có bàn trống, mời ngồi. Đây là thực đơn, quý khách muốn dùng món gì?"
-    },
-    systemPrompt: `Bạn là nhân viên phục vụ tại một nhà hàng Trung Hoa truyền thống. Học viên là thực khách.
-Nhiệm vụ của bạn:
-1. Luôn phản hồi theo cấu trúc: [ZH], [PINYIN], [VI], [FEEDBACK] (nếu có lỗi).
-2. Giữ đúng vai nhân viên phục vụ chu đáo: hỏi món ăn, sở thích (cay/không cay, đá/nóng), giới thiệu món đặc sản, báo giá và tính tiền.`
-  },
-  shopping: {
-    id: "shopping",
-    name: "Mua sắm & Trả giá",
-    icon: "🛍️",
-    level: "HSK 2-3",
-    description: "Nhập vai chủ tiệm quần áo / quà lưu niệm: hỏi giá, thử kích cỡ, mặc cả giảm giá.",
-    initialMessage: {
-      zh: "你好帅哥/美女！来看看吧，新到的衣服和特产，质量都非常好。你喜欢哪一件？",
-      pinyin: "Nǐ hǎo shuàigē / měinǚ! Lái kàn kan ba, xīn dào de yīfu hé tèchǎn, zhìliàng dōu fēicháng hǎo. Nǐ xǐhuan nǎ yí jiàn?",
-      vi: "Chào bạn đẹp trai/xinh gái! Ghé xem đi, quần áo và đặc sản mới về, chất lượng đều rất tốt. Bạn thích chiếc nào?"
-    },
-    systemPrompt: `Bạn là chủ một cửa hàng thời trang/đồ lưu niệm tại chợ đêm Trung Quốc. Học viên là khách mua hàng.
-Cấu trúc: [ZH], [PINYIN], [VI], [FEEDBACK]. Khi khách mặc cả thì linh hoạt giảm giá hoặc giải thích chất lượng tốt.`
-  },
-  direction: {
-    id: "direction",
-    name: "Hỏi đường & Đi lại",
-    icon: "🚖",
-    level: "HSK 2",
-    description: "Hỏi đường đến bến xe, ga tàu điện ngầm, đi taxi, hỏi thời gian và phương tiện.",
-    initialMessage: {
-      zh: "你好！请问有什么可以帮你的吗？你想去哪里？北京的交通我很熟悉！",
-      pinyin: "Nǐ hǎo! Qǐngwèn yǒu shénme kěyǐ bāng nǐ de ma? Nǐ xiǎng qù nǎlǐ? Běijīng de jiāotōng wǒ hěn shúxi!",
-      vi: "Xin chào! Xin hỏi tôi có thể giúp gì cho bạn? Bạn muốn đi đâu? Giao thông ở Bắc Kinh tôi rất rành đấy!"
-    },
-    systemPrompt: `Bạn là người bản địa nhiệt tình chỉ đường ở Trung Quốc. Học viên là du khách đang hỏi đường.
-Cấu trúc: [ZH], [PINYIN], [VI], [FEEDBACK]. Hướng dẫn cách rẽ trái, rẽ phải, đi thẳng, đi xe buýt hay tàu điện ngầm (地铁/公交车/出租车).`
-  },
-  hotel: {
-    id: "hotel",
-    name: "Khách sạn & Nhận phòng",
-    icon: "🏨",
-    level: "HSK 2-3",
-    description: "Nhập vai lễ tân khách sạn: nhận phòng, đổi phòng, hỏi mật khẩu Wi-Fi, trả phòng.",
-    initialMessage: {
-      zh: "您好！欢迎入住北京饭店。请问您有预订吗？请出示一下您的护照。",
-      pinyin: "Nín hǎo! Huānyíng rùzhù Běijīng Fàndiàn. Qǐngwèn nín yǒu yùdìng ma? Qǐng chūshì yíxià nín de hùzhào.",
-      vi: "Kính chào quý khách! Chào mừng quý khách đến với khách sạn Bắc Kinh. Xin hỏi quý khách có đặt phòng trước không ạ? Xin vui lòng xuất trình hộ chiếu."
-    },
-    systemPrompt: `Bạn là nhân viên lễ tân khách sạn cao cấp tại Trung Quốc. Học viên là du khách làm thủ tục.
-Cấu trúc phản hồi: [ZH], [PINYIN], [VI], [FEEDBACK]. Các chủ đề: check-in, phòng đơn/đôi, bữa sáng, mật khẩu Wi-Fi, check-out.`
-  },
-  travel: {
-    id: "travel",
-    name: "Du lịch & Tham quan",
-    icon: "✈️",
-    level: "HSK 2-3",
-    description: "Mua vé danh lam thắng cảnh, tìm hiểu lộ trình tham quan, nhờ chụp ảnh lưu niệm.",
-    initialMessage: {
-      zh: "你好！欢迎来到故宫博物院。今天天气非常好，您想了解哪些游览路线呢？",
-      pinyin: "Nǐ hǎo! Huānyíng lái dào Gùgōng Bówùyuàn. Jīntiān tiānqì fēicháng hǎo, nín xiǎng liǎojiě nǎxiē yóulǎn lùxiàn ne?",
-      vi: "Xin chào! Chào mừng bạn đến với Bảo tàng Cố Cung. Thời tiết hôm nay rất đẹp, bạn muốn tìm hiểu lộ trình tham quan nào?"
-    },
-    systemPrompt: `Bạn là hướng dẫn viên du lịch tại Bắc Kinh/Thượng Hải. Học viên là du khách.
-Cấu trúc: [ZH], [PINYIN], [VI], [FEEDBACK]. Hướng dẫn mua vé tham quan, giới thiệu thắng cảnh, chụp ảnh kỷ niệm.`
-  },
-  interview: {
-    id: "interview",
-    name: "Phỏng vấn xin việc",
-    icon: "💼",
-    level: "HSK 3-4",
-    description: "Nhập vai người phỏng vấn công ty: giới thiệu bản thân, kinh nghiệm làm việc, kỳ vọng lương.",
-    initialMessage: {
-      zh: "你好，请坐。感谢你来参加今天的面试。首先，请用中文简单介绍一下你自己吧。",
-      pinyin: "Nǐ hǎo, qǐng zuò. Gǎnxiè nǐ lái cānjiā jīntiān de miànshì. Shǒuxiān, qǐng yòng Zhōngwén jiǎndān jièshào yíxià nǐ zìjǐ ba.",
-      vi: "Chào bạn, mời ngồi. Cảm ơn bạn đã đến tham gia buổi phỏng vấn hôm nay. Trước tiên, xin mời bạn giới thiệu sơ lược về bản thân bằng tiếng Trung nhé."
-    },
-    systemPrompt: `Bạn là giám đốc nhân sự chuyên nghiệp tại một doanh nghiệp quốc tế. Học viên là ứng viên.
-Cấu trúc phản hồi: [ZH], [PINYIN], [VI], [FEEDBACK]. Hỏi các câu hỏi phỏng vấn chuẩn công sở: điểm mạnh/yếu, kinh nghiệm làm việc.`
   }
 };
-
-// Fallback canned responses if no API key or network failure
-const TUTOR_FALLBACK_RESPONSES = [
-  {
-    zh: "你说得很好！发音也很清楚。继续加油！我们再聊聊你的周末打算吧？",
-    pinyin: "Nǐ shuō de hěn hǎo! Fāyīn yě hěn qīngchu. Jìxù jiāyóu! Wǒmen zài liáo liao nǐ de zhōumò dǎsuàn ba?",
-    vi: "Bạn nói rất tốt! Phát âm cũng rất rõ ràng. Tiếp tục cố gắng nhé! Chúng ta nói thêm về kế hoạch cuối tuần của bạn nhé?",
-    feedback: "💡 Mẹo: Có thể dùng thêm trợ từ '了' hoặc cụm '打算' để diễn đạt dự định."
-  },
-  {
-    zh: "非常有意思！中国人也经常这么说。你可以试着用'虽然...但是...'造一个句子吗？",
-    pinyin: "Fēicháng yǒu yìsi! Zhōngguórén yě jīngcháng zhème shuō. Nǐ kěyǐ shì zhe yòng 'suīrán... dànshì...' zào yí ge jùzi ma?",
-    vi: "Rất thú vị! Người Trung Quốc cũng thường hay nói như vậy. Bạn có thể thử đặt một câu với 'Tuy...nhưng...' được không?",
-    feedback: "💡 Gợi ý: 虽然学汉语有点儿难，但是很有趣。(Tuy học tiếng Trung hơi khó, nhưng rất thú vị.)"
-  },
-  {
-    zh: "听起来很棒！你的汉语水平进步很大。平时你喜欢看中文电影或者听中文歌吗？",
-    pinyin: "Tīng qǐlai hěn bàng! Nǐ de Hànyǔ shuǐpíng jìnbù hěn dà. Píngshí nǐ xǐhuan kàn Zhōngwén diànyǐng huòzhě tīng Zhōngwén gē ma?",
-    vi: "Nghe tuyệt quá! Trình độ tiếng Trung của bạn tiến bộ rất nhiều. Bình thường bạn có thích xem phim hay nghe nhạc Trung Quốc không?",
-    feedback: "💡 Mẹo nhớ: Cấu trúc '平时喜欢...' dùng diễn đạt thói quen hàng ngày."
-  }
-];
 
 // Firebase initialization for Chinese Tutor
 function initChineseTutorFirebase(db, profileKey) {
@@ -365,7 +243,7 @@ function initChineseTutorFirebase(db, profileKey) {
 }
 window.initChineseTutorFirebase = initChineseTutorFirebase;
 
-// Initialize Tutor Tab
+// Initialize Tutor Tab — Mở lên là sẵn sàng trò chuyện tự do ngay lập tức
 function initChineseTutor() {
   if (!tutorProfileKey) {
     tutorProfileKey = window.userProfileKey || localStorage.getItem("currentProfileKey") || "default";
@@ -376,54 +254,35 @@ function initChineseTutor() {
     loadTutorAccountSettings();
   }
   updateTutorModelBadge();
-  updateTutorActiveTopicBadge();
   setupTutorSpeechRecognition();
 
-  // Khi mở box chat, luôn hiển thị màn hình Bắt đầu (người dùng click Bắt đầu mới cho chọn chủ đề)
-  renderTutorStartScreen();
-}
+  // Cố định chế độ trò chuyện tự do
+  currentTutorScenario = "free";
 
-// Cập nhật huy hiệu chủ đề trên Header của modal
-function updateTutorActiveTopicBadge() {
-  const badge = document.getElementById("tutorActiveTopicBadge");
-  const icon = document.getElementById("tutorTopicBadgeIcon");
-  const name = document.getElementById("tutorTopicBadgeName");
-  if (!badge) return;
+  // Nếu có lịch sử chat cũ, tải lại; nếu không, bắt đầu cuộc hội thoại mới ngay lập tức
+  const pKey = tutorProfileKey || window.userProfileKey || "default";
+  let hasRecent = false;
+  try {
+    const raw = localStorage.getItem(`chineseTutor_${pKey}_free`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) hasRecent = true;
+    }
+  } catch (e) { }
 
-  const scenario = CHINESE_TUTOR_SCENARIOS[currentTutorScenario] || CHINESE_TUTOR_SCENARIOS.free;
-  if (tutorConversationHistory && tutorConversationHistory.length > 0) {
-    if (icon) icon.textContent = scenario.icon;
-    if (name) name.textContent = scenario.name;
-    badge.style.display = "inline-flex";
+  if (hasRecent) {
+    loadTutorScenarioHistory("free");
   } else {
-    badge.style.display = "none";
+    startFreeTutorChat();
   }
 }
+
+// Badge chủ đề không còn dùng (đã loại bỏ hệ thống chọn chủ đề)
+function updateTutorActiveTopicBadge() {
+  const badge = document.getElementById("tutorActiveTopicBadge");
+  if (badge) badge.style.display = "none";
+}
 window.updateTutorActiveTopicBadge = updateTutorActiveTopicBadge;
-
-// Render Scenario Pills (fallback giữ lại nếu cần)
-function renderTutorScenarioPills() {
-  const container = document.getElementById("tutorScenarioPills");
-  if (!container) return;
-
-  container.innerHTML = Object.values(CHINESE_TUTOR_SCENARIOS)
-    .map(
-      (sc) => `
-    <button class="tutor-scenario-pill ${sc.id === currentTutorScenario ? "active" : ""}" 
-            onclick="selectAndStartScenario('${sc.id}')" title="${sc.description}">
-      <span class="tutor-pill-icon">${sc.icon}</span>
-      <span class="tutor-pill-name">${sc.name}</span>
-      <span class="tutor-pill-level">${sc.level}</span>
-    </button>
-  `
-    )
-    .join("");
-}
-
-// Switch Scenario
-function switchTutorScenario(scenarioId) {
-  selectAndStartScenario(scenarioId);
-}
 
 // Load Conversation History (Firebase with LocalStorage fallback)
 function loadTutorScenarioHistory(scenarioId) {
@@ -446,7 +305,7 @@ function loadTutorScenarioHistory(scenarioId) {
         tutorConversationHistory = localData;
         renderTutorChatHistory();
       } else {
-        resetTutorConversation();
+        startFreeTutorChat();
       }
     }).catch(err => {
       console.warn("[Chinese Tutor] Firebase load history error:", err);
@@ -454,7 +313,7 @@ function loadTutorScenarioHistory(scenarioId) {
         tutorConversationHistory = localData;
         renderTutorChatHistory();
       } else {
-        resetTutorConversation();
+        startFreeTutorChat();
       }
     });
   } else {
@@ -462,7 +321,7 @@ function loadTutorScenarioHistory(scenarioId) {
       tutorConversationHistory = localData;
       renderTutorChatHistory();
     } else {
-      resetTutorConversation();
+      startFreeTutorChat();
     }
   }
 }
@@ -493,155 +352,35 @@ function renderTutorChatHistory() {
   const historyToRender = [...tutorConversationHistory];
   tutorConversationHistory = [];
   historyToRender.forEach(msg => appendTutorMessage(msg, true));
-  updateTutorActiveTopicBadge();
 }
 
-// Clear Current Scenario Conversation History
+// Clear Current Conversation History
 function clearTutorCurrentHistory() {
-  if (!confirm("Bạn có chắc chắn muốn làm mới và xóa toàn bộ lịch sử trò chuyện của tình huống này không?")) return;
+  if (!confirm("Bạn có chắc chắn muốn làm mới và xóa toàn bộ lịch sử trò chuyện không?")) return;
   const pKey = tutorProfileKey || window.userProfileKey || "default";
   tutorConversationHistory = [];
   try {
-    localStorage.removeItem(`chineseTutor_${pKey}_${currentTutorScenario}`);
+    localStorage.removeItem(`chineseTutor_${pKey}_free`);
   } catch (e) { }
 
   if (firebaseTutorRef) {
-    firebaseTutorRef.child(`scenarios/${currentTutorScenario}/history`).remove()
+    firebaseTutorRef.child("scenarios/free/history").remove()
       .catch(e => console.warn("[Chinese Tutor] Firebase clear history error:", e));
   }
-  resetTutorConversation();
-  updateTutorActiveTopicBadge();
+  startFreeTutorChat();
 }
 window.clearTutorCurrentHistory = clearTutorCurrentHistory;
 
-// Hiển thị màn hình chờ ban đầu với nút Bắt đầu (người dùng click Bắt đầu mới cho chọn chủ đề)
-function renderTutorStartScreen() {
+// Bắt đầu trò chuyện tự do ngay lập tức (không qua Start Screen hay Topic Picker)
+function startFreeTutorChat() {
+  currentTutorScenario = "free";
+  const scenario = CHINESE_TUTOR_SCENARIOS.free;
   const chatContainer = document.getElementById("tutorChatMessages");
   if (!chatContainer) return;
   chatContainer.innerHTML = "";
   tutorConversationHistory = [];
 
-  updateTutorActiveTopicBadge();
-
-  // Kiểm tra xem có phiên hội thoại trước đó trong máy không
-  const pKey = tutorProfileKey || window.userProfileKey || "default";
-  let hasRecent = false;
-  let recentScenario = CHINESE_TUTOR_SCENARIOS[currentTutorScenario] || CHINESE_TUTOR_SCENARIOS.free;
-  try {
-    const raw = localStorage.getItem(`chineseTutor_${pKey}_${currentTutorScenario}`);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) hasRecent = true;
-    }
-  } catch (e) { }
-
-  const startCard = document.createElement("div");
-  startCard.className = "tutor-start-screen-wrapper";
-  startCard.innerHTML = `
-    <div class="tutor-welcome-start-card">
-      <div class="tutor-start-icon">🤖</div>
-      <h4 class="tutor-start-title">Luyện Hội Thoại & Khẩu Ngữ Thông Minh với Gemini</h4>
-      <p class="tutor-start-desc">Trợ giảng tiếng Trung thông minh đồng hành cùng bạn luyện giao tiếp, phản xạ khẩu ngữ, phân tích Hán tự, Pinyin và nhận xét ngữ pháp theo chuẩn HSK.</p>
-      
-      <div class="tutor-start-hints">
-        <div class="tutor-start-hint-item">
-          <i class="fi fi-rr-apps"></i>
-          <span>Nhiều chủ đề phong phú: Chào hỏi, Gọi món, Mua sắm, Du lịch...</span>
-        </div>
-        <div class="tutor-start-hint-item">
-          <i class="fi fi-rr-sparkles"></i>
-          <span>Gia sư AI phản hồi Hán tự, Pinyin và sửa lỗi ngữ pháp</span>
-        </div>
-        <div class="tutor-start-hint-item">
-          <i class="fi fi-rr-microphone"></i>
-          <span>Luyện nói phản xạ trực tiếp qua Microphone giọng nói</span>
-        </div>
-      </div>
-
-      <div class="tutor-start-actions">
-        <button type="button" class="tutor-start-btn" onclick="showTutorTopicPicker()">
-          <i class="fi fi-rr-play"></i>
-          <span>Bắt đầu</span>
-        </button>
-        ${hasRecent ? `
-          <button type="button" class="tutor-continue-btn" onclick="continueRecentTutorChat()" title="Tiếp tục cuộc trò chuyện gần nhất">
-            <i class="fi fi-rr-time-past"></i>
-            <span>Tiếp tục: ${recentScenario.icon} ${escapeHtml(recentScenario.name)}</span>
-          </button>
-        ` : ""}
-      </div>
-    </div>
-  `;
-
-  chatContainer.appendChild(startCard);
-}
-window.renderTutorStartScreen = renderTutorStartScreen;
-
-// Hiển thị màn hình chọn chủ đề đàm thoại khi người dùng bấm Bắt đầu hoặc Đổi chủ đề
-function showTutorTopicPicker() {
-  closeTutorMoreMenu();
-  const chatContainer = document.getElementById("tutorChatMessages");
-  if (!chatContainer) return;
-  chatContainer.innerHTML = "";
-
-  const badge = document.getElementById("tutorActiveTopicBadge");
-  if (badge) badge.style.display = "none";
-
-  const pickerWrapper = document.createElement("div");
-  pickerWrapper.className = "tutor-topic-picker-container";
-
-  pickerWrapper.innerHTML = `
-    <div class="tutor-topic-picker-header">
-      <div class="tutor-topic-picker-badge">Chủ đề đàm thoại HSK</div>
-      <h3 class="tutor-topic-picker-title">Chọn chủ đề bạn muốn luyện tập</h3>
-      <p class="tutor-topic-picker-subtitle">Chọn một tình huống nhập vai để bắt đầu trò chuyện tương tác cùng Gia sư AI:</p>
-    </div>
-
-    <div class="tutor-topic-grid">
-      ${Object.values(CHINESE_TUTOR_SCENARIOS).map(sc => `
-        <div class="tutor-topic-card ${sc.id === currentTutorScenario ? "active" : ""}" 
-             onclick="selectAndStartScenario('${sc.id}')">
-          <div class="tutor-topic-card-header">
-            <span class="tutor-topic-icon">${sc.icon}</span>
-            <span class="tutor-topic-level">${sc.level}</span>
-          </div>
-          <div class="tutor-topic-name">${escapeHtml(sc.name)}</div>
-          <div class="tutor-topic-desc">${escapeHtml(sc.description)}</div>
-          <div class="tutor-topic-card-footer">
-            <span class="tutor-topic-action">
-              <span>Bắt đầu trò chuyện</span>
-              <i class="fi fi-rr-arrow-right"></i>
-            </span>
-          </div>
-        </div>
-      `).join("")}
-    </div>
-
-    <div class="tutor-topic-picker-actions">
-      <button type="button" class="tutor-topic-back-btn" onclick="renderTutorStartScreen()">
-        <i class="fi fi-rr-arrow-left"></i>
-        <span>Quay lại</span>
-      </button>
-    </div>
-  `;
-
-  chatContainer.appendChild(pickerWrapper);
-  chatContainer.scrollTop = 0;
-}
-window.showTutorTopicPicker = showTutorTopicPicker;
-
-// Bắt đầu hội thoại khi người dùng chọn chủ đề
-function selectAndStartScenario(scenarioId) {
-  if (!CHINESE_TUTOR_SCENARIOS[scenarioId]) return;
-  currentTutorScenario = scenarioId;
-
-  const scenario = CHINESE_TUTOR_SCENARIOS[currentTutorScenario];
-  const chatContainer = document.getElementById("tutorChatMessages");
-  if (!chatContainer) return;
-  chatContainer.innerHTML = "";
-  tutorConversationHistory = [];
-
-  // Gửi tin nhắn mở đầu của Gia sư AI cho chủ đề này
+  // Gửi tin nhắn mở đầu của Gia sư AI
   appendTutorMessage({
     role: "assistant",
     zh: scenario.initialMessage.zh,
@@ -650,33 +389,27 @@ function selectAndStartScenario(scenarioId) {
     feedback: ""
   });
 
-  updateTutorActiveTopicBadge();
-
   // Focus ô nhập
   setTimeout(() => {
     const input = document.getElementById("tutorChatInput");
     if (input) input.focus();
   }, 200);
 }
+window.startFreeTutorChat = startFreeTutorChat;
+
+// Backward-compatible wrappers (giữ lại để không gây lỗi nếu HTML còn gọi)
+function renderTutorStartScreen() { startFreeTutorChat(); }
+window.renderTutorStartScreen = renderTutorStartScreen;
+function showTutorTopicPicker() { startFreeTutorChat(); }
+window.showTutorTopicPicker = showTutorTopicPicker;
+function selectAndStartScenario() { startFreeTutorChat(); }
 window.selectAndStartScenario = selectAndStartScenario;
-
-// Tiếp tục phiên chat gần đây
-function continueRecentTutorChat() {
-  loadTutorScenarioHistory(currentTutorScenario);
-  updateTutorActiveTopicBadge();
-}
+function continueRecentTutorChat() { loadTutorScenarioHistory("free"); }
 window.continueRecentTutorChat = continueRecentTutorChat;
-
-// Bắt đầu hội thoại tình huống hiện tại
-function startCurrentTutorScenario() {
-  showTutorTopicPicker();
-}
+function startCurrentTutorScenario() { startFreeTutorChat(); }
 window.startCurrentTutorScenario = startCurrentTutorScenario;
-
-// Reset Conversation to Start Screen
-function resetTutorConversation() {
-  renderTutorStartScreen();
-}
+function resetTutorConversation() { startFreeTutorChat(); }
+function renderTutorScenarioPills() { /* no-op */ }
 
 // Parse AI Raw Response
 function parseTutorAiResponse(raw) {
@@ -845,16 +578,7 @@ async function callTutorGemini(apiKey, model, scenario, history, userText) {
       body: JSON.stringify(body)
     });
 
-    // Nếu gặp mã lỗi 503 (High demand spike tạm thời), tự động chờ 1.2 giây và thử lại 1 lần
-    if (response.status === 503) {
-      console.warn(`[Chinese Tutor] Model ${modelToUse} gặp lỗi 503 (High demand spike), thử lại sau 1.2s...`);
-      await new Promise(r => setTimeout(r, 1200));
-      response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-    }
+    // Không tự động gửi lại ngầm - chỉ gửi lại khi người dùng click icon resend
   } catch (networkErr) {
     const netErr = new Error(`Không thể kết nối mạng tới Google Gemini (${networkErr.message})`);
     netErr.code = 0;
@@ -1165,9 +889,16 @@ function appendTutorMessage(msg, skipSave) {
   msgDiv.className = `tutor-msg-item tutor-msg-${msg.role}`;
 
   if (msg.role === "user") {
+    const encodedUserText = encodeURIComponent(msg.text || "");
+    msgDiv.setAttribute("data-msg-text", msg.text || "");
     msgDiv.innerHTML = `
-      <div class="tutor-msg-bubble user-bubble">
-        <div class="tutor-user-text">${escapeHtml(msg.text)}</div>
+      <div class="tutor-msg-user-content">
+        <button type="button" class="tutor-msg-resend-btn" onclick="retryTutorMessage(decodeURIComponent('${encodedUserText}'), this)" title="Gửi lại tin nhắn này">
+          <i class="fi fi-rr-refresh"></i>
+        </button>
+        <div class="tutor-msg-bubble user-bubble">
+          <div class="tutor-user-text">${escapeHtml(msg.text)}</div>
+        </div>
       </div>
     `;
     tutorConversationHistory.push({ role: "user", text: msg.text });
@@ -1208,52 +939,11 @@ function appendTutorMessage(msg, skipSave) {
   }
 }
 
-// Biến lưu interval đếm ngược tự động thử lại khi hết quota
-let tutorCountdownInterval = null;
-
-function startTutorCountdown(seconds, retryText) {
-  if (tutorCountdownInterval) {
-    clearInterval(tutorCountdownInterval);
-    tutorCountdownInterval = null;
-  }
-  let remaining = seconds;
-  const total = seconds;
-  const numEl = document.getElementById("tutorCountdownNum");
-  const barEl = document.getElementById("tutorCountdownBar");
-
-  tutorCountdownInterval = setInterval(() => {
-    remaining--;
-    if (numEl) numEl.textContent = `${remaining}`;
-    if (barEl) {
-      const pct = Math.max(0, (remaining / total) * 100);
-      barEl.style.width = `${pct}%`;
-    }
-
-    if (remaining <= 0) {
-      clearInterval(tutorCountdownInterval);
-      tutorCountdownInterval = null;
-      if (numEl) numEl.textContent = "0";
-      if (typeof showToast === "function") {
-        showToast("⏳ Hạn mức Quota đã hồi phục! Đang tự động gửi lại câu hỏi...", 2800);
-      }
-      retryTutorMessage(retryText);
-    }
-  }, 1000);
-}
-
-function cancelTutorCountdown() {
-  if (tutorCountdownInterval) {
-    clearInterval(tutorCountdownInterval);
-    tutorCountdownInterval = null;
-  }
-  const box = document.getElementById("tutorCountdownBox");
-  if (box) {
-    box.innerHTML = '<div style="font-size: 12px; color: #94a3b8; padding: 4px 0;">✓ Đã dừng đếm ngược. Bạn có thể nhấn "Thử gửi lại" khi sẵn sàng.</div>';
-  }
-}
+// Giữ lại hàm rỗng tương thích ngược nếu có sự kiện gọi cancelTutorCountdown
+function cancelTutorCountdown() { /* Cơ chế tự động gửi lại đã được loại bỏ */ }
 window.cancelTutorCountdown = cancelTutorCountdown;
 
-// Append Error Message directly to Chat UI (No fake fallback sample responses)
+// Append Error Message directly to Chat UI (Chỉ gửi lại khi người dùng chủ động bấm icon resend)
 function appendTutorErrorMessage({ code, status, message, model, retryText, retryDelaySec = 0 }) {
   const container = document.getElementById("tutorChatMessages");
   if (!container) return;
@@ -1271,9 +961,10 @@ function appendTutorErrorMessage({ code, status, message, model, retryText, retr
 
   let suggestion = "Vui lòng kiểm tra lại kết nối mạng hoặc thử lại sau vài giây.";
   if (isQuotaError) {
-    suggestion = `Mô hình <strong>${escapeHtml(model || "Gemini 3.6 Flash")}</strong> đã đạt giới hạn 20 lượt/phút của gói miễn phí Google API. Hệ thống đang đếm ngược để <strong>tự động gửi lại câu hỏi</strong> khi hạn mức hồi phục!`;
+    const waitHint = retryDelaySec > 0 ? ` (khuyến nghị chờ khoảng ${retryDelaySec}s để hạn mức hồi phục)` : "";
+    suggestion = `Mô hình <strong>${escapeHtml(model || "Gemini 3.6 Flash")}</strong> đã đạt giới hạn 20 lượt/phút của gói miễn phí Google API. Vui lòng bấm vào icon <strong>Gửi lại</strong> (<i class="fi fi-rr-refresh"></i>) khi bạn sẵn sàng${waitHint}.`;
   } else if (isHighDemandOrNotFound) {
-    suggestion = "Máy chủ Google hiện đang bận hoặc quá tải tạm thời. Bạn có thể nhấn <strong>'Thử gửi lại ngay'</strong> sau ít giây.";
+    suggestion = "Máy chủ Google hiện đang bận hoặc quá tải tạm thời. Bạn có thể nhấn icon <strong>Gửi lại</strong> (<i class='fi fi-rr-refresh'></i>) sau ít giây.";
   } else if (code === 400 || code === 403 || lowerMsg.includes("api key")) {
     suggestion = "Google Gemini API Key không hợp lệ hoặc đã hết hạn. Vui lòng kiểm tra lại trong phần Cài đặt AI.";
   }
@@ -1303,26 +994,6 @@ function appendTutorErrorMessage({ code, status, message, model, retryText, retr
         <div class="tutor-error-text">${escapeHtml(message || "Đã xảy ra lỗi khi giao tiếp với Google Gemini.")}</div>
       </div>
 
-      ${(isQuotaError && retryDelaySec > 0 && retryText) ? `
-      <div class="tutor-quota-countdown-box" id="tutorCountdownBox">
-        <div class="tutor-quota-countdown-header">
-          <div class="tutor-quota-countdown-title">
-            <i class="fi fi-rr-hourglass-end"></i>
-            <span>Đang đếm ngược tự động gửi lại:</span>
-          </div>
-          <div class="tutor-quota-timer-badge">
-            <span id="tutorCountdownNum">${retryDelaySec}</span>s
-          </div>
-        </div>
-        <div class="tutor-countdown-progress-track">
-          <div class="tutor-countdown-progress-bar" id="tutorCountdownBar" style="width: 100%;"></div>
-        </div>
-        <div class="tutor-quota-countdown-desc">
-          ⏳ Bạn không cần làm gì, hệ thống sẽ <strong>tự động gửi lại câu hỏi</strong> khi bộ đếm về 0!
-        </div>
-      </div>
-      ` : ""}
-
       <div class="tutor-error-suggestion">
         <div class="tutor-error-suggestion-icon">💡</div>
         <div class="tutor-error-suggestion-text">${suggestion}</div>
@@ -1330,15 +1001,9 @@ function appendTutorErrorMessage({ code, status, message, model, retryText, retr
 
       <div class="tutor-error-actions">
         ${retryText ? `
-          <button type="button" class="tutor-error-btn retry-btn" onclick="retryTutorMessage(decodeURIComponent('${encodedRetry}'))">
+          <button type="button" class="tutor-error-btn retry-btn" onclick="retryTutorMessage(decodeURIComponent('${encodedRetry}'), this)" title="Gửi lại tin nhắn này">
             <i class="fi fi-rr-refresh"></i>
-            <span>Thử gửi lại ngay</span>
-          </button>
-        ` : ""}
-        ${(isQuotaError && retryDelaySec > 0) ? `
-          <button type="button" class="tutor-error-btn cancel-btn" onclick="cancelTutorCountdown()">
-            <i class="fi fi-rr-cross"></i>
-            <span>Hủy đếm ngược</span>
+            <span>Gửi lại</span>
           </button>
         ` : ""}
         <button type="button" class="tutor-error-btn settings-btn" onclick="openTutorSettingsModal()">
@@ -1351,22 +1016,87 @@ function appendTutorErrorMessage({ code, status, message, model, retryText, retr
 
   container.appendChild(msgDiv);
   container.scrollTop = container.scrollHeight;
-
-  // Nếu là lỗi Quota 429 có thời gian chờ, tự động kích hoạt đếm ngược
-  if (isQuotaError && retryText && retryDelaySec > 0) {
-    startTutorCountdown(retryDelaySec, retryText);
-  }
 }
 window.appendTutorErrorMessage = appendTutorErrorMessage;
 
-// Thử gửi lại tin nhắn vừa bị lỗi
-function retryTutorMessage(text) {
+// Thử gửi lại tin nhắn (chỉ kích hoạt khi người dùng click icon resend)
+async function retryTutorMessage(text, triggerEl) {
   if (!text) return;
-  const inputEl = document.getElementById("tutorChatInput");
-  if (inputEl) {
-    inputEl.value = text;
-    autoResizeTutorInput();
-    sendTutorMessage();
+
+  // Xóa thẻ thông báo lỗi tương ứng hoặc thẻ lỗi gần nhất
+  if (triggerEl) {
+    const errorBubble = triggerEl.closest(".tutor-msg-error");
+    if (errorBubble) {
+      errorBubble.remove();
+    } else {
+      const userItem = triggerEl.closest(".tutor-msg-user");
+      if (userItem && userItem.nextElementSibling && userItem.nextElementSibling.classList.contains("tutor-msg-error")) {
+        userItem.nextElementSibling.remove();
+      }
+    }
+  } else {
+    const allErrors = document.querySelectorAll("#tutorChatMessages .tutor-msg-error");
+    if (allErrors.length > 0) {
+      allErrors[allErrors.length - 1].remove();
+    }
+  }
+
+  const pKey = getActiveTutorProfileKey();
+  const activeKey = tutorGeminiKey || localStorage.getItem(`geminiApiKey_${pKey}`) || localStorage.getItem("geminiApiKey") || "";
+
+  if (!activeKey) {
+    if (typeof showToast === "function") {
+      showToast("Vui lòng cài đặt Google Gemini API Key để trò chuyện cùng Gia sư AI!", 4500);
+    }
+    checkTutorApiKeyNotice();
+    openTutorSettingsModal();
+    return;
+  }
+
+  // Đảm bảo không tạo tin nhắn người dùng trùng lặp trong lịch sử
+  const lastHistory = tutorConversationHistory[tutorConversationHistory.length - 1];
+  if (!lastHistory || lastHistory.role !== "user" || lastHistory.text !== text) {
+    appendTutorMessage({ role: "user", text: text });
+  }
+
+  // Hiển thị trạng thái đang soạn
+  showTutorTyping(true);
+
+  const scenario = CHINESE_TUTOR_SCENARIOS[currentTutorScenario] || CHINESE_TUTOR_SCENARIOS.free;
+  const modelToUse = currentTutorModel || DEFAULT_GEMINI_MODEL;
+
+  try {
+    const aiResult = await callTutorGemini(activeKey, modelToUse, scenario, tutorConversationHistory, text);
+    showTutorTyping(false);
+
+    const resultText = (typeof aiResult === "object" && aiResult !== null) ? (aiResult.text || "") : String(aiResult || "");
+    const parsed = parseTutorAiResponse(resultText);
+    appendTutorMessage({
+      role: "assistant",
+      zh: parsed.zh,
+      pinyin: parsed.pinyin,
+      vi: parsed.vi,
+      feedback: parsed.feedback
+    });
+
+    if (aiResult.truncated) {
+      if (typeof showToast === "function") {
+        showToast("⚠️ Phản hồi AI có thể bị cắt ngang do giới hạn token. Hãy thử hỏi lại ngắn gọn hơn.", 4000);
+      }
+    }
+
+  } catch (err) {
+    console.warn("[Chinese Tutor] Gemini API retry failed:", err);
+    showTutorTyping(false);
+
+    appendTutorErrorMessage({
+      code: err.code || 500,
+      status: err.status || "",
+      message: err.message || "Không thể kết nối đến máy chủ Google Gemini.",
+      model: modelToUse,
+      retryText: text,
+      retryDelaySec: err.retryDelaySec || (err.code === 429 ? 28 : 0)
+    });
   }
 }
 window.retryTutorMessage = retryTutorMessage;

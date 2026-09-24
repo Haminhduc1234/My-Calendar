@@ -28060,88 +28060,54 @@ div.fc-modal .fc-modal-dialog,
 }
 
 /* ==========================================================================
-   CHINESE TUTOR - QUOTA COUNTDOWN AUTO-RETRY BOX (GEMINI.md COMPLIANT)
+   CHINESE TUTOR - RESEND ACTION & ICON STYLES (GEMINI.md COMPLIANT)
    ========================================================================== */
 
-.tutor-quota-countdown-box {
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  border-radius: 10px;
-  padding: 10px 12px;
-  margin: 8px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  box-sizing: border-box;
-}
-
-.tutor-quota-countdown-header {
+.tutor-msg-user-content {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
+  max-width: 86%;
 }
 
-.tutor-quota-countdown-title {
+.tutor-msg-user-content .tutor-msg-bubble.user-bubble {
+  max-width: 100%;
+}
+
+.tutor-msg-resend-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--text-secondary, #94a3b8);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #fbbf24;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.65;
+  transition: opacity 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  transform: none !important; /* No hover jitter per GEMINI.md */
 }
 
-.tutor-quota-countdown-title i {
-  position: relative !important;
-  top: 1px !important;
-  display: inline-flex !important;
+.tutor-msg-resend-btn i {
+  position: static !important;
+  top: 0 !important;
+  font-size: 12px;
   line-height: 1 !important;
-  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.tutor-quota-timer-badge {
-  font-size: 12.5px;
-  font-weight: 800;
-  color: #fff;
-  background: rgba(245, 158, 11, 0.28);
-  border: 1px solid rgba(245, 158, 11, 0.5);
-  padding: 2px 8px;
-  border-radius: 6px;
-  letter-spacing: 0.5px;
-}
-
-.tutor-countdown-progress-track {
-  width: 100%;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.tutor-countdown-progress-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
-  border-radius: 999px;
-  transition: width 1s linear;
-}
-
-.tutor-quota-countdown-desc {
-  font-size: 11.5px;
-  color: #fef3c7;
-  line-height: 1.45;
-}
-
-.tutor-error-btn.cancel-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #cbd5e1;
-}
-
-.tutor-error-btn.cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  transform: none;
+.tutor-msg-user-content:hover .tutor-msg-resend-btn,
+.tutor-msg-resend-btn:hover {
+  opacity: 1;
+  background: rgba(2, 132, 199, 0.22);
+  border-color: rgba(56, 189, 248, 0.55);
+  color: #38bdf8;
+  transform: none !important;
 }
 
 

@@ -433,20 +433,13 @@ async function sendAIMessage() {
     
     // Check if it's a rate limit error
     if (error.message.includes("rate_limit") || error.message.includes("429") || error.message.includes("quota")) {
-      showAIError("Đang chờ... Thử lại sau 30s");
-      appendAIMessage("assistant", "Bạn đã gặp giới hạn rate. Đang tự động thử lại sau 30 giây...");
+      showAIError("Đã đạt giới hạn lượt gọi");
+      appendAIMessage("assistant", "Bạn đã gặp giới hạn lượt gọi (Rate limit). Vui lòng thử gửi lại sau giây lát.");
       
-      // Clear any existing retry timeout
       if (aiRetryTimeout) {
         clearTimeout(aiRetryTimeout);
-      }
-      
-      // Schedule retry
-      aiRetryTimeout = setTimeout(function() {
         aiRetryTimeout = null;
-        input.value = message;
-        sendAIMessage();
-      }, 30000);
+      }
     } else {
       showAIError("Lỗi: " + error.message);
       appendAIMessage("assistant", "Xin lỗi, đã xảy ra lỗi: " + error.message);

@@ -19665,16 +19665,111 @@ function closeVocabSearchResults() {
 }
 
 
-// Speak Chinese TTS helper
+// Global Chinese Speech Voice helper
+let cachedZhVoice = null;
+
+function getBestChineseVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
+  if (!voices || voices.length === 0) return null;
+  if (cachedZhVoice && voices.includes(cachedZhVoice)) return cachedZhVoice;
+
+  // 1. Natural / Premium Mandarin voices
+  const preferred = voices.find(v => (v.lang === "zh-CN" || v.lang === "cmn-Hans-CN" || v.lang === "zh_CN") &&
+    /Xiaoxiao|Yunxi|Yunjian|Huihui|Yaoyao|Google 普通话|Natural|Mainland/i.test(v.name));
+  if (preferred) {
+    cachedZhVoice = preferred;
+    return preferred;
+  }
+
+  // 2. Any zh-CN voice
+  const zhCN = voices.find(v => v.lang === "zh-CN" || v.lang === "cmn-Hans-CN" || v.lang === "zh_CN");
+  if (zhCN) {
+    cachedZhVoice = zhCN;
+    return zhCN;
+  }
+
+  // 3. Any Chinese voice
+  const anyZh = voices.find(v => v.lang.startsWith("zh") || v.lang.includes("Chinese"));
+  if (anyZh) {
+    cachedZhVoice = anyZh;
+    return anyZh;
+  }
+
+  return null;
+}
+
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.onvoiceschanged = () => {
+    cachedZhVoice = null;
+    getBestChineseVoice();
+  };
+}
+
+// Bảng tra cứu âm chuẩn Hán ngữ cho Pinyin/Thanh mẫu/Vận mẫu/Bộ thủ khi truyền ký tự Latin
+const PINYIN_SOUND_DICTIONARY = {
+  // 23 Thanh mẫu (bō, pō, mō, fō, dē, tè, nè, lè, gē, kē, hē, jī, qī, xī, zhī, chī, shī, rì, zī, cī, sī, yī, wū)
+  "b": "玻", "p": "坡", "m": "摸", "f": "佛",
+  "d": "得", "t": "特", "n": "讷", "l": "勒",
+  "g": "哥", "k": "科", "h": "喝",
+  "j": "基", "q": "欺", "x": "希",
+  "zh": "知", "ch": "吃", "sh": "诗", "r": "日",
+  "z": "资", "c": "疵", "s": "思",
+  "y": "衣", "w": "乌",
+  // Pinyin thanh mẫu có dấu/kèm vần
+  "bo": "玻", "bō": "玻", "po": "坡", "pō": "坡", "mo": "摸", "mō": "摸", "fo": "佛", "fō": "佛",
+  "de": "得", "dē": "得", "te": "特", "tè": "特", "ne": "讷", "nè": "讷", "le": "勒", "lè": "勒",
+  "ge": "哥", "gē": "哥", "ke": "科", "kē": "科", "he": "喝", "hē": "喝",
+  "ji": "基", "jī": "基", "qi": "欺", "qī": "欺", "xi": "希", "xī": "希",
+  "zhi": "知", "zhī": "知", "chi": "吃", "chī": "吃", "shi": "诗", "shī": "诗", "ri": "日", "rì": "日",
+  "zi": "资", "zī": "资", "ci": "疵", "cī": "疵", "si": "思", "sī": "思",
+  "yi": "衣", "yī": "衣", "wu": "乌", "wū": "乌",
+  // 36 Vận mẫu chuẩn
+  "a": "啊", "ā": "啊", "o": "喔", "ō": "喔", "e": "婀", "ē": "婀",
+  "i": "衣", "u": "乌", "ü": "迂", "v": "迂", "yu": "迂", "yū": "迂",
+  "ai": "哀", "āi": "哀", "ei": "诶", "ēi": "诶", "ao": "熬", "āo": "熬", "ou": "欧", "ōu": "欧",
+  "an": "安", "ān": "安", "en": "恩", "ēn": "恩", "ang": "肮", "āng": "肮", "eng": "鞥", "ēng": "鞥",
+  "ong": "轰", "hōng": "轰",
+  "ia": "鸭", "yā": "鸭", "ie": "椰", "yē": "椰", "iao": "腰", "yāo": "腰",
+  "iu": "优", "yōu": "优", "ian": "烟", "yān": "烟", "in": "因", "yīn": "因",
+  "iang": "央", "yāng": "央", "ing": "英", "yīng": "英", "iong": "雍", "yōng": "雍",
+  "ua": "蛙", "wā": "蛙", "uo": "窝", "wō": "窝", "uai": "歪", "wāi": "歪",
+  "ui": "威", "wēi": "威", "uan": "弯", "wān": "弯", "un": "温", "wēn": "温",
+  "uang": "汪", "wāng": "汪", "üe": "约", "yuē": "约", "ue": "约",
+  "üan": "冤", "yuān": "冤", "ün": "晕", "yūn": "晕", "er": "儿", "ér": "儿",
+  // Bộ thủ biến thể unicode
+  "亻": "人", "氵": "水", "忄": "心", "灬": "火", "辶": "走", "讠": "言", "饣": "食", "艹": "草", "扌": "手", "𧾷": "足"
+};
+
+// Speak Chinese TTS helper (Chuẩn âm vị Hán ngữ Phổ thông)
 function speakChinese(text) {
-  if (!('speechSynthesis' in window)) return;
+  if (!('speechSynthesis' in window) || !text) return;
   window.speechSynthesis.cancel(); // Dừng câu trước nếu đang đọc
-  // Lọc bỏ phần Latin/pinyin (ký tự ASCII + dấu thanh Latin), chỉ giữ chữ Hán và khoảng trắng giữa chúng
-  const chineseOnly = text.replace(/[a-zA-Z\u00C0-\u024F\u1E00-\u1EFF]+/g, " ").replace(/\(.*?\)/g, "").replace(/\s+/g, " ").trim();
-  const cleanText = (chineseOnly || text).trim();
+
+  const trimmed = String(text).trim();
+  let cleanText = "";
+
+  // 1. Kiểm tra từ điển âm chuẩn Pinyin nếu là ký tự Latin / thanh mẫu / vận mẫu / bộ thủ
+  const lowerKey = trimmed.toLowerCase();
+  if (PINYIN_SOUND_DICTIONARY[trimmed]) {
+    cleanText = PINYIN_SOUND_DICTIONARY[trimmed];
+  } else if (PINYIN_SOUND_DICTIONARY[lowerKey]) {
+    cleanText = PINYIN_SOUND_DICTIONARY[lowerKey];
+  } else {
+    // 2. Nếu chuỗi chứa chữ Hán: giữ chữ Hán để TTS tiếng Trung phát âm chuẩn xác nhất
+    const chineseOnly = trimmed.replace(/[a-zA-Z\u00C0-\u024F\u1E00-\u1EFF]+/g, " ").replace(/\(.*?\)/g, "").replace(/\s+/g, " ").trim();
+    cleanText = (chineseOnly || trimmed).trim();
+  }
+
   const utterance = new SpeechSynthesisUtterance(cleanText);
   utterance.lang = "zh-CN";
-  utterance.rate = 0.85; // Tốc độ vừa phải cho người mới học
+  utterance.rate = 0.85; // Tốc độ vừa phải cho người học
+
+  const zhVoice = getBestChineseVoice();
+  if (zhVoice) {
+    utterance.voice = zhVoice;
+  }
+
   window.speechSynthesis.speak(utterance);
 }
 
@@ -20383,19 +20478,26 @@ function renderBasicsContentHTML() {
   if (currentBasicsSubTab === "initials") {
     html += `
       <div class="basics-grid-intro">
-        💡 <strong>Mẹo học Thanh mẫu:</strong> Bấm vào từng âm để nghe giọng đọc bản xứ. Chú ý phân biệt nhóm âm bật hơi (<strong>p, t, k, q, ch, c</strong>) và âm uốn lưỡi (<strong>zh, ch, sh, r</strong>).
+        💡 <strong>Mẹo học Thanh mẫu:</strong> Bấm vào từng âm để nghe giọng đọc bản xứ chuẩn Hán ngữ. Chú ý phân biệt nhóm âm bật hơi (<strong>p, t, k, q, ch, c</strong>) và âm uốn lưỡi (<strong>zh, ch, sh, r</strong>).
       </div>
       <div class="basics-pinyin-grid">
         ${ZH_BASICS_DATA.initials
         .map(
           (item) => `
-          <div class="basics-pinyin-card" onclick="speakChinese('${item.audioText || item.char}')" title="Bấm để nghe phát âm">
+          <div class="basics-pinyin-card" onclick="speakChinese('${item.sound || item.char}')" title="Bấm để nghe âm chuẩn Hán ngữ: ${item.sound}">
             <div class="basics-pinyin-top">
               <span class="basics-pinyin-char">${item.char}</span>
               <span class="basics-pinyin-ipa">${item.ipa}</span>
-              <button class="basics-audio-btn" aria-label="Phát âm">🔊</button>
+              <button class="basics-audio-btn" aria-label="Phát âm" onclick="event.stopPropagation(); speakChinese('${item.sound || item.char}')">🔊</button>
             </div>
+            <div class="basics-pinyin-sound-badge">Âm chuẩn: <strong>${item.sound}</strong></div>
             <div class="basics-pinyin-tip">${item.tip}</div>
+            ${item.exampleWord ? `
+              <div class="basics-pinyin-example-row">
+                <span class="basics-pinyin-example-text">Ví dụ: ${item.exampleWord}</span>
+                <button type="button" class="basics-example-speak-btn" onclick="event.stopPropagation(); speakChinese('${item.exampleHanzi || item.exampleWord}')" title="Nghe từ ví dụ">🔊</button>
+              </div>
+            ` : ""}
           </div>
         `
         )
@@ -20405,17 +20507,19 @@ function renderBasicsContentHTML() {
   } else if (currentBasicsSubTab === "finals") {
     html += `
       <div class="basics-grid-intro">
-        💡 <strong>Mẹo học Vận mẫu:</strong> Vận mẫu đặc biệt <strong>ü</strong> (u hai chấm) giữ nguyên khẩu hình tròn môi khi phát âm. Bấm vào thẻ để nghe đọc.
+        💡 <strong>Mẹo học Vận mẫu:</strong> Vận mẫu đặc biệt <strong>ü</strong> (u hai chấm) giữ nguyên khẩu hình tròn môi khi phát âm. Bấm vào thẻ để nghe giọng đọc bản xứ chuẩn Hán ngữ.
       </div>
       <div class="basics-pinyin-grid">
         ${ZH_BASICS_DATA.finals
         .map(
           (item) => `
-          <div class="basics-pinyin-card" onclick="speakChinese('${item.char}')" title="Bấm để nghe phát âm">
+          <div class="basics-pinyin-card" onclick="speakChinese('${item.sound || item.char}')" title="Bấm để nghe âm chuẩn Hán ngữ: ${item.sound}">
             <div class="basics-pinyin-top">
               <span class="basics-pinyin-char">${item.char}</span>
-              <button class="basics-audio-btn" aria-label="Phát âm">🔊</button>
+              <span class="basics-pinyin-ipa">${item.ipa || ''}</span>
+              <button class="basics-audio-btn" aria-label="Phát âm" onclick="event.stopPropagation(); speakChinese('${item.sound || item.char}')">🔊</button>
             </div>
+            <div class="basics-pinyin-sound-badge">Âm chuẩn: <strong>${item.sound}</strong></div>
             <div class="basics-pinyin-tip">${item.tip}</div>
           </div>
         `
@@ -20470,11 +20574,11 @@ function renderBasicsContentHTML() {
         ${ZH_BASICS_DATA.radicals
         .map(
           (item) => `
-          <div class="basics-radical-card" onclick="speakChinese('${item.char}')">
+          <div class="basics-radical-card" onclick="speakChinese('${item.speakText || item.pinyin || item.char}')" title="Nghe phát âm: ${item.pinyin}">
             <div class="basics-radical-top">
               <span class="basics-radical-char">${item.char}</span>
               <span class="basics-radical-pinyin">${item.pinyin}</span>
-              <button class="basics-audio-btn">🔊</button>
+              <button class="basics-audio-btn" aria-label="Phát âm" onclick="event.stopPropagation(); speakChinese('${item.speakText || item.pinyin || item.char}')">🔊</button>
             </div>
             <div class="basics-radical-name">${item.name}</div>
             <div class="basics-radical-meaning">${item.meaning}</div>

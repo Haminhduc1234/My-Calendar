@@ -13562,6 +13562,66 @@ input[type="datetime-local"] {
   line-height: 1.4;
 }
 
+.basics-pinyin-sound-badge {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  color: #7dd3fc;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.basics-pinyin-sound-badge strong {
+  color: #38bdf8;
+  margin-left: 3px;
+  font-family: "Space Grotesk", sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.basics-pinyin-example-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  margin-top: 2px;
+}
+
+.basics-pinyin-example-text {
+  font-size: 11px;
+  color: #cbd5e1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.basics-example-speak-btn {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #94a3b8;
+  opacity: 0.8;
+  transition: color 0.15s, opacity 0.15s, background 0.15s;
+}
+
+.basics-example-speak-btn:hover {
+  opacity: 1;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.1);
+  transform: none;
+}
+
 .basics-tones-list {
   display: flex;
   flex-direction: column;
@@ -16635,13 +16695,14 @@ input[type="datetime-local"] {
 
 .tutor-input-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 10px;
   background: rgba(15, 23, 42, 0.75);
   border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
   border-radius: 16px;
   padding: 8px 14px;
   backdrop-filter: blur(12px);
+  box-sizing: border-box;
 }
 
 .tutor-chat-textarea {
@@ -16650,9 +16711,34 @@ input[type="datetime-local"] {
   border: none;
   outline: none;
   color: var(--text, #fff);
-  font-size: 14px;
+  font-size: 14.5px;
   font-family: inherit;
   resize: none;
+  min-height: 24px;
+  max-height: 100px;
+  line-height: 1.45;
+  padding: 7px 0;
+  margin: 0;
+  box-sizing: border-box;
+  overflow-y: hidden;
+  transition: height 0.1s ease;
+}
+
+.tutor-chat-textarea::-webkit-scrollbar {
+  width: 5px;
+}
+
+.tutor-chat-textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tutor-chat-textarea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 4px;
+}
+
+.tutor-chat-textarea::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.38);
 }
 
 .tutor-voice-btn,
@@ -27456,4 +27542,608 @@ div.fc-modal .fc-modal-dialog,
   justify-content: center !important;
   line-height: 1 !important;
   font-size: 14px;
-}
+}
+
+/* ==========================================================================
+   CHINESE TUTOR - TOPIC PICKER & SELECTION STYLES (GEMINI.md COMPLIANT)
+   ========================================================================== */
+
+/* Active topic badge on modal header */
+.chinese-tutor-topic-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.32);
+  color: #a78bfa;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  user-select: none;
+}
+
+.chinese-tutor-topic-badge:hover {
+  background: rgba(124, 58, 237, 0.22);
+  border-color: rgba(139, 92, 246, 0.55);
+  color: #c4b5fd;
+  transform: none; /* No hover jitter per GEMINI.md */
+}
+
+.chinese-tutor-topic-badge i,
+.chinese-tutor-topic-badge .tutor-badge-icon {
+  font-size: 12px;
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+.chinese-tutor-topic-badge .tutor-badge-change {
+  font-size: 9.5px;
+  opacity: 0.7;
+  margin-left: 2px;
+}
+
+/* Start screen action buttons group */
+.tutor-start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.tutor-continue-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--text-primary, #f1f5f9);
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.tutor-continue-btn:hover {
+  background: rgba(255, 255, 255, 0.13);
+  border-color: rgba(139, 92, 246, 0.45);
+  color: #fff;
+  transform: none; /* No hover jitter per GEMINI.md */
+}
+
+.tutor-continue-btn i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  font-size: 13px;
+  color: #a78bfa;
+}
+
+/* Topic Picker container */
+.tutor-topic-picker-container {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 18px 12px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-sizing: border-box;
+}
+
+.tutor-topic-picker-header {
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.tutor-topic-picker-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  background: rgba(99, 102, 241, 0.14);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  margin-bottom: 8px;
+}
+
+.tutor-topic-picker-badge i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  font-size: 11px;
+}
+
+.tutor-topic-picker-title {
+  font-size: 21px;
+  font-weight: 800;
+  margin: 0 0 6px 0;
+  color: var(--text-primary, #f8fafc);
+  letter-spacing: -0.3px;
+}
+
+.tutor-topic-picker-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary, #94a3b8);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Grid of topics */
+.tutor-topic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.tutor-topic-card {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  padding: 15px 15px 13px;
+  border-radius: 14px;
+  background: rgba(30, 41, 59, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transform: none !important; /* No hover jitter per GEMINI.md */
+  box-sizing: border-box;
+}
+
+.tutor-topic-card:hover {
+  background: rgba(45, 55, 72, 0.75);
+  border-color: rgba(139, 92, 246, 0.45);
+  box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.35);
+  transform: none !important; /* No hover jitter per GEMINI.md */
+}
+
+.tutor-topic-card.active {
+  background: rgba(124, 58, 237, 0.14);
+  border-color: rgba(139, 92, 246, 0.8);
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.4), 0 8px 20px -4px rgba(124, 58, 237, 0.25);
+}
+
+.tutor-topic-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.tutor-topic-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.tutor-topic-level {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2.5px 7px;
+  border-radius: 6px;
+  background: rgba(139, 92, 246, 0.18);
+  color: #c4b5fd;
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  letter-spacing: 0.3px;
+}
+
+.tutor-topic-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-primary, #f8fafc);
+  margin-bottom: 5px;
+}
+
+.tutor-topic-desc {
+  font-size: 12px;
+  color: var(--text-secondary, #94a3b8);
+  line-height: 1.45;
+  flex-grow: 1;
+  margin-bottom: 11px;
+}
+
+.tutor-topic-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-top: 8px;
+}
+
+.tutor-topic-action {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #818cf8;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.18s ease;
+}
+
+.tutor-topic-card:hover .tutor-topic-action {
+  color: #a78bfa;
+}
+
+.tutor-topic-action i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  font-size: 11px;
+}
+
+/* Topic picker back action */
+.tutor-topic-picker-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.tutor-topic-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.tutor-topic-back-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: none; /* No hover jitter per GEMINI.md */
+}
+
+.tutor-topic-back-btn i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .tutor-topic-grid {
+    grid-template-columns: 1fr;
+  }
+  .tutor-topic-picker-container {
+    padding: 12px 6px 20px;
+  }
+}
+
+/* ==========================================================================
+   CHINESE TUTOR - DIRECT API ERROR BUBBLE & ACTIONS (GEMINI.md COMPLIANT)
+   ========================================================================== */
+
+.tutor-msg-item.tutor-msg-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+  max-width: 92%;
+  align-self: flex-start;
+}
+
+.tutor-avatar-icon.tutor-avatar-error {
+  background: rgba(239, 68, 68, 0.16);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tutor-msg-bubble.error-bubble {
+  background: rgba(239, 68, 68, 0.07);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 14px;
+  padding: 12px 14px;
+  color: var(--text-primary, #f1f5f9);
+  box-shadow: 0 4px 14px -3px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.tutor-error-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+
+.tutor-error-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f87171;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.tutor-error-badge i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  font-size: 12px;
+}
+
+.tutor-error-code {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.32);
+}
+
+.tutor-error-model-tag {
+  font-size: 11.5px;
+  color: var(--text-secondary, #94a3b8);
+  margin-bottom: 7px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tutor-error-model-code {
+  background: rgba(0, 0, 0, 0.25);
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 11px;
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tutor-error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 13px;
+  color: #fecaca;
+  line-height: 1.5;
+  background: rgba(0, 0, 0, 0.22);
+  padding: 8px 10px;
+  border-radius: 8px;
+  border-left: 3px solid #ef4444;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.tutor-error-message i {
+  color: #ef4444;
+  position: relative !important;
+  top: 2px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.tutor-error-text {
+  flex-grow: 1;
+}
+
+.tutor-error-suggestion {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary, #cbd5e1);
+  line-height: 1.45;
+  margin-bottom: 10px;
+  padding: 7px 9px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tutor-error-suggestion-icon {
+  flex-shrink: 0;
+  font-size: 13px;
+}
+
+.tutor-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tutor-error-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  transform: none !important; /* No hover jitter per GEMINI.md */
+}
+
+.tutor-error-btn i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  font-size: 11px;
+}
+
+.tutor-error-btn.retry-btn {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.45);
+  color: #fee2e2;
+}
+
+.tutor-error-btn.retry-btn:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.7);
+  color: #fff;
+  transform: none;
+}
+
+.tutor-error-btn.switch-btn {
+  background: rgba(124, 58, 237, 0.22);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  color: #ddd6fe;
+}
+
+.tutor-error-btn.switch-btn:hover {
+  background: rgba(124, 58, 237, 0.35);
+  border-color: rgba(168, 85, 247, 0.8);
+  color: #fff;
+  transform: none;
+}
+
+.tutor-error-btn.settings-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: var(--text-primary, #f1f5f9);
+}
+
+.tutor-error-btn.settings-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+  transform: none;
+}
+
+/* ==========================================================================
+   CHINESE TUTOR - QUOTA COUNTDOWN AUTO-RETRY BOX (GEMINI.md COMPLIANT)
+   ========================================================================== */
+
+.tutor-quota-countdown-box {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  box-sizing: border-box;
+}
+
+.tutor-quota-countdown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tutor-quota-countdown-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.tutor-quota-countdown-title i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  line-height: 1 !important;
+  font-size: 13px;
+}
+
+.tutor-quota-timer-badge {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(245, 158, 11, 0.28);
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.tutor-countdown-progress-track {
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tutor-countdown-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  border-radius: 999px;
+  transition: width 1s linear;
+}
+
+.tutor-quota-countdown-desc {
+  font-size: 11.5px;
+  color: #fef3c7;
+  line-height: 1.45;
+}
+
+.tutor-error-btn.cancel-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #cbd5e1;
+}
+
+.tutor-error-btn.cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  transform: none;
+}
+
+
+
+

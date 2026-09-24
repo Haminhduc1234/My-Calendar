@@ -1,8 +1,17 @@
 /* ==================== CHINESE TUTOR - AI GIA SƯ TIẾNG TRUNG RIÊNG BIỆT (GOOGLE GEMINI) ==================== */
 
-// Predefined Google Gemini Models (Chỉ sử dụng duy nhất mô hình khả dụng gemini-3.6-flash)
+// Predefined Google Gemini Models
 const GEMINI_TUTOR_MODELS = [
-  { id: "gemini-3.6-flash", name: "Gemini 3.6 Flash", desc: "Mô hình mới nhất và chính thức hoạt động ổn định trên tài khoản Google AI API (Khuyên dùng)" }
+  {
+    id: "gemini-3.6-flash",
+    name: "Gemini 3.6 Flash",
+    desc: "Mô hình mới nhất của Google AI, suy nghĩ thông minh, phân tích sâu và sửa lỗi chính xác (Khuyên dùng)"
+  },
+  {
+    id: "gemini-3.1-flash-lite",
+    name: "Gemini 3.1 Flash-Lite",
+    desc: "Mô hình siêu nhẹ, tốc độ phản hồi cực nhanh, tối ưu chi phí và hạn mức quota cao (Tiết kiệm lượt gọi)"
+  }
 ];
 const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash";
 
@@ -329,8 +338,17 @@ function loadTutorScenarioHistory(scenarioId) {
 // Save Conversation History
 function saveTutorScenarioHistory(scenarioId) {
   const pKey = tutorProfileKey || window.userProfileKey || "default";
+
+  // Sanitize toàn bộ mảng lịch sử để loại bỏ triệt để các thuộc tính undefined trước khi ghi vào Firebase
+  let sanitized = [];
   try {
-    localStorage.setItem(`chineseTutor_${pKey}_${scenarioId}`, JSON.stringify(tutorConversationHistory));
+    sanitized = JSON.parse(JSON.stringify(tutorConversationHistory || []));
+  } catch (e) {
+    sanitized = tutorConversationHistory || [];
+  }
+
+  try {
+    localStorage.setItem(`chineseTutor_${pKey}_${scenarioId}`, JSON.stringify(sanitized));
   } catch (e) { }
 
   if (!firebaseTutorRef && (window.firebaseDb || firebaseTutorDb)) {
@@ -338,8 +356,12 @@ function saveTutorScenarioHistory(scenarioId) {
   }
 
   if (firebaseTutorRef) {
-    firebaseTutorRef.child(`scenarios/${scenarioId}/history`).set(tutorConversationHistory)
-      .catch(e => console.warn("[Chinese Tutor] Firebase save history error:", e));
+    try {
+      firebaseTutorRef.child(`scenarios/${scenarioId}/history`).set(sanitized)
+        .catch(e => console.warn("[Chinese Tutor] Firebase save history error:", e));
+    } catch (fbErr) {
+      console.warn("[Chinese Tutor] Firebase sync error:", fbErr);
+    }
   }
 }
 
@@ -383,10 +405,11 @@ function startFreeTutorChat() {
   // Gửi tin nhắn mở đầu của Gia sư AI
   appendTutorMessage({
     role: "assistant",
-    zh: scenario.initialMessage.zh,
-    pinyin: scenario.initialMessage.pinyin,
-    vi: scenario.initialMessage.vi,
-    feedback: ""
+    zh: scenario.initialMessage.zh || "",
+    pinyin: scenario.initialMessage.pinyin || "",
+    vi: scenario.initialMessage.vi || "",
+    feedback: "",
+    extra: ""
   });
 
   // Focus ô nhập
@@ -413,27 +436,40 @@ function renderTutorScenarioPills() { /* no-op */ }
 
 // Parse AI Raw Response
 function parseTutorAiResponse(raw) {
+  if (!raw || typeof raw !== "string") {
+    return { zh: "", pinyin: "", vi: "", feedback: "", extra: "" };
+  }
+
   const zhMatch = raw.match(/\[ZH\]([\s\S]*?)\[\/ZH\]/i);
   const pinyinMatch = raw.match(/\[PINYIN\]([\s\S]*?)\[\/PINYIN\]/i);
   const viMatch = raw.match(/\[VI\]([\s\S]*?)\[\/VI\]/i);
   const feedbackMatch = raw.match(/\[FEEDBACK\]([\s\S]*?)\[\/FEEDBACK\]/i);
 
-  if (zhMatch && pinyinMatch && viMatch) {
-    return {
-      zh: zhMatch[1].trim(),
-      pinyin: pinyinMatch[1].trim(),
-      vi: viMatch[1].trim(),
-      feedback: feedbackMatch ? feedbackMatch[1].trim() : ""
-    };
+  const zh = zhMatch ? zhMatch[1].trim() : "";
+  const pinyin = pinyinMatch ? pinyinMatch[1].trim() : "";
+  const vi = viMatch ? viMatch[1].trim() : "";
+  const feedback = feedbackMatch ? feedbackMatch[1].trim() : "";
+
+  // Nếu có ít nhất 1 thẻ được trích xuất
+  if (zh || pinyin || vi || feedback) {
+    const extra = raw
+      .replace(/\[ZH\][\s\S]*?\[\/ZH\]/gi, "")
+      .replace(/\[PINYIN\][\s\S]*?\[\/PINYIN\]/gi, "")
+      .replace(/\[VI\][\s\S]*?\[\/VI\]/gi, "")
+      .replace(/\[FEEDBACK\][\s\S]*?\[\/FEEDBACK\]/gi, "")
+      .trim();
+
+    return { zh, pinyin, vi, feedback, extra };
   }
 
-  // Fallback parsing if AI didn't use tags strictly
+  // Fallback parsing nếu AI không dùng thẻ chuẩn
   const lines = raw.split("\n").map(l => l.trim()).filter(Boolean);
   return {
     zh: lines[0] || raw,
     pinyin: lines[1] || "",
     vi: lines[2] || "Bản dịch đang cập nhật",
-    feedback: lines.slice(3).join("\n") || ""
+    feedback: lines.slice(3).join("\n") || "",
+    extra: ""
   };
 }
 
@@ -493,32 +529,14 @@ async function sendTutorMessage() {
   const scenario = CHINESE_TUTOR_SCENARIOS[currentTutorScenario] || CHINESE_TUTOR_SCENARIOS.free;
   const modelToUse = currentTutorModel || DEFAULT_GEMINI_MODEL;
 
+  let aiResult;
   try {
-    const aiResult = await callTutorGemini(activeKey, modelToUse, scenario, tutorConversationHistory, userText);
-    showTutorTyping(false);
-
-    const resultText = (typeof aiResult === "object" && aiResult !== null) ? (aiResult.text || "") : String(aiResult || "");
-    const parsed = parseTutorAiResponse(resultText);
-    appendTutorMessage({
-      role: "assistant",
-      zh: parsed.zh,
-      pinyin: parsed.pinyin,
-      vi: parsed.vi,
-      feedback: parsed.feedback
-    });
-
-    // Cảnh báo nếu phản hồi bị cắt ngang do giới hạn token
-    if (aiResult.truncated) {
-      if (typeof showToast === "function") {
-        showToast("⚠️ Phản hồi AI có thể bị cắt ngang do giới hạn token. Hãy thử hỏi lại ngắn gọn hơn.", 4000);
-      }
-    }
-
+    aiResult = await callTutorGemini(activeKey, modelToUse, scenario, tutorConversationHistory, userText);
   } catch (err) {
     console.warn("[Chinese Tutor] Gemini API Call failed:", err);
     showTutorTyping(false);
 
-    // Hiển thị trực tiếp lỗi API lên đoạn chat nếu tất cả mô hình dự phòng đều thất bại
+    // Hiển thị trực tiếp lỗi API lên đoạn chat nếu gọi API thất bại
     appendTutorErrorMessage({
       code: err.code || 500,
       status: err.status || "",
@@ -527,12 +545,44 @@ async function sendTutorMessage() {
       retryText: userText,
       retryDelaySec: err.retryDelaySec || (err.code === 429 ? 28 : 0)
     });
+    return;
+  }
+
+  showTutorTyping(false);
+
+  try {
+    const resultText = (typeof aiResult === "object" && aiResult !== null) ? (aiResult.text || "") : String(aiResult || "");
+    const parsed = parseTutorAiResponse(resultText);
+    appendTutorMessage({
+      role: "assistant",
+      zh: parsed.zh || "",
+      pinyin: parsed.pinyin || "",
+      vi: parsed.vi || "",
+      feedback: parsed.feedback || "",
+      extra: parsed.extra || "",
+      metadata: {
+        modelVersion: aiResult.modelVersion || modelToUse,
+        responseId: aiResult.responseId || "",
+        finishReason: aiResult.finishReason || "STOP",
+        usageMetadata: aiResult.usageMetadata || null,
+        rawJson: aiResult.rawResponse || null
+      }
+    });
+
+    // Cảnh báo nếu phản hồi bị cắt ngang do giới hạn token
+    if (aiResult.truncated) {
+      if (typeof showToast === "function") {
+        showToast("⚠️ Phản hồi AI có thể bị cắt ngang do giới hạn token. Hãy thử hỏi lại ngắn gọn hơn.", 4000);
+      }
+    }
+  } catch (renderErr) {
+    console.error("[Chinese Tutor] Lỗi render phản hồi:", renderErr);
   }
 }
 
 // Call Google Gemini API (generateContent endpoint)
 async function callTutorGemini(apiKey, model, scenario, history, userText) {
-  const modelToUse = "gemini-3.6-flash"; // Mô hình chính thức duy nhất hoạt động trên tài khoản
+  const modelToUse = (model && GEMINI_TUTOR_MODELS.some(m => m.id === model)) ? model : (currentTutorModel || DEFAULT_GEMINI_MODEL);
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${apiKey}`;
 
   const contents = [];
@@ -556,18 +606,23 @@ async function callTutorGemini(apiKey, model, scenario, history, userText) {
     parts: [{ text: userText }]
   });
 
+  const generationConfig = {
+    temperature: 0.7,
+    maxOutputTokens: 8192
+  };
+  // Model gemini-3.6-flash có khả năng suy nghĩ chuyên sâu; gemini-3.1-flash-lite tối ưu tốc độ và phản hồi tức thì
+  if (modelToUse === "gemini-3.6-flash") {
+    generationConfig.thinkingConfig = {
+      thinkingBudget: 1024
+    };
+  }
+
   const body = {
     systemInstruction: {
       parts: [{ text: scenario.systemPrompt }]
     },
     contents: contents,
-    generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: 8192,
-      thinkingConfig: {
-        thinkingBudget: 1024
-      }
-    }
+    generationConfig: generationConfig
   };
 
   let response;
@@ -632,14 +687,18 @@ async function callTutorGemini(apiKey, model, scenario, history, userText) {
 
   const data = await response.json();
   const candidate = data.candidates?.[0];
-  const finishReason = candidate?.finishReason || "";
+  const finishReason = candidate?.finishReason || "STOP";
 
-  // Tìm part có thuộc tính 'text' (bỏ qua các part chỉ có thoughtSignature)
+  // Tìm part có thuộc tính 'text' và 'thoughtSignature'
   const parts = candidate?.content?.parts || [];
   let rawText = "";
+  let thoughtSignature = "";
   for (const part of parts) {
     if (part.text) {
       rawText += part.text;
+    }
+    if (part.thoughtSignature) {
+      thoughtSignature = part.thoughtSignature;
     }
   }
 
@@ -659,6 +718,12 @@ async function callTutorGemini(apiKey, model, scenario, history, userText) {
   return {
     text: rawText,
     usedModel: modelToUse,
+    modelVersion: data.modelVersion || modelToUse,
+    responseId: data.responseId || "",
+    finishReason: finishReason,
+    usageMetadata: data.usageMetadata || null,
+    thoughtSignature: thoughtSignature,
+    rawResponse: data,
     switched: false,
     truncated: finishReason === "MAX_TOKENS"
   };
@@ -755,7 +820,8 @@ function setTutorStatus(type, message) {
 
 async function testTutorConnection() {
   const keyInput = document.getElementById("tutorApiKeyInput");
-  const model = DEFAULT_GEMINI_MODEL;
+  const modelSelect = document.getElementById("tutorModelSelect");
+  const model = (modelSelect && modelSelect.value) ? modelSelect.value : (currentTutorModel || DEFAULT_GEMINI_MODEL);
   const apiKey = keyInput ? keyInput.value.trim() : "";
 
   if (!apiKey) {
@@ -907,27 +973,46 @@ function appendTutorMessage(msg, skipSave) {
     const escapedPinyin = escapeHtml(msg.pinyin || "");
     const escapedVi = escapeHtml(msg.vi || "");
     const escapedFeedback = msg.feedback ? escapeHtml(msg.feedback) : "";
+    const escapedExtra = msg.extra ? escapeHtml(msg.extra) : "";
+    const msgId = "tutor_resp_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6);
+
+    const metaHtml = renderTutorResponseMetadata(msg.metadata, msgId);
 
     msgDiv.innerHTML = `
       <div class="tutor-avatar-icon">🐼</div>
       <div class="tutor-msg-bubble assistant-bubble">
         <div class="tutor-bubble-top">
           <div class="tutor-zh-text">${escapedZh}</div>
-          <button class="tutor-speak-btn" onclick="speakTutorChinese('${escapedZh.replace(/'/g, "\\'")}')" title="Phát âm">
-            <i class="fi fi-rr-volume"></i>
-          </button>
+          <div class="tutor-msg-actions">
+            <button type="button" class="tutor-action-icon-btn tutor-speak-btn" onclick="speakTutorChinese('${escapedZh.replace(/'/g, "\\'")}')" title="Phát âm tiếng Trung">
+              <i class="fi fi-rr-volume"></i>
+            </button>
+            <button type="button" class="tutor-action-icon-btn tutor-copy-btn" onclick="copyTutorText('${escapedZh.replace(/'/g, "\\'")}', this)" title="Sao chép chữ Hán">
+              <i class="fi fi-rr-copy"></i>
+            </button>
+          </div>
         </div>
-        <div class="tutor-pinyin-text">${escapedPinyin}</div>
-        <div class="tutor-vi-text">${escapedVi}</div>
-        ${escapedFeedback ? `<div class="tutor-feedback-box">${escapedFeedback}</div>` : ""}
+        ${escapedPinyin ? `<div class="tutor-pinyin-text">${escapedPinyin}</div>` : ""}
+        ${escapedVi ? `<div class="tutor-vi-text">${escapedVi}</div>` : ""}
+        ${escapedFeedback ? `
+          <div class="tutor-feedback-box">
+            <div class="tutor-feedback-header">
+              <i class="fi fi-rr-bulb"></i>
+              <span>Nhận xét & Hướng dẫn</span>
+            </div>
+            <div class="tutor-feedback-content">${escapedFeedback}</div>
+          </div>
+        ` : ""}
       </div>
     `;
     tutorConversationHistory.push({
       role: "assistant",
-      zh: msg.zh,
-      pinyin: msg.pinyin,
-      vi: msg.vi,
-      feedback: msg.feedback
+      zh: msg.zh || "",
+      pinyin: msg.pinyin || "",
+      vi: msg.vi || "",
+      feedback: msg.feedback || "",
+      extra: msg.extra || "",
+      metadata: msg.metadata || null
     });
   }
 
@@ -938,6 +1023,216 @@ function appendTutorMessage(msg, skipSave) {
     saveTutorScenarioHistory(currentTutorScenario);
   }
 }
+
+// Render chi tiết phản hồi AI (Mô hình, Token Usage Breakdown, Response ID, Finish Reason, Raw JSON)
+function renderTutorResponseMetadata(meta, msgId) {
+  if (!meta) return "";
+
+  const model = meta.modelVersion || meta.usedModel || "gemini-3.6-flash";
+  const responseId = meta.responseId || "";
+  const finishReason = meta.finishReason || "STOP";
+  const usage = meta.usageMetadata || {};
+
+  const promptTokens = Number(usage.promptTokenCount || 0);
+  const thoughtsTokens = Number(usage.thoughtsTokenCount || 0);
+  const candidatesTokens = Number(usage.candidatesTokenCount || 0);
+  const totalTokens = Number(usage.totalTokenCount || (promptTokens + thoughtsTokens + candidatesTokens));
+  const serviceTier = usage.serviceTier || "standard";
+
+  const rawJsonStr = meta.rawJson ? escapeHtml(JSON.stringify(meta.rawJson, null, 2)) : "";
+  const containerId = msgId || "meta_" + Math.random().toString(36).substr(2, 8);
+
+  const promptPct = totalTokens > 0 ? Math.max(3, (promptTokens / totalTokens * 100)).toFixed(1) : 0;
+  const thoughtsPct = totalTokens > 0 ? Math.max(3, (thoughtsTokens / totalTokens * 100)).toFixed(1) : 0;
+  const candidatesPct = totalTokens > 0 ? Math.max(3, (candidatesTokens / totalTokens * 100)).toFixed(1) : 0;
+
+  return `
+    <div class="tutor-response-meta-container" id="${containerId}">
+      <!-- Thanh tóm tắt thông số nhanh -->
+      <div class="tutor-meta-summary-bar">
+        <div class="tutor-meta-badges-left">
+          <span class="tutor-meta-badge badge-model" title="Phiên bản mô hình AI: ${escapeHtml(model)}">
+            <i class="fi fi-rr-cpu"></i>
+            <span>${escapeHtml(model)}</span>
+          </span>
+          ${totalTokens > 0 ? `
+          <span class="tutor-meta-badge badge-tokens" title="Tổng tokens: ${totalTokens.toLocaleString()} (Prompt: ${promptTokens}, Thoughts: ${thoughtsTokens}, Output: ${candidatesTokens})">
+            <i class="fi fi-rr-database"></i>
+            <span>${totalTokens.toLocaleString()} tokens</span>
+          </span>
+          ` : ""}
+          <span class="tutor-meta-badge badge-finish" title="Trạng thái hoàn tất: ${escapeHtml(finishReason)}">
+            <i class="fi fi-rr-check-circle"></i>
+            <span>${escapeHtml(finishReason)}</span>
+          </span>
+        </div>
+
+        <button type="button" class="tutor-meta-toggle-btn" onclick="toggleTutorResponseDetails('${containerId}')" title="Bấm để xem chi tiết Token và JSON phản hồi từ Gemini API">
+          <i class="fi fi-rr-info"></i>
+          <span>Chi tiết</span>
+          <i class="fi fi-rr-angle-small-down meta-chevron"></i>
+        </button>
+      </div>
+
+      <!-- Khung chi tiết mở rộng -->
+      <div class="tutor-meta-details-drawer" style="display: none;">
+        <!-- Lưới thống kê 4 nhóm Token -->
+        <div class="tutor-token-grid">
+          <div class="tutor-token-stat-item">
+            <div class="tutor-token-stat-label">
+              <i class="fi fi-rr-sign-in-alt"></i>
+              <span>Prompt Tokens</span>
+            </div>
+            <div class="tutor-token-stat-val val-prompt">${promptTokens.toLocaleString()}</div>
+            <div class="tutor-token-stat-sub">Câu hỏi & Ngữ cảnh</div>
+          </div>
+
+          <div class="tutor-token-stat-item">
+            <div class="tutor-token-stat-label">
+              <i class="fi fi-rr-brain"></i>
+              <span>Thoughts Tokens</span>
+            </div>
+            <div class="tutor-token-stat-val val-thoughts">${thoughtsTokens.toLocaleString()}</div>
+            <div class="tutor-token-stat-sub">Suy nghĩ (Gemini 3.6 Flash)</div>
+          </div>
+
+          <div class="tutor-token-stat-item">
+            <div class="tutor-token-stat-label">
+              <i class="fi fi-rr-sign-out-alt"></i>
+              <span>Candidates Tokens</span>
+            </div>
+            <div class="tutor-token-stat-val val-candidates">${candidatesTokens.toLocaleString()}</div>
+            <div class="tutor-token-stat-sub">Câu trả lời tạo ra</div>
+          </div>
+
+          <div class="tutor-token-stat-item">
+            <div class="tutor-token-stat-label">
+              <i class="fi fi-rr-calculator"></i>
+              <span>Total Tokens</span>
+            </div>
+            <div class="tutor-token-stat-val val-total">${totalTokens.toLocaleString()}</div>
+            <div class="tutor-token-stat-sub">Tổng tokens phiên này</div>
+          </div>
+        </div>
+
+        <!-- Thanh tỷ lệ phân bổ Token trực quan -->
+        ${totalTokens > 0 ? `
+        <div class="tutor-token-distribution" title="Phân bổ: Prompt ${promptTokens} | Thoughts ${thoughtsTokens} | Output ${candidatesTokens}">
+          <div class="tutor-dist-seg seg-prompt" style="width: ${promptPct}%" title="Prompt: ${promptTokens}"></div>
+          <div class="tutor-dist-seg seg-thoughts" style="width: ${thoughtsPct}%" title="Thoughts: ${thoughtsTokens}"></div>
+          <div class="tutor-dist-seg seg-output" style="width: ${candidatesPct}%" title="Output: ${candidatesTokens}"></div>
+        </div>
+        ` : ""}
+
+        <!-- Thông số hệ thống bổ sung -->
+        <div class="tutor-tech-meta-row">
+          ${responseId ? `
+          <div class="tutor-tech-item">
+            <span class="tutor-tech-key">Response ID:</span>
+            <code class="tutor-tech-val">${escapeHtml(responseId)}</code>
+          </div>
+          ` : ""}
+          <div class="tutor-tech-item">
+            <span class="tutor-tech-key">Service Tier:</span>
+            <span class="tutor-tech-pill">${escapeHtml(serviceTier)}</span>
+          </div>
+          <div class="tutor-tech-item">
+            <span class="tutor-tech-key">Finish Reason:</span>
+            <span class="tutor-tech-pill finish-pill">${escapeHtml(finishReason)}</span>
+          </div>
+        </div>
+
+        <!-- Khối xem Raw JSON API đúng như trên DevTools -->
+        ${rawJsonStr ? `
+        <div class="tutor-raw-json-wrap">
+          <div class="tutor-raw-json-header">
+            <span class="tutor-raw-json-title">
+              <i class="fi fi-rr-brackets-curly"></i>
+              <span>JSON Response Payload (DevTools Object)</span>
+            </span>
+            <button type="button" class="tutor-raw-copy-btn" onclick="copyTutorRawJson(this)" title="Sao chép toàn bộ JSON">
+              <i class="fi fi-rr-copy"></i>
+              <span>Sao chép JSON</span>
+            </button>
+          </div>
+          <pre class="tutor-raw-json-code"><code>${rawJsonStr}</code></pre>
+        </div>
+        ` : ""}
+      </div>
+    </div>
+  `;
+}
+
+// Toggle mở rộng / thu gọn chi tiết phản hồi
+function toggleTutorResponseDetails(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const drawer = container.querySelector(".tutor-meta-details-drawer");
+  const btn = container.querySelector(".tutor-meta-toggle-btn");
+  if (!drawer) return;
+
+  const isHidden = drawer.style.display === "none" || !drawer.style.display;
+  if (isHidden) {
+    drawer.style.display = "block";
+    if (btn) btn.classList.add("active");
+  } else {
+    drawer.style.display = "none";
+    if (btn) btn.classList.remove("active");
+  }
+}
+window.toggleTutorResponseDetails = toggleTutorResponseDetails;
+
+// Sao chép văn bản
+function copyTutorText(text, btn) {
+  if (!text) return;
+  const doFeedback = () => {
+    if (btn) {
+      const origHtml = btn.innerHTML;
+      btn.innerHTML = '<i class="fi fi-rr-check"></i>';
+      btn.classList.add("copied");
+      setTimeout(() => {
+        btn.innerHTML = origHtml;
+        btn.classList.remove("copied");
+      }, 1800);
+    }
+    if (typeof showToast === "function") {
+      showToast("Đã sao chép vào bộ nhớ tạm!", 2000);
+    }
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(doFeedback).catch(() => {
+      fallbackCopyText(text);
+      doFeedback();
+    });
+  } else {
+    fallbackCopyText(text);
+    doFeedback();
+  }
+}
+window.copyTutorText = copyTutorText;
+
+function fallbackCopyText(text) {
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.opacity = "0";
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand("copy"); } catch (e) { }
+  document.body.removeChild(ta);
+}
+
+// Sao chép toàn bộ Raw JSON phản hồi
+function copyTutorRawJson(btn) {
+  if (!btn) return;
+  const wrap = btn.closest(".tutor-raw-json-wrap");
+  const codeEl = wrap ? wrap.querySelector("code") : null;
+  if (codeEl) {
+    copyTutorText(codeEl.textContent, btn);
+  }
+}
+window.copyTutorRawJson = copyTutorRawJson;
 
 // Giữ lại hàm rỗng tương thích ngược nếu có sự kiện gọi cancelTutorCountdown
 function cancelTutorCountdown() { /* Cơ chế tự động gửi lại đã được loại bỏ */ }
@@ -1065,26 +1360,9 @@ async function retryTutorMessage(text, triggerEl) {
   const scenario = CHINESE_TUTOR_SCENARIOS[currentTutorScenario] || CHINESE_TUTOR_SCENARIOS.free;
   const modelToUse = currentTutorModel || DEFAULT_GEMINI_MODEL;
 
+  let aiResult;
   try {
-    const aiResult = await callTutorGemini(activeKey, modelToUse, scenario, tutorConversationHistory, text);
-    showTutorTyping(false);
-
-    const resultText = (typeof aiResult === "object" && aiResult !== null) ? (aiResult.text || "") : String(aiResult || "");
-    const parsed = parseTutorAiResponse(resultText);
-    appendTutorMessage({
-      role: "assistant",
-      zh: parsed.zh,
-      pinyin: parsed.pinyin,
-      vi: parsed.vi,
-      feedback: parsed.feedback
-    });
-
-    if (aiResult.truncated) {
-      if (typeof showToast === "function") {
-        showToast("⚠️ Phản hồi AI có thể bị cắt ngang do giới hạn token. Hãy thử hỏi lại ngắn gọn hơn.", 4000);
-      }
-    }
-
+    aiResult = await callTutorGemini(activeKey, modelToUse, scenario, tutorConversationHistory, text);
   } catch (err) {
     console.warn("[Chinese Tutor] Gemini API retry failed:", err);
     showTutorTyping(false);
@@ -1097,6 +1375,37 @@ async function retryTutorMessage(text, triggerEl) {
       retryText: text,
       retryDelaySec: err.retryDelaySec || (err.code === 429 ? 28 : 0)
     });
+    return;
+  }
+
+  showTutorTyping(false);
+
+  try {
+    const resultText = (typeof aiResult === "object" && aiResult !== null) ? (aiResult.text || "") : String(aiResult || "");
+    const parsed = parseTutorAiResponse(resultText);
+    appendTutorMessage({
+      role: "assistant",
+      zh: parsed.zh || "",
+      pinyin: parsed.pinyin || "",
+      vi: parsed.vi || "",
+      feedback: parsed.feedback || "",
+      extra: parsed.extra || "",
+      metadata: {
+        modelVersion: aiResult.modelVersion || modelToUse,
+        responseId: aiResult.responseId || "",
+        finishReason: aiResult.finishReason || "STOP",
+        usageMetadata: aiResult.usageMetadata || null,
+        rawJson: aiResult.rawResponse || null
+      }
+    });
+
+    if (aiResult.truncated) {
+      if (typeof showToast === "function") {
+        showToast("⚠️ Phản hồi AI có thể bị cắt ngang do giới hạn token. Hãy thử hỏi lại ngắn gọn hơn.", 4000);
+      }
+    }
+  } catch (renderErr) {
+    console.error("[Chinese Tutor] Lỗi render phản hồi khi retry:", renderErr);
   }
 }
 window.retryTutorMessage = retryTutorMessage;

@@ -28110,6 +28110,447 @@ div.fc-modal .fc-modal-dialog,
   transform: none !important;
 }
 
+/* ==========================================================================
+   CHINESE TUTOR - RESPONSE METADATA & TOKEN ANALYTICS (GEMINI.md COMPLIANT)
+   ========================================================================== */
+
+.tutor-msg-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tutor-action-icon-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #38bdf8;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  transform: none !important;
+}
+
+.tutor-action-icon-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #fff;
+  transform: none !important;
+}
+
+.tutor-action-icon-btn.copied {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: rgba(16, 185, 129, 0.6);
+  color: #34d399;
+}
+
+.tutor-action-icon-btn i {
+  position: static !important;
+  top: 0 !important;
+  font-size: 13px;
+  line-height: 1 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tutor-feedback-box {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-top: 4px;
+}
+
+.tutor-feedback-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-bottom: 5px;
+}
+
+.tutor-feedback-header i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  font-size: 12px;
+  line-height: 1 !important;
+}
+
+.tutor-feedback-content {
+  font-size: 12.5px;
+  color: #fef3c7;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.tutor-extra-box {
+  display: none !important;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 9px 13px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  color: var(--text-secondary, #cbd5e1);
+  line-height: 1.5;
+  margin-top: 4px;
+  white-space: pre-wrap;
+}
+
+/* Container chứa thông tin kỹ thuật phản hồi Response */
+.tutor-response-meta-container {
+  display: none !important;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tutor-meta-summary-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tutor-meta-badges-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tutor-meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2.5px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.2px;
+}
+
+.tutor-meta-badge i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  font-size: 11px;
+}
+
+.tutor-meta-badge.badge-model {
+  background: rgba(99, 102, 241, 0.16);
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  color: #c7d2fe;
+}
+
+.tutor-meta-badge.badge-tokens {
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #fde68a;
+  font-family: monospace;
+}
+
+.tutor-meta-badge.badge-finish {
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.32);
+  color: #a7f3d0;
+  font-size: 10.5px;
+}
+
+.tutor-meta-toggle-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-secondary, #94a3b8);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  transform: none !important;
+}
+
+.tutor-meta-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+  transform: none !important;
+}
+
+.tutor-meta-toggle-btn i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  font-size: 11px;
+  line-height: 1 !important;
+}
+
+.tutor-meta-toggle-btn .meta-chevron {
+  transition: transform 0.2s ease;
+  position: static !important;
+  top: 0 !important;
+}
+
+.tutor-meta-toggle-btn.active .meta-chevron {
+  transform: rotate(180deg);
+}
+
+/* Khối mở rộng chi tiết */
+.tutor-meta-details-drawer {
+  margin-top: 10px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 11px;
+  padding: 12px 14px;
+  animation: tutorFadeIn 0.22s ease-out;
+  box-sizing: border-box;
+}
+
+@keyframes tutorFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Lưới thống kê 4 nhóm Token */
+.tutor-token-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 640px) {
+  .tutor-token-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.tutor-token-stat-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tutor-token-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.tutor-token-stat-label i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  font-size: 10px;
+  line-height: 1 !important;
+}
+
+.tutor-token-stat-val {
+  font-size: 16px;
+  font-weight: 700;
+  font-family: monospace;
+  line-height: 1.2;
+}
+
+.tutor-token-stat-val.val-prompt {
+  color: #38bdf8;
+}
+
+.tutor-token-stat-val.val-thoughts {
+  color: #c084fc;
+}
+
+.tutor-token-stat-val.val-candidates {
+  color: #34d399;
+}
+
+.tutor-token-stat-val.val-total {
+  color: #fbbf24;
+}
+
+.tutor-token-stat-sub {
+  font-size: 10px;
+  color: #64748b;
+}
+
+/* Thanh phân bổ Token trực quan */
+.tutor-token-distribution {
+  display: flex;
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 11px;
+}
+
+.tutor-dist-seg {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.tutor-dist-seg.seg-prompt {
+  background: #38bdf8;
+}
+
+.tutor-dist-seg.seg-thoughts {
+  background: #c084fc;
+}
+
+.tutor-dist-seg.seg-output {
+  background: #34d399;
+}
+
+/* Thông số kỹ thuật hệ thống */
+.tutor-tech-meta-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-secondary, #94a3b8);
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tutor-tech-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tutor-tech-key {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.tutor-tech-val {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1.5px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 10.5px;
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tutor-tech-pill {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  color: #cbd5e1;
+}
+
+.tutor-tech-pill.finish-pill {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Khối xem Raw JSON API Payload */
+.tutor-raw-json-wrap {
+  margin-top: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tutor-raw-json-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tutor-raw-json-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.tutor-raw-json-title i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  font-size: 11px;
+  line-height: 1 !important;
+}
+
+.tutor-raw-copy-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 10.5px;
+  font-weight: 500;
+  padding: 2.5px 8px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+  transform: none !important;
+}
+
+.tutor-raw-copy-btn:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #38bdf8;
+  transform: none !important;
+}
+
+.tutor-raw-copy-btn i {
+  position: relative !important;
+  top: 1px !important;
+  display: inline-flex !important;
+  font-size: 10px;
+  line-height: 1 !important;
+}
+
+.tutor-raw-json-code {
+  margin: 0;
+  padding: 8px 10px;
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+  font-size: 10.5px;
+  color: #94a3b8;
+  line-height: 1.45;
+  max-height: 160px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
 
 
 

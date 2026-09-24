@@ -11,6 +11,11 @@ const GEMINI_TUTOR_MODELS = [
     id: "gemini-3.1-flash-lite",
     name: "Gemini 3.1 Flash-Lite",
     desc: "Mô hình siêu nhẹ, tốc độ phản hồi cực nhanh, tối ưu chi phí và hạn mức quota cao (Tiết kiệm lượt gọi)"
+  },
+  {
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    desc: "Mô hình cân bằng giữa hiệu năng và tốc độ, hỗ trợ đa nhiệm và sáng tạo hiệu quả (Cân bằng)"
   }
 ];
 const DEFAULT_GEMINI_MODEL = "gemini-3.6-flash";

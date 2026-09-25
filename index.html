@@ -1654,17 +1654,17 @@
     </div>
 
     <!-- 4. Cashflow Chart Modal -->
-    <div id="cashflowChartModal" class="modal cashflow-submodal" style="display: none"
+    <div id="cashflowChartModal" class="modal cashflow-submodal cashflow-chart-modal" style="display: none"
       onclick="if (event.target === this) closeCashflowChartModal()">
-      <div class="cashflow-submodal-dialog" style="max-width: 720px;">
+      <div class="cashflow-submodal-dialog cashflow-chart-modal-dialog">
         <div class="cashflow-submodal-header">
           <div class="cashflow-submodal-header-left">
             <div class="cashflow-submodal-icon is-chart">
-              <i class="fi fi-rr-chart-histogram"></i>
+              <i class="fi fi-rr-chart-line-up"></i>
             </div>
             <div>
-              <h3 class="cashflow-submodal-title">Biểu đồ thu chi theo tháng</h3>
-              <p class="cashflow-submodal-subtitle">Theo dõi diễn biến thu chi và xuất báo cáo</p>
+              <h3 class="cashflow-submodal-title">Biểu đồ thu chi theo thời gian</h3>
+              <p class="cashflow-submodal-subtitle">Theo dõi diễn biến thu và chi theo từng ngày</p>
             </div>
           </div>
           <button type="button" class="cashflow-submodal-close" onclick="closeCashflowChartModal()"
@@ -1672,23 +1672,59 @@
         </div>
         <div class="cashflow-submodal-body">
           <div class="cashflow-chart-content" id="cashflowChartContent">
-            <div class="cashflow-chart-controls">
-              <label class="cashflow-month-selector-label" for="cashflowMonthSelect">Xem</label>
-              <select id="cashflowMonthSelect" class="cashflow-month-selector"
-                onchange="onCashflowMonthSelectChange()"></select>
-              <button id="cashflowExportBtn" class="cashflow-export-btn cashflow-export-btn--sm"
-                style="margin-left: auto;" onclick="exportCashflowCsv()">
-                Xuất HTML
-              </button>
+            <!-- Toolbar: Bộ lọc khoảng thời gian & nút xuất HTML -->
+            <div class="cashflow-chart-toolbar">
+              <div class="cashflow-range-filter" id="cashflowChartRangeFilter" role="tablist"
+                aria-label="Bộ lọc thời gian biểu đồ đường">
+                <button type="button" class="cashflow-range-chip active" data-range="month"
+                  onclick="setCashflowChartRange('month')">
+                  Tháng
+                </button>
+                <button type="button" class="cashflow-range-chip" data-range="week"
+                  onclick="setCashflowChartRange('week')">
+                  Tuần
+                </button>
+                <button type="button" class="cashflow-range-chip" data-range="year"
+                  onclick="setCashflowChartRange('year')">
+                  Năm
+                </button>
+                <button type="button" class="cashflow-range-chip" data-range="all"
+                  onclick="setCashflowChartRange('all')">
+                  Tất cả
+                </button>
+              </div>
             </div>
 
-            <div class="cashflow-legend">
-              <span class="legend-item legend-income">Thu</span>
-              <span class="legend-item legend-expense">Chi</span>
+            <!-- Thống kê tóm tắt theo khoảng thời gian -->
+            <div class="cashflow-chart-summary-bar" id="cashflowChartSummaryBar">
+              <div class="chart-summary-stat is-income">
+                <span class="stat-dot"></span>
+                <span class="stat-label">Tổng thu:</span>
+                <span class="stat-num" id="chartStatIncome">0 đ</span>
+              </div>
+              <div class="chart-summary-stat is-expense">
+                <span class="stat-dot"></span>
+                <span class="stat-label">Tổng chi:</span>
+                <span class="stat-num" id="chartStatExpense">0 đ</span>
+              </div>
+              <div class="chart-summary-stat is-balance">
+                <span class="stat-label">Chênh lệch:</span>
+                <span class="stat-num" id="chartStatBalance">0 đ</span>
+              </div>
             </div>
-            <div class="cashflow-chart-wrap">
-              <canvas id="cashflowChart"></canvas>
-              <div class="cashflow-chart-tooltip" id="cashflowChartTooltip" style="display: none"></div>
+            <div class="cashflow-chart-wrap cashflow-chart-card">
+              <!-- Cột trục Y cố định bên trái -->
+              <div class="cashflow-chart-yaxis-col" id="cashflowChartYAxisCol">
+                <canvas id="cashflowChartYAxis"></canvas>
+              </div>
+
+              <!-- Vùng cuộn ngang biểu đồ bên phải -->
+              <div class="cashflow-chart-viewport" id="cashflowChartViewport">
+                <div class="cashflow-chart-inner" id="cashflowChartInner">
+                  <canvas id="cashflowChart"></canvas>
+                  <div class="cashflow-chart-tooltip" id="cashflowChartTooltip" style="display: none"></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1744,7 +1780,8 @@
                     <span class="cashflow-export-option-icon is-recent2"><i class="fi fi-rr-time-past"></i></span>
                     <span class="cashflow-export-option-text">
                       <span class="cashflow-export-option-title">2 tháng gần nhất</span>
-                      <span class="cashflow-export-option-desc" id="cashflowExportDesc_last_2_months">2 tháng gần đây</span>
+                      <span class="cashflow-export-option-desc" id="cashflowExportDesc_last_2_months">2 tháng gần
+                        đây</span>
                     </span>
                   </button>
                   <button type="button" class="cashflow-export-option"
@@ -1752,7 +1789,8 @@
                     <span class="cashflow-export-option-icon is-recent3"><i class="fi fi-rr-chart-pie"></i></span>
                     <span class="cashflow-export-option-text">
                       <span class="cashflow-export-option-title">3 tháng gần nhất</span>
-                      <span class="cashflow-export-option-desc" id="cashflowExportDesc_last_3_months">3 tháng gần đây</span>
+                      <span class="cashflow-export-option-desc" id="cashflowExportDesc_last_3_months">3 tháng gần
+                        đây</span>
                     </span>
                   </button>
                   <button type="button" class="cashflow-export-option"
@@ -1760,7 +1798,8 @@
                     <span class="cashflow-export-option-icon is-recent6"><i class="fi fi-rr-chart-histogram"></i></span>
                     <span class="cashflow-export-option-text">
                       <span class="cashflow-export-option-title">6 tháng gần nhất</span>
-                      <span class="cashflow-export-option-desc" id="cashflowExportDesc_last_6_months">6 tháng gần đây</span>
+                      <span class="cashflow-export-option-desc" id="cashflowExportDesc_last_6_months">6 tháng gần
+                        đây</span>
                     </span>
                   </button>
                   <button type="button" class="cashflow-export-option"
@@ -1771,8 +1810,7 @@
                       <span class="cashflow-export-option-desc" id="cashflowExportDesc_this_year">Cả năm hiện tại</span>
                     </span>
                   </button>
-                  <button type="button" class="cashflow-export-option"
-                    onclick="exportCashflowTransactionsHtml('all')">
+                  <button type="button" class="cashflow-export-option" onclick="exportCashflowTransactionsHtml('all')">
                     <span class="cashflow-export-option-icon is-all"><i class="fi fi-rr-database"></i></span>
                     <span class="cashflow-export-option-text">
                       <span class="cashflow-export-option-title">Tất cả</span>
@@ -3258,21 +3296,22 @@
         title="Gia Sư AI Tiếng Trung (Google Gemini)" aria-label="Mở Gia Sư AI Tiếng Trung">
         <div class="tutor-fab-icon-wrap">
           <svg class="tutor-fab-panda-svg" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="9" cy="9.5" r="5" fill="#1e293b"/>
-            <circle cx="9" cy="9.5" r="2.8" fill="#fda4af"/>
-            <circle cx="27" cy="9.5" r="5" fill="#1e293b"/>
-            <circle cx="27" cy="9.5" r="2.8" fill="#fda4af"/>
-            <ellipse cx="18" cy="19.5" rx="13.5" ry="12.5" fill="#ffffff"/>
-            <ellipse cx="12.5" cy="18" rx="3.6" ry="4.4" transform="rotate(-14 12.5 18)" fill="#1e293b"/>
-            <ellipse cx="23.5" cy="18" rx="3.6" ry="4.4" transform="rotate(14 23.5 18)" fill="#1e293b"/>
-            <circle cx="13" cy="17.6" r="1.8" fill="#ffffff"/>
-            <circle cx="14.2" cy="19.2" r="0.8" fill="#ffffff"/>
-            <circle cx="23" cy="17.6" r="1.8" fill="#ffffff"/>
-            <circle cx="21.8" cy="19.2" r="0.8" fill="#ffffff"/>
-            <ellipse cx="8.5" cy="22.5" rx="2.5" ry="1.4" fill="#fb7185" opacity="0.65"/>
-            <ellipse cx="27.5" cy="22.5" rx="2.5" ry="1.4" fill="#fb7185" opacity="0.65"/>
-            <ellipse cx="18" cy="21.8" rx="1.6" ry="1.1" fill="#1e293b"/>
-            <path d="M16 23.4c0.7 0.8 1.4 0.8 2 0 0.6 0.8 1.3 0.8 2 0" stroke="#1e293b" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+            <circle cx="9" cy="9.5" r="5" fill="#1e293b" />
+            <circle cx="9" cy="9.5" r="2.8" fill="#fda4af" />
+            <circle cx="27" cy="9.5" r="5" fill="#1e293b" />
+            <circle cx="27" cy="9.5" r="2.8" fill="#fda4af" />
+            <ellipse cx="18" cy="19.5" rx="13.5" ry="12.5" fill="#ffffff" />
+            <ellipse cx="12.5" cy="18" rx="3.6" ry="4.4" transform="rotate(-14 12.5 18)" fill="#1e293b" />
+            <ellipse cx="23.5" cy="18" rx="3.6" ry="4.4" transform="rotate(14 23.5 18)" fill="#1e293b" />
+            <circle cx="13" cy="17.6" r="1.8" fill="#ffffff" />
+            <circle cx="14.2" cy="19.2" r="0.8" fill="#ffffff" />
+            <circle cx="23" cy="17.6" r="1.8" fill="#ffffff" />
+            <circle cx="21.8" cy="19.2" r="0.8" fill="#ffffff" />
+            <ellipse cx="8.5" cy="22.5" rx="2.5" ry="1.4" fill="#fb7185" opacity="0.65" />
+            <ellipse cx="27.5" cy="22.5" rx="2.5" ry="1.4" fill="#fb7185" opacity="0.65" />
+            <ellipse cx="18" cy="21.8" rx="1.6" ry="1.1" fill="#1e293b" />
+            <path d="M16 23.4c0.7 0.8 1.4 0.8 2 0 0.6 0.8 1.3 0.8 2 0" stroke="#1e293b" stroke-width="1.1"
+              stroke-linecap="round" fill="none" />
           </svg>
         </div>
         <span class="tutor-fab-badge" id="tutorFabBadge">AI</span>

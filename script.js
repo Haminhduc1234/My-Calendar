@@ -13099,6 +13099,10 @@ function closeCashflowAnalysisModal() {
 function openCashflowChartModal() {
   const modal = document.getElementById("cashflowChartModal");
   if (!modal) return;
+  const viewport = document.getElementById("cashflowChartViewport");
+  if (viewport) viewport._userHasScrolled = false;
+  restoreCashflowChartRange();
+  syncCashflowChartRangeUI();
   modal.style.display = "flex";
   requestAnimationFrame(() => {
     renderCashflowChart();
@@ -13108,6 +13112,7 @@ function openCashflowChartModal() {
 function closeCashflowChartModal() {
   const modal = document.getElementById("cashflowChartModal");
   if (modal) modal.style.display = "none";
+  hideCashflowChartTooltip();
 }
 
 async function openCashflowAllTransactionsModal() {
@@ -13317,11 +13322,32 @@ function getCashflowEntriesForExportRange(rangeKey) {
   let fileNameSuffix = "";
 
   switch (rangeKey) {
+    case "week": {
+      const dayOfWeek = (now.getDay() + 6) % 7;
+      const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+      const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+      const startStr = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, "0")}-${String(monday.getDate()).padStart(2, "0")}`;
+      const endStr = `${sunday.getFullYear()}-${String(sunday.getMonth() + 1).padStart(2, "0")}-${String(sunday.getDate()).padStart(2, "0")}`;
+      filtered = cashflowEntries.filter((entry) => entry.date && entry.date >= startStr && entry.date <= endStr);
+      rangeLabel = `Tuần này (${String(monday.getDate()).padStart(2, "0")}/${String(monday.getMonth() + 1).padStart(2, "0")} - ${String(sunday.getDate()).padStart(2, "0")}/${String(sunday.getMonth() + 1).padStart(2, "0")})`;
+      fileNameSuffix = `tuan_nay`;
+      break;
+    }
+    case "month":
     case "this_month": {
       const ym = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
       filtered = cashflowEntries.filter((entry) => entry.date && entry.date.startsWith(ym));
       rangeLabel = `Tháng ${String(currentMonth).padStart(2, "0")}/${currentYear}`;
       fileNameSuffix = `thang_${String(currentMonth).padStart(2, "0")}_${currentYear}`;
+      break;
+    }
+    case "30days": {
+      const past30 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+      const startStr = `${past30.getFullYear()}-${String(past30.getMonth() + 1).padStart(2, "0")}-${String(past30.getDate()).padStart(2, "0")}`;
+      const endStr = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      filtered = cashflowEntries.filter((entry) => entry.date && entry.date >= startStr && entry.date <= endStr);
+      rangeLabel = `30 ngày qua (${String(past30.getDate()).padStart(2, "0")}/${String(past30.getMonth() + 1).padStart(2, "0")} - ${String(now.getDate()).padStart(2, "0")}/${String(currentMonth).padStart(2, "0")})`;
+      fileNameSuffix = `30_ngay_qua`;
       break;
     }
     case "last_2_months": {
@@ -13354,6 +13380,7 @@ function getCashflowEntriesForExportRange(rangeKey) {
       fileNameSuffix = `6_thang_gan_nhat`;
       break;
     }
+    case "year":
     case "this_year": {
       const startY = `${currentYear}-01-01`;
       const endY = `${currentYear}-12-31`;
@@ -14062,351 +14089,684 @@ function exportCashflowTransactionsHtml(rangeKey) {
   showToast(`Đã xuất báo cáo ${rangeLabel} (${filtered.length} giao dịch) thành công!`, 3000);
 }
 
-const CASHFLOW_CHART_MONTHS_KEY = "cashflowChartMonths";
-const CASHFLOW_CHART_MONTHS_DEFAULT = 12;
+const CASHFLOW_CHART_RANGE_KEY = "cashflowChartRange";
+let cashflowChartRange = "month";
 
-function restoreCashflowChartMonths() {
+function restoreCashflowChartRange() {
   try {
-    const saved = parseInt(localStorage.getItem(CASHFLOW_CHART_MONTHS_KEY), 10);
-    if (saved >= 1 && saved <= 24) {
-      cashflowChartMonths = saved;
+    const saved = localStorage.getItem(CASHFLOW_CHART_RANGE_KEY);
+    if (saved && ["week", "month", "30days", "year", "all"].includes(saved)) {
+      cashflowChartRange = saved;
+    } else {
+      cashflowChartRange = "month";
     }
   } catch {
-    cashflowChartMonths = CASHFLOW_CHART_MONTHS_DEFAULT;
+    cashflowChartRange = "month";
   }
+}
+
+function restoreCashflowChartMonths() {
+  restoreCashflowChartRange();
 }
 
 function applyCashflowMonthSelectValue() {
-  const select = document.getElementById("cashflowMonthSelect");
-  if (!select) return;
-
-  if (!select.options.length) {
-    const fragment = document.createDocumentFragment();
-    for (let i = 1; i <= 24; i++) {
-      const option = document.createElement("option");
-      option.value = String(i);
-      option.textContent = `${i} tháng`;
-      fragment.appendChild(option);
-    }
-    select.appendChild(fragment);
-  }
-
-  select.value = String(cashflowChartMonths);
+  // Dự phòng tương thích
 }
 
 function onCashflowMonthSelectChange() {
-  const select = document.getElementById("cashflowMonthSelect");
-  if (!select) return;
-  const value = parseInt(select.value, 10);
-  if (value < 1 || value > 24) return;
-  cashflowChartMonths = value;
-  localStorage.setItem(CASHFLOW_CHART_MONTHS_KEY, String(value));
+  // Dự phòng tương thích
+}
+
+function setCashflowChartRange(range) {
+  if (!["week", "month", "30days", "year", "all"].includes(range)) return;
+  cashflowChartRange = range;
+  try {
+    localStorage.setItem(CASHFLOW_CHART_RANGE_KEY, range);
+  } catch {}
+  const viewport = document.getElementById("cashflowChartViewport");
+  if (viewport) viewport._userHasScrolled = false;
+  syncCashflowChartRangeUI();
+  hideCashflowChartTooltip();
   renderCashflowChart();
 }
 
-function buildCashflowByMonth(monthsCount = cashflowChartMonths) {
-  const now = new Date();
-  const safeMonthsCount = Math.max(1, Math.min(monthsCount, 24));
-  const months = [];
-  for (let i = safeMonthsCount - 1; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    months.push({
-      year: d.getFullYear(),
-      month: d.getMonth() + 1,
-      label: `T${d.getMonth() + 1}/${d.getFullYear().toString().slice(-2)}`,
-      income: 0,
-      expense: 0,
-    });
-  }
-
-  for (const entry of cashflowEntries) {
-    const [year, month] = entry.date.split("-").map(Number);
-    const target = months.find(
-      (item) => item.year === year && item.month === month,
-    );
-    if (!target) continue;
-    if (entry.type === "income") target.income += entry.amount;
-    else target.expense += entry.amount;
-  }
-
-  return months;
+function syncCashflowChartRangeUI() {
+  const container = document.getElementById("cashflowChartRangeFilter");
+  if (!container) return;
+  const buttons = container.querySelectorAll(".cashflow-range-chip");
+  buttons.forEach((btn) => {
+    if (btn.getAttribute("data-range") === cashflowChartRange) {
+      btn.classList.add("active");
+      btn.setAttribute("aria-selected", "true");
+    } else {
+      btn.classList.remove("active");
+      btn.setAttribute("aria-selected", "false");
+    }
+  });
 }
 
-let cashflowChartHovered = null;
+function exportCashflowChartRangeHtml() {
+  exportCashflowTransactionsHtml(cashflowChartRange);
+}
 
-function renderCashflowChart() {
-  const canvas = document.getElementById("cashflowChart");
-  const tooltip = document.getElementById("cashflowChartTooltip");
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
+function formatCompactVnd(val) {
+  if (val === undefined || val === null) return "0 đ";
+  if (val === 0) return "0 đ";
+  const abs = Math.abs(val);
+  const sign = val < 0 ? "-" : "";
+  if (abs >= 1_000_000_000) {
+    const num = (abs / 1_000_000_000).toFixed(1).replace(/\.0$/, "");
+    return `${sign}${num} tỷ`;
+  }
+  if (abs >= 1_000_000) {
+    const num = (abs / 1_000_000).toFixed(1).replace(/\.0$/, "");
+    return `${sign}${num} tr`;
+  }
+  if (abs >= 1_000) {
+    const num = Math.round(abs / 1_000);
+    return `${sign}${num}k`;
+  }
+  return `${sign}${abs} đ`;
+}
 
-  const rows = buildCashflowByMonth(cashflowChartMonths);
-  const maxVal = Math.max(
-    1,
-    ...rows.map((row) => Math.max(row.income, row.expense)),
-  );
+function getNiceMaxCashflow(val) {
+  if (val <= 0) return 1000000;
+  const mag = Math.pow(10, Math.floor(Math.log10(val)));
+  const norm = val / mag;
+  let niceNorm;
+  if (norm <= 1) niceNorm = 1;
+  else if (norm <= 2) niceNorm = 2;
+  else if (norm <= 2.5) niceNorm = 2.5;
+  else if (norm <= 5) niceNorm = 5;
+  else niceNorm = 10;
+  return niceNorm * mag;
+}
+
+function getCashflowChartDailyData(range = cashflowChartRange) {
+  reloadCashflowEntriesFromCache();
+  const now = new Date();
+  let startDate, endDate;
+
+  if (range === "week") {
+    const dayOfWeek = (now.getDay() + 6) % 7; // Thứ Hai = 0
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+    endDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 6);
+  } else if (range === "month") {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  } else if (range === "30days") {
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+    endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  } else if (range === "year") {
+    startDate = new Date(now.getFullYear(), 0, 1);
+    endDate = new Date(now.getFullYear(), 11, 31);
+  } else {
+    // "all"
+    let minDateStr = null;
+    let maxDateStr = null;
+    cashflowEntries.forEach((entry) => {
+      if (entry.date && /^\d{4}-\d{2}-\d{2}$/.test(entry.date)) {
+        if (!minDateStr || entry.date < minDateStr) minDateStr = entry.date;
+        if (!maxDateStr || entry.date > maxDateStr) maxDateStr = entry.date;
+      }
+    });
+
+    if (minDateStr) {
+      const [y1, m1, d1] = minDateStr.split("-").map(Number);
+      startDate = new Date(y1, m1 - 1, d1);
+    } else {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const effectiveMax = maxDateStr && maxDateStr > todayStr ? maxDateStr : todayStr;
+    const [y2, m2, d2] = effectiveMax.split("-").map(Number);
+    endDate = new Date(y2, m2 - 1, d2);
+  }
+
+  const days = [];
+  const curr = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const endLimit = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+  const dayNames = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+  const fullDayNames = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+
+  while (curr <= endLimit) {
+    const y = curr.getFullYear();
+    const m = curr.getMonth() + 1;
+    const d = curr.getDate();
+    const isoDate = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const dow = curr.getDay();
+
+    days.push({
+      dateStr: isoDate,
+      day: d,
+      month: m,
+      year: y,
+      dayOfWeek: dayNames[dow],
+      fullDayOfWeek: fullDayNames[dow],
+      income: 0,
+      expense: 0,
+      txCount: 0,
+    });
+
+    curr.setDate(curr.getDate() + 1);
+  }
+
+  const dayMap = new Map();
+  days.forEach((day, idx) => {
+    dayMap.set(day.dateStr, idx);
+  });
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+
+  for (const entry of cashflowEntries) {
+    if (!entry.date) continue;
+    const idx = dayMap.get(entry.date);
+    if (idx !== undefined) {
+      const amount = Number(entry.amount) || 0;
+      if (entry.type === "income") {
+        days[idx].income += amount;
+        totalIncome += amount;
+      } else {
+        days[idx].expense += amount;
+        totalExpense += amount;
+      }
+      days[idx].txCount += 1;
+    }
+  }
+
+  return {
+    days,
+    range,
+    totalIncome,
+    totalExpense,
+    balance: totalIncome - totalExpense,
+  };
+}
+
+let cashflowChartHoveredIndex = null;
+
+function renderCashflowYAxis(niceMax, cssH, padT, padB, chartH) {
+  const yCanvas = document.getElementById("cashflowChartYAxis");
+  if (!yCanvas) return;
+  const yCtx = yCanvas.getContext("2d");
+  if (!yCtx) return;
 
   const dpr = window.devicePixelRatio || 1;
-  const wrap = canvas.parentElement;
-  const cssW = wrap.clientWidth;
-  const cssH = wrap.clientHeight;
-  canvas.width = cssW * dpr;
-  canvas.height = cssH * dpr;
+  const colW = 58;
+  yCanvas.width = Math.floor(colW * dpr);
+  yCanvas.height = Math.floor(cssH * dpr);
+  if (yCtx.resetTransform) yCtx.resetTransform();
+  yCtx.scale(dpr, dpr);
+
+  yCtx.clearRect(0, 0, colW, cssH);
+
+  const gridSteps = 5;
+  yCtx.font = '500 11px "Be Vietnam Pro", sans-serif';
+  yCtx.textAlign = "right";
+  yCtx.textBaseline = "middle";
+
+  for (let i = 0; i <= gridSteps; i++) {
+    const ratio = i / gridSteps;
+    const y = padT + chartH - chartH * ratio;
+    const val = niceMax * ratio;
+
+    // Đường gạch nhỏ ở cạnh phải trục Y
+    yCtx.strokeStyle = i === 0 ? "rgba(143, 184, 255, 0.45)" : "rgba(143, 184, 255, 0.18)";
+    yCtx.lineWidth = 1;
+    yCtx.beginPath();
+    yCtx.moveTo(50, y);
+    yCtx.lineTo(colW, y);
+    yCtx.stroke();
+
+    // Nhãn số tiền cô đọng
+    yCtx.fillStyle = i === 0 ? "rgba(226, 232, 240, 0.95)" : "rgba(186, 207, 240, 0.92)";
+    yCtx.fillText(formatCompactVnd(val), 47, y);
+  }
+}
+
+function renderCashflowChart() {
+  const viewport = document.getElementById("cashflowChartViewport");
+  const innerWrap = document.getElementById("cashflowChartInner");
+  const canvas = document.getElementById("cashflowChart");
+  if (!canvas || !viewport || !innerWrap) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const data = getCashflowChartDailyData(cashflowChartRange);
+  const days = data.days;
+
+  // Cập nhật thanh tóm tắt
+  const statIncome = document.getElementById("chartStatIncome");
+  const statExpense = document.getElementById("chartStatExpense");
+  const statBalance = document.getElementById("chartStatBalance");
+
+  if (statIncome) statIncome.textContent = `${data.totalIncome.toLocaleString("vi-VN")} đ`;
+  if (statExpense) statExpense.textContent = `${data.totalExpense.toLocaleString("vi-VN")} đ`;
+  if (statBalance) {
+    const sign = data.balance > 0 ? "+" : "";
+    statBalance.textContent = `${sign}${data.balance.toLocaleString("vi-VN")} đ`;
+    statBalance.style.color = data.balance > 0 ? "#34d399" : data.balance < 0 ? "#fb7185" : "#60a5fa";
+  }
+
+  const dpr = window.devicePixelRatio || 1;
+  const vWidth = viewport.clientWidth || 600;
+  const cssH = viewport.clientHeight || 450;
+
+  const padT = 26;
+  const padB = 36;
+  const chartH = Math.max(10, cssH - padT - padB);
+
+  const n = days.length;
+  if (n === 0) return;
+
+  const maxVal = Math.max(0, ...days.map((d) => Math.max(d.income, d.expense)));
+  const niceMax = getNiceMaxCashflow(maxVal);
+
+  // Vẽ trục Y cố định bên trái
+  renderCashflowYAxis(niceMax, cssH, padT, padB, chartH);
+
+  // Tính toán chiều rộng ngày để cuộn ngang rõ ràng
+  let dayWidth;
+  if (cashflowChartRange === "week") {
+    dayWidth = Math.max(54, Math.floor(vWidth / 7));
+  } else if (cashflowChartRange === "month" || cashflowChartRange === "30days") {
+    dayWidth = 46;
+  } else if (cashflowChartRange === "year") {
+    dayWidth = 24;
+  } else {
+    // all
+    if (n <= 31) dayWidth = 46;
+    else if (n <= 90) dayWidth = 36;
+    else if (n <= 365) dayWidth = 24;
+    else dayWidth = 20;
+  }
+
+  const padL = Math.max(18, Math.floor(dayWidth / 2));
+  const padR = Math.max(26, Math.floor(dayWidth / 2));
+  const calculatedWidth = Math.max(vWidth, n * dayWidth + padL + padR);
+
+  innerWrap.style.width = `${calculatedWidth}px`;
+
+  const scrollHint = document.getElementById("cashflowChartScrollHint");
+  if (scrollHint) {
+    scrollHint.style.display = calculatedWidth > vWidth ? "inline-flex" : "none";
+  }
+
+  canvas.width = Math.floor(calculatedWidth * dpr);
+  canvas.height = Math.floor(cssH * dpr);
+  canvas.style.width = `${calculatedWidth}px`;
+  canvas.style.height = `${cssH}px`;
+  if (ctx.resetTransform) ctx.resetTransform();
   ctx.scale(dpr, dpr);
 
-  const W = cssW;
+  const W = calculatedWidth;
   const H = cssH;
-  const padL = 8;
-  const padR = 8;
-  const padT = 16;
-  const padB = 30;
-  const chartW = W - padL - padR;
-  const chartH = H - padT - padB;
+  const chartW = Math.max(10, W - padL - padR);
 
   ctx.clearRect(0, 0, W, H);
 
-  ctx.strokeStyle = "rgba(154, 183, 231, 0.12)";
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 3; i++) {
-    const y = padT + chartH - (chartH * i) / 3;
+  // Vẽ lưới ngang phủ hết chiều rộng cuộn với 5 mốc tỉ lệ
+  const gridSteps = 5;
+  for (let i = 0; i <= gridSteps; i++) {
+    const ratio = i / gridSteps;
+    const y = padT + chartH - chartH * ratio;
+    ctx.strokeStyle = i === 0 ? "rgba(143, 184, 255, 0.4)" : "rgba(154, 183, 231, 0.1)";
+    ctx.lineWidth = i === 0 ? 1.5 : 1;
     ctx.beginPath();
-    ctx.moveTo(padL, y);
-    ctx.lineTo(padL + chartW, y);
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
     ctx.stroke();
   }
 
-  const n = rows.length;
-  const groupGap = 3;
-  const groupW = Math.max(9, (chartW - groupGap * (n - 1)) / n);
-  const oneBarW = Math.max(3, Math.floor((groupW - 2) / 2));
-  const now = new Date();
-
-  const barPositions = canvas._barPositions || [];
-
-  rows.forEach((row, i) => {
-    const gx = padL + i * (groupW + groupGap);
-    const yBottom = padT + chartH;
-    const incomeH = (row.income / maxVal) * chartH;
-    const expenseH = (row.expense / maxVal) * chartH;
-    const nowMonth =
-      row.year === now.getFullYear() && row.month === now.getMonth() + 1;
-
-    const incomeX = gx;
-    const expenseX = gx + oneBarW + 2;
-
-    barPositions[i] = {
+  // Tính toạ độ các điểm
+  const points = days.map((day, i) => {
+    const x = padL + (n > 1 ? (i / (n - 1)) * chartW : chartW / 2);
+    const yIncome = padT + chartH - (day.income / niceMax) * chartH;
+    const yExpense = padT + chartH - (day.expense / niceMax) * chartH;
+    return {
+      x,
+      yIncome,
+      yExpense,
+      day,
       index: i,
-      income: { x: incomeX, y: yBottom - incomeH, w: oneBarW, h: incomeH, value: row.income },
-      expense: { x: expenseX, y: yBottom - expenseH, w: oneBarW, h: expenseH, value: row.expense },
     };
-
-    if (row.income > 0) {
-      const gi = ctx.createLinearGradient(
-        incomeX,
-        yBottom - incomeH,
-        incomeX,
-        yBottom,
-      );
-      gi.addColorStop(0, nowMonth ? "#53d792" : "#32b873");
-      gi.addColorStop(1, nowMonth ? "#249965" : "#1c7b4d");
-      ctx.fillStyle = gi;
-      ctx.beginPath();
-      ctx.roundRect(incomeX, yBottom - incomeH, oneBarW, incomeH, [3, 3, 0, 0]);
-      ctx.fill();
-    }
-
-    if (row.expense > 0) {
-      const ge = ctx.createLinearGradient(
-        expenseX,
-        yBottom - expenseH,
-        expenseX,
-        yBottom,
-      );
-      ge.addColorStop(0, nowMonth ? "#ff8080" : "#f25f5f");
-      ge.addColorStop(1, nowMonth ? "#ca4848" : "#b73737");
-      ctx.fillStyle = ge;
-      ctx.beginPath();
-      ctx.roundRect(
-        expenseX,
-        yBottom - expenseH,
-        oneBarW,
-        expenseH,
-        [3, 3, 0, 0],
-      );
-      ctx.fill();
-    }
-
-    if (row.income <= 0 && row.expense <= 0) {
-      ctx.fillStyle = "rgba(154, 183, 231, 0.1)";
-      ctx.fillRect(gx, yBottom - 2, groupW, 2);
-    }
-
-    ctx.fillStyle = nowMonth ? "#a8cbff" : "#7a9ac8";
-    ctx.font = `${nowMonth ? "bold " : ""}9px "Be Vietnam Pro", sans-serif`;
-    ctx.textAlign = "center";
-    ctx.fillText(row.label, gx + groupW / 2, H - 10);
   });
 
-  canvas._barPositions = barPositions;
-  attachCashflowChartHover();
-}
+  canvas._chartPoints = points;
+  canvas._chartMeta = { padL, padR, padT, padB, chartW, chartH, W, H, niceMax, dayWidth };
 
-function getBarCenter(meta) {
-  const midX = meta.income.x + meta.income.w / 2;
-  const topY = Math.min(meta.income.y, meta.expense.y);
-  return { midX, topY };
-}
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
-function showCashflowChartTooltip(meta) {
-  const tooltip = document.getElementById("cashflowChartTooltip");
-  if (!tooltip) return;
-
-  if (meta.income.value > 0) {
-    tooltip.innerHTML = `<strong>Thu: ${meta.income.value.toLocaleString("vi-VN")} đ</strong>`;
-  }
-  if (meta.expense.value > 0) {
-    tooltip.innerHTML = `<strong>Chi: ${meta.expense.value.toLocaleString("vi-VN")} đ</strong>`;
-  }
-  if (meta.income.value > 0 && meta.expense.value > 0) {
-    tooltip.innerHTML = `<strong>Thu: ${meta.income.value.toLocaleString("vi-VN")} đ<br>Chi: ${meta.expense.value.toLocaleString("vi-VN")} đ</strong>`;
-  }
-  if (!meta.income.value && !meta.expense.value) {
-    tooltip.innerHTML = `<strong>0 đ</strong>`;
+  // Cột sáng nhẹ đánh dấu ngày hôm nay
+  const todayPoint = points.find((p) => p.day.dateStr === todayIso);
+  if (todayPoint) {
+    const colW = Math.max(34, dayWidth - 4);
+    ctx.fillStyle = "rgba(59, 130, 246, 0.07)";
+    ctx.fillRect(todayPoint.x - colW / 2, padT, colW, chartH);
+    ctx.strokeStyle = "rgba(96, 165, 250, 0.22)";
+    ctx.strokeRect(todayPoint.x - colW / 2, padT, colW, chartH);
   }
 
-  tooltip.style.display = "block";
-}
+  const hasData = data.totalIncome > 0 || data.totalExpense > 0;
 
-function positionCashflowTooltip(meta) {
-  const tooltip = document.getElementById("cashflowChartTooltip");
-  if (!tooltip) return;
-
-  const { midX, topY } = getBarCenter(meta);
-  const wrap = tooltip.parentElement;
-  const canvas = document.getElementById("cashflowChart");
-  if (!wrap || !canvas) return;
-
-  const tooltipRect = tooltip.getBoundingClientRect();
-  const wrapRect = wrap.getBoundingClientRect();
-  const canvasRect = canvas.getBoundingClientRect();
-
-  const relLeft = midX + (canvasRect.left - wrapRect.left);
-  const relTop = topY + (canvasRect.top - wrapRect.top);
-
-  const left = relLeft - tooltipRect.width / 2;
-  tooltip.style.left = `${Math.max(4, Math.min(left, wrap.clientWidth - tooltipRect.width - 4))}px`;
-  tooltip.style.top = `${Math.max(4, relTop - tooltipRect.height - 6)}px`;
-}
-
-function hideCashflowChartTooltip() {
-  const tooltip = document.getElementById("cashflowChartTooltip");
-  if (tooltip) {
-    tooltip.style.display = "none";
-  }
-}
-
-function handleCashflowChartHover(event) {
-  const canvas = document.getElementById("cashflowChart");
-  const tooltip = document.getElementById("cashflowChartTooltip");
-  if (!canvas || !tooltip) return;
-
-  const rect = canvas.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  const positions = canvas._barPositions;
-
-  let matched = null;
-  if (positions) {
-    for (let i = 0; i < positions.length; i++) {
-      const bar = positions[i];
-      const topY = Math.min(bar.income.y, bar.expense.y);
-      const bottomY = Math.max(
-        bar.income.y + bar.income.h,
-        bar.expense.y + bar.expense.h,
-      );
-      if (
-        x >= bar.income.x - 4 &&
-        x <= bar.expense.x + bar.expense.w + 4 &&
-        y >= topY - 4 &&
-        y <= bottomY + 4
-      ) {
-        matched = bar;
-        break;
-      }
-    }
-  }
-
-  if (matched) {
-    if (cashflowChartHovered !== matched.index) {
-      cashflowChartHovered = matched.index;
-    }
-    showCashflowChartTooltip(matched);
-    positionCashflowTooltip(matched);
+  if (!hasData) {
+    ctx.fillStyle = "rgba(148, 163, 184, 0.45)";
+    ctx.textAlign = "center";
+    ctx.font = '12px "Be Vietnam Pro", sans-serif';
+    ctx.fillText("Không có phát sinh thu chi trong khoảng thời gian này", W / 2, padT + chartH / 2);
   } else {
-    if (cashflowChartHovered !== null) {
-      cashflowChartHovered = null;
+    // 1. Vùng gradient Thu (Xanh lá)
+    const gradIncome = ctx.createLinearGradient(0, padT, 0, padT + chartH);
+    gradIncome.addColorStop(0, "rgba(16, 185, 129, 0.25)");
+    gradIncome.addColorStop(1, "rgba(16, 185, 129, 0.0)");
+
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, padT + chartH);
+    for (let i = 0; i < n; i++) {
+      ctx.lineTo(points[i].x, points[i].yIncome);
     }
-    tooltip.style.display = "none";
-  }
-}
+    ctx.lineTo(points[n - 1].x, padT + chartH);
+    ctx.closePath();
+    ctx.fillStyle = gradIncome;
+    ctx.fill();
 
-function handleCashflowChartClick(event) {
-  const canvas = document.getElementById("cashflowChart");
-  const tooltip = document.getElementById("cashflowChartTooltip");
-  if (!canvas || !tooltip) return;
+    // 2. Vùng gradient Chi (Đỏ hồng)
+    const gradExpense = ctx.createLinearGradient(0, padT, 0, padT + chartH);
+    gradExpense.addColorStop(0, "rgba(244, 63, 94, 0.22)");
+    gradExpense.addColorStop(1, "rgba(244, 63, 94, 0.0)");
 
-  const rect = canvas.getBoundingClientRect();
-  const x = event.clientX - rect.left;
-  const y = event.clientY - rect.top;
-  const positions = canvas._barPositions;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, padT + chartH);
+    for (let i = 0; i < n; i++) {
+      ctx.lineTo(points[i].x, points[i].yExpense);
+    }
+    ctx.lineTo(points[n - 1].x, padT + chartH);
+    ctx.closePath();
+    ctx.fillStyle = gradExpense;
+    ctx.fill();
 
-  let matched = null;
-  if (positions) {
-    for (let i = 0; i < positions.length; i++) {
-      const bar = positions[i];
-      const topY = Math.min(bar.income.y, bar.expense.y);
-      const bottomY = Math.max(
-        bar.income.y + bar.income.h,
-        bar.expense.y + bar.expense.h,
-      );
-      if (
-        x >= bar.income.x - 4 &&
-        x <= bar.expense.x + bar.expense.w + 4 &&
-        y >= topY - 4 &&
-        y <= bottomY + 4
-      ) {
-        matched = bar;
-        break;
+    // 3. Đường nét Thu (Income line)
+    ctx.strokeStyle = "#10b981";
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    points.forEach((p, i) => {
+      if (i === 0) ctx.moveTo(p.x, p.yIncome);
+      else ctx.lineTo(p.x, p.yIncome);
+    });
+    ctx.stroke();
+
+    // 4. Đường nét Chi (Expense line)
+    ctx.strokeStyle = "#f43f5e";
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    points.forEach((p, i) => {
+      if (i === 0) ctx.moveTo(p.x, p.yExpense);
+      else ctx.lineTo(p.x, p.yExpense);
+    });
+    ctx.stroke();
+
+    // 5. Điểm nút (Dots)
+    const showAllDots = dayWidth >= 36;
+    points.forEach((p) => {
+      if (showAllDots || p.day.income > 0) {
+        ctx.fillStyle = "#10b981";
+        ctx.strokeStyle = "#081124";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.arc(p.x, p.yIncome, p.day.income > 0 ? 3.5 : 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
       }
-    }
+      if (showAllDots || p.day.expense > 0) {
+        ctx.fillStyle = "#f43f5e";
+        ctx.strokeStyle = "#081124";
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.arc(p.x, p.yExpense, p.day.expense > 0 ? 3.5 : 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+    });
   }
 
-  if (matched) {
-    if (cashflowChartHovered === matched.index && tooltip.style.display === "block") {
-      tooltip.style.display = "none";
-      cashflowChartHovered = null;
+  // 6. Nhãn trục X (Ngày)
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+
+  points.forEach((p, i) => {
+    let shouldShow = false;
+    let label = "";
+
+    if (cashflowChartRange === "week") {
+      shouldShow = true;
+      label = `${p.day.dayOfWeek} ${p.day.day}`;
+    } else if (cashflowChartRange === "month" || cashflowChartRange === "30days") {
+      shouldShow = true;
+      label = `${String(p.day.day).padStart(2, "0")}/${String(p.day.month).padStart(2, "0")}`;
+    } else if (cashflowChartRange === "year") {
+      shouldShow = p.day.day === 1 || p.day.day === 15;
+      label = p.day.day === 1 ? `T${p.day.month}` : `${p.day.day}`;
     } else {
-      cashflowChartHovered = matched.index;
-      showCashflowChartTooltip(matched);
-      positionCashflowTooltip(matched);
+      // all
+      if (dayWidth >= 36) {
+        shouldShow = true;
+        label = `${p.day.day}/${p.day.month}`;
+      } else {
+        shouldShow = p.day.day === 1 || p.day.day === 15;
+        label = p.day.day === 1 ? `T${p.day.month}` : `${p.day.day}`;
+      }
     }
-  } else {
-    tooltip.style.display = "none";
-    cashflowChartHovered = null;
+
+    if (shouldShow && label) {
+      const isToday = p.day.dateStr === todayIso;
+      ctx.fillStyle = isToday ? "#60a5fa" : "rgba(148, 163, 184, 0.85)";
+      ctx.font = isToday ? 'bold 10px "Be Vietnam Pro", sans-serif' : '9.5px "Be Vietnam Pro", sans-serif';
+      ctx.fillText(label, p.x, padT + chartH + 8);
+    }
+  });
+
+  // 7. Vẽ đường kẻ dóng và điểm hover nếu có tương tác
+  if (cashflowChartHoveredIndex !== null && points[cashflowChartHoveredIndex]) {
+    const pt = points[cashflowChartHoveredIndex];
+
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = "rgba(147, 197, 253, 0.55)";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(pt.x, padT);
+    ctx.lineTo(pt.x, padT + chartH);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = "#10b981";
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.yIncome, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "#f43f5e";
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.yExpense, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
   }
+
+  // Tự động cuộn đến hôm nay / ngày gần nhất nếu người dùng chưa cuộn thủ công
+  if (!viewport._userHasScrolled) {
+    requestAnimationFrame(() => {
+      if (todayPoint && calculatedWidth > vWidth) {
+        const targetScroll = Math.max(0, todayPoint.x - vWidth / 2);
+        viewport.scrollLeft = targetScroll;
+      } else if (calculatedWidth > vWidth) {
+        viewport.scrollLeft = viewport.scrollWidth;
+      }
+    });
+  }
+
+  attachCashflowChartHover();
+  attachCashflowChartDragScroll();
+}
+
+function attachCashflowChartDragScroll() {
+  const viewport = document.getElementById("cashflowChartViewport");
+  if (!viewport || viewport._dragAttached) return;
+  viewport._dragAttached = true;
+
+  let isDown = false;
+  let startX = 0;
+  let scrollLeft = 0;
+  let dragDist = 0;
+
+  viewport.addEventListener("mousedown", (e) => {
+    isDown = true;
+    dragDist = 0;
+    startX = e.pageX - viewport.offsetLeft;
+    scrollLeft = viewport.scrollLeft;
+  });
+
+  viewport.addEventListener("mouseleave", () => {
+    isDown = false;
+  });
+
+  viewport.addEventListener("mouseup", () => {
+    isDown = false;
+  });
+
+  viewport.addEventListener("mousemove", (e) => {
+    if (!isDown) return;
+    const x = e.pageX - viewport.offsetLeft;
+    const walk = (x - startX) * 1.3;
+    dragDist += Math.abs(walk);
+    if (dragDist > 5) {
+      viewport._userHasScrolled = true;
+      viewport.scrollLeft = scrollLeft - walk;
+      hideCashflowChartTooltip();
+    }
+  });
+
+  viewport.addEventListener("scroll", () => {
+    viewport._userHasScrolled = true;
+  }, { passive: true });
+
+  // Cuộn bằng chuột
+  viewport.addEventListener("wheel", (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && viewport.scrollWidth > viewport.clientWidth) {
+      viewport._userHasScrolled = true;
+      viewport.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }
+  }, { passive: false });
 }
 
 function attachCashflowChartHover() {
   const canvas = document.getElementById("cashflowChart");
-  if (!canvas) return;
-  if (canvas._hoverAttached) return;
+  if (!canvas || canvas._hoverAttached) return;
   canvas._hoverAttached = true;
-  canvas.addEventListener("mousemove", handleCashflowChartHover);
+
+  const onPointerMove = (evt) => {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = evt.touches && evt.touches[0] ? evt.touches[0].clientX : evt.clientX;
+    const clientY = evt.touches && evt.touches[0] ? evt.touches[0].clientY : evt.clientY;
+    if (clientX === undefined || clientY === undefined) return;
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    handleCashflowChartPointer(x, y, clientX, clientY);
+  };
+
+  canvas.addEventListener("mousemove", onPointerMove);
   canvas.addEventListener("mouseleave", () => {
-    cashflowChartHovered = null;
     hideCashflowChartTooltip();
   });
-  canvas.addEventListener("click", handleCashflowChartClick);
+
+  canvas.addEventListener("touchstart", onPointerMove, { passive: true });
+  canvas.addEventListener("touchmove", onPointerMove, { passive: true });
+  canvas.addEventListener("touchend", () => {
+    setTimeout(hideCashflowChartTooltip, 2500);
+  });
+}
+
+function handleCashflowChartPointer(x, y, clientX, clientY) {
+  const canvas = document.getElementById("cashflowChart");
+  const tooltip = document.getElementById("cashflowChartTooltip");
+  const viewport = document.getElementById("cashflowChartViewport");
+  if (!canvas || !tooltip || !viewport || !canvas._chartPoints || !canvas._chartPoints.length) return;
+
+  const points = canvas._chartPoints;
+  let closest = 0;
+  let minDx = Infinity;
+
+  for (let i = 0; i < points.length; i++) {
+    const dx = Math.abs(x - points[i].x);
+    if (dx < minDx) {
+      minDx = dx;
+      closest = i;
+    }
+  }
+
+  const pt = points[closest];
+  cashflowChartHoveredIndex = closest;
+
+  renderCashflowChart();
+
+  const diff = pt.day.income - pt.day.expense;
+  const diffSign = diff > 0 ? "+" : "";
+  const dateFormatted = `${pt.day.fullDayOfWeek}, ${String(pt.day.day).padStart(2, "0")}/${String(pt.day.month).padStart(2, "0")}/${pt.day.year}`;
+
+  tooltip.innerHTML = `
+    <div class="cf-tip-date">${dateFormatted}</div>
+    <div class="cf-tip-row is-income">
+      <span class="cf-tip-dot"></span>Thu: +${pt.day.income.toLocaleString("vi-VN")} đ
+    </div>
+    <div class="cf-tip-row is-expense">
+      <span class="cf-tip-dot"></span>Chi: -${pt.day.expense.toLocaleString("vi-VN")} đ
+    </div>
+    <div class="cf-tip-row is-diff" style="color: ${diff > 0 ? '#34d399' : diff < 0 ? '#fb7185' : '#60a5fa'}">
+      Chênh lệch: ${diffSign}${diff.toLocaleString("vi-VN")} đ
+    </div>
+    ${pt.day.txCount > 0 ? `<div style="font-size:10.5px;color:#94a3b8;margin-top:2px;">${pt.day.txCount} giao dịch</div>` : ""}
+  `;
+  tooltip.style.display = "block";
+
+  const tooltipWidth = tooltip.offsetWidth || 150;
+  const tooltipHeight = tooltip.offsetHeight || 90;
+  const sLeft = viewport.scrollLeft;
+  const vWidth = viewport.clientWidth;
+  const vHeight = viewport.clientHeight;
+
+  // Căn chỉnh vị trí tooltip bám theo điểm đang hover và nằm gọn trong vùng nhìn thấy
+  let left = pt.x - tooltipWidth / 2;
+  left = Math.max(sLeft + 10, Math.min(left, sLeft + vWidth - tooltipWidth - 10));
+
+  const higherY = Math.min(pt.yIncome, pt.yExpense);
+  let top = higherY - tooltipHeight - 12;
+  if (top < 10) {
+    top = Math.max(pt.yIncome, pt.yExpense) + 14;
+  }
+  top = Math.max(10, Math.min(top, vHeight - tooltipHeight - 10));
+
+  tooltip.style.left = `${Math.round(left)}px`;
+  tooltip.style.top = `${Math.round(top)}px`;
+}
+
+function hideCashflowChartTooltip() {
+  const tooltip = document.getElementById("cashflowChartTooltip");
+  if (tooltip) tooltip.style.display = "none";
+  if (cashflowChartHoveredIndex !== null) {
+    cashflowChartHoveredIndex = null;
+    renderCashflowChart();
+  }
 }
 
 function formatCashflowDate(dateIso) {
@@ -14600,9 +14960,13 @@ function renderCashflowQuickView() {
   syncCashflowRangeFilterUI();
 
   window.addEventListener("resize", () => {
-    if (document.getElementById("cashflowModal").style.display === "flex") {
+    const cfModal = document.getElementById("cashflowModal");
+    const cfChartModal = document.getElementById("cashflowChartModal");
+    if ((cfModal && cfModal.style.display === "flex") || (cfChartModal && cfChartModal.style.display === "flex")) {
       renderCashflowChart();
-      renderCashflowPieCharts();
+      if (cfModal && cfModal.style.display === "flex") {
+        renderCashflowPieCharts();
+      }
     }
     const moreDropdown = document.getElementById("moreMenuDropdown");
     if (moreDropdown && moreDropdown.classList.contains("is-open")) {

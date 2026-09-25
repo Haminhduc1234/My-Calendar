@@ -615,7 +615,7 @@ function startFreeTutorChat() {
     vi: scenario.initialMessage.vi || "",
     feedback: "",
     extra: ""
-  });
+  }, false, true);
 
   // Focus ô nhập
   setTimeout(() => {
@@ -772,7 +772,7 @@ async function sendTutorMessage() {
         usageMetadata: aiResult.usageMetadata || null,
         rawJson: aiResult.rawResponse || null
       }
-    });
+    }, false, true);
 
     // Cảnh báo nếu phản hồi bị cắt ngang do giới hạn token
     if (aiResult.truncated) {
@@ -1151,10 +1151,226 @@ function promptTutorApiKey() {
 }
 window.promptTutorApiKey = promptTutorApiKey;
 
+// ==================== STREAM TYPEWRITER EFFECT ====================
+let _currentTutorTypingFinisher = null;
+
+function streamTutorAssistantMessage(msgDiv, msg, onComplete) {
+  const container = document.getElementById("tutorChatMessages");
+  const zhEl = msgDiv.querySelector(".tutor-zh-text-content");
+  const pinyinEl = msgDiv.querySelector(".tutor-pinyin-text");
+  const viEl = msgDiv.querySelector(".tutor-vi-text");
+  const feedbackBox = msgDiv.querySelector(".tutor-feedback-box");
+  const feedbackContent = msgDiv.querySelector(".tutor-feedback-content");
+  const actionsEl = msgDiv.querySelector(".tutor-msg-actions");
+
+  // Tạo con trỏ nhấp nháy
+  const cursor = document.createElement("span");
+  cursor.className = "tutor-typing-cursor";
+
+  const zh = msg.zh || "";
+  const pinyin = msg.pinyin || "";
+  const vi = msg.vi || "";
+  let cleanFeedback = (msg.feedback || "").trim();
+  cleanFeedback = cleanFeedback.replace(/^(\s*💡\s*)?(Nhận xét\s*(&\s*Hướng dẫn)?|Góp ý|Feedback)[:：]?\s*/i, "").trim();
+  cleanFeedback = cleanFeedback.replace(/\n{3,}/g, "\n\n");
+
+  let isCancelled = false;
+  let currentTimer = null;
+
+  // Hoàn tất hiển thị tức thì (khi người dùng bấm vào bong bóng hoặc gửi câu hỏi mới)
+  const finishImmediately = () => {
+    if (isCancelled) return;
+    isCancelled = true;
+    if (currentTimer) clearTimeout(currentTimer);
+    if (_currentTutorTypingFinisher === finishImmediately) {
+      _currentTutorTypingFinisher = null;
+    }
+
+    if (zhEl) zhEl.textContent = zh;
+    if (pinyin && pinyinEl) {
+      pinyinEl.style.display = "block";
+      pinyinEl.textContent = pinyin;
+    }
+    if (vi && viEl) {
+      viEl.style.display = "block";
+      viEl.textContent = vi;
+    }
+    if (cleanFeedback && feedbackBox && feedbackContent) {
+      feedbackBox.style.display = "block";
+      feedbackContent.textContent = cleanFeedback;
+    }
+    if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
+    if (actionsEl) {
+      actionsEl.style.opacity = "1";
+      actionsEl.style.pointerEvents = "auto";
+    }
+    if (container) container.scrollTop = container.scrollHeight;
+    if (typeof onComplete === "function") onComplete();
+  };
+
+  _currentTutorTypingFinisher = finishImmediately;
+
+  // Bấm vào bong bóng để hiển thị ngay lập tức (không cần đợi chạy xong)
+  const bubble = msgDiv.querySelector(".assistant-bubble");
+  if (bubble) {
+    bubble.addEventListener("click", finishImmediately, { once: true });
+  }
+
+  // Giai đoạn 1: Gõ từng ký tự chữ Hán (Zh)
+  let zhIdx = 0;
+  if (zhEl && zh.length > 0) {
+    zhEl.parentNode.appendChild(cursor);
+  }
+
+  function typeZh() {
+    if (isCancelled) return;
+    if (zhIdx < zh.length) {
+      zhIdx++;
+      if (zhEl) zhEl.textContent = zh.slice(0, zhIdx);
+      if (container) container.scrollTop = container.scrollHeight;
+      currentTimer = setTimeout(typeZh, 24);
+    } else {
+      typePinyin();
+    }
+  }
+
+  // Giai đoạn 2: Hiện và gõ Pinyin
+  let pinyinIdx = 0;
+  function typePinyin() {
+    if (isCancelled) return;
+    if (!pinyin || !pinyinEl) {
+      typeVi();
+      return;
+    }
+    pinyinEl.style.display = "block";
+    pinyinEl.textContent = "";
+    pinyinEl.appendChild(cursor);
+
+    function stepPinyin() {
+      if (isCancelled) return;
+      if (pinyinIdx < pinyin.length) {
+        pinyinIdx = Math.min(pinyin.length, pinyinIdx + 2);
+        pinyinEl.textContent = pinyin.slice(0, pinyinIdx);
+        pinyinEl.appendChild(cursor);
+        if (container) container.scrollTop = container.scrollHeight;
+        currentTimer = setTimeout(stepPinyin, 16);
+      } else {
+        typeVi();
+      }
+    }
+    stepPinyin();
+  }
+
+  // Giai đoạn 3: Hiện và gõ Bản dịch Tiếng Việt
+  let viIdx = 0;
+  function typeVi() {
+    if (isCancelled) return;
+    if (!vi || !viEl) {
+      typeFeedback();
+      return;
+    }
+    viEl.style.display = "block";
+    viEl.textContent = "";
+    viEl.appendChild(cursor);
+
+    function stepVi() {
+      if (isCancelled) return;
+      if (viIdx < vi.length) {
+        viIdx = Math.min(vi.length, viIdx + 2);
+        viEl.textContent = vi.slice(0, viIdx);
+        viEl.appendChild(cursor);
+        if (container) container.scrollTop = container.scrollHeight;
+        currentTimer = setTimeout(stepVi, 18);
+      } else {
+        typeFeedback();
+      }
+    }
+    stepVi();
+  }
+
+  // Giai đoạn 4: Hiện và gõ Khối nhận xét & Hướng dẫn
+  let fbIdx = 0;
+  function typeFeedback() {
+    if (isCancelled) return;
+    if (!cleanFeedback || !feedbackBox || !feedbackContent) {
+      finalize();
+      return;
+    }
+    feedbackBox.style.display = "block";
+    feedbackContent.textContent = "";
+    feedbackContent.appendChild(cursor);
+
+    function stepFb() {
+      if (isCancelled) return;
+      if (fbIdx < cleanFeedback.length) {
+        fbIdx = Math.min(cleanFeedback.length, fbIdx + 3);
+        feedbackContent.textContent = cleanFeedback.slice(0, fbIdx);
+        feedbackContent.appendChild(cursor);
+        if (container) container.scrollTop = container.scrollHeight;
+        currentTimer = setTimeout(stepFb, 16);
+      } else {
+        finalize();
+      }
+    }
+    stepFb();
+  }
+
+  // Giai đoạn 5: Hoàn tất
+  function finalize() {
+    if (isCancelled) return;
+    if (_currentTutorTypingFinisher === finishImmediately) {
+      _currentTutorTypingFinisher = null;
+    }
+    if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
+    if (actionsEl) {
+      actionsEl.style.opacity = "1";
+      actionsEl.style.pointerEvents = "auto";
+    }
+    if (container) container.scrollTop = container.scrollHeight;
+    if (typeof onComplete === "function") onComplete();
+  }
+
+  if (zh.length > 0) {
+    typeZh();
+  } else {
+    typePinyin();
+  }
+}
+
+// Cute Mascot Avatar for AI Assistant
+function getTutorAvatarHTML() {
+  return `
+    <div class="tutor-avatar-icon" title="Panda AI Tutor">
+      <svg class="tutor-cute-panda-svg" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="9" cy="9.5" r="5" fill="#1e293b"/>
+        <circle cx="9" cy="9.5" r="2.8" fill="#fda4af"/>
+        <circle cx="27" cy="9.5" r="5" fill="#1e293b"/>
+        <circle cx="27" cy="9.5" r="2.8" fill="#fda4af"/>
+        <ellipse cx="18" cy="19.5" rx="13.5" ry="12.5" fill="#ffffff"/>
+        <ellipse cx="12.5" cy="18" rx="3.6" ry="4.4" transform="rotate(-14 12.5 18)" fill="#1e293b"/>
+        <ellipse cx="23.5" cy="18" rx="3.6" ry="4.4" transform="rotate(14 23.5 18)" fill="#1e293b"/>
+        <circle cx="13" cy="17.6" r="1.8" fill="#ffffff"/>
+        <circle cx="14.2" cy="19.2" r="0.8" fill="#ffffff"/>
+        <circle cx="23" cy="17.6" r="1.8" fill="#ffffff"/>
+        <circle cx="21.8" cy="19.2" r="0.8" fill="#ffffff"/>
+        <ellipse cx="8.5" cy="22.5" rx="2.5" ry="1.4" fill="#fb7185" opacity="0.65"/>
+        <ellipse cx="27.5" cy="22.5" rx="2.5" ry="1.4" fill="#fb7185" opacity="0.65"/>
+        <ellipse cx="18" cy="21.8" rx="1.6" ry="1.1" fill="#1e293b"/>
+        <path d="M16 23.4c0.7 0.8 1.4 0.8 2 0 0.6 0.8 1.3 0.8 2 0" stroke="#1e293b" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+      </svg>
+    </div>
+  `;
+}
+
 // Append Message to UI
-function appendTutorMessage(msg, skipSave) {
+function appendTutorMessage(msg, skipSave, animate = false) {
   const container = document.getElementById("tutorChatMessages");
   if (!container) return;
+
+  // Nếu đang có tin nhắn trước đó đang chạy hiệu ứng gõ, hoàn tất ngay lập tức
+  if (typeof _currentTutorTypingFinisher === "function") {
+    _currentTutorTypingFinisher();
+  }
 
   const msgDiv = document.createElement("div");
   msgDiv.className = `tutor-msg-item tutor-msg-${msg.role}`;
@@ -1173,6 +1389,12 @@ function appendTutorMessage(msg, skipSave) {
       </div>
     `;
     tutorConversationHistory.push({ role: "user", text: msg.text });
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
+
+    if (!skipSave) {
+      saveTutorScenarioHistory(currentTutorScenario);
+    }
   } else {
     const escapedZh = escapeHtml(msg.zh || "");
     const escapedPinyin = escapeHtml(msg.pinyin || "");
@@ -1181,17 +1403,15 @@ function appendTutorMessage(msg, skipSave) {
     cleanFeedback = cleanFeedback.replace(/^(\s*💡\s*)?(Nhận xét\s*(&\s*Hướng dẫn)?|Góp ý|Feedback)[:：]?\s*/i, "").trim();
     cleanFeedback = cleanFeedback.replace(/\n{3,}/g, "\n\n");
     const escapedFeedback = cleanFeedback ? escapeHtml(cleanFeedback) : "";
-    const escapedExtra = msg.extra ? escapeHtml(msg.extra) : "";
-    const msgId = "tutor_resp_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6);
 
-    const metaHtml = renderTutorResponseMetadata(msg.metadata, msgId);
+    const shouldAnimate = Boolean(animate && !skipSave && (msg.zh || msg.vi));
 
     msgDiv.innerHTML = `
-      <div class="tutor-avatar-icon">🐼</div>
+      ${getTutorAvatarHTML()}
       <div class="tutor-msg-bubble assistant-bubble">
         <div class="tutor-bubble-top">
-          <div class="tutor-zh-text">${escapedZh}</div>
-          <div class="tutor-msg-actions">
+          <div class="tutor-zh-text"><span class="tutor-zh-text-content">${shouldAnimate ? "" : escapedZh}</span></div>
+          <div class="tutor-msg-actions" style="${shouldAnimate ? "opacity: 0; pointer-events: none; transition: opacity 0.25s ease;" : ""}">
             <button type="button" class="tutor-action-icon-btn tutor-speak-btn" onclick="speakTutorChinese('${escapedZh.replace(/'/g, "\\'")}')" title="Phát âm tiếng Trung">
               <i class="fi fi-rr-volume"></i>
             </button>
@@ -1200,11 +1420,15 @@ function appendTutorMessage(msg, skipSave) {
             </button>
           </div>
         </div>
-        ${escapedPinyin ? `<div class="tutor-pinyin-text">${escapedPinyin}</div>` : ""}
-        ${escapedVi ? `<div class="tutor-vi-text">${escapedVi}</div>` : ""}
-        ${escapedFeedback ? `<div class="tutor-feedback-box"><div class="tutor-feedback-header"><i class="fi fi-rr-bulb"></i><span>Nhận xét & Hướng dẫn</span></div><div class="tutor-feedback-content">${escapedFeedback}</div></div>` : ""}
+        <div class="tutor-pinyin-text" style="${(shouldAnimate || !escapedPinyin) ? "display: none;" : ""}">${shouldAnimate ? "" : escapedPinyin}</div>
+        <div class="tutor-vi-text" style="${(shouldAnimate || !escapedVi) ? "display: none;" : ""}">${shouldAnimate ? "" : escapedVi}</div>
+        <div class="tutor-feedback-box" style="${(shouldAnimate || !escapedFeedback) ? "display: none;" : ""}">
+          <div class="tutor-feedback-header"><i class="fi fi-rr-bulb"></i><span>Nhận xét & Hướng dẫn</span></div>
+          <div class="tutor-feedback-content">${shouldAnimate ? "" : escapedFeedback}</div>
+        </div>
       </div>
     `;
+
     tutorConversationHistory.push({
       role: "assistant",
       zh: msg.zh || "",
@@ -1214,13 +1438,21 @@ function appendTutorMessage(msg, skipSave) {
       extra: msg.extra || "",
       metadata: msg.metadata || null
     });
-  }
 
-  container.appendChild(msgDiv);
-  container.scrollTop = container.scrollHeight;
+    container.appendChild(msgDiv);
+    container.scrollTop = container.scrollHeight;
 
-  if (!skipSave) {
-    saveTutorScenarioHistory(currentTutorScenario);
+    if (shouldAnimate) {
+      streamTutorAssistantMessage(msgDiv, msg, () => {
+        if (!skipSave) {
+          saveTutorScenarioHistory(currentTutorScenario);
+        }
+      });
+    } else {
+      if (!skipSave) {
+        saveTutorScenarioHistory(currentTutorScenario);
+      }
+    }
   }
 }
 
@@ -1597,7 +1829,7 @@ async function retryTutorMessage(text, triggerEl) {
         usageMetadata: aiResult.usageMetadata || null,
         rawJson: aiResult.rawResponse || null
       }
-    });
+    }, false, true);
 
     if (aiResult.truncated) {
       if (typeof showToast === "function") {
@@ -1622,7 +1854,7 @@ function showTutorTyping(show) {
       typingEl.id = "tutorTypingIndicator";
       typingEl.className = "tutor-msg-item tutor-msg-assistant typing-state";
       typingEl.innerHTML = `
-        <div class="tutor-avatar-icon">🐼</div>
+        ${getTutorAvatarHTML()}
         <div class="tutor-typing-dots">
           <span></span><span></span><span></span>
         </div>

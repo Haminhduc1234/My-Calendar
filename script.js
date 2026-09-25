@@ -21071,20 +21071,26 @@ function renderQuizQuestion() {
   const progress = document.getElementById("quizProgress");
   const progressFill = document.getElementById("quizProgressFill");
 
+  if (!questionArea || !resultArea || !question || !options) return;
+
   if (currentQuizIndex >= currentQuizQuestions.length) {
     questionArea.style.display = "none";
     resultArea.style.display = "flex";
-    document.getElementById("quizScoreNum").textContent = currentQuizScore;
-    document.getElementById("quizScoreTotal").textContent =
-      currentQuizQuestions.length;
+    const numEl = document.getElementById("quizScoreNum");
+    const totalEl = document.getElementById("quizScoreTotal");
+    if (numEl) numEl.textContent = currentQuizScore;
+    if (totalEl) totalEl.textContent = currentQuizQuestions.length;
 
-    const percentage = (currentQuizScore / currentQuizQuestions.length) * 100;
+    const percentage = currentQuizQuestions.length > 0
+      ? (currentQuizScore / currentQuizQuestions.length) * 100
+      : 0;
     let feedback = "";
     if (percentage >= 90) feedback = "Xuất sắc! Bạn nắm vững kiến thức rồi! 🎉";
     else if (percentage >= 70) feedback = "Tốt lắm! Cần ôn tập thêm một chút.";
     else if (percentage >= 50) feedback = "Khá ổn! Hãy tiếp tục luyện tập nhé.";
     else feedback = "Cần cố gắng hơn. Hãy học lại và thử lại nhé! 💪";
-    document.getElementById("quizFeedback").textContent = feedback;
+    const feedbackEl = document.getElementById("quizFeedback");
+    if (feedbackEl) feedbackEl.textContent = feedback;
     return;
   }
 
@@ -21092,15 +21098,15 @@ function renderQuizQuestion() {
   resultArea.style.display = "none";
 
   const item = currentQuizQuestions[currentQuizIndex];
-  progress.textContent = `Câu ${currentQuizIndex + 1}/${currentQuizQuestions.length}`;
-  progressFill.style.width = `${((currentQuizIndex + 1) / currentQuizQuestions.length) * 100}%`;
+  if (progress) progress.textContent = `Câu ${currentQuizIndex + 1}/${currentQuizQuestions.length}`;
+  if (progressFill) progressFill.style.width = `${((currentQuizIndex + 1) / currentQuizQuestions.length) * 100}%`;
 
   currentQuizAnswered = false;
 
   if (currentQuizType === "vocabulary") {
     question.textContent = `"${item.word}" ${item.phonetic ? "(" + item.phonetic + ") " : ""}có nghĩa là gì?`;
     const wrongAnswers = getAllVocabulary()
-      .filter((v) => v.word !== item.word)
+      .filter((v) => v.word !== item.word && v.meaning && v.meaning !== item.meaning)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3)
       .map((v) => v.meaning);
@@ -21108,15 +21114,16 @@ function renderQuizQuestion() {
     const allOptions = shuffleArray([item.meaning, ...wrongAnswers]);
     options.innerHTML = allOptions
       .map(
-        (opt) => `
-      <button class="quiz-option" onclick="selectQuizAnswer(this, '${escapeHtml(item.meaning)}')">${opt}</button>
-    `,
+        (opt) => {
+          const isCorrect = opt === item.meaning;
+          return `<button class="quiz-option" data-correct="${isCorrect}" onclick="selectQuizAnswer(this, ${isCorrect})">${escapeHtml(opt)}</button>`;
+        }
       )
       .join("");
   } else if (currentQuizType === "grammar") {
     question.textContent = `${item.title}: ${item.example}`;
     const wrongAnswers = getAllGrammar()
-      .filter((g) => g.title !== item.title)
+      .filter((g) => g.title !== item.title && g.formula && g.formula !== item.formula)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3)
       .map((g) => g.formula);
@@ -21124,15 +21131,16 @@ function renderQuizQuestion() {
     const allOptions = shuffleArray([item.formula, ...wrongAnswers]);
     options.innerHTML = allOptions
       .map(
-        (opt) => `
-      <button class="quiz-option" onclick="selectQuizAnswer(this, '${escapeHtml(item.formula)}')">${opt}</button>
-    `,
+        (opt) => {
+          const isCorrect = opt === item.formula;
+          return `<button class="quiz-option" data-correct="${isCorrect}" onclick="selectQuizAnswer(this, ${isCorrect})">${escapeHtml(opt)}</button>`;
+        }
       )
       .join("");
   } else if (currentQuizType === "phrases") {
     question.textContent = `"${item.phrase}" có nghĩa là gì?`;
     const wrongAnswers = getAllPhrases()
-      .filter((p) => p.phrase !== item.phrase)
+      .filter((p) => p.phrase !== item.phrase && p.meaning && p.meaning !== item.meaning)
       .sort(() => Math.random() - 0.5)
       .slice(0, 3)
       .map((p) => p.meaning);
@@ -21140,25 +21148,24 @@ function renderQuizQuestion() {
     const allOptions = shuffleArray([item.meaning, ...wrongAnswers]);
     options.innerHTML = allOptions
       .map(
-        (opt) => `
-      <button class="quiz-option" onclick="selectQuizAnswer(this, '${escapeHtml(item.meaning)}')">${opt}</button>
-    `,
+        (opt) => {
+          const isCorrect = opt === item.meaning;
+          return `<button class="quiz-option" data-correct="${isCorrect}" onclick="selectQuizAnswer(this, ${isCorrect})">${escapeHtml(opt)}</button>`;
+        }
       )
       .join("");
   }
 }
 
-function selectQuizAnswer(button, correctAnswer) {
+function selectQuizAnswer(button, isCorrect) {
   if (currentQuizAnswered) return;
   currentQuizAnswered = true;
 
   const allOptions = document.querySelectorAll(".quiz-option");
-  const userAnswer = button.textContent;
-  const isCorrect = userAnswer === correctAnswer;
 
   allOptions.forEach((opt) => {
     opt.disabled = true;
-    if (opt.textContent === correctAnswer) {
+    if (opt.getAttribute("data-correct") === "true") {
       opt.classList.add("correct");
     } else if (opt === button && !isCorrect) {
       opt.classList.add("incorrect");
@@ -21170,7 +21177,7 @@ function selectQuizAnswer(button, correctAnswer) {
   setTimeout(() => {
     currentQuizIndex++;
     renderQuizQuestion();
-  }, 1200);
+  }, 1000);
 }
 
 function retryQuiz() {

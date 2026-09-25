@@ -20421,6 +20421,22 @@ function switchLearnTab(tab) {
   const targetContent = document.getElementById(`learn${tab.charAt(0).toUpperCase() + tab.slice(1)}Tab`);
   if (targetContent) targetContent.classList.add("active");
 
+  // Cuộn thanh tab learn-tabs ngang đến nút active (focus theo như ở basics-subtab-bar)
+  const bar = document.querySelector(".learn-tabs");
+  const activeBtn = targetTabBtn || (bar ? bar.querySelector(".learn-tab.active") : null);
+  if (bar && activeBtn) {
+    const scrollTabs = () => {
+      const barRect = bar.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      if (barRect.width > 0) {
+        const btnCenter = btnRect.left - barRect.left + bar.scrollLeft + btnRect.width / 2;
+        bar.scrollTo({ left: btnCenter - bar.offsetWidth / 2, behavior: "smooth" });
+      }
+    };
+    scrollTabs();
+    requestAnimationFrame(scrollTabs);
+  }
+
   if (tab === "basics") renderBasicsSection();
   else if (tab === "vocabulary") selectVocabCategory("all");
   else if (tab === "grammar") selectGrammarCategory("all");
@@ -20440,6 +20456,20 @@ function switchLearnTab(tab) {
     showTutorFloatingBtn(currentLearnLanguage === "zh");
   }
 }
+
+// Tự động cuộn focus căn giữa khi click bất kỳ tab nào trong .learn-tabs
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".learn-tab");
+  if (btn && btn.closest(".learn-tabs")) {
+    const bar = btn.closest(".learn-tabs");
+    const barRect = bar.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    if (barRect.width > 0) {
+      const btnCenter = btnRect.left - barRect.left + bar.scrollLeft + btnRect.width / 2;
+      bar.scrollTo({ left: btnCenter - bar.offsetWidth / 2, behavior: "smooth" });
+    }
+  }
+});
 
 // Render Chinese Basics (Pinyin, Vận mẫu, Thanh mẫu, Thanh điệu, Các nét, Bộ thủ)
 let currentBasicsSubTab = "initials";
@@ -20463,10 +20493,16 @@ function switchBasicsSubTab(subTab) {
   const bar = container.querySelector(".basics-subtab-bar");
   const activeBtn = bar ? bar.querySelector(".basics-subtab-btn.active") : null;
   if (bar && activeBtn) {
-    const barRect = bar.getBoundingClientRect();
-    const btnRect = activeBtn.getBoundingClientRect();
-    const btnCenter = btnRect.left - barRect.left + bar.scrollLeft + btnRect.width / 2;
-    bar.scrollTo({ left: btnCenter - bar.offsetWidth / 2, behavior: "smooth" });
+    const scrollSubTab = () => {
+      const barRect = bar.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      if (barRect.width > 0) {
+        const btnCenter = btnRect.left - barRect.left + bar.scrollLeft + btnRect.width / 2;
+        bar.scrollTo({ left: btnCenter - bar.offsetWidth / 2, behavior: "smooth" });
+      }
+    };
+    scrollSubTab();
+    requestAnimationFrame(scrollSubTab);
   }
 }
 
@@ -20701,6 +20737,22 @@ function renderBasicsSection() {
     </div>
     <div class="basics-content-panel">${renderBasicsContentHTML()}</div>
   `;
+
+  // Cuộn thanh subtab bar ngang đến nút active nếu cần
+  const bar = container.querySelector(".basics-subtab-bar");
+  const activeBtn = bar ? bar.querySelector(".basics-subtab-btn.active") : null;
+  if (bar && activeBtn) {
+    const scrollSubTab = () => {
+      const barRect = bar.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      if (barRect.width > 0) {
+        const btnCenter = btnRect.left - barRect.left + bar.scrollLeft + btnRect.width / 2;
+        bar.scrollTo({ left: btnCenter - bar.offsetWidth / 2, behavior: "smooth" });
+      }
+    };
+    scrollSubTab();
+    requestAnimationFrame(scrollSubTab);
+  }
 }
 
 // Vocabulary Category Selection

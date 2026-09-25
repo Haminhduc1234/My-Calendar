@@ -12714,6 +12714,7 @@ input[type="datetime-local"] {
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   overflow-x: auto;
+  scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
   -webkit-overflow-scrolling: touch;
@@ -13447,6 +13448,7 @@ input[type="datetime-local"] {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   overflow-x: auto;
+  scroll-behavior: smooth;
   white-space: nowrap;
   border-bottom: 1px solid var(--line, rgba(255, 255, 255, 0.08));
   margin: -6px 0 2px;

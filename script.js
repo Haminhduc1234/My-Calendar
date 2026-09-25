@@ -11707,7 +11707,7 @@ function handleCashflowMenuAction(actionFn) {
   }
 }
 
-// Tự động đóng menu 3 chấm khi click ra ngoài hoặc bấm Escape
+// Tự động đóng menu 3 chấm hoặc menu export khi click ra ngoài hoặc bấm Escape
 document.addEventListener("click", function (e) {
   const dropdown = document.getElementById("cashflowMoreDropdown");
   const btn = document.getElementById("cashflowMoreMenuBtn");
@@ -11716,11 +11716,20 @@ document.addEventListener("click", function (e) {
       closeCashflowMoreMenu();
     }
   }
+
+  const expDropdown = document.getElementById("cashflowExportDropdown");
+  const expBtn = document.getElementById("cashflowAllExportBtn");
+  if (expDropdown && expDropdown.classList.contains("is-open")) {
+    if (!expDropdown.contains(e.target) && (!expBtn || !expBtn.contains(e.target))) {
+      closeCashflowExportMenu();
+    }
+  }
 });
 
 document.addEventListener("keydown", function (e) {
   if (e.key === "Escape") {
     closeCashflowMoreMenu();
+    closeCashflowExportMenu();
   }
 });
 
@@ -13105,6 +13114,7 @@ async function openCashflowAllTransactionsModal() {
   const modal = document.getElementById("cashflowAllTransactionsModal");
   if (!modal) return;
 
+  closeCashflowExportMenu();
   reloadCashflowEntriesFromCache();
   renderCashflowAllTransactionsList();
   modal.style.display = "flex";
@@ -13260,8 +13270,796 @@ function renderCashflowAllTransactionsList() {
 }
 
 function closeCashflowAllTransactionsModal() {
+  closeCashflowExportMenu();
   const modal = document.getElementById("cashflowAllTransactionsModal");
   if (modal) modal.style.display = "none";
+}
+
+/* ==================== XUẤT BẢNG GIAO DỊCH HTML ==================== */
+function toggleCashflowExportMenu(event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const dropdown = document.getElementById("cashflowExportDropdown");
+  const btn = document.getElementById("cashflowAllExportBtn");
+  if (!dropdown) return;
+
+  const isOpen = dropdown.classList.toggle("is-open");
+  if (btn) {
+    btn.classList.toggle("is-active", isOpen);
+    btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  }
+
+  if (isOpen) {
+    updateCashflowExportMenuCounts();
+  }
+}
+
+function closeCashflowExportMenu() {
+  const dropdown = document.getElementById("cashflowExportDropdown");
+  const btn = document.getElementById("cashflowAllExportBtn");
+  if (dropdown) dropdown.classList.remove("is-open");
+  if (btn) {
+    btn.classList.remove("is-active");
+    btn.setAttribute("aria-expanded", "false");
+  }
+}
+
+function getCashflowEntriesForExportRange(rangeKey) {
+  reloadCashflowEntriesFromCache();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1; // 1-12
+
+  let filtered = [];
+  let rangeLabel = "";
+  let fileNameSuffix = "";
+
+  switch (rangeKey) {
+    case "this_month": {
+      const ym = `${currentYear}-${String(currentMonth).padStart(2, "0")}`;
+      filtered = cashflowEntries.filter((entry) => entry.date && entry.date.startsWith(ym));
+      rangeLabel = `Tháng ${String(currentMonth).padStart(2, "0")}/${currentYear}`;
+      fileNameSuffix = `thang_${String(currentMonth).padStart(2, "0")}_${currentYear}`;
+      break;
+    }
+    case "last_2_months": {
+      const startDate = new Date(currentYear, currentMonth - 2, 1);
+      const startYm = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-01`;
+      const endDate = new Date(currentYear, currentMonth, 0);
+      const endYm = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
+      filtered = cashflowEntries.filter((entry) => entry.date && entry.date >= startYm && entry.date <= endYm);
+      rangeLabel = `2 tháng gần nhất (T${startDate.getMonth() + 1}/${startDate.getFullYear()} - T${currentMonth}/${currentYear})`;
+      fileNameSuffix = `2_thang_gan_nhat`;
+      break;
+    }
+    case "last_3_months": {
+      const startDate = new Date(currentYear, currentMonth - 3, 1);
+      const startYm = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-01`;
+      const endDate = new Date(currentYear, currentMonth, 0);
+      const endYm = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
+      filtered = cashflowEntries.filter((entry) => entry.date && entry.date >= startYm && entry.date <= endYm);
+      rangeLabel = `3 tháng gần nhất (T${startDate.getMonth() + 1}/${startDate.getFullYear()} - T${currentMonth}/${currentYear})`;
+      fileNameSuffix = `3_thang_gan_nhat`;
+      break;
+    }
+    case "last_6_months": {
+      const startDate = new Date(currentYear, currentMonth - 6, 1);
+      const startYm = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}-01`;
+      const endDate = new Date(currentYear, currentMonth, 0);
+      const endYm = `${currentYear}-${String(currentMonth).padStart(2, "0")}-${String(endDate.getDate()).padStart(2, "0")}`;
+      filtered = cashflowEntries.filter((entry) => entry.date && entry.date >= startYm && entry.date <= endYm);
+      rangeLabel = `6 tháng gần nhất (T${startDate.getMonth() + 1}/${startDate.getFullYear()} - T${currentMonth}/${currentYear})`;
+      fileNameSuffix = `6_thang_gan_nhat`;
+      break;
+    }
+    case "this_year": {
+      const startY = `${currentYear}-01-01`;
+      const endY = `${currentYear}-12-31`;
+      filtered = cashflowEntries.filter((entry) => entry.date && entry.date >= startY && entry.date <= endY);
+      rangeLabel = `Năm ${currentYear}`;
+      fileNameSuffix = `nam_${currentYear}`;
+      break;
+    }
+    case "all":
+    default: {
+      filtered = [...cashflowEntries];
+      rangeLabel = "Toàn bộ giao dịch";
+      fileNameSuffix = "toan_bo";
+      break;
+    }
+  }
+
+  return { filtered, rangeLabel, fileNameSuffix };
+}
+
+function updateCashflowExportMenuCounts() {
+  const options = ["this_month", "last_2_months", "last_3_months", "last_6_months", "this_year", "all"];
+  for (const opt of options) {
+    const data = getCashflowEntriesForExportRange(opt);
+    const descEl = document.getElementById(`cashflowExportDesc_${opt}`);
+    if (descEl) {
+      const count = data.filtered.length;
+      if (opt === "this_month") {
+        descEl.innerText = `${data.rangeLabel} • ${count} giao dịch`;
+      } else if (opt === "this_year") {
+        descEl.innerText = `Năm ${new Date().getFullYear()} • ${count} giao dịch`;
+      } else if (opt === "all") {
+        descEl.innerText = `Toàn bộ lịch sử • ${count} giao dịch`;
+      } else {
+        descEl.innerText = `${count} giao dịch`;
+      }
+    }
+  }
+}
+
+function exportCashflowTransactionsHtml(rangeKey) {
+  closeCashflowExportMenu();
+  const { filtered, rangeLabel, fileNameSuffix } = getCashflowEntriesForExportRange(rangeKey);
+
+  if (filtered.length === 0) {
+    showToast(`Không có giao dịch nào trong khoảng thời gian "${rangeLabel}"!`, 3000);
+    return;
+  }
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+  let incomeCount = 0;
+  let expenseCount = 0;
+
+  const rowsHtml = filtered.map((entry, index) => {
+    const isIncome = entry.type === "income";
+    if (isIncome) {
+      totalIncome += entry.amount;
+      incomeCount++;
+    } else {
+      totalExpense += entry.amount;
+      expenseCount++;
+    }
+
+    const categoryLabel = getCashflowCategoryLabel(entry.type, entry.category);
+    const noteSafe = escapeHtml(entry.note || "");
+    const dateFormatted = formatCashflowDate(entry.date);
+    const createdFormatted = formatTimestampForCsv(entry.createdAt);
+    const updatedFormatted = entry.updatedAt ? formatTimestampForCsv(entry.updatedAt) : "—";
+
+    let imageCell = '<span style="color:#94a3b8;">—</span>';
+    if (entry.image && entry.image.trim() && entry.image.startsWith("data:")) {
+      imageCell = `<img class="thumb-img" src="${entry.image}" alt="Ảnh giao dịch" onclick="openLightbox(this.src)" title="Nhấn để phóng to ảnh" />`;
+    }
+
+    const searchableText = `${entry.date} ${dateFormatted} ${isIncome ? 'thu thu_nhap khoản thu' : 'chi chi_phi khoản chi'} ${categoryLabel} ${entry.note || ''} ${entry.amount}`.toLowerCase();
+
+    return `
+      <tr data-type="${entry.type}" data-text="${escapeHtml(searchableText)}" data-amount="${entry.amount}">
+        <td class="text-center" style="color: #64748b; font-weight: 500;">${index + 1}</td>
+        <td style="font-weight: 600; white-space: nowrap;">${dateFormatted}</td>
+        <td>
+          <span class="badge ${isIncome ? 'badge-income' : 'badge-expense'}">
+            ${isIncome ? 'Thu' : 'Chi'}
+          </span>
+        </td>
+        <td>
+          <span class="badge badge-cat">${escapeHtml(categoryLabel)}</span>
+        </td>
+        <td class="${isIncome ? 'amount-income' : 'amount-expense'}">
+          ${isIncome ? '+' : '-'}${entry.amount.toLocaleString("vi-VN")} đ
+        </td>
+        <td class="note-cell">${noteSafe || '<span style="color:#94a3b8;font-style:italic;">Không có ghi chú</span>'}</td>
+        <td class="text-center">${imageCell}</td>
+        <td style="color: #64748b; font-size: 12px; white-space: nowrap;">${createdFormatted}</td>
+        <td style="color: #64748b; font-size: 12px; white-space: nowrap;">${updatedFormatted}</td>
+      </tr>`;
+  }).join("");
+
+  const balance = totalIncome - totalExpense;
+  const totalCount = filtered.length;
+  const nowStr = new Date().toLocaleString("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
+
+  const html = `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Báo Cáo Giao Dịch - ${rangeLabel}</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --income: #16a34a;
+      --income-bg: #dcfce7;
+      --income-border: #bbf7d0;
+      --expense: #dc2626;
+      --expense-bg: #fee2e2;
+      --expense-border: #fecaca;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px 20px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    .header-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 24px 28px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .header-title-block h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-subtitle {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .header-subtitle strong {
+      color: #1e293b;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: #334155;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-action:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+    .btn-action.btn-primary {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #1d4ed8;
+    }
+    .btn-action.btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    /* Summary cards */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 22px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .stat-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+    .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-card.income .stat-value { color: var(--income); }
+    .stat-card.expense .stat-value { color: var(--expense); }
+    .stat-card.balance .stat-value { color: ${balance >= 0 ? 'var(--income)' : 'var(--expense)'}; }
+    .stat-card.total .stat-value { color: #3b82f6; }
+    .stat-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Toolbar */
+    .toolbar-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 20px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .search-box {
+      flex: 1;
+      min-width: 260px;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 9px 14px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      font-size: 13.5px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+    .filter-pills {
+      display: flex;
+      gap: 6px;
+    }
+    .filter-pill {
+      padding: 7px 16px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: #ffffff;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .filter-pill:hover {
+      background: #f1f5f9;
+    }
+    .filter-pill.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+    }
+
+    /* Table & Horizontal Scroll */
+    .table-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+      width: 100%;
+    }
+    .scroll-hint {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 9px 14px;
+      background: #eff6ff;
+      border-bottom: 1px solid #dbeafe;
+      color: #2563eb;
+      font-size: 12.5px;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+    .table-responsive {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+      display: block;
+      position: relative;
+    }
+    .table-responsive::-webkit-scrollbar {
+      height: 7px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    table {
+      width: 100%;
+      min-width: 950px;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13.5px;
+    }
+    thead th {
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: 600;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    tbody td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    tbody tr:hover {
+      background: #f8fafc;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .badge-income {
+      background: var(--income-bg);
+      color: var(--income);
+      border: 1px solid var(--income-border);
+    }
+    .badge-expense {
+      background: var(--expense-bg);
+      color: var(--expense);
+      border: 1px solid var(--expense-border);
+    }
+    .badge-cat {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+    }
+    .amount-income {
+      color: var(--income);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .amount-expense {
+      color: var(--expense);
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
+    }
+    .text-right { text-align: right; }
+    .text-center { text-align: center; }
+    .note-cell {
+      max-width: 280px;
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.4;
+    }
+    .thumb-img {
+      width: 42px;
+      height: 42px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .thumb-img:hover { opacity: 0.85; }
+
+    .empty-state {
+      display: none;
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+    /* Lightbox Modal */
+    .lightbox-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.85);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .lightbox-modal.open { display: flex; }
+    .lightbox-content {
+      max-width: 90vw;
+      max-height: 88vh;
+      border-radius: 10px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+      background: #000;
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 24px;
+      color: #fff;
+      font-size: 32px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      line-height: 1;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      color: var(--text-muted);
+      font-size: 12.5px;
+    }
+
+    @media (max-width: 980px) {
+      .scroll-hint {
+        display: flex;
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 12px 10px;
+      }
+      .header-card {
+        padding: 16px 14px;
+        border-radius: 12px;
+      }
+      .header-title-block h1 {
+        font-size: 18px;
+      }
+      .header-subtitle {
+        font-size: 12px;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .stat-card {
+        padding: 12px 14px;
+        border-radius: 10px;
+      }
+      .stat-label {
+        font-size: 11px;
+      }
+      .stat-value {
+        font-size: 17px;
+      }
+      .stat-sub {
+        font-size: 11px;
+      }
+      .toolbar-card {
+        padding: 12px 14px;
+        border-radius: 12px;
+      }
+      .search-box {
+        min-width: 100%;
+      }
+      .filter-pills {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
+        padding-bottom: 2px;
+      }
+      .filter-pill {
+        white-space: nowrap;
+        font-size: 12px;
+        padding: 6px 12px;
+      }
+      table {
+        min-width: 900px;
+        font-size: 12.5px;
+      }
+      thead th, tbody td {
+        padding: 10px 12px;
+      }
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .container { max-width: 100%; }
+      .header-card { box-shadow: none; border: none; padding: 8px 0; }
+      .header-actions, .toolbar-card, .lightbox-modal, .footer, .scroll-hint { display: none !important; }
+      .table-card { box-shadow: none; border: 1px solid #cbd5e1; }
+      table { font-size: 11px; min-width: 100%; }
+      tbody td, thead th { padding: 6px 8px; }
+      .thumb-img { width: 32px; height: 32px; }
+      @page { margin: 1.2cm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-card">
+      <div class="header-title-block">
+        <h1>Báo Cáo Giao Dịch Thu Chi</h1>
+        <div class="header-subtitle">
+          <span>Khoảng thời gian: <strong>${rangeLabel}</strong></span>
+          <span>Thời gian xuất: <strong>${nowStr}</strong></span>
+          <span>Tổng số: <strong id="headerTotalCount">${totalCount}</strong> giao dịch</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn-action btn-primary" onclick="window.print()">
+          🖨️ In / Lưu PDF
+        </button>
+      </div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="stat-card income">
+        <div class="stat-label">Tổng Thu Nhập</div>
+        <div class="stat-value">+${totalIncome.toLocaleString("vi-VN")} đ</div>
+        <div class="stat-sub">${incomeCount} khoản thu</div>
+      </div>
+      <div class="stat-card expense">
+        <div class="stat-label">Tổng Chi Tiêu</div>
+        <div class="stat-value">-${totalExpense.toLocaleString("vi-VN")} đ</div>
+        <div class="stat-sub">${expenseCount} khoản chi</div>
+      </div>
+    </div>
+
+    <div class="toolbar-card">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm theo ngày, danh mục, ghi chú, số tiền..." oninput="filterTable()" />
+      </div>
+      <div class="filter-pills">
+        <button type="button" class="filter-pill active" onclick="setTypeFilter('all', this)">Tất cả (<span id="countPillAll">${totalCount}</span>)</button>
+        <button type="button" class="filter-pill" onclick="setTypeFilter('income', this)">Khoản thu (<span id="countPillIncome">${incomeCount}</span>)</button>
+        <button type="button" class="filter-pill" onclick="setTypeFilter('expense', this)">Khoản chi (<span id="countPillExpense">${expenseCount}</span>)</button>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="scroll-hint">
+        <span>👉 Vuốt sang ngang để xem đầy đủ các cột dữ liệu 👈</span>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th class="text-center" style="width: 50px;">STT</th>
+              <th style="width: 100px;">Ngày</th>
+              <th style="width: 180px;">Phân loại</th>
+              <th style="width: 180px;">Danh mục</th>
+              <th class="text-right" style="width: 180px;">Số tiền</th>
+              <th style="width: 240px;">Ghi chú</th>
+              <th class="text-center" style="width: 120px;">Hình ảnh</th>
+              <th style="width: 160px;">Tạo lúc</th>
+              <th style="width: 160px;">Cập nhật</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            ${rowsHtml}
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="emptyFilterState">
+        <div class="empty-icon">🔍</div>
+        <div>Không tìm thấy giao dịch nào phù hợp với bộ lọc tìm kiếm.</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Báo cáo được trích xuất tự động từ My Calendar • ${nowStr}
+    </div>
+  </div>
+
+  <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
+    <button type="button" class="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <img class="lightbox-content" id="lightboxImg" src="" alt="Phóng to ảnh" onclick="event.stopPropagation()" />
+  </div>
+
+  <script>
+    let currentFilter = 'all';
+
+    function filterTable() {
+      const query = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+      const rows = document.querySelectorAll('#tableBody tr');
+      let visibleCount = 0;
+
+      rows.forEach(row => {
+        const type = row.getAttribute('data-type');
+        const text = row.getAttribute('data-text') || '';
+        
+        const matchesType = currentFilter === 'all' || currentFilter === type;
+        const matchesSearch = !query || text.includes(query);
+
+        if (matchesType && matchesSearch) {
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
+
+      const emptyEl = document.getElementById('emptyFilterState');
+      if (emptyEl) {
+        emptyEl.style.display = visibleCount === 0 ? 'block' : 'none';
+      }
+    }
+
+    function setTypeFilter(type, btn) {
+      currentFilter = type;
+      document.querySelectorAll('.filter-pill').forEach(pill => pill.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      filterTable();
+    }
+
+    function openLightbox(src) {
+      const modal = document.getElementById('lightboxModal');
+      const img = document.getElementById('lightboxImg');
+      if (modal && img) {
+        img.src = src;
+        modal.classList.add('open');
+      }
+    }
+
+    function closeLightbox() {
+      const modal = document.getElementById('lightboxModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeLightbox();
+    });
+  </script>
+</body>
+</html>`;
+
+  const blob = new Blob(["\uFEFF" + html], { type: "text/html;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `bao_cao_giao_dich_${fileNameSuffix}_${Date.now()}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  showToast(`Đã xuất báo cáo ${rangeLabel} (${filtered.length} giao dịch) thành công!`, 3000);
 }
 
 const CASHFLOW_CHART_MONTHS_KEY = "cashflowChartMonths";

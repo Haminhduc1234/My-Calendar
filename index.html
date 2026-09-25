@@ -1715,7 +1715,74 @@
     <div id="cashflowAllTransactionsModal" class="cashflow-all-modal" style="display: none">
       <div class="cashflow-all-dialog">
         <div class="cashflow-all-header">
-          <h3>Tất cả giao dịch</h3>
+          <div class="cashflow-all-title-wrap">
+            <h3>Tất cả giao dịch</h3>
+            <div class="cashflow-export-dropdown-wrapper">
+              <button type="button" class="cashflow-all-export-btn" id="cashflowAllExportBtn"
+                onclick="toggleCashflowExportMenu(event)" title="Xuất bảng giao dịch ra file HTML"
+                aria-label="Xuất bảng giao dịch ra file HTML" aria-haspopup="true" aria-expanded="false">
+                <i class="fi fi-rr-download"></i>
+              </button>
+              <!-- Dropdown menu chọn option trước khi export -->
+              <div class="cashflow-export-dropdown" id="cashflowExportDropdown" role="menu"
+                aria-label="Tùy chọn xuất bảng giao dịch">
+                <div class="cashflow-export-dropdown-header">
+                  <span>Xuất bảng giao dịch HTML</span>
+                  <span class="cashflow-export-dropdown-sub">Chọn khoảng thời gian</span>
+                </div>
+                <div class="cashflow-export-dropdown-list">
+                  <button type="button" class="cashflow-export-option"
+                    onclick="exportCashflowTransactionsHtml('this_month')">
+                    <span class="cashflow-export-option-icon is-month"><i class="fi fi-rr-calendar"></i></span>
+                    <span class="cashflow-export-option-text">
+                      <span class="cashflow-export-option-title">Tháng này</span>
+                      <span class="cashflow-export-option-desc" id="cashflowExportDesc_this_month">Tháng hiện tại</span>
+                    </span>
+                  </button>
+                  <button type="button" class="cashflow-export-option"
+                    onclick="exportCashflowTransactionsHtml('last_2_months')">
+                    <span class="cashflow-export-option-icon is-recent2"><i class="fi fi-rr-time-past"></i></span>
+                    <span class="cashflow-export-option-text">
+                      <span class="cashflow-export-option-title">2 tháng gần nhất</span>
+                      <span class="cashflow-export-option-desc" id="cashflowExportDesc_last_2_months">2 tháng gần đây</span>
+                    </span>
+                  </button>
+                  <button type="button" class="cashflow-export-option"
+                    onclick="exportCashflowTransactionsHtml('last_3_months')">
+                    <span class="cashflow-export-option-icon is-recent3"><i class="fi fi-rr-chart-pie"></i></span>
+                    <span class="cashflow-export-option-text">
+                      <span class="cashflow-export-option-title">3 tháng gần nhất</span>
+                      <span class="cashflow-export-option-desc" id="cashflowExportDesc_last_3_months">3 tháng gần đây</span>
+                    </span>
+                  </button>
+                  <button type="button" class="cashflow-export-option"
+                    onclick="exportCashflowTransactionsHtml('last_6_months')">
+                    <span class="cashflow-export-option-icon is-recent6"><i class="fi fi-rr-chart-histogram"></i></span>
+                    <span class="cashflow-export-option-text">
+                      <span class="cashflow-export-option-title">6 tháng gần nhất</span>
+                      <span class="cashflow-export-option-desc" id="cashflowExportDesc_last_6_months">6 tháng gần đây</span>
+                    </span>
+                  </button>
+                  <button type="button" class="cashflow-export-option"
+                    onclick="exportCashflowTransactionsHtml('this_year')">
+                    <span class="cashflow-export-option-icon is-year"><i class="fi fi-rr-document-signed"></i></span>
+                    <span class="cashflow-export-option-text">
+                      <span class="cashflow-export-option-title">Năm nay</span>
+                      <span class="cashflow-export-option-desc" id="cashflowExportDesc_this_year">Cả năm hiện tại</span>
+                    </span>
+                  </button>
+                  <button type="button" class="cashflow-export-option"
+                    onclick="exportCashflowTransactionsHtml('all')">
+                    <span class="cashflow-export-option-icon is-all"><i class="fi fi-rr-database"></i></span>
+                    <span class="cashflow-export-option-text">
+                      <span class="cashflow-export-option-title">Tất cả</span>
+                      <span class="cashflow-export-option-desc" id="cashflowExportDesc_all">Toàn bộ lịch sử</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
           <button type="button" class="cashflow-all-close" onclick="closeCashflowAllTransactionsModal()"
             aria-label="Đóng danh sách giao dịch">
             ×

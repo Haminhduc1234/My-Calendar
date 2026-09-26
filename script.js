@@ -842,7 +842,71 @@ function switchAuthTab(tab) {
   document.getElementById("authModal").style.display = "flex";
 }
 
-function showLoginForm() { switchAuthTab("login"); }
+function showLogoutLoadingOverlay(title = "Đang đăng xuất...", subtitle = "Đang xử lý dọn dẹp phiên và bảo mật dữ liệu") {
+  const overlay = document.getElementById("logoutLoadingOverlay");
+  const titleEl = document.getElementById("logoutLoadingTitle");
+  const subtitleEl = document.getElementById("logoutLoadingSubtitle");
+  if (titleEl) titleEl.textContent = title;
+  if (subtitleEl) subtitleEl.textContent = subtitle;
+
+  document.documentElement.classList.add("app-is-logging-out");
+  if (overlay) {
+    overlay.classList.remove("is-fading-out");
+    overlay.classList.add("is-visible");
+    overlay.style.display = "flex";
+  }
+}
+window.showLogoutLoadingOverlay = showLogoutLoadingOverlay;
+
+function hideLogoutLoadingOverlay() {
+  try {
+    sessionStorage.removeItem("appLogoutInProgress");
+  } catch (e) {}
+
+  const overlay = document.getElementById("logoutLoadingOverlay");
+  if (!overlay) {
+    document.documentElement.classList.remove("app-is-logging-out");
+    return;
+  }
+
+  const subtitleEl = document.getElementById("logoutLoadingSubtitle");
+  if (subtitleEl) {
+    subtitleEl.textContent = "Hoàn tất! Đang mở màn hình đăng nhập...";
+  }
+
+  setTimeout(() => {
+    overlay.classList.add("is-fading-out");
+    document.documentElement.classList.remove("app-is-logging-out");
+    setTimeout(() => {
+      overlay.style.display = "none";
+      overlay.classList.remove("is-visible", "is-fading-out");
+      const usernameInput = document.getElementById("loginUsername");
+      if (usernameInput) {
+        usernameInput.focus();
+      }
+    }, 380);
+  }, 400);
+}
+window.hideLogoutLoadingOverlay = hideLogoutLoadingOverlay;
+
+// Safety timeout: if page was reloaded during logout and something hung, guarantee login modal displays
+try {
+  if (sessionStorage.getItem("appLogoutInProgress") === "true") {
+    setTimeout(() => {
+      if (sessionStorage.getItem("appLogoutInProgress") === "true" || document.documentElement.classList.contains("app-is-logging-out")) {
+        hideLogoutLoadingOverlay();
+        showLoginForm();
+      }
+    }, 4500);
+  }
+} catch (e) {}
+
+function showLoginForm() { 
+  switchAuthTab("login"); 
+  if (sessionStorage.getItem("appLogoutInProgress") === "true" || document.documentElement.classList.contains("app-is-logging-out")) {
+    hideLogoutLoadingOverlay();
+  }
+}
 function showRegisterForm() { switchAuthTab("register"); }
 function showUpgradeForm() { switchAuthTab("upgrade"); }
 
@@ -863,12 +927,30 @@ function logoutAndStartFresh() {
     "Cảnh báo xóa dữ liệu",
     "Thao tác này sẽ xóa toàn bộ dữ liệu cũ của bạn trên thiết bị. Bạn có chắc chắn muốn tiếp tục?",
     "Tiếp tục",
-    () => {
-      unregisterDeviceNotificationToken();
+    async () => {
+      showLogoutLoadingOverlay("Đang làm mới dữ liệu...", "Đang dọn dẹp dữ liệu phiên cũ...");
+      try {
+        sessionStorage.setItem("appLogoutInProgress", "true");
+      } catch (e) {}
+
+      try {
+        if (typeof unregisterDeviceNotificationToken === "function") {
+          await Promise.race([
+            unregisterDeviceNotificationToken(),
+            new Promise((r) => setTimeout(r, 1000)),
+          ]);
+        }
+      } catch (e) {}
+
       localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
       localStorage.removeItem("calendarUsername");
+      localStorage.removeItem("currentProfileKey");
+      localStorage.removeItem("tutorProfileKey");
       legacyProfileKey = "";
-      window.location.reload();
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
     },
     undefined,
     { type: "warning", icon: "⚠️", btnType: "danger" }
@@ -1297,18 +1379,54 @@ function logoutProfileSession() {
     "Đăng xuất",
     "Bạn có chắc chắn muốn đăng xuất tài khoản hiện tại?",
     "Đăng xuất",
-    () => {
+    async () => {
+      // 1. Hiển thị màn hình loading toàn trang ngay lập tức
+      showLogoutLoadingOverlay("Đang đăng xuất...", "Đang xử lý dọn dẹp phiên và bảo mật dữ liệu...");
+      try {
+        sessionStorage.setItem("appLogoutInProgress", "true");
+      } catch (e) {}
+
+      // Đóng dropdown menu nếu còn mở
+      if (typeof closeMoreMenu === "function") {
+        closeMoreMenu();
+      }
+
+      // 2. Hủy đăng ký push notification FCM của thiết bị
+      try {
+        if (typeof unregisterDeviceNotificationToken === "function") {
+          await Promise.race([
+            unregisterDeviceNotificationToken(),
+            new Promise((resolve) => setTimeout(resolve, 1000)),
+          ]);
+        }
+      } catch (err) {
+        console.warn("[Auth] Lỗi hủy token FCM khi đăng xuất:", err);
+      }
+
+      // 3. Tắt các realtime listener Firebase
+      try {
+        if (firebaseDatesRef) firebaseDatesRef.off();
+        if (firebaseQuickNotesRef) firebaseQuickNotesRef.off();
+        if (firebaseProjectsRef) firebaseProjectsRef.off();
+        if (firebaseTranslateHistoryRef) firebaseTranslateHistoryRef.off();
+        if (firebaseProfileSettingsRef) firebaseProfileSettingsRef.off();
+        if (firebaseRecurringRef) firebaseRecurringRef.off();
+        if (firebaseFundsRef) firebaseFundsRef.off();
+      } catch (e) {}
+
+      // 4. Xóa thông tin đăng nhập trong localStorage
       localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
       localStorage.removeItem("calendarUsername");
+      localStorage.removeItem("currentProfileKey");
+      localStorage.removeItem("tutorProfileKey");
       userProfileKey = "";
       currentUsername = "";
       dateDataCache = {};
 
-      if (firebaseDatesRef) {
-        firebaseDatesRef.off();
-      }
-
-      window.location.reload();
+      // 5. Tải lại trang sau thời gian ngắn để đảm bảo giao diện loading mượt mà
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
     },
     undefined,
     { type: "warning", icon: "🚪", btnType: "danger" }

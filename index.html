@@ -18,7 +18,7 @@
     rel="stylesheet" />
   <!-- Flaticon UIcons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons/css/all/all.css" />
-  <link rel="stylesheet" href="style.css?v=20260924_tutor_lock_v3" />
+  <link rel="stylesheet" href="style.css?v=20260926_logout_loading_v1" />
   <link rel="stylesheet" href="family-cookbook.css?v=20260917_search_pos" />
   <link rel="stylesheet" href="family-health.css?v=20260918_cards_layout" />
   <link rel="icon" type="image/png" href="public/favicon.png" />
@@ -34,6 +34,15 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+  <script>
+    (function () {
+      try {
+        if (sessionStorage.getItem("appLogoutInProgress") === "true") {
+          document.documentElement.classList.add("app-is-logging-out");
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 
 <body>
@@ -51,6 +60,28 @@
           <circle cx="12" cy="12" r="9" stroke="rgba(168,196,255,0.18)" stroke-width="2.5" />
           <path d="M12 3a9 9 0 0 1 9 9" stroke="#a8c8ff" stroke-width="2.5" stroke-linecap="round" />
         </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout Loading Overlay -->
+  <div id="logoutLoadingOverlay" class="logout-loading-overlay" style="display: none;" aria-live="assertive" aria-busy="true">
+    <div class="logout-loading-backdrop"></div>
+    <div class="logout-loading-card">
+      <div class="logout-loading-spinner-wrap">
+        <div class="logout-loading-pulse-glow"></div>
+        <div class="logout-loading-ring ring-outer"></div>
+        <div class="logout-loading-ring ring-inner"></div>
+        <div class="logout-loading-icon-center">
+          <i class="fi fi-rr-sign-out-alt"></i>
+        </div>
+      </div>
+      <div class="logout-loading-text-wrap">
+        <h3 class="logout-loading-title" id="logoutLoadingTitle">Đang đăng xuất...</h3>
+        <p class="logout-loading-subtitle" id="logoutLoadingSubtitle">Đang xử lý dọn dẹp phiên và bảo mật dữ liệu</p>
+      </div>
+      <div class="logout-loading-progress-bar">
+        <div class="logout-loading-progress-line"></div>
       </div>
     </div>
   </div>

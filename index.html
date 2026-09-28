@@ -18,7 +18,7 @@
     rel="stylesheet" />
   <!-- Flaticon UIcons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons/css/all/all.css" />
-  <link rel="stylesheet" href="style.css?v=20260926_logout_loading_v1" />
+  <link rel="stylesheet" href="style.css?v=20260928_submodal_zindex_v2" />
   <link rel="stylesheet" href="family-cookbook.css?v=20260917_search_pos" />
   <link rel="stylesheet" href="family-health.css?v=20260918_cards_layout" />
   <link rel="icon" type="image/png" href="public/favicon.png" />
@@ -1359,6 +1359,22 @@
                   <span class="cashflow-menu-desc">Xu hướng chi tiêu theo kỳ</span>
                 </span>
               </button>
+              <button type="button" class="cashflow-menu-item" role="menuitem"
+                onclick="handleCashflowMenuAction(openCashflowMonthlyReportModal)">
+                <span class="cashflow-menu-icon is-report"><i class="fi fi-rr-file-chart-line"></i></span>
+                <span class="cashflow-menu-text">
+                  <span class="cashflow-menu-title">Báo cáo tháng</span>
+                  <span class="cashflow-menu-desc">Tổng kết & so sánh kỳ trước</span>
+                </span>
+              </button>
+              <button type="button" class="cashflow-menu-item" role="menuitem"
+                onclick="handleCashflowMenuAction(openCashflowBudgetModal)">
+                <span class="cashflow-menu-icon is-budget"><i class="fi fi-rr-target"></i></span>
+                <span class="cashflow-menu-text">
+                  <span class="cashflow-menu-title">Ngân sách & Giới hạn</span>
+                  <span class="cashflow-menu-desc">Hạn mức chi tiêu theo danh mục</span>
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -1494,6 +1510,192 @@
               onclick="addCashflowEntry()">
               Thêm
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Financial Report Modal -->
+    <div id="cashflowMonthlyReportModal" class="modal cashflow-submodal" style="display: none"
+      onclick="if (event.target === this) closeCashflowMonthlyReportModal()">
+      <div class="cashflow-submodal-dialog cashflow-report-dialog" style="max-width: 680px;">
+        <div class="cashflow-submodal-header">
+          <div class="cashflow-submodal-header-left">
+            <div class="cashflow-submodal-icon is-report">
+              <i class="fi fi-rr-file-chart-line"></i>
+            </div>
+            <div>
+              <h3 class="cashflow-submodal-title">Báo cáo tài chính tháng</h3>
+              <p class="cashflow-submodal-subtitle" id="reportSubtitle">Tổng kết, so sánh kỳ trước & đánh giá tài chính</p>
+            </div>
+          </div>
+          <button type="button" class="cashflow-submodal-close" onclick="closeCashflowMonthlyReportModal()"
+            aria-label="Đóng">×</button>
+        </div>
+        <div class="cashflow-submodal-body">
+          <!-- Month Navigator -->
+          <div class="report-month-nav">
+            <button type="button" class="report-month-btn" onclick="changeReportMonth(-1)" aria-label="Tháng trước">
+              <i class="fi fi-rr-angle-left"></i>
+            </button>
+            <div class="report-month-title-wrap">
+              <span class="report-month-label" id="reportMonthLabel">Tháng --/----</span>
+              <button type="button" class="report-current-month-btn" id="reportCurrentMonthBtn" onclick="goToReportCurrentMonth()">Hiện tại</button>
+            </div>
+            <button type="button" class="report-month-btn" onclick="changeReportMonth(1)" aria-label="Tháng sau">
+              <i class="fi fi-rr-angle-right"></i>
+            </button>
+          </div>
+
+          <!-- Smart Insight Banner -->
+          <div class="report-insight-card" id="reportInsightCard"></div>
+
+          <!-- Summary KPI Cards -->
+          <div class="report-kpi-grid" id="reportKpiGrid"></div>
+
+          <!-- Month-over-Month Comparison -->
+          <div class="report-section">
+            <div class="report-section-header">
+              <div class="report-section-title">
+                <i class="fi fi-rr-refresh"></i>
+                <span>So sánh với tháng trước</span>
+              </div>
+            </div>
+            <div class="report-comparison-card" id="reportComparisonCard"></div>
+          </div>
+
+          <!-- Top 5 Expenses -->
+          <div class="report-section">
+            <div class="report-section-header">
+              <div class="report-section-title">
+                <i class="fi fi-rr-flame"></i>
+                <span>Top khoản chi lớn nhất</span>
+              </div>
+            </div>
+            <div class="report-top-list" id="reportTopExpensesList"></div>
+          </div>
+
+          <!-- Category Breakdown -->
+          <div class="report-section">
+            <div class="report-section-header">
+              <div class="report-section-title">
+                <i class="fi fi-rr-chart-pie-alt"></i>
+                <span>Chi tiêu theo nhóm danh mục</span>
+              </div>
+            </div>
+            <div class="report-category-list" id="reportCategoryList"></div>
+          </div>
+
+          <!-- 6-Month Trend Chart -->
+          <div class="report-section">
+            <div class="report-section-header">
+              <div class="report-section-title">
+                <i class="fi fi-rr-chart-histogram"></i>
+                <span>Xu hướng thu chi 6 tháng gần nhất</span>
+              </div>
+            </div>
+            <div class="report-trend-chart-box">
+              <div class="report-trend-chart-legend">
+                <span class="legend-item"><span class="legend-dot is-income"></span> Thu nhập</span>
+                <span class="legend-item"><span class="legend-dot is-expense"></span> Chi tiêu</span>
+              </div>
+              <div class="report-trend-canvas-wrap">
+                <canvas id="reportTrendCanvas" width="600" height="220"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Budget & Spending Limits Modal -->
+    <div id="cashflowBudgetModal" class="modal cashflow-submodal" style="display: none"
+      onclick="if (event.target === this) closeCashflowBudgetModal()">
+      <div class="cashflow-submodal-dialog cashflow-budget-dialog" style="max-width: 620px;">
+        <div class="cashflow-submodal-header">
+          <div class="cashflow-submodal-header-left">
+            <div class="cashflow-submodal-icon is-budget">
+              <i class="fi fi-rr-target"></i>
+            </div>
+            <div>
+              <h3 class="cashflow-submodal-title">Ngân sách & Giới hạn chi tiêu</h3>
+              <p class="cashflow-submodal-subtitle" id="budgetSubtitle">Quản lý hạn mức chi tiêu từng nhóm mỗi tháng</p>
+            </div>
+          </div>
+          <button type="button" class="cashflow-submodal-close" onclick="closeCashflowBudgetModal()"
+            aria-label="Đóng">×</button>
+        </div>
+        <div class="cashflow-submodal-body">
+          <!-- Month Navigator -->
+          <div class="report-month-nav budget-month-nav">
+            <button type="button" class="report-month-btn" onclick="changeBudgetMonth(-1)" aria-label="Tháng trước">
+              <i class="fi fi-rr-angle-left"></i>
+            </button>
+            <div class="report-month-title-wrap">
+              <span class="report-month-label" id="budgetMonthLabel">Tháng --/----</span>
+              <button type="button" class="report-current-month-btn" id="budgetCurrentMonthBtn" onclick="goToBudgetCurrentMonth()">Hiện tại</button>
+            </div>
+            <button type="button" class="report-month-btn" onclick="changeBudgetMonth(1)" aria-label="Tháng sau">
+              <i class="fi fi-rr-angle-right"></i>
+            </button>
+          </div>
+
+          <!-- Overall Budget Progress Card -->
+          <div class="budget-overall-card" id="budgetOverallCard"></div>
+
+          <!-- Copy from previous month banner (if current month has no budgets) -->
+          <div class="budget-copy-banner" id="budgetCopyBanner" style="display: none;">
+            <div class="budget-copy-info">
+              <i class="fi fi-rr-duplicate"></i>
+              <span>Tháng này chưa có hạn mức nào. Sao chép nhanh từ tháng trước?</span>
+            </div>
+            <button type="button" class="budget-copy-btn" onclick="copyBudgetsFromPrevMonth()">Sao chép ngay</button>
+          </div>
+
+          <!-- List of Budgets -->
+          <div class="budget-section">
+            <div class="budget-section-header">
+              <div class="budget-section-title">
+                <i class="fi fi-rr-apps"></i>
+                <span>Hạn mức theo danh mục</span>
+              </div>
+              <button type="button" class="budget-btn-add-trigger" id="budgetAddTriggerBtn" onclick="toggleBudgetAddForm(true)">
+                <i class="fi fi-rr-plus"></i>
+                <span>Thêm hạn mức</span>
+              </button>
+            </div>
+            <div class="budget-items-list" id="budgetItemsList"></div>
+          </div>
+
+          <!-- Add / Edit Budget Limit Form -->
+          <div class="budget-form-card" id="budgetFormCard" style="display: none;">
+            <div class="budget-form-header">
+              <h4 class="budget-form-title" id="budgetFormTitle">Thêm hạn mức danh mục</h4>
+              <button type="button" class="budget-form-close-btn" onclick="toggleBudgetAddForm(false)" aria-label="Đóng form">
+                <i class="fi fi-rr-cross-small"></i>
+              </button>
+            </div>
+            <form id="budgetForm" onsubmit="handleSaveBudgetItem(event)">
+              <input type="hidden" id="budgetEditCatId" value="" />
+              <div class="budget-form-row">
+                <div class="budget-form-group">
+                  <label for="budgetCategorySelect" class="budget-field-label">Danh mục chi tiêu</label>
+                  <select id="budgetCategorySelect" class="budget-form-select" required></select>
+                </div>
+                <div class="budget-form-group">
+                  <label for="budgetLimitInput" class="budget-field-label">Hạn mức tháng (VNĐ)</label>
+                  <input type="text" id="budgetLimitInput" class="budget-form-input" placeholder="VD: 3.000.000"
+                    inputmode="numeric" oninput="formatCurrencyInput(this)" required autocomplete="off" />
+                </div>
+              </div>
+              <div class="budget-form-actions">
+                <button type="button" class="budget-btn-secondary" onclick="toggleBudgetAddForm(false)">Hủy</button>
+                <button type="submit" class="budget-btn-primary" id="budgetSaveBtn">
+                  <i class="fi fi-rr-disk"></i>
+                  <span>Lưu hạn mức</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -3658,7 +3860,7 @@
   <script src="senior-mode.js?v=20260916"></script>
   <script src="family-cookbook.js?v=20260917_search_pos"></script>
   <script src="family-health.js?v=20260918_latest_log_sync"></script>
-  <script src="script.js?v=20260919_modern_flow"></script>
+  <script src="script.js?v=20260928_report_budget_v1"></script>
   <!-- <script src="MapSearch.js"></script> -->
 
   <!-- <script>

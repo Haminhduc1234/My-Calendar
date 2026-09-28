@@ -87,6 +87,8 @@ function getOpenModalId() {
     "cashflowQuickViewModal",
     "eventQuickViewModal",
     "cashflowCategoryModal",
+    "cashflowMonthlyReportModal",
+    "cashflowBudgetModal",
   ];
   for (const id of modalIds) {
     const el = document.getElementById(id);
@@ -3452,6 +3454,7 @@ async function initFirebaseRealtime() {
 
   // Cashflow categories
   loadCashflowCategoriesFromStorage();
+  loadBudgetsFromStorage();
 
   // Profile Settings reference (Avatar, Cover, DisplayName, Bio)
   firebaseProfileSettingsRef = firebaseDb.ref(
@@ -3783,6 +3786,7 @@ async function reloadFirebaseForUser() {
 
   // Reload Cashflow categories
   loadCashflowCategoriesFromStorage();
+  loadBudgetsFromStorage();
 
   // Load dates from Firebase
   try {
@@ -4009,6 +4013,8 @@ function closeAllModals() {
     "cashflowQuickViewModal",
     "cashflowDeleteConfirmModal",
     "cashflowAllTransactionsModal",
+    "cashflowMonthlyReportModal",
+    "cashflowBudgetModal",
     "currencyModal",
     "fundsModal",
     "fundModal",
@@ -12352,6 +12358,14 @@ function renderCashflowDashboard() {
   if (atModal && atModal.style.display === "flex") {
     renderCashflowAllTransactionsList();
   }
+  const repModal = document.getElementById("cashflowMonthlyReportModal");
+  if (repModal && repModal.style.display === "flex") {
+    renderCashflowMonthlyReport();
+  }
+  const budModal = document.getElementById("cashflowBudgetModal");
+  if (budModal && budModal.style.display === "flex") {
+    renderCashflowBudgets();
+  }
 }
 
 function setCashflowAnalyticsRange(range) {
@@ -13231,6 +13245,858 @@ function closeCashflowChartModal() {
   const modal = document.getElementById("cashflowChartModal");
   if (modal) modal.style.display = "none";
   hideCashflowChartTooltip();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CASHFLOW MONTHLY REPORT (BÁO CÁO TÀI CHÍNH THÁNG)
+   ═══════════════════════════════════════════════════════════════ */
+
+let reportSelectedMonth = ""; // 'YYYY-MM'
+
+function getCurrentReportMonthKey() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+function openCashflowMonthlyReportModal() {
+  const modal = document.getElementById("cashflowMonthlyReportModal");
+  if (!modal) return;
+  if (!reportSelectedMonth) {
+    reportSelectedMonth = getCurrentReportMonthKey();
+  }
+  reloadCashflowEntriesFromCache();
+  modal.style.display = "flex";
+  renderCashflowMonthlyReport();
+}
+
+function closeCashflowMonthlyReportModal() {
+  const modal = document.getElementById("cashflowMonthlyReportModal");
+  if (modal) modal.style.display = "none";
+}
+
+function changeReportMonth(step) {
+  if (!reportSelectedMonth) reportSelectedMonth = getCurrentReportMonthKey();
+  const [y, m] = reportSelectedMonth.split("-").map(Number);
+  const targetDate = new Date(y, m - 1 + step, 1);
+  const newY = targetDate.getFullYear();
+  const newM = String(targetDate.getMonth() + 1).padStart(2, "0");
+  reportSelectedMonth = `${newY}-${newM}`;
+  renderCashflowMonthlyReport();
+}
+
+function goToReportCurrentMonth() {
+  reportSelectedMonth = getCurrentReportMonthKey();
+  renderCashflowMonthlyReport();
+}
+
+function renderCashflowMonthlyReport() {
+  if (!reportSelectedMonth) reportSelectedMonth = getCurrentReportMonthKey();
+  const [curY, curM] = reportSelectedMonth.split("-").map(Number);
+  const currentKey = getCurrentReportMonthKey();
+
+  // 1. Cập nhật Month Navigator
+  const labelEl = document.getElementById("reportMonthLabel");
+  if (labelEl) {
+    labelEl.textContent = `Tháng ${String(curM).padStart(2, "0")}/${curY}`;
+  }
+  const currBtn = document.getElementById("reportCurrentMonthBtn");
+  if (currBtn) {
+    currBtn.style.display = reportSelectedMonth === currentKey ? "none" : "inline-block";
+  }
+
+  // 2. Lọc dữ liệu tháng này & tháng trước
+  const curEntries = cashflowEntries.filter((e) => e.date && e.date.startsWith(reportSelectedMonth));
+  const prevDate = new Date(curY, curM - 2, 1);
+  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+  const prevEntries = cashflowEntries.filter((e) => e.date && e.date.startsWith(prevMonthKey));
+
+  const curIncome = curEntries
+    .filter((e) => e.type === "income")
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const curExpense = curEntries
+    .filter((e) => e.type === "expense")
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const netSavings = curIncome - curExpense;
+  const savingsRate = curIncome > 0 ? (netSavings / curIncome) * 100 : 0;
+
+  const prevIncome = prevEntries
+    .filter((e) => e.type === "income")
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const prevExpense = prevEntries
+    .filter((e) => e.type === "expense")
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+  // 3. Smart Insight Card
+  const insightEl = document.getElementById("reportInsightCard");
+  if (insightEl) {
+    let insightHtml = "";
+    if (curIncome === 0 && curExpense === 0) {
+      insightHtml = `
+        <div class="report-insight-icon"><i class="fi fi-rr-info"></i></div>
+        <div class="report-insight-text">Chưa có giao dịch thu chi nào trong tháng này. Hãy thêm giao dịch để xem báo cáo phân tích chi tiết.</div>
+      `;
+    } else if (netSavings < 0) {
+      const deficit = Math.abs(netSavings);
+      insightHtml = `
+        <div class="report-insight-icon" style="color: #f87171; background: rgba(239, 68, 68, 0.15);"><i class="fi fi-rr-triangle-warning"></i></div>
+        <div class="report-insight-text">
+          <strong>Chi tiêu vượt thu nhập!</strong> Bạn đang thâm hụt <strong>${formatVnd(deficit)} đ</strong> trong tháng này. Cần xem xét cắt giảm các khoản chi không cấp thiết.
+        </div>
+      `;
+    } else if (savingsRate >= 30) {
+      insightHtml = `
+        <div class="report-insight-icon" style="color: #34d399; background: rgba(16, 185, 129, 0.15);"><i class="fi fi-rr-sparkles"></i></div>
+        <div class="report-insight-text">
+          <strong>Quản lý tài chính xuất sắc!</strong> Tỷ lệ tiết kiệm đạt <strong>${savingsRate.toFixed(1)}%</strong> (${formatVnd(netSavings)} đ). Bạn đang tích lũy rất tốt theo khuyến nghị tài chính.
+        </div>
+      `;
+    } else if (savingsRate >= 15) {
+      insightHtml = `
+        <div class="report-insight-icon"><i class="fi fi-rr-check"></i></div>
+        <div class="report-insight-text">
+          <strong>Tài chính ổn định!</strong> Bạn đã tiết kiệm được <strong>${savingsRate.toFixed(1)}%</strong> thu nhập (${formatVnd(netSavings)} đ). Duy trì thói quen này để đạt mục tiêu dài hạn.
+        </div>
+      `;
+    } else {
+      insightHtml = `
+        <div class="report-insight-icon" style="color: #fbbf24; background: rgba(245, 158, 11, 0.15);"><i class="fi fi-rr-bulb"></i></div>
+        <div class="report-insight-text">
+          Tỷ lệ tiết kiệm tháng này đạt <strong>${savingsRate.toFixed(1)}%</strong>. Hãy chú ý các khoản chi lớn để gia tăng quỹ dự phòng.
+        </div>
+      `;
+    }
+    insightEl.innerHTML = insightHtml;
+  }
+
+  // 4. KPI Cards
+  const kpiGrid = document.getElementById("reportKpiGrid");
+  if (kpiGrid) {
+    const rateEval =
+      savingsRate >= 30
+        ? "Xuất sắc"
+        : savingsRate >= 15
+        ? "Tốt"
+        : savingsRate > 0
+        ? "Thấp"
+        : "Thâm hụt";
+    kpiGrid.innerHTML = `
+      <div class="report-kpi-card is-income">
+        <div class="report-kpi-header"><i class="fi fi-rr-arrow-down-left"></i><span>Tổng Thu</span></div>
+        <div class="report-kpi-value">${formatVnd(curIncome)} đ</div>
+        <div class="report-kpi-sub">${curEntries.filter((e) => e.type === "income").length} khoản thu</div>
+      </div>
+      <div class="report-kpi-card is-expense">
+        <div class="report-kpi-header"><i class="fi fi-rr-arrow-up-right"></i><span>Tổng Chi</span></div>
+        <div class="report-kpi-value">${formatVnd(curExpense)} đ</div>
+        <div class="report-kpi-sub">${curEntries.filter((e) => e.type === "expense").length} khoản chi</div>
+      </div>
+      <div class="report-kpi-card is-net ${netSavings >= 0 ? "positive" : "negative"}">
+        <div class="report-kpi-header"><i class="fi fi-rr-scale"></i><span>Chênh Lệch</span></div>
+        <div class="report-kpi-value">${netSavings >= 0 ? "+" : ""}${formatVnd(netSavings)} đ</div>
+        <div class="report-kpi-sub">${netSavings >= 0 ? "Thặng dư tích lũy" : "Chi vượt thu"}</div>
+      </div>
+      <div class="report-kpi-card is-rate">
+        <div class="report-kpi-header"><i class="fi fi-rr-piggy-bank"></i><span>Tiết Kiệm</span></div>
+        <div class="report-kpi-value">${savingsRate.toFixed(1)}%</div>
+        <div class="report-kpi-sub">Đánh giá: ${rateEval}</div>
+      </div>
+    `;
+  }
+
+  // 5. Month-over-Month Comparison
+  const compEl = document.getElementById("reportComparisonCard");
+  if (compEl) {
+    // Biến động thu
+    let incomeCompHtml = "";
+    if (prevIncome > 0) {
+      const diffIncome = curIncome - prevIncome;
+      const pctIncome = (diffIncome / prevIncome) * 100;
+      const isUp = pctIncome >= 0;
+      incomeCompHtml = `
+        <span class="report-comp-badge ${isUp ? "better" : "worse"}">
+          <i class="fi ${isUp ? "fi-rr-arrow-trend-up" : "fi-rr-arrow-trend-down"}"></i>
+          <span>${isUp ? "+" : ""}${pctIncome.toFixed(1)}%</span>
+        </span>
+        <span class="report-comp-sub">${diffIncome >= 0 ? "Tăng" : "Giảm"} ${formatVnd(Math.abs(diffIncome))} đ</span>
+      `;
+    } else {
+      incomeCompHtml = `<span class="report-comp-badge neutral"><span>--</span></span><span class="report-comp-sub">Không có dữ liệu T${prevDate.getMonth() + 1}</span>`;
+    }
+
+    // Biến động chi (Chi giảm = tốt/better, Chi tăng = worse)
+    let expenseCompHtml = "";
+    if (prevExpense > 0) {
+      const diffExpense = curExpense - prevExpense;
+      const pctExpense = (diffExpense / prevExpense) * 100;
+      const isSpendLess = diffExpense <= 0;
+      expenseCompHtml = `
+        <span class="report-comp-badge ${isSpendLess ? "better" : "worse"}">
+          <i class="fi ${diffExpense >= 0 ? "fi-rr-arrow-trend-up" : "fi-rr-arrow-trend-down"}"></i>
+          <span>${diffExpense >= 0 ? "+" : ""}${pctExpense.toFixed(1)}%</span>
+        </span>
+        <span class="report-comp-sub">${diffExpense >= 0 ? "Tăng" : "Giảm"} ${formatVnd(Math.abs(diffExpense))} đ</span>
+      `;
+    } else {
+      expenseCompHtml = `<span class="report-comp-badge neutral"><span>--</span></span><span class="report-comp-sub">Không có dữ liệu T${prevDate.getMonth() + 1}</span>`;
+    }
+
+    // Chi tiêu trung bình ngày
+    let daysInMonth = new Date(curY, curM, 0).getDate();
+    if (reportSelectedMonth === currentKey) {
+      daysInMonth = Math.max(1, new Date().getDate());
+    }
+    const avgPerDay = curExpense / daysInMonth;
+
+    compEl.innerHTML = `
+      <div class="report-comp-col">
+        <span class="report-comp-label">Thu nhập so kỳ trước</span>
+        ${incomeCompHtml}
+      </div>
+      <div class="report-comp-col">
+        <span class="report-comp-label">Chi tiêu so kỳ trước</span>
+        ${expenseCompHtml}
+      </div>
+      <div class="report-comp-col">
+        <span class="report-comp-label">Chi tiêu trung bình/ngày</span>
+        <span class="report-comp-badge neutral">
+          <i class="fi fi-rr-calendar"></i>
+          <span>${formatVnd(avgPerDay)} đ</span>
+        </span>
+        <span class="report-comp-sub">Tính trên ${daysInMonth} ngày</span>
+      </div>
+    `;
+  }
+
+  // 6. Top 5 khoản chi lớn nhất
+  const topListEl = document.getElementById("reportTopExpensesList");
+  if (topListEl) {
+    const expenses = curEntries
+      .filter((e) => e.type === "expense")
+      .sort((a, b) => (Number(b.amount) || 0) - (Number(a.amount) || 0))
+      .slice(0, 5);
+
+    if (expenses.length === 0) {
+      topListEl.innerHTML = `<div class="budget-empty-state">Không có khoản chi nào trong tháng này</div>`;
+    } else {
+      topListEl.innerHTML = expenses
+        .map((item, idx) => {
+          const amt = Number(item.amount) || 0;
+          const pct = curExpense > 0 ? ((amt / curExpense) * 100).toFixed(1) : 0;
+          const catName = getCashflowCategoryLabel("expense", item.category);
+          const dateStr = item.date ? formatCashflowDate(item.date) : "";
+          const noteText = item.note || catName;
+          return `
+            <div class="report-top-item">
+              <span class="report-top-rank">#${idx + 1}</span>
+              <div class="report-top-info">
+                <div class="report-top-note" title="${escapeHtml(noteText)}">${escapeHtml(noteText)}</div>
+                <div class="report-top-meta">
+                  <span>${escapeHtml(catName)}</span>
+                  <span>•</span>
+                  <span>${dateStr}</span>
+                </div>
+              </div>
+              <div class="report-top-amount-wrap">
+                <div class="report-top-amount">${formatVnd(amt)} đ</div>
+                <div class="report-top-pct">${pct}% tổng chi</div>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+  }
+
+  // 7. Chi tiêu theo nhóm danh mục
+  const catListEl = document.getElementById("reportCategoryList");
+  if (catListEl) {
+    const catMap = {};
+    for (const e of curEntries) {
+      if (e.type !== "expense") continue;
+      const catKey = String(e.category || "Chưa phân loại").trim();
+      const amt = Number(e.amount) || 0;
+      if (!catMap[catKey]) {
+        catMap[catKey] = {
+          name: getCashflowCategoryLabel("expense", catKey),
+          amount: 0,
+          count: 0,
+        };
+      }
+      catMap[catKey].amount += amt;
+      catMap[catKey].count += 1;
+    }
+
+    const catItems = Object.values(catMap).sort((a, b) => b.amount - a.amount);
+    if (catItems.length === 0) {
+      catListEl.innerHTML = `<div class="budget-empty-state">Chưa có dữ liệu danh mục chi tiêu</div>`;
+    } else {
+      const colors = ["#38bdf8", "#ec4899", "#f59e0b", "#10b981", "#8b5cf6", "#06b6d4", "#f43f5e", "#64748b"];
+      catListEl.innerHTML = catItems
+        .map((item, idx) => {
+          const pct = curExpense > 0 ? ((item.amount / curExpense) * 100).toFixed(1) : 0;
+          const color = colors[idx % colors.length];
+          return `
+            <div class="report-category-item">
+              <div class="report-cat-header">
+                <span class="report-cat-name">
+                  <span class="report-cat-dot" style="background: ${color};"></span>
+                  <span>${escapeHtml(item.name)}</span>
+                </span>
+                <span class="report-cat-amount">${formatVnd(item.amount)} đ</span>
+              </div>
+              <div class="report-cat-progress-track">
+                <div class="report-cat-progress-bar" style="width: ${pct}%; background: ${color};"></div>
+              </div>
+              <div class="report-cat-footer">
+                <span>${item.count} lượt giao dịch</span>
+                <span><strong>${pct}%</strong> tổng chi</span>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+  }
+
+  // 8. Vẽ biểu đồ xu hướng 6 tháng gần nhất
+  requestAnimationFrame(() => {
+    drawReportTrendChart(curY, curM);
+  });
+}
+
+function drawReportTrendChart(centerYear, centerMonth) {
+  const canvas = document.getElementById("reportTrendCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  // Lấy 6 tháng lùi về từ centerYear, centerMonth
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(centerYear, centerMonth - 1 - i, 1);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const key = `${y}-${m}`;
+    const label = `T${d.getMonth() + 1}`;
+
+    const monthEntries = cashflowEntries.filter((e) => e.date && e.date.startsWith(key));
+    const inc = monthEntries
+      .filter((e) => e.type === "income")
+      .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const exp = monthEntries
+      .filter((e) => e.type === "expense")
+      .reduce((s, e) => s + (Number(e.amount) || 0), 0);
+
+    months.push({ key, label, income: inc, expense: exp });
+  }
+
+  // Thiết lập độ phân giải Retina Canvas
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const cssWidth = Math.max(300, rect.width || 560);
+  const cssHeight = 220;
+  canvas.width = cssWidth * dpr;
+  canvas.height = cssHeight * dpr;
+  ctx.scale(dpr, dpr);
+
+  ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+  const padLeft = 46;
+  const padRight = 16;
+  const padTop = 24;
+  const padBottom = 34;
+  const chartW = cssWidth - padLeft - padRight;
+  const chartH = cssHeight - padTop - padBottom;
+
+  // Tìm max value
+  const maxVal = Math.max(1, ...months.map((m) => Math.max(m.income, m.expense)));
+  const niceMax = getNiceMaxCashflow(maxVal);
+
+  // Vẽ lưới ngang
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+  ctx.lineWidth = 1;
+  ctx.fillStyle = "rgba(148, 163, 184, 0.65)";
+  ctx.font = "10.5px 'Be Vietnam Pro', sans-serif";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+
+  const gridSteps = 4;
+  for (let i = 0; i <= gridSteps; i++) {
+    const yPos = padTop + chartH - (i / gridSteps) * chartH;
+    const val = (niceMax / gridSteps) * i;
+    ctx.beginPath();
+    ctx.moveTo(padLeft, yPos);
+    ctx.lineTo(cssWidth - padRight, yPos);
+    ctx.stroke();
+
+    ctx.fillText(formatCompactVnd(val), padLeft - 6, yPos);
+  }
+
+  // Vẽ các cột thu chi
+  const colGroupWidth = chartW / months.length;
+  const barWidth = Math.min(18, colGroupWidth * 0.32);
+  const gap = 3;
+
+  months.forEach((m, idx) => {
+    const groupCenterX = padLeft + idx * colGroupWidth + colGroupWidth / 2;
+    const incX = groupCenterX - barWidth - gap / 2;
+    const expX = groupCenterX + gap / 2;
+
+    const incH = (m.income / niceMax) * chartH;
+    const expH = (m.expense / niceMax) * chartH;
+
+    // Highlight tháng đang chọn
+    if (m.key === reportSelectedMonth) {
+      ctx.fillStyle = "rgba(56, 189, 248, 0.06)";
+      ctx.fillRect(padLeft + idx * colGroupWidth + 2, padTop, colGroupWidth - 4, chartH);
+    }
+
+    // Cột thu (Xanh lá)
+    if (incH > 0) {
+      ctx.fillStyle = "#10b981";
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(incX, padTop + chartH - incH, barWidth, incH, [3, 3, 0, 0]);
+      } else {
+        ctx.rect(incX, padTop + chartH - incH, barWidth, incH);
+      }
+      ctx.fill();
+    }
+
+    // Cột chi (Đỏ/Cam)
+    if (expH > 0) {
+      ctx.fillStyle = "#f43f5e";
+      ctx.beginPath();
+      if (typeof ctx.roundRect === "function") {
+        ctx.roundRect(expX, padTop + chartH - expH, barWidth, expH, [3, 3, 0, 0]);
+      } else {
+        ctx.rect(expX, padTop + chartH - expH, barWidth, expH);
+      }
+      ctx.fill();
+    }
+
+    // Label tháng
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillStyle = m.key === reportSelectedMonth ? "#38bdf8" : "rgba(202, 220, 251, 0.75)";
+    ctx.font = m.key === reportSelectedMonth ? "bold 11px 'Be Vietnam Pro', sans-serif" : "11px 'Be Vietnam Pro', sans-serif";
+    ctx.fillText(m.label, groupCenterX, padTop + chartH + 8);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CASHFLOW BUDGETS & SPENDING LIMITS (NGÂN SÁCH & GIỚI HẠN)
+   ═══════════════════════════════════════════════════════════════ */
+
+const FIREBASE_BUDGETS_PATH = "cashflowBudgets";
+let budgetSelectedMonth = ""; // 'YYYY-MM'
+let userBudgets = {}; // { [monthStr: string]: { [catId: string]: number } }
+let firebaseBudgetsRef = null;
+let isBudgetsFirebaseInitialized = false;
+
+function getBudgetStorageKey() {
+  const profileKey = userProfileKey || "default";
+  return `cashflow_budgets_${profileKey}`;
+}
+
+function loadBudgetsFromStorage() {
+  try {
+    const raw = localStorage.getItem(getBudgetStorageKey());
+    if (raw) {
+      userBudgets = JSON.parse(raw) || {};
+    } else {
+      userBudgets = {};
+    }
+  } catch (e) {
+    console.error("Error loading budgets from storage:", e);
+    userBudgets = {};
+  }
+  initBudgetsFirebase();
+}
+
+function saveBudgetsToStorage() {
+  try {
+    localStorage.setItem(getBudgetStorageKey(), JSON.stringify(userBudgets));
+  } catch (e) {
+    console.error("Error saving budgets to localStorage:", e);
+  }
+  saveBudgetsToFirebase();
+}
+
+function initBudgetsFirebase() {
+  if (!firebaseDb || !userProfileKey) return;
+  try {
+    firebaseBudgetsRef = firebaseDb.ref(`${FIREBASE_BUDGETS_PATH}/${userProfileKey}`);
+    firebaseBudgetsRef.off();
+    firebaseBudgetsRef.on("value", (snap) => {
+      const data = snap.val();
+      if (data && typeof data === "object") {
+        userBudgets = data;
+        localStorage.setItem(getBudgetStorageKey(), JSON.stringify(userBudgets));
+        const modal = document.getElementById("cashflowBudgetModal");
+        if (modal && modal.style.display === "flex") {
+          renderCashflowBudgets();
+        }
+      }
+    });
+    isBudgetsFirebaseInitialized = true;
+  } catch (e) {
+    console.error("Error initBudgetsFirebase:", e);
+  }
+}
+
+function saveBudgetsToFirebase() {
+  if (!firebaseDb || !userProfileKey) return;
+  if (!firebaseBudgetsRef) {
+    firebaseBudgetsRef = firebaseDb.ref(`${FIREBASE_BUDGETS_PATH}/${userProfileKey}`);
+  }
+  firebaseBudgetsRef.set(userBudgets).catch((err) => {
+    console.error("Error saving budgets to Firebase:", err);
+  });
+}
+
+function openCashflowBudgetModal() {
+  const modal = document.getElementById("cashflowBudgetModal");
+  if (!modal) return;
+  if (!budgetSelectedMonth) {
+    budgetSelectedMonth = getCurrentReportMonthKey();
+  }
+  loadBudgetsFromStorage();
+  reloadCashflowEntriesFromCache();
+  toggleBudgetAddForm(false);
+  modal.style.display = "flex";
+  renderCashflowBudgets();
+}
+
+function closeCashflowBudgetModal() {
+  const modal = document.getElementById("cashflowBudgetModal");
+  if (modal) modal.style.display = "none";
+  toggleBudgetAddForm(false);
+}
+
+function changeBudgetMonth(step) {
+  if (!budgetSelectedMonth) budgetSelectedMonth = getCurrentReportMonthKey();
+  const [y, m] = budgetSelectedMonth.split("-").map(Number);
+  const targetDate = new Date(y, m - 1 + step, 1);
+  const newY = targetDate.getFullYear();
+  const newM = String(targetDate.getMonth() + 1).padStart(2, "0");
+  budgetSelectedMonth = `${newY}-${newM}`;
+  toggleBudgetAddForm(false);
+  renderCashflowBudgets();
+}
+
+function goToBudgetCurrentMonth() {
+  budgetSelectedMonth = getCurrentReportMonthKey();
+  toggleBudgetAddForm(false);
+  renderCashflowBudgets();
+}
+
+function renderCashflowBudgets() {
+  if (!budgetSelectedMonth) budgetSelectedMonth = getCurrentReportMonthKey();
+  const [curY, curM] = budgetSelectedMonth.split("-").map(Number);
+  const currentKey = getCurrentReportMonthKey();
+
+  // 1. Month Navigator
+  const labelEl = document.getElementById("budgetMonthLabel");
+  if (labelEl) {
+    labelEl.textContent = `Tháng ${String(curM).padStart(2, "0")}/${curY}`;
+  }
+  const currBtn = document.getElementById("budgetCurrentMonthBtn");
+  if (currBtn) {
+    currBtn.style.display = budgetSelectedMonth === currentKey ? "none" : "inline-block";
+  }
+
+  // 2. Lấy dữ liệu ngân sách & chi tiêu tháng này
+  const monthBudgets = userBudgets[budgetSelectedMonth] || {};
+  const monthExpenses = cashflowEntries.filter((e) => e.type === "expense" && e.date && e.date.startsWith(budgetSelectedMonth));
+
+  // Gom chi tiêu theo category
+  const spentByCat = {};
+  let totalAllMonthExpense = 0;
+  for (const entry of monthExpenses) {
+    const rawCat = String(entry.category || "uncategorized").trim();
+    const amt = Number(entry.amount) || 0;
+    spentByCat[rawCat] = (spentByCat[rawCat] || 0) + amt;
+    totalAllMonthExpense += amt;
+  }
+
+  // Tính tổng hạn mức và tổng đã chi của các danh mục có đặt hạn mức
+  const budgetCatIds = Object.keys(monthBudgets);
+  const totalBudgetLimit = budgetCatIds.reduce((sum, catId) => sum + (Number(monthBudgets[catId]) || 0), 0);
+
+  let totalBudgetSpent = 0;
+  for (const catId of budgetCatIds) {
+    totalBudgetSpent += spentByCat[catId] || 0;
+  }
+
+  // 3. Overall Budget Card
+  const overallCard = document.getElementById("budgetOverallCard");
+  if (overallCard) {
+    if (totalBudgetLimit === 0) {
+      overallCard.innerHTML = `
+        <div class="budget-overall-header">
+          <span class="budget-overall-title">Tổng ngân sách tháng</span>
+          <span class="budget-status-pill neutral">Chưa thiết lập</span>
+        </div>
+        <div class="budget-overall-numbers">
+          <span class="budget-spent-large">${formatVnd(totalAllMonthExpense)} đ</span>
+          <span class="budget-limit-total">Tổng đã chi tháng này</span>
+        </div>
+        <div class="budget-overall-footer">
+          <span class="budget-remaining-text">Chưa đặt hạn mức nào cho tháng này. Nhấn "Thêm hạn mức" bên dưới để quản lý!</span>
+        </div>
+      `;
+    } else {
+      const overallPct = (totalBudgetSpent / totalBudgetLimit) * 100;
+      const isOver = totalBudgetSpent > totalBudgetLimit;
+      const remaining = totalBudgetLimit - totalBudgetSpent;
+
+      let statusClass = "safe";
+      let statusText = "Trong tầm kiểm soát";
+      if (isOver) {
+        statusClass = "danger";
+        statusText = "Vượt ngân sách!";
+      } else if (overallPct >= 80) {
+        statusClass = "warning";
+        statusText = "Cảnh báo chạm ngưỡng";
+      }
+
+      const barPct = Math.min(100, overallPct);
+
+      overallCard.innerHTML = `
+        <div class="budget-overall-header">
+          <span class="budget-overall-title">Tổng ngân sách tháng</span>
+          <span class="budget-status-pill ${statusClass}">
+            <i class="fi ${isOver ? "fi-rr-triangle-warning" : "fi-rr-shield-check"}"></i>
+            <span>${statusText}</span>
+          </span>
+        </div>
+        <div class="budget-overall-numbers">
+          <span class="budget-spent-large">${formatVnd(totalBudgetSpent)} đ</span>
+          <span class="budget-limit-total">/ ${formatVnd(totalBudgetLimit)} đ (${overallPct.toFixed(1)}%)</span>
+        </div>
+        <div class="budget-progress-track">
+          <div class="budget-progress-bar ${statusClass}" style="width: ${barPct}%;"></div>
+        </div>
+        <div class="budget-overall-footer">
+          <span class="budget-remaining-text ${statusClass}">
+            ${isOver ? `Đã vượt: <strong>+${formatVnd(Math.abs(remaining))} đ</strong>` : `Còn lại: <strong>${formatVnd(remaining)} đ</strong>`}
+          </span>
+          <span class="budget-limit-total">${budgetCatIds.length} nhóm áp dụng</span>
+        </div>
+      `;
+    }
+  }
+
+  // 4. Banner sao chép từ tháng trước
+  const copyBanner = document.getElementById("budgetCopyBanner");
+  if (copyBanner) {
+    if (budgetCatIds.length === 0) {
+      const prevDate = new Date(curY, curM - 2, 1);
+      const prevKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+      const prevBudgets = userBudgets[prevKey] || {};
+      if (Object.keys(prevBudgets).length > 0) {
+        copyBanner.style.display = "flex";
+      } else {
+        copyBanner.style.display = "none";
+      }
+    } else {
+      copyBanner.style.display = "none";
+    }
+  }
+
+  // 5. Render danh sách hạn mức từng danh mục
+  const listEl = document.getElementById("budgetItemsList");
+  if (listEl) {
+    if (budgetCatIds.length === 0) {
+      listEl.innerHTML = `
+        <div class="budget-empty-state">
+          <i class="fi fi-rr-target" style="font-size: 28px; color: #fbbf24; display: block; margin-bottom: 8px;"></i>
+          <span>Tháng này chưa có hạn mức danh mục nào.</span>
+          <div style="margin-top: 8px;">
+            <button type="button" class="budget-btn-add-trigger" onclick="toggleBudgetAddForm(true)">
+              <i class="fi fi-rr-plus"></i><span>Thêm hạn mức đầu tiên</span>
+            </button>
+          </div>
+        </div>
+      `;
+    } else {
+      listEl.innerHTML = budgetCatIds
+        .map((catId) => {
+          const limit = Number(monthBudgets[catId]) || 0;
+          const spent = spentByCat[catId] || 0;
+          const catName = getCashflowCategoryLabel("expense", catId);
+          const pct = limit > 0 ? (spent / limit) * 100 : 0;
+          const isOver = spent > limit;
+          const remaining = limit - spent;
+          const barPct = Math.min(100, pct);
+
+          let statusClass = "safe";
+          let badgeText = `Còn ${formatVnd(remaining)} đ`;
+          if (isOver) {
+            statusClass = "danger";
+            badgeText = `Vượt +${formatVnd(Math.abs(remaining))} đ`;
+          } else if (pct >= 80) {
+            statusClass = "warning";
+            badgeText = `Sắp chạm (còn ${formatVnd(remaining)} đ)`;
+          }
+
+          return `
+            <div class="budget-item-card ${isOver ? "is-over" : ""}">
+              <div class="budget-item-header">
+                <span class="budget-item-cat">
+                  <span class="budget-item-icon"><i class="fi fi-rr-tag"></i></span>
+                  <span>${escapeHtml(catName)}</span>
+                </span>
+                <div class="budget-item-actions">
+                  <button type="button" class="budget-action-btn" title="Chỉnh sửa hạn mức" onclick="editBudgetItem('${escapeHtml(catId)}', ${limit})">
+                    <i class="fi fi-rr-edit"></i>
+                  </button>
+                  <button type="button" class="budget-action-btn delete" title="Xóa hạn mức" onclick="deleteBudgetItem('${escapeHtml(catId)}')">
+                    <i class="fi fi-rr-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="budget-item-amounts">
+                <span class="budget-item-spent">Đã chi: ${formatVnd(spent)} đ</span>
+                <span class="budget-item-limit">Hạn mức: ${formatVnd(limit)} đ</span>
+              </div>
+              <div class="budget-item-progress-track">
+                <div class="budget-item-progress-bar ${statusClass}" style="width: ${barPct}%;"></div>
+              </div>
+              <div class="budget-item-footer">
+                <span class="budget-item-pct ${statusClass}">${pct.toFixed(1)}%</span>
+                <span class="budget-item-badge ${statusClass}">${badgeText}</span>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+  }
+
+  // 6. Cập nhật dropdown danh mục trong form
+  populateBudgetCategoryDropdown();
+}
+
+function populateBudgetCategoryDropdown() {
+  const select = document.getElementById("budgetCategorySelect");
+  if (!select) return;
+  const categories = cashflowCategories.expense && cashflowCategories.expense.length > 0
+    ? cashflowCategories.expense
+    : (getDefaultCategories().expense || []);
+
+  const editCatId = document.getElementById("budgetEditCatId")?.value || "";
+
+  select.innerHTML = categories
+    .map((cat) => {
+      const id = cat.id || cat.name;
+      const name = cat.name || id;
+      const isSelected = editCatId && (editCatId === id || editCatId === name);
+      return `<option value="${escapeHtml(id)}" ${isSelected ? "selected" : ""}>${escapeHtml(name)}</option>`;
+    })
+    .join("");
+}
+
+function toggleBudgetAddForm(open) {
+  const formCard = document.getElementById("budgetFormCard");
+  if (!formCard) return;
+  if (open) {
+    document.getElementById("budgetFormTitle").textContent = "Thêm hạn mức danh mục";
+    document.getElementById("budgetEditCatId").value = "";
+    document.getElementById("budgetLimitInput").value = "";
+    populateBudgetCategoryDropdown();
+    formCard.style.display = "flex";
+    setTimeout(() => {
+      document.getElementById("budgetLimitInput")?.focus();
+    }, 100);
+  } else {
+    formCard.style.display = "none";
+    document.getElementById("budgetEditCatId").value = "";
+    document.getElementById("budgetLimitInput").value = "";
+  }
+}
+
+function handleSaveBudgetItem(event) {
+  event.preventDefault();
+  const catSelect = document.getElementById("budgetCategorySelect");
+  const limitInput = document.getElementById("budgetLimitInput");
+  if (!catSelect || !limitInput) return;
+
+  const catId = catSelect.value.trim();
+  const rawLimit = limitInput.value.replace(/\D/g, "");
+  const limit = Number(rawLimit) || 0;
+
+  if (!catId) {
+    showToast("Vui lòng chọn danh mục");
+    return;
+  }
+  if (limit <= 0) {
+    showToast("Vui lòng nhập số tiền hạn mức lớn hơn 0");
+    return;
+  }
+
+  if (!budgetSelectedMonth) budgetSelectedMonth = getCurrentReportMonthKey();
+  if (!userBudgets[budgetSelectedMonth]) {
+    userBudgets[budgetSelectedMonth] = {};
+  }
+
+  userBudgets[budgetSelectedMonth][catId] = limit;
+  saveBudgetsToStorage();
+  renderCashflowBudgets();
+  toggleBudgetAddForm(false);
+  showToast("Đã lưu hạn mức ngân sách!");
+}
+
+function editBudgetItem(catId, currentLimit) {
+  const formCard = document.getElementById("budgetFormCard");
+  if (!formCard) return;
+  document.getElementById("budgetFormTitle").textContent = "Chỉnh sửa hạn mức";
+  document.getElementById("budgetEditCatId").value = catId;
+  populateBudgetCategoryDropdown();
+  const select = document.getElementById("budgetCategorySelect");
+  if (select) select.value = catId;
+  const input = document.getElementById("budgetLimitInput");
+  if (input) input.value = formatVnd(currentLimit);
+  formCard.style.display = "flex";
+  input?.focus();
+}
+
+function deleteBudgetItem(catId) {
+  const catName = getCashflowCategoryLabel("expense", catId);
+  showConfirmPopup(
+    "Xóa hạn mức",
+    `Bạn có chắc chắn muốn xóa hạn mức cho danh mục "${catName}"?`,
+    "Xóa",
+    () => {
+      if (userBudgets[budgetSelectedMonth]) {
+        delete userBudgets[budgetSelectedMonth][catId];
+        saveBudgetsToStorage();
+        renderCashflowBudgets();
+        showToast("Đã xóa hạn mức danh mục");
+      }
+    }
+  );
+}
+
+function copyBudgetsFromPrevMonth() {
+  if (!budgetSelectedMonth) budgetSelectedMonth = getCurrentReportMonthKey();
+  const [curY, curM] = budgetSelectedMonth.split("-").map(Number);
+  const prevDate = new Date(curY, curM - 2, 1);
+  const prevKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+  const prevBudgets = userBudgets[prevKey];
+
+  if (!prevBudgets || Object.keys(prevBudgets).length === 0) {
+    showToast("Tháng trước chưa có hạn mức để sao chép");
+    return;
+  }
+
+  userBudgets[budgetSelectedMonth] = { ...prevBudgets };
+  saveBudgetsToStorage();
+  renderCashflowBudgets();
+  showToast("Đã sao chép hạn mức từ tháng trước!");
 }
 
 async function openCashflowAllTransactionsModal() {

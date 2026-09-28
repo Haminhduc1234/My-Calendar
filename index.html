@@ -18,7 +18,7 @@
     rel="stylesheet" />
   <!-- Flaticon UIcons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@flaticon/flaticon-uicons/css/all/all.css" />
-  <link rel="stylesheet" href="style.css?v=20260928_submodal_zindex_v2" />
+  <link rel="stylesheet" href="style.css?v=20260928_photo_btn_v7" />
   <link rel="stylesheet" href="family-cookbook.css?v=20260917_search_pos" />
   <link rel="stylesheet" href="family-health.css?v=20260918_cards_layout" />
   <link rel="icon" type="image/png" href="public/favicon.png" />
@@ -40,7 +40,7 @@
         if (sessionStorage.getItem("appLogoutInProgress") === "true") {
           document.documentElement.classList.add("app-is-logging-out");
         }
-      } catch (e) {}
+      } catch (e) { }
     })();
   </script>
 </head>
@@ -65,7 +65,8 @@
   </div>
 
   <!-- Logout Loading Overlay -->
-  <div id="logoutLoadingOverlay" class="logout-loading-overlay" style="display: none;" aria-live="assertive" aria-busy="true">
+  <div id="logoutLoadingOverlay" class="logout-loading-overlay" style="display: none;" aria-live="assertive"
+    aria-busy="true">
     <div class="logout-loading-backdrop"></div>
     <div class="logout-loading-card">
       <div class="logout-loading-spinner-wrap">
@@ -1438,27 +1439,18 @@
                 </div>
               </div>
 
-              <!-- 3 & 4. Danh mục & Ngày giao dịch (Gộp trên 1 hàng) -->
-              <div class="cashflow-form-row">
-                <div class="cashflow-input-item">
-                  <div class="cashflow-field-wrap">
-                    <i class="fi fi-rr-folder cashflow-field-icon"></i>
-                    <select id="cashflowCategory" class="cashflow-custom-select" aria-label="Danh mục thu chi"
-                      title="Chọn danh mục thu chi"></select>
-                    <i class="fi fi-rr-angle-small-down cashflow-select-arrow"></i>
-                  </div>
-                </div>
+              <!-- 3. Khối chọn danh mục thu chi (100% chiều ngang, dạng Tags chọn nhanh + Khác) -->
+              <div class="cashflow-input-item cashflow-category-tags-container">
+                <!-- Select ẩn giữ tương thích 100% với logic code hiện có -->
+                <select id="cashflowCategory" style="display: none;" aria-label="Danh mục thu chi"
+                  title="Chọn danh mục thu chi"></select>
 
-                <div class="cashflow-input-item">
-                  <div class="cashflow-field-wrap">
-                    <i class="fi fi-rr-calendar cashflow-field-icon"></i>
-                    <input type="date" id="cashflowDate" class="cashflow-custom-date" aria-label="Ngày giao dịch"
-                      title="Chọn ngày giao dịch" />
-                  </div>
+                <div class="cashflow-category-chips-grid" id="cashflowCategoryChipsGrid">
+                  <!-- Được tạo động bởi renderCashflowCategoryChips() -->
                 </div>
               </div>
 
-              <!-- 5. Ghi chú -->
+              <!-- 4. Ghi chú -->
               <div class="cashflow-input-item">
                 <div class="cashflow-field-wrap">
                   <i class="fi fi-rr-edit cashflow-field-icon"></i>
@@ -1467,14 +1459,29 @@
                 </div>
               </div>
 
-              <!-- 6. Ảnh đính kèm (Hiển thị riêng) -->
+              <!-- 5. Ngày giao dịch & Nút tải ảnh đính kèm (cùng 1 hàng) -->
               <div class="cashflow-input-item">
-                <div class="cashflow-image-upload-area" id="cashflowImageUploadArea">
-                  <input type="file" id="cashflowImageInput" accept="image/*"
-                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2;" />
-                  <div class="cashflow-image-placeholder" id="cashflowImagePlaceholder">
-                    <i class="fi fi-rr-camera"></i>
+                <div class="cashflow-date-photo-row">
+                  <div class="cashflow-field-wrap cashflow-date-field-wrap" onclick="openCashflowDatePicker(event)">
+                    <i class="fi fi-rr-calendar cashflow-field-icon"></i>
+                    <input type="text" id="cashflowDateDisplay" class="cashflow-custom-date-display"
+                      placeholder="dd/mm/yyyy" readonly aria-label="Ngày giao dịch" title="Chọn ngày giao dịch" />
+                    <input type="date" id="cashflowDate" class="cashflow-custom-date-picker-overlay"
+                      aria-label="Ngày giao dịch" title="Chọn ngày giao dịch" />
+                    <i class="fi fi-rr-angle-small-down cashflow-select-arrow"></i>
                   </div>
+
+                  <label class="cashflow-photo-btn" id="cashflowPhotoBtn" title="Tải ảnh hóa đơn / giao dịch"
+                    for="cashflowImageInput">
+                    <input type="file" id="cashflowImageInput" accept="image/*" style="display: none;" />
+                    <i class="fi fi-rr-camera"></i>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 6. Ảnh đính kèm (chỉ hiển thị khi đã chọn/tải ảnh lên) -->
+              <div class="cashflow-input-item" id="cashflowImageUploadAreaWrapper">
+                <div class="cashflow-image-upload-area" id="cashflowImageUploadArea" style="display: none;">
                   <div class="cashflow-image-preview" id="cashflowImagePreview" style="display: none">
                     <img id="cashflowImageImg" src="" alt="Ảnh mô tả" />
                     <button type="button" class="cashflow-image-remove" onclick="removeCashflowImage()"
@@ -1515,6 +1522,31 @@
       </div>
     </div>
 
+    <!-- Popup nhỏ chọn tất cả danh mục (Tag Khác) -->
+    <div id="cashflowCategoryPickerModal" class="modal cashflow-submodal" style="display: none;"
+      onclick="if(event.target===this) closeCashflowCategoryPickerModal()">
+      <div class="cashflow-cat-picker-dialog">
+        <div class="cashflow-cat-picker-header">
+          <div class="cashflow-cat-picker-title">
+            <i class="fi fi-rr-apps"></i>
+            <span id="cashflowCatPickerTitle">Tất cả danh mục chi tiêu</span>
+          </div>
+          <button type="button" class="cashflow-cat-picker-close" onclick="closeCashflowCategoryPickerModal()"
+            aria-label="Đóng" title="Đóng">
+            <i class="fi fi-rr-cross"></i>
+          </button>
+        </div>
+        <div class="cashflow-cat-picker-list" id="cashflowCatPickerList">
+          <!-- Rendered dynamically -->
+        </div>
+        <div class="cashflow-cat-picker-footer">
+          <button type="button" class="cashflow-cat-picker-manage-btn" onclick="openCashflowCategoryModalFromPicker()">
+            <i class="fi fi-rr-settings"></i> <span>Quản lý danh mục...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Monthly Financial Report Modal -->
     <div id="cashflowMonthlyReportModal" class="modal cashflow-submodal" style="display: none"
       onclick="if (event.target === this) closeCashflowMonthlyReportModal()">
@@ -1526,7 +1558,8 @@
             </div>
             <div>
               <h3 class="cashflow-submodal-title">Báo cáo tài chính tháng</h3>
-              <p class="cashflow-submodal-subtitle" id="reportSubtitle">Tổng kết, so sánh kỳ trước & đánh giá tài chính</p>
+              <p class="cashflow-submodal-subtitle" id="reportSubtitle">Tổng kết, so sánh kỳ trước & đánh giá tài chính
+              </p>
             </div>
           </div>
           <button type="button" class="cashflow-submodal-close" onclick="closeCashflowMonthlyReportModal()"
@@ -1540,7 +1573,8 @@
             </button>
             <div class="report-month-title-wrap">
               <span class="report-month-label" id="reportMonthLabel">Tháng --/----</span>
-              <button type="button" class="report-current-month-btn" id="reportCurrentMonthBtn" onclick="goToReportCurrentMonth()">Hiện tại</button>
+              <button type="button" class="report-current-month-btn" id="reportCurrentMonthBtn"
+                onclick="goToReportCurrentMonth()">Hiện tại</button>
             </div>
             <button type="button" class="report-month-btn" onclick="changeReportMonth(1)" aria-label="Tháng sau">
               <i class="fi fi-rr-angle-right"></i>
@@ -1633,7 +1667,8 @@
             </button>
             <div class="report-month-title-wrap">
               <span class="report-month-label" id="budgetMonthLabel">Tháng --/----</span>
-              <button type="button" class="report-current-month-btn" id="budgetCurrentMonthBtn" onclick="goToBudgetCurrentMonth()">Hiện tại</button>
+              <button type="button" class="report-current-month-btn" id="budgetCurrentMonthBtn"
+                onclick="goToBudgetCurrentMonth()">Hiện tại</button>
             </div>
             <button type="button" class="report-month-btn" onclick="changeBudgetMonth(1)" aria-label="Tháng sau">
               <i class="fi fi-rr-angle-right"></i>
@@ -1659,7 +1694,8 @@
                 <i class="fi fi-rr-apps"></i>
                 <span>Hạn mức theo danh mục</span>
               </div>
-              <button type="button" class="budget-btn-add-trigger" id="budgetAddTriggerBtn" onclick="toggleBudgetAddForm(true)">
+              <button type="button" class="budget-btn-add-trigger" id="budgetAddTriggerBtn"
+                onclick="toggleBudgetAddForm(true)">
                 <i class="fi fi-rr-plus"></i>
                 <span>Thêm hạn mức</span>
               </button>
@@ -1671,7 +1707,8 @@
           <div class="budget-form-card" id="budgetFormCard" style="display: none;">
             <div class="budget-form-header">
               <h4 class="budget-form-title" id="budgetFormTitle">Thêm hạn mức danh mục</h4>
-              <button type="button" class="budget-form-close-btn" onclick="toggleBudgetAddForm(false)" aria-label="Đóng form">
+              <button type="button" class="budget-form-close-btn" onclick="toggleBudgetAddForm(false)"
+                aria-label="Đóng form">
                 <i class="fi fi-rr-cross-small"></i>
               </button>
             </div>
@@ -2063,106 +2100,112 @@
       </div>
     </div>
 
-    <!-- Cashflow Category Modal -->
-    <div id="cashflowCategoryModal" class="modal">
-      <div class="modal-content event-modal-wrapper" style="max-width: 420px">
-        <div class="event-modal-header">
-          <div>
-            <h3>Quản lý danh mục</h3>
-          </div>
-          <button class="modal-close event-modal-close" onclick="closeCashflowCategoryModal()">
-            ×
-          </button>
-        </div>
-        <div style="padding: 20px">
-          <div style="
-                display: flex;
-                gap: 12px;
-                margin-bottom: 16px;
-                align-items: center;
-              ">
-            <select id="cashflowCategoryType" style="
-                  flex: 1;
-                  padding: 12px;
-                  border-radius: 10px;
-                  border: 1px solid #e5e7eb;
-                  background: white;
-                  font-size: 16px;
-                  cursor: pointer;
-                " onchange="renderCategoryList()">
-              <option value="income">📈 Loại thu</option>
-              <option value="expense">📉 Loại chi</option>
-            </select>
-            <button onclick="openAddCategoryForm()" style="
-                  padding: 12px 20px;
-                  background: #10b981;
-                  color: white;
-                  border: none;
-                  border-radius: 10px;
-                  cursor: pointer;
-                  font-weight: 600;
-                  font-size: 14px;
-                  white-space: nowrap;
-                ">
-              + Thêm mới
-            </button>
-          </div>
-          <div id="cashflowCategoryList" style="
-                max-height: 360px;
-                overflow-y: auto;
-                border: 1px solid #e5e7eb;
-                border-radius: 12px;
-                background: #fafafa;
-              "></div>
-          <div id="cashflowCategoryForm" style="
-                display: none;
-                margin-top: 16px;
-                padding-top: 16px;
-                border-top: 2px dashed #e5e7eb;
-              ">
-            <input type="hidden" id="editingCategoryId" />
-            <input type="text" id="newCategoryName" placeholder="Nhập tên danh mục mới" style="
-                  width: 100%;
-                  padding: 12px 14px;
-                  margin-bottom: 12px;
-                  box-sizing: border-box;
-                  border-radius: 10px;
-                  border: 1px solid #e5e7eb;
-                  font-size: 16px;
-                " />
-            <div style="display: flex; gap: 10px; justify-content: flex-end">
-              <button onclick="cancelCategoryForm()" style="
-                    padding: 10px 18px;
-                    border-radius: 8px;
-                    border: 1px solid #d1d5db;
-                    background: white;
-                    cursor: pointer;
-                    font-size: 14px;
-                  ">
-                Hủy
-              </button>
-              <button onclick="saveCategory()" style="
-                    padding: 10px 18px;
-                    background: #10b981;
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-weight: 600;
-                    font-size: 14px;
-                  ">
-                Lưu
-              </button>
+    <!-- Cashflow Category Modal (Đồng bộ giao diện Thu Chi) -->
+    <div id="cashflowCategoryModal" class="modal cashflow-submodal" style="display: none;"
+      onclick="if (event.target === this) closeCashflowCategoryModal()">
+      <div class="cashflow-submodal-dialog cashflow-cat-manager-dialog" style="max-width: 520px;">
+        <div class="cashflow-submodal-header">
+          <div class="cashflow-submodal-header-left">
+            <div class="cashflow-submodal-icon is-category">
+              <i class="fi fi-rr-apps"></i>
+            </div>
+            <div>
+              <h3 class="cashflow-submodal-title">Quản lý danh mục</h3>
+              <p class="cashflow-submodal-subtitle">Tùy chỉnh danh mục & biểu tượng thu chi</p>
             </div>
           </div>
-          <p style="
-                text-align: center;
-                color: #9ca3af;
-                font-size: 12px;
-                margin-top: 12px;
-              ">
-            Kéo thả để sắp xếp thứ tự
+          <button type="button" class="cashflow-submodal-close" onclick="closeCashflowCategoryModal()" aria-label="Đóng"
+            title="Đóng">×</button>
+        </div>
+
+        <div class="cashflow-submodal-body cashflow-cat-manager-body">
+          <!-- Top controls: Type Segmented Pills + Add Button -->
+          <div class="cashflow-cat-top-bar">
+            <!-- Hidden select to keep existing code calling document.getElementById("cashflowCategoryType").value working 100% -->
+            <select id="cashflowCategoryType" style="display: none;" onchange="renderCategoryList()">
+              <option value="expense">Loại chi</option>
+              <option value="income">Loại thu</option>
+            </select>
+
+            <div class="cashflow-cat-type-segmented">
+              <button type="button" class="cashflow-cat-type-btn active" id="cashflowCatTypeBtnExpense"
+                onclick="setCashflowCategoryManagerType('expense')">
+                <i class="fi fi-rr-arrow-trend-down"></i> <span>Loại chi</span>
+              </button>
+              <button type="button" class="cashflow-cat-type-btn" id="cashflowCatTypeBtnIncome"
+                onclick="setCashflowCategoryManagerType('income')">
+                <i class="fi fi-rr-arrow-trend-up"></i> <span>Loại thu</span>
+              </button>
+            </div>
+
+            <button type="button" class="cashflow-cat-add-btn" onclick="openAddCategoryForm()">
+              <i class="fi fi-rr-plus"></i> <span>Thêm mới</span>
+            </button>
+          </div>
+
+          <!-- Category List Container -->
+          <div id="cashflowCategoryList" class="cashflow-cat-manager-list"></div>
+
+          <p class="cashflow-cat-drag-hint">
+            <i class="fi fi-rr-cursor"></i> Kéo thả để sắp xếp thứ tự hiển thị
           </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal con chỉnh sửa / thêm mới danh mục (Hiển thị đè lên trên) -->
+    <div id="cashflowCategoryEditModal" class="modal cashflow-submodal" style="display: none;"
+      onclick="if (event.target === this) closeCashflowCategoryEditModal()">
+      <div class="cashflow-submodal-dialog cashflow-cat-edit-dialog" style="max-width: 440px;">
+        <div class="cashflow-submodal-header">
+          <div class="cashflow-submodal-header-left">
+            <div class="cashflow-submodal-icon is-cat-edit" id="cashflowCatEditHeaderIcon">
+              <i class="fi fi-rr-edit" id="cashflowCatEditHeaderIconGlyph"></i>
+            </div>
+            <div>
+              <h3 class="cashflow-submodal-title" id="cashflowCatFormTitle">Thêm danh mục mới</h3>
+              <p class="cashflow-submodal-subtitle" id="cashflowCatFormSubtitle">Đặt tên và chọn biểu tượng hiển thị</p>
+            </div>
+          </div>
+          <button type="button" class="cashflow-submodal-close" onclick="closeCashflowCategoryEditModal()"
+            aria-label="Đóng" title="Đóng">×</button>
+        </div>
+
+        <div class="cashflow-submodal-body cashflow-cat-edit-body">
+          <form id="cashflowCategoryForm" onsubmit="event.preventDefault(); saveCategory();">
+            <input type="hidden" id="editingCategoryId" />
+            <input type="hidden" id="newCategoryIcon" value="fi-rr-folder" />
+
+            <div class="cashflow-cat-input-group">
+              <label class="cashflow-cat-field-label">Tên danh mục <span class="cashflow-cat-required">*</span></label>
+              <div class="cashflow-cat-name-input-wrap">
+                <div class="cashflow-cat-preview-icon" id="cashflowCatPreviewIcon" title="Biểu tượng đã chọn">
+                  <i class="fi fi-rr-folder" id="cashflowCatPreviewIconGlyph"></i>
+                </div>
+                <input type="text" id="newCategoryName" placeholder="Ví dụ: Cà phê, Xăng xe, Mua sắm..."
+                  class="cashflow-cat-name-input" maxlength="40" autocomplete="off"
+                  oninput="onCategoryNameInput(this.value)" />
+              </div>
+            </div>
+
+            <div class="cashflow-cat-icon-section">
+              <div class="cashflow-cat-icon-label-row">
+                <span class="cashflow-cat-field-label">Chọn biểu tượng:</span>
+                <span class="cashflow-cat-icon-count">38 biểu tượng</span>
+              </div>
+              <div class="cashflow-cat-icon-grid" id="cashflowCatIconGrid">
+                <!-- Danh sách 38 icon mặc định -->
+              </div>
+            </div>
+
+            <div class="cashflow-cat-edit-actions">
+              <button type="button" onclick="closeCashflowCategoryEditModal()"
+                class="cashflow-cat-btn-cancel">Hủy</button>
+              <button type="submit" class="cashflow-cat-btn-save">
+                <i class="fi fi-rr-check"></i> <span id="cashflowCatSaveBtnText">Lưu danh mục</span>
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -3860,7 +3903,7 @@
   <script src="senior-mode.js?v=20260916"></script>
   <script src="family-cookbook.js?v=20260917_search_pos"></script>
   <script src="family-health.js?v=20260918_latest_log_sync"></script>
-  <script src="script.js?v=20260928_report_budget_v1"></script>
+  <script src="script.js?v=20260928_photo_btn_v7"></script>
   <!-- <script src="MapSearch.js"></script> -->
 
   <!-- <script>

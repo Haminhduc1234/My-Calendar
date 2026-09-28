@@ -86,7 +86,9 @@ function getOpenModalId() {
     "taskFormModal",
     "cashflowQuickViewModal",
     "eventQuickViewModal",
+    "cashflowCategoryEditModal",
     "cashflowCategoryModal",
+    "cashflowCategoryPickerModal",
     "cashflowMonthlyReportModal",
     "cashflowBudgetModal",
   ];
@@ -863,7 +865,7 @@ window.showLogoutLoadingOverlay = showLogoutLoadingOverlay;
 function hideLogoutLoadingOverlay() {
   try {
     sessionStorage.removeItem("appLogoutInProgress");
-  } catch (e) {}
+  } catch (e) { }
 
   const overlay = document.getElementById("logoutLoadingOverlay");
   if (!overlay) {
@@ -901,10 +903,10 @@ try {
       }
     }, 4500);
   }
-} catch (e) {}
+} catch (e) { }
 
-function showLoginForm() { 
-  switchAuthTab("login"); 
+function showLoginForm() {
+  switchAuthTab("login");
   if (sessionStorage.getItem("appLogoutInProgress") === "true" || document.documentElement.classList.contains("app-is-logging-out")) {
     hideLogoutLoadingOverlay();
   }
@@ -933,7 +935,7 @@ function logoutAndStartFresh() {
       showLogoutLoadingOverlay("Đang làm mới dữ liệu...", "Đang dọn dẹp dữ liệu phiên cũ...");
       try {
         sessionStorage.setItem("appLogoutInProgress", "true");
-      } catch (e) {}
+      } catch (e) { }
 
       try {
         if (typeof unregisterDeviceNotificationToken === "function") {
@@ -942,7 +944,7 @@ function logoutAndStartFresh() {
             new Promise((r) => setTimeout(r, 1000)),
           ]);
         }
-      } catch (e) {}
+      } catch (e) { }
 
       localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
       localStorage.removeItem("calendarUsername");
@@ -1386,7 +1388,7 @@ function logoutProfileSession() {
       showLogoutLoadingOverlay("Đang đăng xuất...", "Đang xử lý dọn dẹp phiên và bảo mật dữ liệu...");
       try {
         sessionStorage.setItem("appLogoutInProgress", "true");
-      } catch (e) {}
+      } catch (e) { }
 
       // Đóng dropdown menu nếu còn mở
       if (typeof closeMoreMenu === "function") {
@@ -1414,7 +1416,7 @@ function logoutProfileSession() {
         if (firebaseProfileSettingsRef) firebaseProfileSettingsRef.off();
         if (firebaseRecurringRef) firebaseRecurringRef.off();
         if (firebaseFundsRef) firebaseFundsRef.off();
-      } catch (e) {}
+      } catch (e) { }
 
       // 4. Xóa thông tin đăng nhập trong localStorage
       localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
@@ -4015,6 +4017,9 @@ function closeAllModals() {
     "cashflowAllTransactionsModal",
     "cashflowMonthlyReportModal",
     "cashflowBudgetModal",
+    "cashflowCategoryPickerModal",
+    "cashflowCategoryEditModal",
+    "cashflowCategoryModal",
     "currencyModal",
     "fundsModal",
     "fundModal",
@@ -4197,7 +4202,10 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
       if (dKey) {
         const isoDate = dateKeyToIsoDate(dKey) || dKey;
         const dateInput = document.getElementById("cashflowDate");
-        if (dateInput) dateInput.value = isoDate;
+        if (dateInput) {
+          dateInput.value = isoDate;
+          syncCashflowDateDisplay();
+        }
       }
     }
     return;
@@ -11723,6 +11731,93 @@ function getTodayIsoDate() {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function formatCashflowDisplayDate(isoStr) {
+  if (!isoStr) return "";
+  const parts = String(isoStr).split("-");
+  if (parts.length === 3) {
+    const [yyyy, mm, dd] = parts;
+    if (yyyy && mm && dd) {
+      return `${String(dd).padStart(2, "0")}/${String(mm).padStart(2, "0")}/${yyyy}`;
+    }
+  }
+  return isoStr;
+}
+
+function syncCashflowDateDisplay() {
+  const dateInput = document.getElementById("cashflowDate");
+  const displayInput = document.getElementById("cashflowDateDisplay");
+  if (dateInput && displayInput) {
+    displayInput.value = formatCashflowDisplayDate(dateInput.value);
+  }
+}
+
+function openCashflowDatePicker(e) {
+  if (e && e.target && e.target.id === "cashflowDate") {
+    return;
+  }
+  const dateInput = document.getElementById("cashflowDate");
+  if (!dateInput) return;
+  if (typeof dateInput.showPicker === "function") {
+    try {
+      dateInput.showPicker();
+      return;
+    } catch (err) { }
+  }
+  try {
+    dateInput.focus();
+  } catch (err) { }
+}
+
+function initCashflowDateFormatted() {
+  const dateInput = document.getElementById("cashflowDate");
+  const displayInput = document.getElementById("cashflowDateDisplay");
+  if (!dateInput || !displayInput) return;
+
+  if (!dateInput._hasFormattedInit) {
+    dateInput._hasFormattedInit = true;
+
+    // Intercept .value setter so any programmatic assignment automatically updates display
+    const nativeDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
+    if (nativeDescriptor && nativeDescriptor.set) {
+      Object.defineProperty(dateInput, "value", {
+        get() {
+          return nativeDescriptor.get.call(this);
+        },
+        set(val) {
+          nativeDescriptor.set.call(this, val);
+          syncCashflowDateDisplay();
+        },
+        configurable: true
+      });
+    }
+
+    dateInput.addEventListener("change", syncCashflowDateDisplay);
+    dateInput.addEventListener("input", syncCashflowDateDisplay);
+
+    dateInput.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (typeof dateInput.showPicker === "function") {
+        try {
+          dateInput.showPicker();
+        } catch (err) { }
+      }
+    });
+
+    dateInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault();
+        if (typeof dateInput.showPicker === "function") {
+          try {
+            dateInput.showPicker();
+          } catch (err) { }
+        }
+      }
+    });
+  }
+
+  syncCashflowDateDisplay();
+}
+
 async function openCashflowModal() {
   closeAllModals();
   const modal = document.getElementById("cashflowModal");
@@ -11731,6 +11826,8 @@ async function openCashflowModal() {
   if (dateInput && !dateInput.value) {
     dateInput.value = getTodayIsoDate();
   }
+  initCashflowDateFormatted();
+  syncCashflowDateDisplay();
 
   restoreCashflowChartMonths();
   applyCashflowMonthSelectValue();
@@ -12094,6 +12191,7 @@ function startCashflowEdit(id) {
   editingCashflowId = id;
 
   document.getElementById("cashflowDate").value = entry.date;
+  syncCashflowDateDisplay();
   setCashflowType(entry.type);
   updateCashflowCategoryDropdowns();
   document.getElementById("cashflowAmount").value =
@@ -12105,6 +12203,7 @@ function startCashflowEdit(id) {
   if (entry.category) {
     document.getElementById("cashflowCategory").value = entry.category;
   }
+  renderCashflowCategoryChips();
 
   syncCashflowFormMode();
 
@@ -12134,7 +12233,6 @@ function cancelCashflowEdit() {
 function initCashflowImageUpload() {
   const uploadArea = document.getElementById("cashflowImageUploadArea");
   const fileInput = document.getElementById("cashflowImageInput");
-  const placeholder = document.getElementById("cashflowImagePlaceholder");
   const preview = document.getElementById("cashflowImagePreview");
   const previewImg = document.getElementById("cashflowImageImg");
   const removeBtn = document.querySelector(".cashflow-image-remove");
@@ -12158,7 +12256,7 @@ function initCashflowImageUpload() {
       return;
     }
 
-    placeholder.style.display = "none";
+    uploadArea.style.display = "block";
     preview.style.display = "none";
     const loadingEl = document.createElement("div");
     loadingEl.className = "cashflow-image-loading";
@@ -12200,19 +12298,27 @@ function initCashflowImageUpload() {
 
         previewImg.src = compressed;
         preview.style.display = "flex";
+        uploadArea.style.display = "block";
         uploadArea.classList.add("has-image");
+
+        const photoBtn = document.getElementById("cashflowPhotoBtn");
+        if (photoBtn) photoBtn.classList.add("has-image");
       };
       img.onerror = () => {
         if (loadingEl.parentNode) loadingEl.remove();
         previewImg.src = event.target.result;
         preview.style.display = "flex";
+        uploadArea.style.display = "block";
         uploadArea.classList.add("has-image");
+
+        const photoBtn = document.getElementById("cashflowPhotoBtn");
+        if (photoBtn) photoBtn.classList.add("has-image");
       };
       img.src = event.target.result;
     };
     reader.onerror = () => {
       if (loadingEl.parentNode) loadingEl.remove();
-      placeholder.style.display = "flex";
+      uploadArea.style.display = "none";
       alert("Không thể đọc file ảnh. Vui lòng thử lại.");
     };
     reader.readAsDataURL(file);
@@ -12222,15 +12328,19 @@ function initCashflowImageUpload() {
 function removeCashflowImage() {
   const uploadArea = document.getElementById("cashflowImageUploadArea");
   const fileInput = document.getElementById("cashflowImageInput");
-  const placeholder = document.getElementById("cashflowImagePlaceholder");
   const preview = document.getElementById("cashflowImagePreview");
   const previewImg = document.getElementById("cashflowImageImg");
 
   if (fileInput) fileInput.value = "";
   if (previewImg) previewImg.src = "";
-  if (placeholder) placeholder.style.display = "flex";
   if (preview) preview.style.display = "none";
-  if (uploadArea) uploadArea.classList.remove("has-image");
+  if (uploadArea) {
+    uploadArea.style.display = "none";
+    uploadArea.classList.remove("has-image");
+  }
+
+  const photoBtn = document.getElementById("cashflowPhotoBtn");
+  if (photoBtn) photoBtn.classList.remove("has-image");
 }
 
 function getCashflowImageData() {
@@ -12243,15 +12353,18 @@ function getCashflowImageData() {
 
 function setCashflowImageData(imageData) {
   const uploadArea = document.getElementById("cashflowImageUploadArea");
-  const placeholder = document.getElementById("cashflowImagePlaceholder");
   const preview = document.getElementById("cashflowImagePreview");
   const previewImg = document.getElementById("cashflowImageImg");
+  const photoBtn = document.getElementById("cashflowPhotoBtn");
 
   if (imageData && imageData.trim() && imageData.startsWith("data:")) {
     if (previewImg) previewImg.src = imageData;
-    if (placeholder) placeholder.style.display = "none";
     if (preview) preview.style.display = "flex";
-    if (uploadArea) uploadArea.classList.add("has-image");
+    if (uploadArea) {
+      uploadArea.style.display = "block";
+      uploadArea.classList.add("has-image");
+    }
+    if (photoBtn) photoBtn.classList.add("has-image");
   } else {
     removeCashflowImage();
   }
@@ -12260,6 +12373,7 @@ function setCashflowImageData(imageData) {
 function resetCashflowForm() {
   editingCashflowId = "";
   document.getElementById("cashflowDate").value = getTodayIsoDate();
+  syncCashflowDateDisplay();
   setCashflowType("expense");
   updateCashflowCategoryDropdowns();
   document.getElementById("cashflowAmount").value = "";
@@ -13377,10 +13491,10 @@ function renderCashflowMonthlyReport() {
       savingsRate >= 30
         ? "Xuất sắc"
         : savingsRate >= 15
-        ? "Tốt"
-        : savingsRate > 0
-        ? "Thấp"
-        : "Thâm hụt";
+          ? "Tốt"
+          : savingsRate > 0
+            ? "Thấp"
+            : "Thâm hụt";
     kpiGrid.innerHTML = `
       <div class="report-kpi-card is-income">
         <div class="report-kpi-header"><i class="fi fi-rr-arrow-down-left"></i><span>Tổng Thu</span></div>
@@ -15106,7 +15220,7 @@ function setCashflowChartRange(range) {
   cashflowChartRange = range;
   try {
     localStorage.setItem(CASHFLOW_CHART_RANGE_KEY, range);
-  } catch {}
+  } catch { }
   const viewport = document.getElementById("cashflowChartViewport");
   if (viewport) viewport._userHasScrolled = false;
   syncCashflowChartRangeUI();
@@ -15936,8 +16050,12 @@ function renderCashflowQuickView() {
   }
 
   const dateInput = document.getElementById("cashflowDate");
-  if (!dateInput.value) {
-    dateInput.value = getTodayIsoDate();
+  if (dateInput) {
+    if (!dateInput.value) {
+      dateInput.value = getTodayIsoDate();
+    }
+    initCashflowDateFormatted();
+    syncCashflowDateDisplay();
   }
 
   syncCashflowFormMode();
@@ -15960,6 +16078,24 @@ function renderCashflowQuickView() {
 
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
+      const editModal = document.getElementById("cashflowCategoryEditModal");
+      if (editModal && editModal.style.display === "flex") {
+        closeCashflowCategoryEditModal();
+        return;
+      }
+
+      const catModal = document.getElementById("cashflowCategoryModal");
+      if (catModal && catModal.style.display === "flex") {
+        closeCashflowCategoryModal();
+        return;
+      }
+
+      const pickerModal = document.getElementById("cashflowCategoryPickerModal");
+      if (pickerModal && pickerModal.style.display === "flex") {
+        closeCashflowCategoryPickerModal();
+        return;
+      }
+
       const qvModal = document.getElementById("cashflowQuickViewModal");
       const atModal = document.getElementById("cashflowAllTransactionsModal");
       const qvVisible = qvModal && qvModal.style.display === "flex";
@@ -15985,6 +16121,62 @@ function renderCashflowQuickView() {
 renderOvertime();
 
 /* ========================== LOẠI THU CHI ========================== */
+const CASHFLOW_DEFAULT_ICONS = [
+  // Ăn uống & Tiêu dùng
+  { icon: "fi-rr-utensils", title: "Ăn uống" },
+  { icon: "fi-rr-coffee", title: "Cà phê / Đồ uống" },
+  { icon: "fi-rr-cup-cake", title: "Ăn vặt / Tráng miệng" },
+  { icon: "fi-rr-shopping-cart", title: "Đi chợ / Siêu thị" },
+  { icon: "fi-rr-shopping-bag", title: "Mua sắm" },
+  { icon: "fi-rr-tshirt", title: "Quần áo / Thời trang" },
+
+  // Đi lại & Di chuyển
+  { icon: "fi-rr-motorcycle", title: "Xe máy" },
+  { icon: "fi-rr-car", title: "Ô tô / Grab" },
+  { icon: "fi-rr-gas-pump", title: "Xăng dầu" },
+  { icon: "fi-rr-bus", title: "Xe buýt / Công cộng" },
+  { icon: "fi-rr-plane", title: "Vé máy bay / Du lịch" },
+
+  // Nhà cửa & Tiện ích
+  { icon: "fi-rr-home", title: "Nhà ở" },
+  { icon: "fi-rr-bolt", title: "Điện" },
+  { icon: "fi-rr-faucet", title: "Nước" },
+  { icon: "fi-rr-wifi", title: "Internet / Wifi" },
+  { icon: "fi-rr-phone-call", title: "Điện thoại / 4G" },
+  { icon: "fi-rr-settings", title: "Sửa chữa / Thiết bị" },
+
+  // Y tế & Sức khỏe
+  { icon: "fi-rr-heart", title: "Sức khỏe" },
+  { icon: "fi-rr-medicine", title: "Thuốc men" },
+  { icon: "fi-rr-hospital", title: "Khám chữa bệnh" },
+  { icon: "fi-rr-dumbbell", title: "Thể thao / Gym" },
+
+  // Học tập & Giải trí
+  { icon: "fi-rr-graduation-cap", title: "Giáo dục / Học tập" },
+  { icon: "fi-rr-book-alt", title: "Sách vở / Tài liệu" },
+  { icon: "fi-rr-gamepad", title: "Trò chơi / Game" },
+  { icon: "fi-rr-film", title: "Phim ảnh / Giải trí" },
+  { icon: "fi-rr-music", title: "Âm nhạc" },
+  { icon: "fi-rr-camera", title: "Nghệ thuật / Chụp ảnh" },
+
+  // Thu nhập & Tài chính
+  { icon: "fi-rr-wallet", title: "Tiền lương" },
+  { icon: "fi-rr-gift", title: "Thưởng / Quà tặng" },
+  { icon: "fi-rr-coins", title: "Phụ cấp / Tiền mặt" },
+  { icon: "fi-rr-chart-line-up", title: "Đầu tư / Lợi nhuận" },
+  { icon: "fi-rr-piggy-bank", title: "Tiết kiệm" },
+  { icon: "fi-rr-credit-card", title: "Thẻ ngân hàng" },
+  { icon: "fi-rr-badge-percent", title: "Lãi suất / Hoa hồng" },
+
+  // Gia đình & Khác
+  { icon: "fi-rr-users-alt", title: "Gia đình" },
+  { icon: "fi-rr-child-head", title: "Con cái" },
+  { icon: "fi-rr-paw", title: "Thú cưng" },
+  { icon: "fi-rr-heart-partner-handshake", title: "Hiếu hỷ / Từ thiện" },
+  { icon: "fi-rr-menu-dots", title: "Khác" },
+  { icon: "fi-rr-folder", title: "Danh mục chung" },
+];
+
 const FIREBASE_CATEGORIES_PATH = "cashflowCategories";
 let firebaseCategoriesRef = null;
 let cashflowCategories = getDefaultCategories();
@@ -15992,23 +16184,23 @@ let cashflowCategories = getDefaultCategories();
 function getDefaultCategories() {
   return {
     income: [
-      { id: "income-1", name: "Lương" },
-      { id: "income-2", name: "Thưởng" },
-      { id: "income-3", name: "Phụ cấp" },
-      { id: "income-4", name: "Thu nhập phụ" },
-      { id: "income-5", name: "Khác" },
+      { id: "income-1", name: "Lương", icon: "fi-rr-wallet" },
+      { id: "income-2", name: "Thưởng", icon: "fi-rr-gift" },
+      { id: "income-3", name: "Phụ cấp", icon: "fi-rr-coins" },
+      { id: "income-4", name: "Thu nhập phụ", icon: "fi-rr-chart-line-up" },
+      { id: "income-5", name: "Khác", icon: "fi-rr-menu-dots" },
     ],
     expense: [
-      { id: "expense-1", name: "Ăn uống" },
-      { id: "expense-2", name: "Đi lại" },
-      { id: "expense-3", name: "Nhà ở" },
-      { id: "expense-4", name: "Điện nước" },
-      { id: "expense-5", name: "Internet/Điện thoại" },
-      { id: "expense-6", name: "Y tế" },
-      { id: "expense-7", name: "Mua sắm" },
-      { id: "expense-8", name: "Giải trí" },
-      { id: "expense-9", name: "Giáo dục" },
-      { id: "expense-10", name: "Khác" },
+      { id: "expense-1", name: "Ăn uống", icon: "fi-rr-utensils" },
+      { id: "expense-2", name: "Đi lại", icon: "fi-rr-car" },
+      { id: "expense-3", name: "Nhà ở", icon: "fi-rr-home" },
+      { id: "expense-4", name: "Điện nước", icon: "fi-rr-bolt" },
+      { id: "expense-5", name: "Internet/Điện thoại", icon: "fi-rr-wifi" },
+      { id: "expense-6", name: "Y tế", icon: "fi-rr-heart" },
+      { id: "expense-7", name: "Mua sắm", icon: "fi-rr-shopping-bag" },
+      { id: "expense-8", name: "Giải trí", icon: "fi-rr-gamepad" },
+      { id: "expense-9", name: "Giáo dục", icon: "fi-rr-graduation-cap" },
+      { id: "expense-10", name: "Khác", icon: "fi-rr-menu-dots" },
     ],
   };
 }
@@ -16083,15 +16275,45 @@ function saveCashflowCategoriesToStorage() {
   saveCashflowCategoriesToFirebase();
 }
 
-function openCashflowCategoryModal() {
-  document.getElementById("cashflowCategoryModal").style.display = "flex";
-  document.getElementById("cashflowCategoryType").value = "income";
+function setCashflowCategoryManagerType(type) {
+  const typeSelect = document.getElementById("cashflowCategoryType");
+  if (typeSelect) typeSelect.value = type;
+
+  const btnExpense = document.getElementById("cashflowCatTypeBtnExpense");
+  const btnIncome = document.getElementById("cashflowCatTypeBtnIncome");
+  if (btnExpense) btnExpense.classList.toggle("active", type === "expense");
+  if (btnIncome) btnIncome.classList.toggle("active", type === "income");
+
   renderCategoryList();
 }
 
+function openCashflowCategoryModal() {
+  const modal = document.getElementById("cashflowCategoryModal");
+  if (!modal) return;
+  modal.style.display = "flex";
+
+  const mainType = document.getElementById("cashflowType")?.value || "expense";
+  setCashflowCategoryManagerType(mainType);
+}
+
 function closeCashflowCategoryModal() {
-  document.getElementById("cashflowCategoryModal").style.display = "none";
-  cancelCategoryForm();
+  const modal = document.getElementById("cashflowCategoryModal");
+  if (modal) modal.style.display = "none";
+  closeCashflowCategoryEditModal();
+}
+
+function openCashflowCategoryEditModal() {
+  const modal = document.getElementById("cashflowCategoryEditModal");
+  if (modal) modal.style.display = "flex";
+}
+
+function closeCashflowCategoryEditModal() {
+  const modal = document.getElementById("cashflowCategoryEditModal");
+  if (modal) modal.style.display = "none";
+  const editId = document.getElementById("editingCategoryId");
+  if (editId) editId.value = "";
+  const nameInput = document.getElementById("newCategoryName");
+  if (nameInput) nameInput.value = "";
 }
 
 let draggedItem = null;
@@ -16127,28 +16349,33 @@ function renderCategoryList() {
 
   list.innerHTML = categories
     .map(
-      (cat, index) => `
+      (cat, index) => {
+        const iconClass = cat.icon || getCashflowCategoryIcon(cat.name, cat.id);
+        return `
     <div 
       draggable="true" 
       data-id="${cat.id}" 
       data-index="${index}"
       data-type="${type}"
-      style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #f0f0f0; cursor: grab; background: white; transition: background 0.15s; user-select: none; -webkit-user-select: none; touch-action: pan-y;"
       class="category-item"
     >
       <button
         type="button"
         data-drag-handle="true"
         aria-label="Kéo để sắp xếp"
-        style="border: none; background: transparent; color: #9ca3af; margin-right: 2px; font-size: 18px; line-height: 1; padding: 6px 4px; cursor: grab; touch-action: none;"
+        class="cat-drag-handle"
       >☰</button>
-      <span style="flex: 1; color: #374151; min-width: 0;">${cat.name}</span>
-      <div style="display: flex; gap: 4px; flex-shrink: 0;">
-        <button onclick="editCategory('${cat.id}')" title="Sửa" style="background: #f3f4f6; border: none; cursor: pointer; padding: 6px 10px; border-radius: 6px; color: #374151; font-size: 13px;">✏️ Sửa</button>
-        <button onclick="deleteCategory('${cat.id}')" title="Xóa" style="background: #fef2f2; border: none; cursor: pointer; padding: 6px 10px; border-radius: 6px; color: #dc2626; font-size: 13px;">🗑️ Xóa</button>
+      <div class="cat-item-icon-box">
+        <i class="fi ${iconClass}"></i>
+      </div>
+      <span class="cat-item-name">${cat.name}</span>
+      <div class="cat-item-actions">
+        <button onclick="editCategory('${cat.id}')" title="Sửa" class="cat-btn-edit">✏️ Sửa</button>
+        <button onclick="deleteCategory('${cat.id}')" title="Xóa" class="cat-btn-delete">🗑️ Xóa</button>
       </div>
     </div>
-  `,
+  `;
+      }
     )
     .join("");
 
@@ -16163,18 +16390,18 @@ function initDragDrop() {
     item.addEventListener("dragstart", function (e) {
       draggedIndex = parseInt(this.dataset.index);
       this.style.opacity = "0.5";
-      this.style.background = "#e0f2fe";
+      this.style.background = "rgba(59, 130, 246, 0.35)";
       e.dataTransfer.effectAllowed = "move";
     });
 
     item.addEventListener("dragover", function (e) {
       e.preventDefault();
       e.dataTransfer.dropEffect = "move";
-      this.style.background = "#bae6fd";
+      this.style.background = "rgba(59, 130, 246, 0.5)";
     });
 
     item.addEventListener("dragleave", function () {
-      this.style.background = "white";
+      this.style.background = "";
     });
 
     item.addEventListener("drop", function (e) {
@@ -16194,7 +16421,7 @@ function initDragDrop() {
     item.addEventListener("dragend", function () {
       list.querySelectorAll(".category-item").forEach((el) => {
         el.style.opacity = "";
-        el.style.background = "white";
+        el.style.background = "";
       });
       draggedIndex = null;
     });
@@ -16295,7 +16522,8 @@ function startCategoryTouchDragging() {
   placeholder.style.visibility = "hidden";
   placeholder.style.height = `${item.offsetHeight}px`;
   placeholder.style.margin = "0";
-  placeholder.style.borderBottom = "1px solid #f0f0f0";
+  placeholder.style.border = "1px dashed rgba(143, 184, 255, 0.3)";
+  placeholder.style.borderRadius = "11px";
 
   categoryTouchDragState.placeholder = placeholder;
 
@@ -16304,9 +16532,9 @@ function startCategoryTouchDragging() {
 
   item.classList.add("category-item-touch-dragging");
   item.style.width = `${item.offsetWidth}px`;
-  item.style.opacity = "0.92";
-  item.style.background = "#e0f2fe";
-  item.style.boxShadow = "0 10px 24px rgba(15, 23, 42, 0.16)";
+  item.style.opacity = "0.95";
+  item.style.background = "rgba(30, 58, 110, 0.95)";
+  item.style.boxShadow = "0 10px 24px rgba(0, 0, 0, 0.5)";
 }
 
 function handleCategoryTouchEnd() {
@@ -16343,7 +16571,7 @@ function resetCategoryTouchDrag() {
   if (item) {
     item.classList.remove("category-item-touch-dragging");
     item.style.opacity = "";
-    item.style.background = "white";
+    item.style.background = "";
     item.style.boxShadow = "";
     item.style.width = "";
     item.style.position = "";
@@ -16376,54 +16604,137 @@ function resetCategoryTouchDrag() {
   categoryTouchDragState.startedFromHandle = false;
 }
 
+function renderCashflowCatIconGrid(activeIcon) {
+  const grid = document.getElementById("cashflowCatIconGrid");
+  if (!grid) return;
+
+  grid.innerHTML = CASHFLOW_DEFAULT_ICONS.map((item) => {
+    const isSelected = item.icon === activeIcon;
+    return `
+      <button type="button" class="cashflow-icon-btn ${isSelected ? "active" : ""}" 
+        onclick="selectCashflowFormIcon('${item.icon}')"
+        title="${item.title}">
+        <i class="fi ${item.icon}"></i>
+      </button>
+    `;
+  }).join("");
+}
+
+function selectCashflowFormIcon(iconClass) {
+  const hiddenInput = document.getElementById("newCategoryIcon");
+  if (hiddenInput) hiddenInput.value = iconClass;
+
+  const previewGlyph = document.getElementById("cashflowCatPreviewIconGlyph");
+  if (previewGlyph) previewGlyph.className = `fi ${iconClass}`;
+
+  renderCashflowCatIconGrid(iconClass);
+}
+
+function onCategoryNameInput(val) {
+  const editingId = document.getElementById("editingCategoryId")?.value;
+  if (!editingId) {
+    const guessed = getCashflowCategoryIcon(val);
+    if (guessed && guessed !== "fi-rr-folder") {
+      selectCashflowFormIcon(guessed);
+    }
+  }
+}
+
 function openAddCategoryForm() {
-  document.getElementById("cashflowCategoryForm").style.display = "block";
-  document.getElementById("editingCategoryId").value = "";
-  document.getElementById("newCategoryName").value = "";
-  document.getElementById("newCategoryName").focus();
+  const formTitle = document.getElementById("cashflowCatFormTitle");
+  if (formTitle) formTitle.innerText = "Thêm danh mục mới";
+
+  const formSubtitle = document.getElementById("cashflowCatFormSubtitle");
+  if (formSubtitle) formSubtitle.innerText = "Đặt tên và chọn biểu tượng hiển thị";
+
+  const saveBtnText = document.getElementById("cashflowCatSaveBtnText");
+  if (saveBtnText) saveBtnText.innerText = "Thêm danh mục";
+
+  const editIcon = document.getElementById("cashflowCatEditHeaderIconGlyph");
+  if (editIcon) editIcon.className = "fi fi-rr-plus";
+
+  const editId = document.getElementById("editingCategoryId");
+  if (editId) editId.value = "";
+
+  const nameInput = document.getElementById("newCategoryName");
+  if (nameInput) nameInput.value = "";
+
+  selectCashflowFormIcon("fi-rr-folder");
+  openCashflowCategoryEditModal();
+
+  if (nameInput) {
+    setTimeout(() => nameInput.focus(), 80);
+  }
 }
 
 function cancelCategoryForm() {
-  document.getElementById("cashflowCategoryForm").style.display = "none";
-  document.getElementById("editingCategoryId").value = "";
-  document.getElementById("newCategoryName").value = "";
+  closeCashflowCategoryEditModal();
 }
 
 function saveCategory() {
-  const name = document.getElementById("newCategoryName").value.trim();
+  const nameInput = document.getElementById("newCategoryName");
+  const name = (nameInput?.value || "").trim();
   if (!name) {
-    alert("Vui lòng nhập tên loại");
+    alert("Vui lòng nhập tên danh mục");
+    if (nameInput) nameInput.focus();
     return;
   }
 
-  const editingId = document.getElementById("editingCategoryId").value;
-  const type = document.getElementById("cashflowCategoryType").value;
+  const editingId = document.getElementById("editingCategoryId")?.value;
+  const icon = document.getElementById("newCategoryIcon")?.value || getCashflowCategoryIcon(name);
+  const type = document.getElementById("cashflowCategoryType")?.value || "expense";
 
   if (editingId) {
     const cat = cashflowCategories[type].find((c) => c.id === editingId);
-    if (cat) cat.name = name;
+    if (cat) {
+      cat.name = name;
+      cat.icon = icon;
+    }
   } else {
     cashflowCategories[type].push({
       id: `${type}-${Date.now()}`,
       name,
+      icon,
     });
   }
 
   saveCashflowCategoriesToStorage();
   renderCategoryList();
-  cancelCategoryForm();
+  closeCashflowCategoryEditModal();
   updateCashflowCategoryDropdowns();
 }
 
 function editCategory(id) {
-  const type = document.getElementById("cashflowCategoryType").value;
+  const type = document.getElementById("cashflowCategoryType")?.value || "expense";
   const cat = cashflowCategories[type].find((c) => c.id === id);
   if (!cat) return;
 
-  document.getElementById("cashflowCategoryForm").style.display = "block";
-  document.getElementById("editingCategoryId").value = id;
-  document.getElementById("newCategoryName").value = cat.name;
-  document.getElementById("newCategoryName").focus();
+  const formTitle = document.getElementById("cashflowCatFormTitle");
+  if (formTitle) formTitle.innerText = "Chỉnh sửa danh mục";
+
+  const formSubtitle = document.getElementById("cashflowCatFormSubtitle");
+  if (formSubtitle) formSubtitle.innerText = `Đang chỉnh sửa: "${cat.name}"`;
+
+  const saveBtnText = document.getElementById("cashflowCatSaveBtnText");
+  if (saveBtnText) saveBtnText.innerText = "Lưu thay đổi";
+
+  const editIcon = document.getElementById("cashflowCatEditHeaderIconGlyph");
+  if (editIcon) editIcon.className = "fi fi-rr-edit";
+
+  const editId = document.getElementById("editingCategoryId");
+  if (editId) editId.value = id;
+
+  const nameInput = document.getElementById("newCategoryName");
+  if (nameInput) nameInput.value = cat.name;
+
+  const selectedIcon = cat.icon || getCashflowCategoryIcon(cat.name, cat.id);
+  selectCashflowFormIcon(selectedIcon);
+
+  openCashflowCategoryEditModal();
+
+  if (nameInput) {
+    setTimeout(() => nameInput.focus(), 80);
+  }
 }
 
 function deleteCategory(id) {
@@ -16465,10 +16776,171 @@ function updateCashflowCategoryDropdowns() {
   } else if (categories.length > 0) {
     categorySelect.value = categories[0].id;
   }
+
+  renderCashflowCategoryChips();
 }
 
 function onCashflowTypeChange() {
   updateCashflowCategoryDropdowns();
+}
+
+function getCashflowCategoryIcon(name, catId = null) {
+  if (catId) {
+    const all = [...(cashflowCategories.income || []), ...(cashflowCategories.expense || [])];
+    const found = all.find((c) => c.id === catId);
+    if (found && found.icon) return found.icon;
+  }
+  if (name) {
+    const all = [...(cashflowCategories.income || []), ...(cashflowCategories.expense || [])];
+    const found = all.find((c) => c.name === name);
+    if (found && found.icon) return found.icon;
+  }
+
+  const n = String(name || "").toLowerCase().trim();
+  if (n.includes("ăn") || n.includes("uống") || n.includes("cơm") || n.includes("thực phẩm") || n.includes("nhà hàng")) return "fi-rr-utensils";
+  if (n.includes("cà phê") || n.includes("cafe") || n.includes("nước ngọt")) return "fi-rr-coffee";
+  if (n.includes("đi lại") || n.includes("xăng") || n.includes("xe") || n.includes("taxi") || n.includes("grab")) return "fi-rr-car";
+  if (n.includes("nhà") || n.includes("thuê") || n.includes("phòng")) return "fi-rr-home";
+  if (n.includes("điện") || n.includes("nước") || n.includes("gas")) return "fi-rr-bolt";
+  if (n.includes("internet") || n.includes("thoại") || n.includes("mạng") || n.includes("wifi") || n.includes("4g")) return "fi-rr-wifi";
+  if (n.includes("y tế") || n.includes("thuốc") || n.includes("khám") || n.includes("bệnh") || n.includes("viện")) return "fi-rr-heart";
+  if (n.includes("mua sắm") || n.includes("shopping") || n.includes("quần áo") || n.includes("đồ")) return "fi-rr-shopping-bag";
+  if (n.includes("giải trí") || n.includes("chơi") || n.includes("game") || n.includes("phim") || n.includes("du lịch")) return "fi-rr-gamepad";
+  if (n.includes("giáo dục") || n.includes("học") || n.includes("sách") || n.includes("khoá học")) return "fi-rr-graduation-cap";
+  if (n.includes("lương")) return "fi-rr-wallet";
+  if (n.includes("thưởng")) return "fi-rr-gift";
+  if (n.includes("phụ cấp")) return "fi-rr-coins";
+  if (n.includes("thu nhập phụ") || n.includes("đầu tư") || n.includes("kinh doanh") || n.includes("lãi")) return "fi-rr-chart-line-up";
+  if (n.includes("khác")) return "fi-rr-menu-dots";
+  return "fi-rr-folder";
+}
+
+function renderCashflowCategoryChips() {
+  const typeSelect = document.getElementById("cashflowType");
+  const categorySelect = document.getElementById("cashflowCategory");
+  const container = document.getElementById("cashflowCategoryChipsGrid");
+  const previewBadge = document.getElementById("cashflowSelectedCatBadge");
+  if (!container || !categorySelect || !typeSelect) return;
+
+  const currentType = typeSelect.value || "expense";
+  const categories = cashflowCategories[currentType] || [];
+  const selectedVal = String(categorySelect.value || "").trim();
+
+  // Tìm danh mục đang chọn
+  const selectedCat = categories.find((c) => c.id === selectedVal || c.name === selectedVal) || categories[0];
+  const currentSelectedId = selectedCat ? selectedCat.id : selectedVal;
+
+  if (previewBadge && selectedCat) {
+    previewBadge.innerText = selectedCat.name;
+  }
+
+  // 7 loại chính đầu tiên (kết hợp với tag "Khác" tạo thành 2 hàng x 4 loại)
+  const topCategories = categories.slice(0, 7);
+  const isSelectedInTop7 = topCategories.some((c) => c.id === currentSelectedId);
+
+  let html = "";
+  topCategories.forEach((cat) => {
+    const isActive = cat.id === currentSelectedId;
+    const iconClass = cat.icon || getCashflowCategoryIcon(cat.name, cat.id);
+    html += `
+      <button type="button" class="cashflow-cat-chip ${isActive ? "active" : ""}" 
+        onclick="selectCashflowCategory('${cat.id}')"
+        title="${cat.name}">
+        <i class="fi ${iconClass} cashflow-cat-chip-icon"></i>
+        <span class="cashflow-cat-chip-name">${cat.name}</span>
+      </button>
+    `;
+  });
+
+  // Tag "Khác" mở popup
+  const isMoreActive = !isSelectedInTop7 && Boolean(selectedCat);
+  const moreLabel = isMoreActive ? selectedCat.name : "Khác";
+  const moreIcon = isMoreActive
+    ? selectedCat.icon || getCashflowCategoryIcon(selectedCat.name, selectedCat.id)
+    : "fi-rr-menu-dots";
+
+  html += `
+    <button type="button" class="cashflow-cat-chip cashflow-cat-chip-more ${isMoreActive ? "active" : ""}" 
+      onclick="openCashflowCategoryPickerModal()"
+      title="${isMoreActive ? 'Đang chọn: ' + selectedCat.name + ' (Bấm để đổi danh mục khác)' : 'Xem toàn bộ danh mục'}">
+      <i class="fi ${moreIcon} cashflow-cat-chip-icon"></i>
+      <span class="cashflow-cat-chip-name">${moreLabel}</span>
+    </button>
+  `;
+
+  container.innerHTML = html;
+}
+
+function selectCashflowCategory(catId) {
+  const categorySelect = document.getElementById("cashflowCategory");
+  if (categorySelect) {
+    categorySelect.value = catId;
+    categorySelect.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  renderCashflowCategoryChips();
+}
+
+function openCashflowCategoryPickerModal() {
+  const modal = document.getElementById("cashflowCategoryPickerModal");
+  if (!modal) return;
+
+  const typeSelect = document.getElementById("cashflowType");
+  const currentType = typeSelect ? typeSelect.value : "expense";
+  const titleEl = document.getElementById("cashflowCatPickerTitle");
+  if (titleEl) {
+    titleEl.innerText = currentType === "expense" ? "Tất cả danh mục chi tiêu" : "Tất cả danh mục thu nhập";
+  }
+
+  renderCashflowCategoryPickerList();
+  modal.style.display = "flex";
+}
+
+function closeCashflowCategoryPickerModal() {
+  const modal = document.getElementById("cashflowCategoryPickerModal");
+  if (modal) modal.style.display = "none";
+}
+
+function renderCashflowCategoryPickerList() {
+  const listEl = document.getElementById("cashflowCatPickerList");
+  const typeSelect = document.getElementById("cashflowType");
+  const categorySelect = document.getElementById("cashflowCategory");
+  if (!listEl || !typeSelect || !categorySelect) return;
+
+  const currentType = typeSelect.value || "expense";
+  const categories = cashflowCategories[currentType] || [];
+  const selectedVal = String(categorySelect.value || "").trim();
+
+  listEl.innerHTML = categories
+    .map((cat) => {
+      const isSelected = cat.id === selectedVal || cat.name === selectedVal;
+      const iconClass = cat.icon || getCashflowCategoryIcon(cat.name, cat.id);
+      return `
+        <div class="cashflow-cat-picker-item ${isSelected ? "selected" : ""}" 
+          onclick="selectCategoryFromPicker('${cat.id}')"
+          role="button" tabindex="0">
+          <div class="cashflow-cat-picker-item-left">
+            <div class="cashflow-cat-picker-icon-box">
+              <i class="fi ${iconClass}"></i>
+            </div>
+            <span class="cashflow-cat-picker-item-name">${cat.name}</span>
+          </div>
+          ${isSelected ? '<i class="fi fi-rr-check cashflow-cat-picker-check"></i>' : ""}
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function selectCategoryFromPicker(catId) {
+  selectCashflowCategory(catId);
+  closeCashflowCategoryPickerModal();
+}
+
+function openCashflowCategoryModalFromPicker() {
+  closeCashflowCategoryPickerModal();
+  if (typeof openCashflowCategoryModal === "function") {
+    openCashflowCategoryModal();
+  }
 }
 
 /* ========================== QUẢN LÝ QUỸ ========================== */

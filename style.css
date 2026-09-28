@@ -5833,55 +5833,55 @@ body::before {
   border-color: rgba(255, 255, 255, 0.28);
 }
 
-/* 1. Segmented Switch: Khoản Chi / Khoản Thu (Liền nhau, không border bọc, Nổi bật & Sắc nét) */
+/* 1. Segmented Switch: Khoản Chi / Khoản Thu (Liền nhau, border chỉ có ở xung quanh) */
 .cashflow-type-segmented {
   position: relative;
   display: flex;
-  padding: 4px;
+  padding: 0;
   gap: 0;
   background: rgba(6, 14, 30, 0.88);
-  border: none !important;
-  border-radius: 13px;
+  border: 1px solid rgba(143, 184, 255, 0.25) !important;
+  border-radius: 12px;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
   box-sizing: border-box;
   user-select: none;
   overflow: hidden;
 }
 
-/* Thanh trượt hiệu ứng chuyển động mượt mà (Sliding Pill Glider) */
+/* Thanh trượt hiệu ứng chuyển động mượt mà (Sliding Glider) */
 .cashflow-type-glider {
   position: absolute;
-  top: 4px;
-  bottom: 4px;
-  left: 4px;
-  width: calc(50% - 4px);
-  border-radius: 9px;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+  border-radius: 0;
+  border: none !important;
   pointer-events: none;
   z-index: 1;
   box-sizing: border-box;
   transition:
-    transform 0.3s cubic-bezier(0.34, 1.25, 0.64, 1),
-    background 0.28s ease,
-    border-color 0.28s ease,
-    box-shadow 0.28s ease;
+    transform 0.28s cubic-bezier(0.34, 1.25, 0.64, 1),
+    background 0.25s ease;
 }
 
-/* Trạng thái Chi: Glider nằm bên trái (Đỏ rực sắc nét, bóng glow đỏ tinh tế) */
+/* Trạng thái Chi: Glider nằm bên trái (Đỏ rực sắc nét) */
 .cashflow-type-segmented.is-expense .cashflow-type-glider,
 .cashflow-type-segmented:has(#cashflowTypeBtnExpense.active) .cashflow-type-glider {
   transform: translateX(0);
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  border: none !important;
+  box-shadow: none !important;
 }
 
-/* Trạng thái Thu: Glider trượt sang bên phải (Xanh ngọc rực rỡ, bóng glow xanh tươi mát) */
+/* Trạng thái Thu: Glider trượt sang bên phải (Xanh ngọc rực rỡ) */
 .cashflow-type-segmented.is-income .cashflow-type-glider,
 .cashflow-type-segmented:has(#cashflowTypeBtnIncome.active) .cashflow-type-glider {
   transform: translateX(100%);
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .cashflow-type-segment {
@@ -5889,18 +5889,18 @@ body::before {
   z-index: 2;
   flex: 1;
   width: 50%;
-  height: 40px;
+  height: 42px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 0 14px;
-  border-radius: 9px;
+  border-radius: 0;
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
   color: rgba(202, 220, 251, 0.65);
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;

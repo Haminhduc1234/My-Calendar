@@ -16125,7 +16125,7 @@ const CASHFLOW_DEFAULT_ICONS = [
   // Ăn uống & Tiêu dùng
   { icon: "fi-rr-utensils", title: "Ăn uống" },
   { icon: "fi-rr-coffee", title: "Cà phê / Đồ uống" },
-  { icon: "fi-rr-cup-cake", title: "Ăn vặt / Tráng miệng" },
+  { icon: "fi-rr-cupcake", title: "Ăn vặt / Tráng miệng" },
   { icon: "fi-rr-shopping-cart", title: "Đi chợ / Siêu thị" },
   { icon: "fi-rr-shopping-bag", title: "Mua sắm" },
   { icon: "fi-rr-tshirt", title: "Quần áo / Thời trang" },
@@ -16149,7 +16149,7 @@ const CASHFLOW_DEFAULT_ICONS = [
   { icon: "fi-rr-heart", title: "Sức khỏe" },
   { icon: "fi-rr-medicine", title: "Thuốc men" },
   { icon: "fi-rr-hospital", title: "Khám chữa bệnh" },
-  { icon: "fi-rr-dumbbell", title: "Thể thao / Gym" },
+  { icon: "fi-rr-gym", title: "Thể thao / Gym" },
 
   // Học tập & Giải trí
   { icon: "fi-rr-graduation-cap", title: "Giáo dục / Học tập" },
@@ -16807,6 +16807,8 @@ function getCashflowCategoryIcon(name, catId = null) {
   if (n.includes("mua sắm") || n.includes("shopping") || n.includes("quần áo") || n.includes("đồ")) return "fi-rr-shopping-bag";
   if (n.includes("giải trí") || n.includes("chơi") || n.includes("game") || n.includes("phim") || n.includes("du lịch")) return "fi-rr-gamepad";
   if (n.includes("giáo dục") || n.includes("học") || n.includes("sách") || n.includes("khoá học")) return "fi-rr-graduation-cap";
+  if (n.includes("thể thao") || n.includes("gym")) return "fi-rr-gym";
+  if (n.includes("bánh") || n.includes("tráng miệng") || n.includes("ăn vặt")) return "fi-rr-cupcake";
   if (n.includes("lương")) return "fi-rr-wallet";
   if (n.includes("thưởng")) return "fi-rr-gift";
   if (n.includes("phụ cấp")) return "fi-rr-coins";
@@ -16834,9 +16836,22 @@ function renderCashflowCategoryChips() {
     previewBadge.innerText = selectedCat.name;
   }
 
-  // 7 loại chính đầu tiên (kết hợp với tag "Khác" tạo thành 2 hàng x 4 loại)
-  const topCategories = categories.slice(0, 7);
-  const isSelectedInTop7 = topCategories.some((c) => c.id === currentSelectedId);
+  // Tối đa 8 loại hiển thị bên ngoài
+  const maxOutside = 6;
+  const hasMore = categories.length > maxOutside;
+
+  // Nếu danh mục đang chọn nằm ngoài top 8, thay thế vị trí thứ 8 bằng danh mục đang chọn để luôn nhìn thấy
+  let topCategories = [];
+  if (hasMore) {
+    const isSelectedInTop8 = categories.slice(0, maxOutside).some((c) => c.id === currentSelectedId);
+    if (isSelectedInTop8 || !selectedCat) {
+      topCategories = categories.slice(0, maxOutside);
+    } else {
+      topCategories = [...categories.slice(0, maxOutside - 1), selectedCat];
+    }
+  } else {
+    topCategories = categories;
+  }
 
   let html = "";
   topCategories.forEach((cat) => {
@@ -16852,21 +16867,17 @@ function renderCashflowCategoryChips() {
     `;
   });
 
-  // Tag "Khác" mở popup
-  const isMoreActive = !isSelectedInTop7 && Boolean(selectedCat);
-  const moreLabel = isMoreActive ? selectedCat.name : "Khác";
-  const moreIcon = isMoreActive
-    ? selectedCat.icon || getCashflowCategoryIcon(selectedCat.name, selectedCat.id)
-    : "fi-rr-menu-dots";
-
-  html += `
-    <button type="button" class="cashflow-cat-chip cashflow-cat-chip-more ${isMoreActive ? "active" : ""}" 
-      onclick="openCashflowCategoryPickerModal()"
-      title="${isMoreActive ? 'Đang chọn: ' + selectedCat.name + ' (Bấm để đổi danh mục khác)' : 'Xem toàn bộ danh mục'}">
-      <i class="fi ${moreIcon} cashflow-cat-chip-icon"></i>
-      <span class="cashflow-cat-chip-name">${moreLabel}</span>
-    </button>
-  `;
+  // Nếu còn lại danh mục (tổng > 8) thì hiển thị nút "Tất cả" với icon 3 gạch ngang để mở modal
+  if (hasMore) {
+    html += `
+      <button type="button" class="cashflow-cat-chip cashflow-cat-chip-more" 
+        onclick="openCashflowCategoryPickerModal()"
+        title="Xem tất cả danh mục">
+        <i class="fi fi-rr-menu-burger cashflow-cat-chip-icon"></i>
+        <span class="cashflow-cat-chip-name">Tất cả</span>
+      </button>
+    `;
+  }
 
   container.innerHTML = html;
 }

@@ -85,6 +85,8 @@ function getOpenModalId() {
     "projectFormModal",
     "taskFormModal",
     "cashflowQuickViewModal",
+    "cashflowExceededBalanceModal",
+    "cashflowWithdrawFundModal",
     "eventQuickViewModal",
     "cashflowCategoryEditModal",
     "cashflowCategoryModal",
@@ -4020,6 +4022,8 @@ function closeAllModals() {
     "cashflowCategoryPickerModal",
     "cashflowCategoryEditModal",
     "cashflowCategoryModal",
+    "cashflowExceededBalanceModal",
+    "cashflowWithdrawFundModal",
     "currencyModal",
     "fundsModal",
     "fundModal",
@@ -11896,6 +11900,8 @@ function closeCashflowModal() {
   closeCashflowChartModal();
   closeCashflowAllTransactionsModal();
   closeCashflowQuickViewModal();
+  closeCashflowExceededBalanceModal();
+  closeCashflowWithdrawFundModal();
   document.getElementById("cashflowModal").style.display = "none";
 }
 
@@ -11989,12 +11995,325 @@ function setCashflowType(type) {
   onCashflowTypeChange();
 }
 
+/**
+ * Cập nhật giao diện thanh số dư khả dụng và trạng thái nút Chi / Lấy ra từ quỹ
+ */
+function updateCashflowAvailableBalanceUI() {
+  const bar = document.getElementById("cashflowAvailableBar");
+  const valEl = document.getElementById("cashflowAvailableValue");
+  const withdrawBtn = document.getElementById("cashflowWithdrawBtn");
+  const addBtn = document.getElementById("cashflowMobileAddBtn");
+  const typeSelect = document.getElementById("cashflowType");
+
+  if (!bar || !valEl) return;
+
+  const currentType = typeSelect ? typeSelect.value : "expense";
+  const available = calculateAvailableFundBalance();
+
+  valEl.innerText = `${available.toLocaleString("vi-VN")} ₫`;
+
+  if (currentType === "expense") {
+    if (available > 0) {
+      bar.classList.add("is-positive");
+      bar.classList.remove("is-empty");
+      if (withdrawBtn) withdrawBtn.style.display = "none";
+      if (addBtn) {
+        addBtn.classList.remove("is-disabled");
+        addBtn.removeAttribute("title");
+      }
+    } else {
+      bar.classList.remove("is-positive");
+      bar.classList.add("is-empty");
+      if (withdrawBtn) withdrawBtn.style.display = "inline-flex";
+      if (addBtn) {
+        addBtn.classList.add("is-disabled");
+        addBtn.setAttribute("title", "Số dư khả dụng bằng 0. Vui lòng lấy ra từ quỹ để chi tiêu.");
+      }
+    }
+  } else {
+    // Thu nhập
+    if (available > 0) {
+      bar.classList.add("is-positive");
+      bar.classList.remove("is-empty");
+    } else {
+      bar.classList.remove("is-positive");
+      bar.classList.add("is-empty");
+    }
+    if (withdrawBtn) withdrawBtn.style.display = "none";
+    if (addBtn) {
+      addBtn.classList.remove("is-disabled");
+      addBtn.removeAttribute("title");
+    }
+  }
+
+  checkCashflowAmountExceeded();
+}
+
+let pendingExceededExpenseAmount = 0;
+
+/**
+ * Mở popup thông báo và hướng dẫn vượt quá số dư khả dụng
+ */
+function openCashflowExceededBalanceModal(expenseAmount, availableBalance) {
+  pendingExceededExpenseAmount = expenseAmount;
+  const modal = document.getElementById("cashflowExceededBalanceModal");
+  const availEl = document.getElementById("cashflowExceededAvailableVal");
+  const expEl = document.getElementById("cashflowExceededExpenseVal");
+  const shortEl = document.getElementById("cashflowExceededShortageVal");
+
+  if (!modal) return;
+
+  const shortage = Math.max(expenseAmount - availableBalance, 0);
+
+  if (availEl) availEl.innerText = `${availableBalance.toLocaleString("vi-VN")} ₫`;
+  if (expEl) expEl.innerText = `${expenseAmount.toLocaleString("vi-VN")} ₫`;
+  if (shortEl) shortEl.innerText = `${shortage.toLocaleString("vi-VN")} ₫`;
+
+  modal.style.display = "flex";
+}
+
+function closeCashflowExceededBalanceModal() {
+  const modal = document.getElementById("cashflowExceededBalanceModal");
+  if (modal) modal.style.display = "none";
+}
+
+/**
+ * Từ popup thông báo, mở sang popup "Lấy ra từ quỹ" với số tiền còn thiếu được điền sẵn
+ */
+function openWithdrawFromExceededModal() {
+  const available = calculateAvailableFundBalance();
+  const shortage = Math.max(pendingExceededExpenseAmount - available, 0);
+  closeCashflowExceededBalanceModal();
+  openCashflowWithdrawFundModal(shortage > 0 ? shortage : null);
+}
+
+function openCashflowExceededModalFromHint() {
+  const amountInput = document.getElementById("cashflowAmount");
+  const amount = parseInt((amountInput ? amountInput.value : "").replace(/\D/g, ""), 10) || 0;
+  const available = calculateAvailableFundBalance();
+  openCashflowExceededBalanceModal(amount, available);
+}
+
+/**
+ * Kiểm tra realtime ô nhập tiền chi tiêu để hiện hint cảnh báo nếu vượt số dư
+ */
+function checkCashflowAmountExceeded() {
+  const typeSelect = document.getElementById("cashflowType");
+  const amountInput = document.getElementById("cashflowAmount");
+  const hintBtn = document.getElementById("cashflowAmountWarningHint");
+  const hintVal = document.getElementById("cashflowAmountWarningVal");
+
+  if (!typeSelect || !amountInput || !hintBtn) return;
+
+  const currentType = typeSelect.value;
+  if (currentType !== "expense") {
+    hintBtn.style.display = "none";
+    return;
+  }
+
+  const amount = parseInt(amountInput.value.replace(/\D/g, ""), 10) || 0;
+  const available = calculateAvailableFundBalance();
+
+  if (amount > 0 && (available <= 0 || amount > available)) {
+    const shortage = Math.max(amount - available, 0);
+    if (hintVal) hintVal.innerText = `Thiếu ${shortage.toLocaleString("vi-VN")} ₫`;
+    hintBtn.style.display = "inline-flex";
+  } else {
+    hintBtn.style.display = "none";
+  }
+}
+
+/**
+ * Mở modal lấy ra từ quỹ với danh sách quỹ và số tiền đề xuất (nếu có)
+ * Hoàn toàn độc lập trong form chi tiêu, không mở hay chuyển sang phần Quỹ
+ */
+function openCashflowWithdrawFundModal(suggestedAmount = null) {
+  loadFundsFromLocalStorage();
+  const select = document.getElementById("cashflowWithdrawFundSelect");
+  const amountInput = document.getElementById("cashflowWithdrawAmount");
+  const infoEl = document.getElementById("cashflowWithdrawFundInfo");
+  const balEl = document.getElementById("cashflowWithdrawFundBalance");
+  const modal = document.getElementById("cashflowWithdrawFundModal");
+
+  if (!select || !amountInput || !modal) return;
+
+  select.innerHTML = '<option value="">-- Chọn quỹ --</option>';
+
+  if (!fundsData.funds || fundsData.funds.length === 0) {
+    alert("Hiện bạn chưa có quỹ nào trong hệ thống. Vui lòng tạo quỹ trước trong Quản lý Quỹ.");
+    return;
+  }
+
+  let firstValidFundId = "";
+  let totalFundBalance = 0;
+
+  for (const fund of fundsData.funds) {
+    const balance = getFundBalance(fund.id);
+    totalFundBalance += balance;
+    const opt = document.createElement("option");
+    opt.value = fund.id;
+    if (balance > 0) {
+      opt.textContent = `${fund.name} (Số dư: ${balance.toLocaleString("vi-VN")} ₫)`;
+      if (!firstValidFundId) firstValidFundId = fund.id;
+    } else {
+      opt.textContent = `${fund.name} (Hết số dư: 0 ₫)`;
+      opt.disabled = true;
+    }
+    select.appendChild(opt);
+  }
+
+  if (totalFundBalance <= 0) {
+    alert("Tất cả các quỹ hiện tại đều không có số dư để rút tiền.\nVui lòng thêm số dư vào quỹ hoặc nạp thêm khoản Thu!");
+    return;
+  }
+
+  if (firstValidFundId) {
+    select.value = firstValidFundId;
+    if (infoEl && balEl) {
+      const b = getFundBalance(firstValidFundId);
+      balEl.innerText = `${b.toLocaleString("vi-VN")} ₫`;
+      infoEl.style.display = "flex";
+    }
+  } else {
+    if (infoEl) infoEl.style.display = "none";
+  }
+
+  if (suggestedAmount && suggestedAmount > 0) {
+    const curBal = firstValidFundId ? getFundBalance(firstValidFundId) : 0;
+    const fillAmount = curBal > 0 ? Math.min(suggestedAmount, curBal) : suggestedAmount;
+    amountInput.value = fillAmount.toLocaleString("vi-VN");
+  } else {
+    amountInput.value = "";
+  }
+
+  modal.style.display = "flex";
+  setTimeout(() => amountInput.focus(), 100);
+}
+
+function closeCashflowWithdrawFundModal() {
+  const modal = document.getElementById("cashflowWithdrawFundModal");
+  if (modal) modal.style.display = "none";
+}
+
+function onCashflowWithdrawFundChange() {
+  const select = document.getElementById("cashflowWithdrawFundSelect");
+  const infoEl = document.getElementById("cashflowWithdrawFundInfo");
+  const balEl = document.getElementById("cashflowWithdrawFundBalance");
+  if (!select) return;
+
+  const fundId = select.value;
+  if (!fundId) {
+    if (infoEl) infoEl.style.display = "none";
+    return;
+  }
+
+  const balance = getFundBalance(fundId);
+  if (balEl) balEl.innerText = `${balance.toLocaleString("vi-VN")} ₫`;
+  if (infoEl) infoEl.style.display = "flex";
+}
+
+function setCashflowWithdrawMaxAmount() {
+  const select = document.getElementById("cashflowWithdrawFundSelect");
+  const amountInput = document.getElementById("cashflowWithdrawAmount");
+  if (!select || !amountInput) return;
+
+  const fundId = select.value;
+  if (!fundId) {
+    alert("Vui lòng chọn quỹ trước");
+    return;
+  }
+
+  const balance = getFundBalance(fundId);
+  amountInput.value = balance.toLocaleString("vi-VN");
+  formatCurrencyInput(amountInput);
+}
+
+function quickSetCashflowWithdrawAmount(amount) {
+  const select = document.getElementById("cashflowWithdrawFundSelect");
+  const amountInput = document.getElementById("cashflowWithdrawAmount");
+  if (!amountInput) return;
+
+  const fundId = select ? select.value : "";
+  if (fundId) {
+    const balance = getFundBalance(fundId);
+    if (balance > 0 && amount > balance) {
+      amount = balance;
+    }
+  }
+
+  amountInput.value = amount.toLocaleString("vi-VN");
+  formatCurrencyInput(amountInput);
+  amountInput.focus();
+}
+
+function confirmCashflowWithdrawFund() {
+  const select = document.getElementById("cashflowWithdrawFundSelect");
+  const amountInput = document.getElementById("cashflowWithdrawAmount");
+  if (!select || !amountInput) return;
+
+  const fundId = select.value;
+  const amount = parseInt(amountInput.value.replace(/\D/g, ""), 10) || 0;
+
+  if (!fundId) {
+    alert("Vui lòng chọn quỹ để lấy tiền ra");
+    return;
+  }
+
+  if (amount <= 0) {
+    alert("Vui lòng nhập số tiền lớn hơn 0");
+    return;
+  }
+
+  const fund = fundsData.funds.find((f) => f.id === fundId);
+  if (!fund) {
+    alert("Quỹ đã chọn không hợp lệ");
+    return;
+  }
+
+  const balance = getFundBalance(fundId);
+  if (amount > balance) {
+    alert(`Số tiền lấy ra (${amount.toLocaleString("vi-VN")} ₫) vượt quá số dư hiện có của quỹ "${fund.name}" (${balance.toLocaleString("vi-VN")} ₫).`);
+    return;
+  }
+
+  const fundIndex = fundsData.funds.findIndex((f) => f.id === fundId);
+  if (fundIndex >= 0) {
+    fundsData.funds[fundIndex].initialAmount = (fundsData.funds[fundIndex].initialAmount || 0) - amount;
+    fundsData.funds[fundIndex].updatedAt = Date.now();
+  }
+
+  saveFundsToFirebase();
+
+  // Bắn thông báo đẩy
+  try {
+    queueEventNotification({
+      id: `withdraw-${Date.now()}`,
+      title: "Lấy tiền ra từ quỹ",
+      text: `Đã lấy ${amount.toLocaleString("vi-VN")} đ từ quỹ ${fund.name} vào số dư khả dụng`,
+      note: `Đã lấy ${amount.toLocaleString("vi-VN")} đ từ quỹ ${fund.name} vào số dư khả dụng`,
+      fundName: fund.name,
+      amount: amount,
+      date: getTodayIsoDate(),
+      createdAt: Date.now()
+    }, "", "fund_withdraw");
+  } catch (errNotif) {
+    console.warn("[Cashflow] Lỗi queueEventNotification withdraw:", errNotif);
+  }
+
+  closeCashflowWithdrawFundModal();
+  updateCashflowAvailableBalanceUI();
+  checkCashflowAmountExceeded();
+
+  showToast(`Đã lấy thành công ${amount.toLocaleString("vi-VN")} ₫ từ "${fund.name}" vào số dư khả dụng!`, 3000);
+}
+
 function quickSetCashflowAmount(amount) {
   const input = document.getElementById("cashflowAmount");
   if (!input) return;
   input.value = amount.toLocaleString("vi-VN");
   formatCurrencyInput(input);
   updateCashflowAmountClearBtn();
+  checkCashflowAmountExceeded();
   input.focus();
 }
 
@@ -12017,6 +12336,7 @@ function quickAddCashflowAmount(addVal, appendZeros) {
   }
   formatCurrencyInput(input);
   updateCashflowAmountClearBtn();
+  checkCashflowAmountExceeded();
   input.focus();
 }
 
@@ -12027,6 +12347,7 @@ function clearCashflowAmount() {
     input.focus();
   }
   updateCashflowAmountClearBtn();
+  checkCashflowAmountExceeded();
 }
 
 function updateCashflowAmountClearBtn() {
@@ -12051,6 +12372,15 @@ function addCashflowEntry() {
   const note = noteInput.value.trim();
   const image = getCashflowImageData();
   const targetDateKey = isoDateToDateKey(date);
+
+  // Kiểm tra số dư khả dụng đối với khoản Chi: hiển thị popup thông báo và hướng dẫn mở popup lấy ra từ quỹ
+  if (type === "expense") {
+    const available = calculateAvailableFundBalance();
+    if (available <= 0 || amount > available) {
+      openCashflowExceededBalanceModal(amount, available);
+      return;
+    }
+  }
 
   if (!date || !targetDateKey) {
     alert("Vui lòng chọn ngày giao dịch");
@@ -12464,6 +12794,7 @@ function confirmRemoveCashflowEntry() {
 
 function renderCashflowDashboard() {
   reloadCashflowEntriesFromCache();
+  updateCashflowAvailableBalanceUI();
   renderCashflowMonthSummary();
   renderCashflowRecentList();
   renderCashflowPieCharts();
@@ -16046,6 +16377,14 @@ function renderCashflowQuickView() {
     amountInput.addEventListener("input", () => {
       formatCurrencyInput(amountInput);
       updateCashflowAmountClearBtn();
+      checkCashflowAmountExceeded();
+    });
+  }
+
+  const withdrawAmountInput = document.getElementById("cashflowWithdrawAmount");
+  if (withdrawAmountInput) {
+    withdrawAmountInput.addEventListener("input", () => {
+      formatCurrencyInput(withdrawAmountInput);
     });
   }
 
@@ -16078,6 +16417,18 @@ function renderCashflowQuickView() {
 
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
+      const exceededModal = document.getElementById("cashflowExceededBalanceModal");
+      if (exceededModal && exceededModal.style.display === "flex") {
+        closeCashflowExceededBalanceModal();
+        return;
+      }
+
+      const withdrawModal = document.getElementById("cashflowWithdrawFundModal");
+      if (withdrawModal && withdrawModal.style.display === "flex") {
+        closeCashflowWithdrawFundModal();
+        return;
+      }
+
       const editModal = document.getElementById("cashflowCategoryEditModal");
       if (editModal && editModal.style.display === "flex") {
         closeCashflowCategoryEditModal();
@@ -16782,6 +17133,7 @@ function updateCashflowCategoryDropdowns() {
 
 function onCashflowTypeChange() {
   updateCashflowCategoryDropdowns();
+  updateCashflowAvailableBalanceUI();
 }
 
 function getCashflowCategoryIcon(name, catId = null) {
@@ -16993,10 +17345,19 @@ function initFundsFirebase() {
 }
 
 function loadFundsFromLocalStorage() {
-  const stored = localStorage.getItem(`funds_${userProfileKey}`);
+  const profileKey = userProfileKey || "default";
+  let stored = localStorage.getItem(`funds_${profileKey}`);
+  if (!stored) {
+    stored = localStorage.getItem("funds_default") || localStorage.getItem("funds_");
+  }
   if (stored) {
     try {
-      fundsData = JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      fundsData = {
+        funds: Array.isArray(parsed.funds) ? parsed.funds : [],
+        allocations: Array.isArray(parsed.allocations) ? parsed.allocations : [],
+        totalIncome: parsed.totalIncome || 0,
+      };
     } catch (e) {
       fundsData = { funds: [], allocations: [], totalIncome: 0 };
     }
@@ -17004,13 +17365,14 @@ function loadFundsFromLocalStorage() {
 }
 
 function saveFundsToFirebase() {
+  const profileKey = userProfileKey || "default";
+  localStorage.setItem(`funds_${profileKey}`, JSON.stringify(fundsData));
   if (!firebaseFundsRef) return;
   firebaseFundsRef.set({
     funds: fundsData.funds,
     allocations: fundsData.allocations,
     totalIncome: fundsData.totalIncome,
   });
-  localStorage.setItem(`funds_${userProfileKey}`, JSON.stringify(fundsData));
 }
 
 function calculateTotalIncome() {
@@ -17057,6 +17419,9 @@ function getFundBalance(fundId) {
  * Tính số dư khả dụng thực tế chuẩn xác = (Tổng Thu - Tổng Chi) - Tổng đã phân bổ vào quỹ
  */
 function calculateAvailableFundBalance() {
+  if (!fundsData || !fundsData.funds || fundsData.funds.length === 0) {
+    loadFundsFromLocalStorage();
+  }
   reloadCashflowEntriesFromCache();
   const totalIncome = calculateTotalIncome();
   const totalExpense = calculateTotalExpense();
@@ -17118,6 +17483,7 @@ function closeFundsModal() {
 
 function renderFundsDashboard() {
   reloadCashflowEntriesFromCache();
+  updateCashflowAvailableBalanceUI();
   const totalIncome = calculateTotalIncome();
   const totalExpense = calculateTotalExpense();
   const difference = totalIncome - totalExpense;

@@ -1414,6 +1414,25 @@
                 <option value="income">Thu</option>
               </select>
 
+              <!-- Thanh hiển thị Số dư khả dụng & Rút từ quỹ -->
+              <div class="cashflow-available-bar" id="cashflowAvailableBar">
+                <div class="cashflow-available-left">
+                  <span class="cashflow-available-label">
+                    <i class="fi fi-rr-wallet"
+                      style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>
+                    <span>Khả dụng:</span>
+                  </span>
+                  <span class="cashflow-available-value" id="cashflowAvailableValue">0 ₫</span>
+                </div>
+                <button type="button" class="cashflow-withdraw-btn" id="cashflowWithdrawBtn"
+                  onclick="openCashflowWithdrawFundModal()" title="Lấy tiền ra từ quỹ để chi tiêu"
+                  style="display: none;">
+                  <i class="fi fi-rr-arrow-up-from-square"
+                    style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>
+                  <span>Lấy ra từ quỹ</span>
+                </button>
+              </div>
+
               <!-- 2. Hero Amount Input & Quick Chips -->
               <div class="cashflow-amount-hero">
                 <div class="cashflow-amount-input-box">
@@ -1425,6 +1444,14 @@
                     <i class="fi fi-rr-cross-small"></i>
                   </button>
                 </div>
+                <!-- Dòng gợi ý khi số tiền chi vượt quá số dư khả dụng -->
+                <button type="button" class="cashflow-amount-warning-hint" id="cashflowAmountWarningHint"
+                  onclick="openCashflowExceededModalFromHint()" style="display: none;"
+                  title="Bấm để xem thông báo và lấy ra từ quỹ">
+                  <i class="fi fi-rr-triangle-warning"
+                    style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>
+                  <span>Vượt số dư khả dụng (<strong id="cashflowAmountWarningVal">0 ₫</strong>) - Bấm lấy từ quỹ</span>
+                </button>
                 <div class="cashflow-quick-amounts">
                   <button type="button" class="cashflow-quick-chip"
                     onclick="quickAddCashflowAmount(0, '000')">+000</button>
@@ -1542,6 +1569,146 @@
         <div class="cashflow-cat-picker-footer">
           <button type="button" class="cashflow-cat-picker-manage-btn" onclick="openCashflowCategoryModalFromPicker()">
             <i class="fi fi-rr-settings"></i> <span>Quản lý danh mục...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup thông báo và hướng dẫn vượt quá số dư khả dụng -->
+    <div id="cashflowExceededBalanceModal" class="modal cashflow-submodal" style="display: none;"
+      onclick="if(event.target===this) closeCashflowExceededBalanceModal()">
+      <div class="cashflow-submodal-dialog cashflow-exceeded-dialog">
+        <div class="cashflow-submodal-header">
+          <div class="cashflow-submodal-header-left">
+            <div class="cashflow-submodal-icon is-warning">
+              <i class="fi fi-rr-triangle-warning"></i>
+            </div>
+            <div>
+              <h3 class="cashflow-submodal-title">Vượt quá số dư khả dụng</h3>
+              <p class="cashflow-submodal-subtitle">Khoản chi tiêu lớn hơn số tiền khả dụng hiện có</p>
+            </div>
+          </div>
+          <button type="button" class="cashflow-submodal-close" onclick="closeCashflowExceededBalanceModal()"
+            aria-label="Đóng" title="Đóng">
+            ×
+          </button>
+        </div>
+
+        <div class="cashflow-submodal-body cashflow-exceeded-body">
+          <div class="cashflow-exceeded-stat-cards">
+            <div class="cashflow-exceeded-stat-item">
+              <span class="cashflow-exceeded-stat-label">Số dư khả dụng</span>
+              <strong class="cashflow-exceeded-stat-val is-available" id="cashflowExceededAvailableVal">0 ₫</strong>
+            </div>
+            <div class="cashflow-exceeded-stat-divider">
+              <i class="fi fi-rr-arrow-right"></i>
+            </div>
+            <div class="cashflow-exceeded-stat-item">
+              <span class="cashflow-exceeded-stat-label">Khoản muốn chi</span>
+              <strong class="cashflow-exceeded-stat-val is-expense" id="cashflowExceededExpenseVal">0 ₫</strong>
+            </div>
+          </div>
+
+          <div class="cashflow-exceeded-diff-badge" id="cashflowExceededDiffBadge">
+            <i class="fi fi-rr-coins"
+              style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>
+            <span>Số tiền còn thiếu: <strong id="cashflowExceededShortageVal">0 ₫</strong></span>
+          </div>
+
+          <div class="cashflow-exceeded-guide-msg">
+            <i class="fi fi-rr-info"
+              style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>
+            <span>Số tiền chi vượt quá số dư khả dụng trong ví. Bạn vui lòng bấm <strong>"Lấy ra từ quỹ"</strong> để
+              chọn quỹ và rút số tiền còn thiếu vào số dư.</span>
+          </div>
+        </div>
+
+        <div class="cashflow-submodal-actions-bar">
+          <button type="button" class="cashflow-submodal-cancel-btn" onclick="closeCashflowExceededBalanceModal()">
+            Đóng
+          </button>
+          <button type="button" class="cashflow-submodal-confirm-btn is-warning"
+            onclick="openWithdrawFromExceededModal()">
+            <i class="fi fi-rr-arrow-up-from-square"
+              style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>
+            <span>Lấy ra từ quỹ</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Lấy ra từ quỹ (chọn quỹ & nhập số tiền lấy ra) -->
+    <div id="cashflowWithdrawFundModal" class="modal cashflow-submodal" style="display: none;"
+      onclick="if(event.target===this) closeCashflowWithdrawFundModal()">
+      <div class="cashflow-submodal-dialog cashflow-withdraw-dialog">
+        <div class="cashflow-submodal-header">
+          <div class="cashflow-submodal-header-left">
+            <div class="cashflow-submodal-icon is-withdraw">
+              <i class="fi fi-rr-arrow-up-from-square"></i>
+            </div>
+            <div>
+              <h3 class="cashflow-submodal-title" id="cashflowWithdrawModalTitle">Lấy ra từ quỹ</h3>
+              <p class="cashflow-submodal-subtitle">Rút tiền từ quỹ dự phòng vào số dư khả dụng</p>
+            </div>
+          </div>
+          <button type="button" class="cashflow-submodal-close" onclick="closeCashflowWithdrawFundModal()"
+            aria-label="Đóng" title="Đóng">
+            ×
+          </button>
+        </div>
+
+        <div class="cashflow-submodal-body cashflow-withdraw-body">
+          <label class="cashflow-withdraw-label-group">
+            <span class="cashflow-withdraw-label">Chọn quỹ cần lấy ra</span>
+            <select id="cashflowWithdrawFundSelect" class="cashflow-withdraw-select"
+              onchange="onCashflowWithdrawFundChange()" aria-label="Chọn quỹ cần lấy ra" title="Chọn quỹ cần lấy ra">
+              <option value="">-- Chọn quỹ --</option>
+            </select>
+          </label>
+
+          <div class="cashflow-withdraw-fund-info" id="cashflowWithdrawFundInfo" style="display: none;">
+            <div class="cashflow-withdraw-info-left">
+              <i class="fi fi-rr-shield-check"
+                style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>
+              <span>Số dư hiện tại của quỹ:</span>
+            </div>
+            <strong id="cashflowWithdrawFundBalance">0 ₫</strong>
+          </div>
+
+          <label class="cashflow-withdraw-label-group">
+            <span class="cashflow-withdraw-label">Số tiền lấy ra</span>
+            <div class="cashflow-withdraw-amount-wrap">
+              <span class="cashflow-currency-symbol">₫</span>
+              <input type="text" id="cashflowWithdrawAmount" class="cashflow-withdraw-amount-field" placeholder="0"
+                inputmode="numeric" autocomplete="off" />
+              <button type="button" class="cashflow-withdraw-max-btn" onclick="setCashflowWithdrawMaxAmount()"
+                title="Lấy tối đa số dư của quỹ">Tối đa</button>
+            </div>
+          </label>
+
+          <div class="cashflow-quick-amounts cashflow-withdraw-quick-amounts">
+            <button type="button" class="cashflow-quick-chip"
+              onclick="quickSetCashflowWithdrawAmount(50000)">50k</button>
+            <button type="button" class="cashflow-quick-chip"
+              onclick="quickSetCashflowWithdrawAmount(100000)">100k</button>
+            <button type="button" class="cashflow-quick-chip"
+              onclick="quickSetCashflowWithdrawAmount(200000)">200k</button>
+            <button type="button" class="cashflow-quick-chip"
+              onclick="quickSetCashflowWithdrawAmount(500000)">500k</button>
+            <button type="button" class="cashflow-quick-chip"
+              onclick="quickSetCashflowWithdrawAmount(1000000)">1M</button>
+          </div>
+        </div>
+
+        <div class="cashflow-submodal-actions-bar">
+          <button type="button" class="cashflow-submodal-cancel-btn" onclick="closeCashflowWithdrawFundModal()">
+            Hủy
+          </button>
+          <button type="button" class="cashflow-submodal-confirm-btn is-withdraw" id="cashflowWithdrawConfirmBtn"
+            onclick="confirmCashflowWithdrawFund()">
+            <i class="fi fi-rr-check"
+              style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>
+            <span>Xác nhận lấy ra</span>
           </button>
         </div>
       </div>

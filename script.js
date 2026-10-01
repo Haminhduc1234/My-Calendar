@@ -12276,31 +12276,43 @@ function confirmCashflowWithdrawFund() {
     return;
   }
 
-  const fundIndex = fundsData.funds.findIndex((f) => f.id === fundId);
-  if (fundIndex >= 0) {
-    fundsData.funds[fundIndex].initialAmount = (fundsData.funds[fundIndex].initialAmount || 0) - amount;
-    fundsData.funds[fundIndex].updatedAt = Date.now();
+  // Bảo toàn dữ liệu gốc (initialAmount) của quỹ - ghi nhận giao dịch rút tiền vào allocations
+  if (!Array.isArray(fundsData.allocations)) {
+    fundsData.allocations = [];
   }
 
+  const withdrawAllocation = {
+    id: `alloc-withdraw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    fundId: fundId,
+    amount: -amount,
+    type: "withdraw",
+    note: `Lấy ra từ quỹ ${fund.name}`,
+    date: getTodayIsoDate(),
+    createdAt: Date.now(),
+  };
+
+  fundsData.allocations.push(withdrawAllocation);
   saveFundsToFirebase();
 
   // Bắn thông báo đẩy
   try {
     queueEventNotification({
-      id: `withdraw-${Date.now()}`,
+      id: withdrawAllocation.id,
       title: "Lấy tiền ra từ quỹ",
       text: `Đã lấy ${amount.toLocaleString("vi-VN")} đ từ quỹ ${fund.name} vào số dư khả dụng`,
       note: `Đã lấy ${amount.toLocaleString("vi-VN")} đ từ quỹ ${fund.name} vào số dư khả dụng`,
       fundName: fund.name,
       amount: amount,
-      date: getTodayIsoDate(),
-      createdAt: Date.now()
+      date: withdrawAllocation.date,
+      createdAt: withdrawAllocation.createdAt
     }, "", "fund_withdraw");
   } catch (errNotif) {
     console.warn("[Cashflow] Lỗi queueEventNotification withdraw:", errNotif);
   }
 
   closeCashflowWithdrawFundModal();
+  renderAllocateHistory();
+  renderFundsDashboard();
   updateCashflowAvailableBalanceUI();
   checkCashflowAmountExceeded();
 
@@ -17334,6 +17346,7 @@ function initFundsFirebase() {
       } else {
         fundsData = { funds: [], allocations: [], totalIncome: 0 };
       }
+      normalizeFundsData();
       renderFundsDashboard();
     },
     (error) => {
@@ -17342,6 +17355,32 @@ function initFundsFirebase() {
       renderFundsDashboard();
     },
   );
+}
+
+function normalizeFundsData() {
+  if (!fundsData || !Array.isArray(fundsData.funds)) return;
+  let hasChanges = false;
+  for (const fund of fundsData.funds) {
+    // Nếu quỹ có initialAmount bị âm do trước đó bị trừ trực tiếp vào số gốc
+    if (typeof fund.initialAmount === "number" && fund.initialAmount < 0) {
+      const negativeAmount = Math.abs(fund.initialAmount);
+      fund.initialAmount = 0;
+      if (!Array.isArray(fundsData.allocations)) fundsData.allocations = [];
+      fundsData.allocations.push({
+        id: `alloc-withdraw-fix-${Date.now()}-${fund.id}`,
+        fundId: fund.id,
+        amount: -negativeAmount,
+        type: "withdraw",
+        note: `Khôi phục số tiền đã lấy ra từ quỹ ${fund.name}`,
+        date: getTodayIsoDate(),
+        createdAt: Date.now(),
+      });
+      hasChanges = true;
+    }
+  }
+  if (hasChanges) {
+    saveFundsToFirebase();
+  }
 }
 
 function loadFundsFromLocalStorage() {
@@ -17362,6 +17401,7 @@ function loadFundsFromLocalStorage() {
       fundsData = { funds: [], allocations: [], totalIncome: 0 };
     }
   }
+  normalizeFundsData();
 }
 
 function saveFundsToFirebase() {
@@ -18201,14 +18241,24 @@ function confirmTopupFund() {
       return;
     }
 
-    const fundIndex = fundsData.funds.findIndex((f) => f.id === topupFundId);
-    if (fundIndex >= 0) {
-      fundsData.funds[fundIndex].initialAmount = (fundsData.funds[fundIndex].initialAmount || 0) - amount;
-      fundsData.funds[fundIndex].updatedAt = Date.now();
+    if (!Array.isArray(fundsData.allocations)) {
+      fundsData.allocations = [];
     }
 
+    const withdrawAllocation = {
+      id: `alloc-withdraw-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      fundId: topupFundId,
+      amount: -amount,
+      type: "withdraw",
+      note: `Lấy ra từ quỹ ${fund.name}`,
+      date: getTodayIsoDate(),
+      createdAt: Date.now(),
+    };
+
+    fundsData.allocations.push(withdrawAllocation);
     saveFundsToFirebase();
     closeTopupFundModal();
+    renderAllocateHistory();
     renderFundsDashboard();
     return;
   }
@@ -18225,14 +18275,24 @@ function confirmTopupFund() {
     }
   }
 
-  const fundIndex = fundsData.funds.findIndex((f) => f.id === topupFundId);
-  if (fundIndex >= 0) {
-    fundsData.funds[fundIndex].initialAmount = (fundsData.funds[fundIndex].initialAmount || 0) + amount;
-    fundsData.funds[fundIndex].updatedAt = Date.now();
+  if (!Array.isArray(fundsData.allocations)) {
+    fundsData.allocations = [];
   }
 
+  const topupAllocation = {
+    id: `alloc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    fundId: topupFundId,
+    amount: amount,
+    type: "topup",
+    note: `Nạp thêm vào quỹ ${fund.name}`,
+    date: getTodayIsoDate(),
+    createdAt: Date.now(),
+  };
+
+  fundsData.allocations.push(topupAllocation);
   saveFundsToFirebase();
   closeTopupFundModal();
+  renderAllocateHistory();
   renderFundsDashboard();
 }
 
@@ -18430,14 +18490,23 @@ function renderAllocateHistory() {
     const fund = fundsData.funds.find((f) => f.id === alloc.fundId);
     if (!fund) continue;
 
+    const isWithdraw = Number(alloc.amount) < 0 || alloc.type === "withdraw";
+    const absAmount = Math.abs(Number(alloc.amount) || 0);
+    const amountSign = isWithdraw ? "-" : "+";
+    const amountColor = isWithdraw ? "#f59e0b" : "#10b981";
+    const withdrawBadge = isWithdraw
+      ? `<span style="font-size: 11px; padding: 2px 7px; border-radius: 6px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; margin-left: 6px; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 600;">Lấy ra</span>`
+      : "";
+
     const item = document.createElement("div");
     item.className = "allocate-history-item";
     item.innerHTML = `
       <div class="allocate-history-item-info">
         <div class="allocate-history-item-color" style="background: ${fund.color}"></div>
         <span class="allocate-history-item-name">${fund.name}</span>
+        ${withdrawBadge}
       </div>
-      <span class="allocate-history-item-amount">+${alloc.amount.toLocaleString("vi-VN")} đ</span>
+      <span class="allocate-history-item-amount" style="color: ${amountColor} !important;">${amountSign}${absAmount.toLocaleString("vi-VN")} đ</span>
       <span class="allocate-history-item-date">${formatCashflowDate(alloc.date)}</span>
     `;
     listEl.appendChild(item);

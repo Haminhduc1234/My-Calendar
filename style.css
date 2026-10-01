@@ -6425,7 +6425,7 @@ body::before {
   margin-top: 4px;
   padding: 6px 10px;
   background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.28);
+  border: 1px transparent;
   border-radius: 8px;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;

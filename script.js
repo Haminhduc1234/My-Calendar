@@ -12013,6 +12013,7 @@ function updateCashflowAvailableBalanceUI() {
   valEl.innerText = `${available.toLocaleString("vi-VN")} ₫`;
 
   if (currentType === "expense") {
+    bar.style.display = "flex";
     if (available > 0) {
       bar.classList.add("is-positive");
       bar.classList.remove("is-empty");
@@ -12031,14 +12032,8 @@ function updateCashflowAvailableBalanceUI() {
       }
     }
   } else {
-    // Thu nhập
-    if (available > 0) {
-      bar.classList.add("is-positive");
-      bar.classList.remove("is-empty");
-    } else {
-      bar.classList.remove("is-positive");
-      bar.classList.add("is-empty");
-    }
+    // Tab Thu nhập: Ẩn hoàn toàn thanh số dư khả dụng
+    bar.style.display = "none";
     if (withdrawBtn) withdrawBtn.style.display = "none";
     if (addBtn) {
       addBtn.classList.remove("is-disabled");

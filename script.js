@@ -17423,7 +17423,7 @@ function loadFundsFromLocalStorage() {
 // Tự động nạp cache quỹ vào bộ nhớ ngay khi script chạy
 try {
   loadFundsFromLocalStorage();
-} catch (_) {}
+} catch (_) { }
 
 function saveFundsToFirebase() {
   const profileKey = userProfileKey || "default";
@@ -17763,63 +17763,90 @@ function renderFundsList() {
       progressText = "Không giới hạn";
     }
 
+    const fillHeight = balance <= 0 ? 0 : (target > 0 ? Math.max(12, Math.min(percentage, 95)) : 55);
+    const isCompleted = target > 0 && balance >= target;
+
     const item = document.createElement("div");
-    item.className = "fund-item";
+    item.className = "fund-item fund-jar-item";
     item.draggable = true;
     item.dataset.fundId = fund.id;
     item.title = "Giữ để kéo thả sắp xếp vị trí";
     item.style.setProperty("--fund-color", color);
-    item.style.setProperty("--fund-color-light", `rgba(${colorRgb}, 0.4)`);
+    item.style.setProperty("--fund-color-light", `rgba(${colorRgb}, 0.5)`);
+    item.style.setProperty("--fund-color-dark", `rgba(${colorRgb}, 0.85)`);
+    item.style.setProperty("--fund-color-glow", `rgba(${colorRgb}, 0.28)`);
     item.innerHTML = `
-      <div class="fund-card-header">
-        <div class="fund-jar">
-          <div class="fund-jar-lid"></div>
-          <div class="fund-jar-neck"></div>
-          <div class="fund-jar-body">
-            <div class="fund-jar-fill" style="height: ${Math.max(percentage, 5)}%;">
-              <div class="fund-jar-shine"></div>
-            </div>
-            <div class="fund-percentage">${target > 0 ? percentage.toFixed(0) + '%' : '∞'}</div>
-          </div>
-          <div class="fund-jar-glow"></div>
-        </div>
-        <div class="fund-item-actions">
-          <button class="fund-action-btn" onclick="toggleFundAction(this, event)" title="Tùy chọn">
-            <i class="fi fi-rr-menu-dots-vertical"></i>
-          </button>
-          <div class="fund-action-dropdown">
-            <button class="fund-action-item" onclick="editFund('${fund.id}'); closeFundActionDropdown(this);">
-              <i class="fi fi-rr-pencil"></i>
-              Sửa quỹ
-            </button>
-            <button class="fund-action-item" onclick="openTopupFundModal('${fund.id}'); closeFundActionDropdown(this);">
-              <i class="fi fi-rr-plus"></i>
-              Thêm vào quỹ
-            </button>
-            <button class="fund-action-item" onclick="openWithdrawFundModal('${fund.id}'); closeFundActionDropdown(this);">
-              <i class="fi fi-rr-minus"></i>
-              Lấy ra từ quỹ
-            </button>
-            <button class="fund-action-item danger" onclick="confirmDeleteFund('${fund.id}'); closeFundActionDropdown(this);">
-              <i class="fi fi-rr-trash"></i>
-              Xóa quỹ
-            </button>
-          </div>
-        </div>
+      <!-- Nắp hũ -->
+      <div class="fund-jar-cap">
+        <div class="fund-jar-cap-lid"></div>
+        <div class="fund-jar-neck"></div>
       </div>
-      <div class="fund-item-info">
-        <div class="fund-item-name" title="${fund.name}">${fund.name}</div>
-        <div class="fund-item-balance">
-          <span class="fund-current-amount">${balance.toLocaleString("vi-VN")} đ</span>
+
+      <!-- Thân hũ thủy tinh chứa nước và thông tin -->
+      <div class="fund-jar-body-wrap">
+        <!-- Mực nước dâng theo % -->
+        <div class="fund-jar-liquid" style="height: ${fillHeight}%;">
+          <div class="fund-jar-liquid-surface"></div>
+          <div class="fund-jar-liquid-bubble bubble-1"></div>
+          <div class="fund-jar-liquid-bubble bubble-2"></div>
         </div>
-        <div class="fund-target-row">
-          ${target > 0
-        ? `<div class="fund-progress-track">
-                 <div class="fund-progress-fill" style="width: ${percentage}%;"></div>
-               </div>
-               <div class="fund-target-text ${balance >= target ? 'is-complete' : ''}">${progressText}</div>`
-        : `<div class="fund-target-text unconstrained">Không giới hạn</div>`
-      }
+
+        <!-- Vệt bóng sáng thủy tinh phản chiếu -->
+        <div class="fund-jar-shine-left"></div>
+        <div class="fund-jar-shine-corner"></div>
+
+        <!-- Thanh vai trên hũ: Huy hiệu % và Nút menu 3 chấm -->
+        <div class="fund-jar-shoulder-bar">
+          <div class="fund-jar-badge ${isCompleted ? 'is-complete' : ''}">
+            ${target > 0 ? (isCompleted ? '<i class="fi fi-rr-check"></i> 100%' : `${percentage.toFixed(0)}%`) : '<span class="fund-jar-infinite">∞</span>'}
+          </div>
+
+          <div class="fund-item-actions">
+            <button class="fund-action-btn" onclick="toggleFundAction(this, event)" title="Tùy chọn">
+              <i class="fi fi-rr-menu-dots-vertical"></i>
+            </button>
+            <div class="fund-action-dropdown">
+              <button class="fund-action-item" onclick="editFund('${fund.id}'); closeFundActionDropdown(this);">
+                <i class="fi fi-rr-pencil"></i>
+                Sửa quỹ
+              </button>
+              <button class="fund-action-item" onclick="openTopupFundModal('${fund.id}'); closeFundActionDropdown(this);">
+                <i class="fi fi-rr-plus"></i>
+                Thêm vào quỹ
+              </button>
+              <button class="fund-action-item" onclick="openWithdrawFundModal('${fund.id}'); closeFundActionDropdown(this);">
+                <i class="fi fi-rr-minus"></i>
+                Lấy ra từ quỹ
+              </button>
+              <button class="fund-action-item danger" onclick="confirmDeleteFund('${fund.id}'); closeFundActionDropdown(this);">
+                <i class="fi fi-rr-trash"></i>
+                Xóa quỹ
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tem dán nhãn thông tin trung tâm hũ -->
+        <div class="fund-jar-label-card">
+          <div class="fund-jar-name" title="${fund.name}">
+            <span class="fund-jar-color-tag" style="background: ${color};"></span>
+            <span class="fund-jar-name-text">${fund.name}</span>
+          </div>
+
+          <div class="fund-jar-balance">
+            <span class="fund-jar-balance-val">${balance.toLocaleString("vi-VN")} đ</span>
+          </div>
+
+          <div class="fund-jar-target-info">
+            ${target > 0 ? `
+              <div class="fund-jar-progress-track">
+                <div class="fund-jar-progress-bar" style="width: ${Math.min(percentage, 100)}%;"></div>
+              </div>
+              <div class="fund-jar-target-desc ${isCompleted ? 'is-complete' : ''}">${progressText}</div>
+            ` : `
+              <div class="fund-jar-target-desc unconstrained">Tích lũy tự do</div>
+            `}
+          </div>
         </div>
       </div>
     `;
@@ -18450,6 +18477,7 @@ function openTopupFundModal(fundId) {
     if (needed > 0) {
       if (hintEl) {
         hintEl.style.display = "flex";
+        hintEl.style.flexWrap = "wrap";
         hintEl.innerHTML = `<i class="fi fi-rr-bullseye-arrow"></i> Mục tiêu: <strong>${target.toLocaleString("vi-VN")} đ</strong> (cần thêm <strong>${needed.toLocaleString("vi-VN")} đ</strong>)`;
       }
       if (maxBtn) {
@@ -18957,7 +18985,6 @@ function renderAllocateHistory() {
       <div class="allocate-history-item-info">
         <div class="allocate-history-item-color" style="background: ${fund.color}"></div>
         <span class="allocate-history-item-name">${fund.name}</span>
-        ${withdrawBadge}
       </div>
       <span class="allocate-history-item-amount" style="color: ${amountColor} !important;">${amountSign}${absAmount.toLocaleString("vi-VN")} đ</span>
       <span class="allocate-history-item-date">${formatCashflowDate(alloc.date)}</span>

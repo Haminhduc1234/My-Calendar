@@ -86,9 +86,29 @@ module.exports = async (req, res) => {
       if (eventData.text || eventData.note) bodyParts.push(eventData.text || eventData.note);
       if (eventData.hasImage) bodyParts.push("📎 Kèm hình ảnh");
       targetUrl = `/?action=cashflow&id=${encodeURIComponent(eventData.id || "")}&date=${encodeURIComponent(dateKey || "")}&amount=${encodeURIComponent(eventData.amount || "")}&category=${encodeURIComponent(eventData.category || "")}&cashflowType=${encodeURIComponent(eventData.cashflowType || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
-    } else if (type === "fund_allocation" || type === "funds") {
-      title = `📊 Phân bổ quỹ: ${eventData.fundName || "Quỹ"}`;
-      if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
+    } else if (
+      type === "fund_allocation" ||
+      type === "funds" ||
+      type === "fund_topup" ||
+      type === "fund_withdraw" ||
+      type === "fund_delete" ||
+      type === "fund_create" ||
+      type === "fund_update"
+    ) {
+      if (type === "fund_withdraw") {
+        title = `💸 Lấy tiền ra từ quỹ: ${eventData.fundName || "Quỹ"}`;
+      } else if (type === "fund_delete") {
+        title = `🗑️ Xóa quỹ: ${eventData.fundName || "Quỹ"}`;
+      } else if (type === "fund_topup") {
+        title = `💰 Thêm vào quỹ: ${eventData.fundName || "Quỹ"}`;
+      } else if (type === "fund_create") {
+        title = `✨ Tạo quỹ mới: ${eventData.fundName || "Quỹ"}`;
+      } else if (type === "fund_update") {
+        title = `✏️ Cập nhật quỹ: ${eventData.fundName || "Quỹ"}`;
+      } else {
+        title = `📊 Phân bổ quỹ: ${eventData.fundName || "Quỹ"}`;
+      }
+      if (eventData.amount && Number(eventData.amount) > 0) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
       if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
       if (eventData.text || eventData.note) bodyParts.push(eventData.text || eventData.note);
       targetUrl = `/?action=funds&id=${encodeURIComponent(eventData.id || "")}&fundName=${encodeURIComponent(eventData.fundName || "")}&amount=${encodeURIComponent(eventData.amount || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;

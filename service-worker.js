@@ -47,20 +47,32 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
                 const amt = payload.data?.amount || parsedEventData.amount;
                 if (amt) bodyParts.push(`${Number(amt).toLocaleString("vi-VN")} đ`);
                 if (eventNote) bodyParts.push(eventNote);
-            } else if (type === "fund_allocation" || type === "funds" || type === "fund_topup" || type === "fund_withdraw" || type === "fund_delete") {
+            } else if (
+                type === "fund_allocation" ||
+                type === "funds" ||
+                type === "fund_topup" ||
+                type === "fund_withdraw" ||
+                type === "fund_delete" ||
+                type === "fund_create" ||
+                type === "fund_update"
+            ) {
                 if (type === "fund_withdraw") {
                     title = rawTitle || "💸 Lấy tiền ra từ quỹ";
                 } else if (type === "fund_delete") {
                     title = rawTitle || "🗑️ Xóa quỹ";
                 } else if (type === "fund_topup") {
                     title = rawTitle || "💰 Thêm vào quỹ";
+                } else if (type === "fund_create") {
+                    title = rawTitle || "✨ Tạo quỹ mới";
+                } else if (type === "fund_update") {
+                    title = rawTitle || "✏️ Cập nhật quỹ";
                 } else {
                     title = rawTitle || "📊 Phân bổ quỹ mới";
                 }
                 const fn = cleanStr(payload.data?.fundName || parsedEventData.fundName);
                 if (fn) bodyParts.push(`Quỹ: ${fn}`);
                 const amt = payload.data?.amount || parsedEventData.amount;
-                if (amt) bodyParts.push(`${Number(amt).toLocaleString("vi-VN")} đ`);
+                if (amt && Number(amt) > 0) bodyParts.push(`${Number(amt).toLocaleString("vi-VN")} đ`);
                 if (eventNote) bodyParts.push(eventNote);
             } else {
                 if (dateStr) bodyParts.push(`Ngày ${dateStr}`);

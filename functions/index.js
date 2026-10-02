@@ -26,11 +26,25 @@ function buildNotificationBody(event, dateKey, notificationType = "event") {
     if (event.hasImage) bodyParts.push("📎 Kèm hình ảnh");
     return bodyParts.join(" | ") || "Có giao dịch thu chi mới";
   }
-  if (type === "fund_allocation" || type === "funds") {
-    if (event.amount) bodyParts.push(`${Number(event.amount).toLocaleString("vi-VN")} đ`);
+  if (
+    type === "fund_allocation" ||
+    type === "funds" ||
+    type === "fund_topup" ||
+    type === "fund_withdraw" ||
+    type === "fund_delete" ||
+    type === "fund_create" ||
+    type === "fund_update"
+  ) {
+    if (event.fundName) bodyParts.push(`Quỹ: ${event.fundName}`);
+    if (event.amount && Number(event.amount) > 0) bodyParts.push(`${Number(event.amount).toLocaleString("vi-VN")} đ`);
     const dateStr = event.date || dateKey;
     if (dateStr) bodyParts.push(`Ngày ${dateStr}`);
     if (event.text || event.note) bodyParts.push(event.text || event.note);
+    if (type === "fund_withdraw") return bodyParts.join(" | ") || "Đã lấy tiền ra từ quỹ";
+    if (type === "fund_delete") return bodyParts.join(" | ") || "Đã xóa quỹ";
+    if (type === "fund_topup") return bodyParts.join(" | ") || "Đã thêm tiền vào quỹ";
+    if (type === "fund_create") return bodyParts.join(" | ") || "Đã tạo quỹ mới";
+    if (type === "fund_update") return bodyParts.join(" | ") || "Đã cập nhật quỹ";
     return bodyParts.join(" | ") || "Có phân bổ quỹ mới";
   }
   const dateStr = event.date || dateKey;
@@ -93,8 +107,28 @@ async function sendNotificationToProfile(profileKey, eventData, dateKey = "", ex
     const isExpense = eventData.cashflowType === "expense";
     title = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
     targetUrl = `/?action=cashflow&id=${encodeURIComponent(eventData.id || "")}&date=${encodeURIComponent(dateKey || "")}&amount=${encodeURIComponent(eventData.amount || "")}&category=${encodeURIComponent(eventData.category || "")}&cashflowType=${encodeURIComponent(eventData.cashflowType || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
-  } else if (type === "fund_allocation" || type === "funds") {
-    title = "📊 Phân bổ quỹ mới";
+  } else if (
+    type === "fund_allocation" ||
+    type === "funds" ||
+    type === "fund_topup" ||
+    type === "fund_withdraw" ||
+    type === "fund_delete" ||
+    type === "fund_create" ||
+    type === "fund_update"
+  ) {
+    if (type === "fund_withdraw") {
+      title = `💸 Lấy tiền ra từ quỹ: ${eventData.fundName || "Quỹ"}`;
+    } else if (type === "fund_delete") {
+      title = `🗑️ Xóa quỹ: ${eventData.fundName || "Quỹ"}`;
+    } else if (type === "fund_topup") {
+      title = `💰 Thêm vào quỹ: ${eventData.fundName || "Quỹ"}`;
+    } else if (type === "fund_create") {
+      title = `✨ Tạo quỹ mới: ${eventData.fundName || "Quỹ"}`;
+    } else if (type === "fund_update") {
+      title = `✏️ Cập nhật quỹ: ${eventData.fundName || "Quỹ"}`;
+    } else {
+      title = `📊 Phân bổ quỹ: ${eventData.fundName || "Quỹ"}`;
+    }
     targetUrl = `/?action=funds&id=${encodeURIComponent(eventData.id || "")}&fundName=${encodeURIComponent(eventData.fundName || "")}&amount=${encodeURIComponent(eventData.amount || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
   } else if (type === "event_reminder") {
     // Nhắc nhở trước 60 phút - title đã được set từ caller (⏰ Sắp đến giờ: ...)

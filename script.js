@@ -72,6 +72,7 @@ function getOpenModalId() {
     "fundsModal",
     "fundModal",
     "allocateModal",
+    "allocateHistoryModal",
     "topupFundModal",
     "profileSettingsModal",
     "cropModal",
@@ -3090,7 +3091,11 @@ function initRecurringEventsFirebase() {
         const key = getRecurringEventsStorageKey();
         currentRecurringCacheKey = key;
         localStorage.setItem(key, JSON.stringify(list));
-        renderCalendar();
+        if (typeof scheduleCalendarRender === "function") {
+          scheduleCalendarRender(50);
+        } else {
+          renderCalendar();
+        }
         renderTodayEvents();
         if (typeof renderRecurringEventsList === "function") {
           renderRecurringEventsList();
@@ -3398,8 +3403,176 @@ async function ensureFirebaseAuth() {
   }
 }
 
+/* ==================== DEBOUNCED CALENDAR RENDER & LAZY FIREBASE SYNC ==================== */
+let _calendarRenderTimer = null;
+function scheduleCalendarRender(delayMs = 50) {
+  if (_calendarRenderTimer) clearTimeout(_calendarRenderTimer);
+  _calendarRenderTimer = setTimeout(() => {
+    _calendarRenderTimer = null;
+    renderCalendar();
+    renderOvertime();
+    renderOvertimeSalary();
+  }, delayMs);
+}
+window.scheduleCalendarRender = scheduleCalendarRender;
+
+const FIREBASE_SYNCED = {
+  quickNotes: false,
+  projects: false,
+  funds: false,
+  translate: false,
+  cookbook: false,
+  health: false,
+  senior: false,
+  srs: false,
+  tutor: false,
+};
+
+function ensureQuickNotesFirebaseSynced() {
+  if (FIREBASE_SYNCED.quickNotes) return;
+  if (!firebaseDb || !userProfileKey) return;
+  FIREBASE_SYNCED.quickNotes = true;
+
+  if (!firebaseQuickNotesRef) {
+    firebaseQuickNotesRef = firebaseDb.ref(`quickNotes/${userProfileKey}`);
+  }
+
+  firebaseQuickNotesRef.on("value", (snapshot) => {
+    const incoming = snapshot.val();
+    const normalized = normalizeQuickNotes(incoming);
+    quickNotesCache = normalized;
+    localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(normalized));
+    if (LAZY_LOAD.quickNotes) {
+      renderQuickNotes();
+    }
+  });
+}
+window.ensureQuickNotesFirebaseSynced = ensureQuickNotesFirebaseSynced;
+
+function ensureProjectsFirebaseSynced() {
+  if (FIREBASE_SYNCED.projects) return;
+  if (!firebaseDb || !userProfileKey) return;
+  FIREBASE_SYNCED.projects = true;
+
+  if (!firebaseProjectsRef) {
+    firebaseProjectsRef = firebaseDb.ref(`projects/${userProfileKey}`);
+  }
+
+  firebaseProjectsRef.on("value", (snapshot) => {
+    const remoteData = snapshot.val() || {};
+    projectsDataCache = {};
+    const newTasksCache = {};
+
+    Object.keys(remoteData).forEach((key) => {
+      const val = remoteData[key];
+      if (val && typeof val === "object") {
+        if (val.tasks && typeof val.tasks === "object") {
+          newTasksCache[key] = val.tasks;
+          saveProjectTasksToLocalStorage(key);
+          const { tasks, ...projectData } = val;
+          projectsDataCache[key] = projectData;
+        } else if (val.id || val.title) {
+          projectsDataCache[key] = val;
+          newTasksCache[key] = {};
+          saveProjectTasksToLocalStorage(key);
+        }
+      }
+    });
+
+    projectTasksCache = newTasksCache;
+    saveProjectsToLocalStorage();
+    renderProjectsList();
+    if (currentOpenedProjectId) {
+      renderProjectTasksList(currentOpenedProjectId);
+    }
+  });
+}
+window.ensureProjectsFirebaseSynced = ensureProjectsFirebaseSynced;
+
+function ensureFundsFirebaseSynced() {
+  if (FIREBASE_SYNCED.funds) return;
+  if (!firebaseDb || !userProfileKey) return;
+  FIREBASE_SYNCED.funds = true;
+  initFundsFirebase();
+}
+window.ensureFundsFirebaseSynced = ensureFundsFirebaseSynced;
+
+function ensureTranslateFirebaseSynced() {
+  if (FIREBASE_SYNCED.translate) return;
+  if (!firebaseDb || !userProfileKey) return;
+  FIREBASE_SYNCED.translate = true;
+
+  if (!firebaseTranslateHistoryRef) {
+    firebaseTranslateHistoryRef = firebaseDb.ref(
+      `${FIREBASE_TRANSLATE_HISTORY_PATH}/${userProfileKey}`,
+    );
+  }
+
+  firebaseTranslateHistoryRef.on("value", (snapshot) => {
+    const remoteData = snapshot.val() || {};
+    translateHistoryCache = Object.keys(remoteData)
+      .map((key) => ({
+        id: key,
+        ...remoteData[key],
+      }))
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    renderTranslateHistory();
+  });
+}
+window.ensureTranslateFirebaseSynced = ensureTranslateFirebaseSynced;
+
+function ensureCookbookFirebaseSynced() {
+  if (FIREBASE_SYNCED.cookbook) return;
+  if (!firebaseDb || !userProfileKey) return;
+  FIREBASE_SYNCED.cookbook = true;
+  if (typeof initCookbookFirebase === "function") {
+    initCookbookFirebase(firebaseDb, userProfileKey);
+  }
+}
+window.ensureCookbookFirebaseSynced = ensureCookbookFirebaseSynced;
+
+function ensureHealthFirebaseSynced() {
+  if (FIREBASE_SYNCED.health) return;
+  if (!firebaseDb || !userProfileKey) return;
+  FIREBASE_SYNCED.health = true;
+  if (typeof initFamilyHealthFirebase === "function") {
+    initFamilyHealthFirebase(firebaseDb, userProfileKey);
+  }
+}
+window.ensureHealthFirebaseSynced = ensureHealthFirebaseSynced;
+
+function ensureSeniorFirebaseSynced() {
+  if (FIREBASE_SYNCED.senior) return;
+  if (!firebaseDb || !userProfileKey) return;
+  FIREBASE_SYNCED.senior = true;
+  if (typeof initSeniorFirebase === "function") {
+    initSeniorFirebase(firebaseDb, userProfileKey);
+  }
+}
+window.ensureSeniorFirebaseSynced = ensureSeniorFirebaseSynced;
+
+function ensureSrsFirebaseSynced() {
+  if (FIREBASE_SYNCED.srs) return;
+  if (!firebaseDb || !userProfileKey) return;
+  FIREBASE_SYNCED.srs = true;
+  if (typeof initSrsRealtimeSync === "function") {
+    initSrsRealtimeSync();
+  }
+}
+window.ensureSrsFirebaseSynced = ensureSrsFirebaseSynced;
+
+function ensureChineseTutorFirebaseSynced() {
+  if (FIREBASE_SYNCED.tutor) return;
+  if (!firebaseDb || !userProfileKey) return;
+  FIREBASE_SYNCED.tutor = true;
+  if (typeof initChineseTutorFirebase === "function") {
+    initChineseTutorFirebase(firebaseDb, userProfileKey);
+  }
+}
+window.ensureChineseTutorFirebaseSynced = ensureChineseTutorFirebaseSynced;
+
 async function initFirebaseRealtime() {
-  console.log("[Firebase] Bắt đầu khởi tạo Firebase Realtime...");
+  console.log("[Firebase] Bắt đầu khởi tạo Firebase Realtime (Tối ưu tải nhẹ)...");
 
   if (!window.firebase || !window.firebase.apps) {
     console.log("[Firebase] window.firebase không tồn tại");
@@ -3434,24 +3607,6 @@ async function initFirebaseRealtime() {
   firebaseDatesRef = firebaseDb.ref(
     `${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`,
   );
-  firebaseQuickNotesRef = firebaseDb.ref(`quickNotes/${userProfileKey}`);
-  firebaseProjectsRef = firebaseDb.ref(`projects/${userProfileKey}`);
-  firebaseTranslateHistoryRef = firebaseDb.ref(
-    `${FIREBASE_TRANSLATE_HISTORY_PATH}/${userProfileKey}`,
-  );
-
-  // SRS Realtime Database Sync
-  if (typeof initSrsRealtimeSync === "function") {
-    initSrsRealtimeSync();
-  }
-
-  // Chinese Tutor AI Chat Firebase Sync
-  if (typeof initChineseTutorFirebase === "function") {
-    initChineseTutorFirebase(firebaseDb, userProfileKey);
-  }
-
-  // Funds reference
-  initFundsFirebase();
 
   // Recurring events reference
   initRecurringEventsFirebase();
@@ -3464,14 +3619,6 @@ async function initFirebaseRealtime() {
   firebaseProfileSettingsRef = firebaseDb.ref(
     `${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`,
   );
-  console.log(
-    "[Firebase] Profile settings ref path:",
-    `${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`,
-  );
-  console.log(
-    "[Firebase] firebaseProfileSettingsRef created:",
-    !!firebaseProfileSettingsRef,
-  );
 
   // Setup real-time listener for profile settings
   setupProfileFirebaseListener();
@@ -3479,207 +3626,10 @@ async function initFirebaseRealtime() {
   // Load Profile Settings from Firebase
   loadProfileSettingsFromFirebase();
 
-  // Senior Mode - Gọi Người Thân Một Chạm & Danh Bạ
-  if (typeof initSeniorFirebase === "function") {
-    initSeniorFirebase(firebaseDb, userProfileKey);
-  }
-
-  // Family Cookbook & Dietary Notes
-  if (typeof initCookbookFirebase === "function") {
-    initCookbookFirebase(firebaseDb, userProfileKey);
-  }
-
-  // Family Health Tracker
-  if (typeof initFamilyHealthFirebase === "function") {
-    initFamilyHealthFirebase(firebaseDb, userProfileKey);
-  }
-
   window.firebaseDb = firebaseDb;
   window.userProfileKey = userProfileKey;
 
-  console.log("[Firebase] Đã khởi tạo thành công, firebaseDb:", !!firebaseDb);
-
-  // Lắng nghe sự thay đổi của Translate History
-  firebaseTranslateHistoryRef.on("value", (snapshot) => {
-    const remoteData = snapshot.val() || {};
-    translateHistoryCache = Object.keys(remoteData)
-      .map((key) => ({
-        id: key,
-        ...remoteData[key],
-      }))
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    console.log(
-      "Translate history: Loaded",
-      translateHistoryCache.length,
-      "items from Firebase",
-    );
-    renderTranslateHistory();
-  });
-
-  // Lắng nghe sự thay đổi của Projects
-  firebaseProjectsRef.on("value", (snapshot) => {
-    const remoteData = snapshot.val() || {};
-
-    // Separate projects and tasks
-    projectsDataCache = {};
-    const newTasksCache = {};
-
-    Object.keys(remoteData).forEach((key) => {
-      const val = remoteData[key];
-      if (val && typeof val === "object") {
-        if (val.tasks && typeof val.tasks === "object") {
-          newTasksCache[key] = val.tasks;
-          saveProjectTasksToLocalStorage(key);
-          const { tasks, ...projectData } = val;
-          projectsDataCache[key] = projectData;
-        } else if (val.id || val.title) {
-          projectsDataCache[key] = val;
-          newTasksCache[key] = {};
-          saveProjectTasksToLocalStorage(key);
-        }
-      }
-    });
-
-    projectTasksCache = newTasksCache;
-    saveProjectsToLocalStorage();
-    renderProjectsList();
-    if (currentOpenedProjectId) {
-      renderProjectTasksList(currentOpenedProjectId);
-    }
-  });
-
-  // Xóa date cache localStorage của profile cũ để tránh cross-profile pollution
-  for (let i = localStorage.length - 1; i >= 0; i--) {
-    const k = localStorage.key(i);
-    if (k && isDateKey(k)) localStorage.removeItem(k);
-  }
-
-  const snapshot = await firebaseDatesRef.once("value");
-  const remoteData = snapshot.val() || {};
-
-  dateDataCache = {};
-  Object.keys(remoteData).forEach((dateKey) => {
-    if (!isDateKey(dateKey)) return;
-    if (!isDateRecordTrusted(remoteData[dateKey])) return;
-    dateDataCache[dateKey] = normalizeDateData(remoteData[dateKey]);
-  });
-
-  // Render calendar immediately after loading Firebase data
-  renderCalendar();
-  renderOvertime();
-  renderOvertimeSalary();
-
-  const migrationFlag = `${LEGACY_MIGRATION_FLAG_PREFIX}${userProfileKey}`;
-  const migrated = localStorage.getItem(migrationFlag) === "1";
-  if (!migrated) {
-    const localData = collectLegacyLocalDateData();
-    const localKeys = Object.keys(localData);
-    for (const dateKey of localKeys) {
-      if (dateDataCache[dateKey]) continue;
-      dateDataCache[dateKey] = normalizeDateData(localData[dateKey]);
-      await firebaseDatesRef.child(dateKey).set({
-        __type: "date_data",
-        events:
-          dateDataCache[dateKey].events.length > 0
-            ? dateDataCache[dateKey].events
-            : {},
-        overtimeHours: dateDataCache[dateKey].overtimeHours,
-        cashflowEntries:
-          dateDataCache[dateKey].cashflowEntries.length > 0
-            ? dateDataCache[dateKey].cashflowEntries
-            : {},
-        updatedAt: Date.now(),
-      });
-    }
-    localStorage.setItem(migrationFlag, "1");
-  }
-
-  await migrateLegacyCashflowEntriesIfNeeded();
-
-  // Initial Quick Notes Sync
-  const qnSnapshot = await firebaseQuickNotesRef.once("value");
-  const remoteNotes = qnSnapshot.val();
-
-  if (remoteNotes !== null && remoteNotes !== undefined) {
-    const parsed = normalizeQuickNotes(remoteNotes);
-    quickNotesCache = parsed;
-    localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(parsed));
-    if (LAZY_LOAD.quickNotes) {
-      renderQuickNotes();
-    }
-  } else {
-    // Migration: only migrate from legacy local storage ONCE per profile if flag not set
-    const migrationFlag = `quickNotesMigrated:${userProfileKey}`;
-    const migrated = localStorage.getItem(migrationFlag) === "1";
-    if (!migrated) {
-      const localRaw = localStorage.getItem(getQuickNoteStorageKey()) || localStorage.getItem(QUICK_NOTE_STORAGE_KEY_PREFIX);
-      let localNotes = [];
-      try {
-        if (localRaw) localNotes = normalizeQuickNotes(JSON.parse(localRaw));
-      } catch (e) { }
-
-      if (localNotes.length > 0) {
-        quickNotesCache = localNotes;
-        await firebaseQuickNotesRef.set(localNotes);
-        if (LAZY_LOAD.quickNotes) {
-          renderQuickNotes();
-        }
-      } else {
-        quickNotesCache = [];
-        localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify([]));
-      }
-      localStorage.setItem(migrationFlag, "1");
-    } else {
-      quickNotesCache = [];
-      localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify([]));
-      if (LAZY_LOAD.quickNotes) {
-        renderQuickNotes();
-      }
-    }
-  }
-
-  // Initial Projects Sync
-  const projSnapshot = await firebaseProjectsRef.once("value");
-  const remoteProjects = projSnapshot.val();
-
-  if (remoteProjects && typeof remoteProjects === "object") {
-    projectsDataCache = {};
-    Object.keys(remoteProjects).forEach((key) => {
-      const val = remoteProjects[key];
-      if (val && typeof val === "object") {
-        if (val.tasks) {
-          projectTasksCache[key] = val.tasks;
-          const { tasks, ...projectData } = val;
-          projectsDataCache[key] = projectData;
-        } else if (val.id || val.title) {
-          projectsDataCache[key] = val;
-        }
-      }
-    });
-    localStorage.setItem(
-      `projects:${userProfileKey}`,
-      JSON.stringify(projectsDataCache),
-    );
-  } else {
-    const localProjects = loadProjectsFromLocalStorage();
-    if (localProjects) {
-      projectsDataCache = localProjects;
-      await firebaseProjectsRef.set(localProjects);
-    }
-  }
-
-  // Load tasks for each project from local storage if not loaded from Firebase
-  Object.keys(projectsDataCache).forEach((projectId) => {
-    if (!projectTasksCache[projectId]) {
-      const localTasks = loadProjectTasksFromLocalStorage(projectId);
-      if (localTasks) {
-        projectTasksCache[projectId] = localTasks;
-      }
-    }
-  });
-
-  // Listen for date data changes from Firebase
-  let isInitialDatesLoad = true;
+  // Lắng nghe trực tiếp sự thay đổi của Dates (Firebase tự phát sinh snapshot đầu tiên)
   firebaseDatesRef.on("value", (dataSnapshot) => {
     const incoming = dataSnapshot.val() || {};
     const nextCache = {};
@@ -3710,10 +3660,8 @@ async function initFirebaseRealtime() {
 
     dateDataCache = nextCache;
 
-    // Re-render calendar after Firebase data loads to display events and overtime
-    renderCalendar();
-    renderOvertime();
-    renderOvertimeSalary();
+    // Dùng Debounce render calendar mượt mà, không giật màn hình
+    scheduleCalendarRender(50);
 
     if (LAZY_LOAD.cashflow) {
       renderCashflowDashboard();
@@ -3723,15 +3671,36 @@ async function initFirebaseRealtime() {
     if (selectedKey && document.getElementById("dayDetailsModal")?.style.display !== "none") {
       openDayDetails(selectedKey);
     }
-  });
 
-  firebaseQuickNotesRef.on("value", (snapshot) => {
-    const incoming = snapshot.val();
-    const normalized = normalizeQuickNotes(incoming);
-    quickNotesCache = normalized;
-    localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(normalized));
-    if (LAZY_LOAD.quickNotes) {
-      renderQuickNotes();
+    // Xử lý migration nếu cần (chạy không-blocking ở nền)
+    const migrationFlag = `${LEGACY_MIGRATION_FLAG_PREFIX}${userProfileKey}`;
+    if (localStorage.getItem(migrationFlag) !== "1") {
+      setTimeout(() => {
+        try {
+          const localData = collectLegacyLocalDateData();
+          const localKeys = Object.keys(localData);
+          for (const dateKey of localKeys) {
+            if (dateDataCache[dateKey]) continue;
+            dateDataCache[dateKey] = normalizeDateData(localData[dateKey]);
+            firebaseDatesRef.child(dateKey).set({
+              __type: "date_data",
+              events:
+                dateDataCache[dateKey].events.length > 0
+                  ? dateDataCache[dateKey].events
+                  : {},
+              overtimeHours: dateDataCache[dateKey].overtimeHours,
+              cashflowEntries:
+                dateDataCache[dateKey].cashflowEntries.length > 0
+                  ? dateDataCache[dateKey].cashflowEntries
+                  : {},
+              updatedAt: Date.now(),
+            });
+          }
+          localStorage.setItem(migrationFlag, "1");
+        } catch (e) {
+          console.warn("[Firebase] Migration error:", e);
+        }
+      }, 2500);
     }
   });
 
@@ -3748,8 +3717,7 @@ async function initFirebaseRealtime() {
   setupNotificationQueueListener();
   setupNotificationHistoryListener();
 
-  // Realtime database initialized
-  console.log("Firebase Realtime Database connected");
+  console.log("[Firebase] Realtime Database kết nối thành công (Tải nhanh Core Mode)");
 }
 
 // Reload all Firebase references and data when user changes (after login/register/upgrade)
@@ -3768,117 +3736,43 @@ async function reloadFirebaseForUser() {
   projectsDataCache = {};
   projectTasksCache = {};
 
+  // Reset lazy sync flags so modals will reconnect on-demand for new profile
+  Object.keys(FIREBASE_SYNCED).forEach((key) => {
+    FIREBASE_SYNCED[key] = false;
+  });
+  if (typeof LAZY_LOAD === "object") {
+    LAZY_LOAD.quickNotes = false;
+    LAZY_LOAD.projects = false;
+    LAZY_LOAD.funds = false;
+    LAZY_LOAD.translate = false;
+  }
+
   // Off existing listeners to prevent duplicates
   if (firebaseDatesRef) firebaseDatesRef.off();
   if (firebaseQuickNotesRef) firebaseQuickNotesRef.off();
   if (firebaseTranslateHistoryRef) firebaseTranslateHistoryRef.off();
   if (firebaseProjectsRef) firebaseProjectsRef.off();
   if (firebaseRecurringRef) firebaseRecurringRef.off();
+  if (firebaseFundsRef) firebaseFundsRef.off();
 
-  // Update Firebase references with new userProfileKey
+  // Update essential Firebase references with new userProfileKey
   firebaseDatesRef = firebaseDb.ref(`${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`);
-  firebaseQuickNotesRef = firebaseDb.ref(`quickNotes/${userProfileKey}`);
-  firebaseProjectsRef = firebaseDb.ref(`projects/${userProfileKey}`);
-  firebaseTranslateHistoryRef = firebaseDb.ref(`${FIREBASE_TRANSLATE_HISTORY_PATH}/${userProfileKey}`);
+  firebaseQuickNotesRef = null;
+  firebaseProjectsRef = null;
+  firebaseTranslateHistoryRef = null;
+  firebaseFundsRef = null;
   firebaseProfileSettingsRef = firebaseDb.ref(`${FIREBASE_PROFILE_SETTINGS_PATH}/${userProfileKey}`);
-
-  // Reload Funds
-  initFundsFirebase();
 
   // Reload Recurring Events
   initRecurringEventsFirebase();
 
-  // Reload Cashflow categories
+  // Reload Cashflow categories & budgets
   loadCashflowCategoriesFromStorage();
   loadBudgetsFromStorage();
 
-  // Load dates from Firebase
-  try {
-    const datesSnapshot = await firebaseDatesRef.once("value");
-    const remoteDates = datesSnapshot.val() || {};
-    Object.keys(remoteDates).forEach((dateKey) => {
-      if (!isDateKey(dateKey)) return;
-      if (!isDateRecordTrusted(remoteDates[dateKey])) return;
-      dateDataCache[dateKey] = normalizeDateData(remoteDates[dateKey]);
-    });
-    console.log("[Firebase] Loaded", Object.keys(dateDataCache).length, "date records");
-  } catch (err) {
-    console.error("[Firebase] Error loading dates:", err);
-  }
-
-  // Load Quick Notes
-  try {
-    const quickNotesSnapshot = await firebaseQuickNotesRef.once("value");
-    const quickNotesData = quickNotesSnapshot.val();
-    const normalized = normalizeQuickNotes(quickNotesData);
-    quickNotesCache = normalized;
-    localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(normalized));
-  } catch (err) {
-    console.error("[Firebase] Error loading quick notes:", err);
-  }
-
-  // Load Projects
-  try {
-    const projectsSnapshot = await firebaseProjectsRef.once("value");
-    const projectsData = projectsSnapshot.val() || {};
-    Object.keys(projectsData).forEach((key) => {
-      const val = projectsData[key];
-      if (val && typeof val === "object") {
-        if (val.tasks) {
-          projectTasksCache[key] = val.tasks;
-          const { tasks, ...projectData } = val;
-          projectsDataCache[key] = projectData;
-        } else if (val.id || val.title) {
-          projectsDataCache[key] = val;
-        }
-      }
-    });
-  } catch (err) {
-    console.error("[Firebase] Error loading projects:", err);
-  }
-
-  // Load Translate History
-  try {
-    const translateSnapshot = await firebaseTranslateHistoryRef.once("value");
-    const translateData = translateSnapshot.val() || {};
-    translateHistoryCache = Object.keys(translateData)
-      .map((key) => ({ id: key, ...translateData[key] }))
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-  } catch (err) {
-    console.error("[Firebase] Error loading translate history:", err);
-  }
-
-  // Setup real-time listeners
+  // Setup profile listener
   setupProfileFirebaseListener();
   loadProfileSettingsFromFirebase();
-
-  // Senior Mode - Gọi Người Thân Một Chạm & Danh Bạ
-  if (typeof initSeniorFirebase === "function") {
-    initSeniorFirebase(firebaseDb, userProfileKey);
-  }
-
-  // Family Cookbook & Dietary Notes
-  if (typeof initCookbookFirebase === "function") {
-    initCookbookFirebase(firebaseDb, userProfileKey);
-  }
-
-  // Family Health Tracker
-  if (typeof initFamilyHealthFirebase === "function") {
-    initFamilyHealthFirebase(firebaseDb, userProfileKey);
-  }
-
-  // Chinese SRS Progress Sync
-  if (typeof initSrsRealtimeSync === "function") {
-    initSrsRealtimeSync();
-  }
-
-  // Chinese Tutor AI Chat Firebase Sync
-  if (typeof initChineseTutorFirebase === "function") {
-    initChineseTutorFirebase(firebaseDb, userProfileKey);
-  }
-
-  // Track first Firebase data load for this user
-  let isFirstReloadLoad = true;
 
   // Realtime listener for dates
   firebaseDatesRef.on("value", (dataSnapshot) => {
@@ -3910,69 +3804,14 @@ async function reloadFirebaseForUser() {
     }
 
     dateDataCache = nextCache;
-
-    // Always render calendar after login (user changed)
-    renderCalendar();
-    renderOvertime();
-    renderOvertimeSalary();
+    scheduleCalendarRender(50);
 
     if (LAZY_LOAD.cashflow) {
       renderCashflowDashboard();
     }
 
-    // Nếu modal chi tiết ngày đang mở trên thiết bị này cho ngày vừa được cập nhật/xóa:
     if (selectedKey && document.getElementById("dayDetailsModal")?.style.display !== "none") {
       openDayDetails(selectedKey);
-    }
-  });
-
-  // Realtime listener for quick notes
-  firebaseQuickNotesRef.on("value", (snapshot) => {
-    const incoming = snapshot.val();
-    const normalized = normalizeQuickNotes(incoming);
-    quickNotesCache = normalized;
-    localStorage.setItem(getQuickNoteStorageKey(), JSON.stringify(normalized));
-    if (LAZY_LOAD.quickNotes) {
-      renderQuickNotes();
-    }
-  });
-
-  // Realtime listener for translate history
-  firebaseTranslateHistoryRef.on("value", (snapshot) => {
-    const remoteData = snapshot.val() || {};
-    translateHistoryCache = Object.keys(remoteData)
-      .map((key) => ({ id: key, ...remoteData[key] }))
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    renderTranslateHistory();
-  });
-
-  // Realtime listener for projects
-  firebaseProjectsRef.on("value", (snapshot) => {
-    const remoteData = snapshot.val() || {};
-    projectsDataCache = {};
-    const newTasksCache = {};
-
-    Object.keys(remoteData).forEach((key) => {
-      const val = remoteData[key];
-      if (val && typeof val === "object") {
-        if (val.tasks && typeof val.tasks === "object") {
-          newTasksCache[key] = val.tasks;
-          saveProjectTasksToLocalStorage(key);
-          const { tasks, ...projectData } = val;
-          projectsDataCache[key] = projectData;
-        } else if (val.id || val.title) {
-          projectsDataCache[key] = val;
-          newTasksCache[key] = {};
-          saveProjectTasksToLocalStorage(key);
-        }
-      }
-    });
-
-    projectTasksCache = newTasksCache;
-    saveProjectsToLocalStorage();
-    renderProjectsList();
-    if (currentOpenedProjectId) {
-      renderProjectTasksList(currentOpenedProjectId);
     }
   });
 
@@ -3981,16 +3820,6 @@ async function reloadFirebaseForUser() {
     const k = localStorage.key(i);
     if (k && isDateKey(k)) localStorage.removeItem(k);
   }
-
-  // Re-render UI
-  renderCalendar();
-  renderOvertime();
-  renderOvertimeSalary();
-  if (LAZY_LOAD.quickNotes) {
-    renderQuickNotes();
-  }
-  renderProjectsList();
-  renderTranslateHistory();
 
   // Re-sync Push Notification token for the new user profile
   initFirebaseMessaging();
@@ -7069,6 +6898,7 @@ function closeOvertimeModal() {
 
 function openProjectsModal() {
   closeAllModals();
+  ensureProjectsFirebaseSynced();
   document.getElementById("projectsModal").style.display = "flex";
   loadProjectsOnDemand();
 
@@ -8151,14 +7981,14 @@ function showToast(message, duration = 2500) {
       transform: translateX(-50%);
       background: rgba(20, 30, 50, 0.95);
       color: #e6f0ff;
-      padding: 12px 24px;
+      padding: 12px;
       border-radius: 10px;
-      font-size: 14px;
+      font-size: 12px;
       z-index: 9999;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
       border: 1px solid rgba(0, 204, 68, 0.4);
       animation: toastIn 0.3s ease;
-      max-width: 90vw;
+      max-width: 95vw;
       text-align: center;
     `;
     document.body.appendChild(toast);
@@ -8937,6 +8767,7 @@ function forceCloseQuickNoteModal() {
 
 function openQuickNoteModal() {
   closeAllModals();
+  ensureQuickNotesFirebaseSynced();
   loadQuickNotesOnDemand();
   document.getElementById("quickNoteModal").style.display = "flex";
 
@@ -9570,6 +9401,7 @@ function closeMoreMenu() {
 
 function openFamilyCookbookModal() {
   closeAllModals();
+  ensureCookbookFirebaseSynced();
   const modal = document.getElementById("familyCookbookModal");
   if (modal) {
     modal.style.display = "flex";
@@ -17414,7 +17246,7 @@ function initFundsFirebase() {
       const profileKey = userProfileKey || "default";
       try {
         localStorage.setItem(`funds_${profileKey}`, JSON.stringify(fundsData));
-      } catch (_) {}
+      } catch (_) { }
       renderFundsDashboard();
     },
     (error) => {
@@ -17479,7 +17311,7 @@ function normalizeFundsData() {
   const profileKey = userProfileKey || "default";
   try {
     localStorage.setItem(`funds_${profileKey}`, JSON.stringify(fundsData));
-  } catch (_) {}
+  } catch (_) { }
 
   if (hasChanges && firebaseFundsRef) {
     saveFundsToFirebase();
@@ -17577,6 +17409,7 @@ function calculateAvailableFundBalance() {
 
 function openFundsModal() {
   closeAllModals();
+  ensureFundsFirebaseSynced();
   const modal = document.getElementById("fundsModal");
   modal.style.display = "flex";
 
@@ -17874,13 +17707,13 @@ function renderFundsList() {
           <span class="fund-current-amount">${balance.toLocaleString("vi-VN")} đ</span>
         </div>
         <div class="fund-target-row">
-          ${target > 0 
-            ? `<div class="fund-progress-track">
+          ${target > 0
+        ? `<div class="fund-progress-track">
                  <div class="fund-progress-fill" style="width: ${percentage}%;"></div>
                </div>
                <div class="fund-target-text ${balance >= target ? 'is-complete' : ''}">${progressText}</div>`
-            : `<div class="fund-target-text unconstrained">Không giới hạn</div>`
-          }
+        : `<div class="fund-target-text unconstrained">Không giới hạn</div>`
+      }
         </div>
       </div>
     `;
@@ -17983,7 +17816,7 @@ function handleFundTouchStart(e) {
   _fundTouchHoldTimer = setTimeout(() => {
     _fundTouchIsDragging = true;
     if (navigator.vibrate) {
-      try { navigator.vibrate(35); } catch (_) {}
+      try { navigator.vibrate(35); } catch (_) { }
     }
     if (_fundTouchSrcEl) {
       _fundTouchSrcEl.classList.add("dragging", "touch-dragging");
@@ -18857,10 +18690,18 @@ function closeCelebrationModal() {
 window.closeCelebrationModal = closeCelebrationModal;
 
 function renderAllocateHistory() {
+  const badgeEl = document.getElementById("allocateHistoryBadge");
+  const allocationsCount = Array.isArray(fundsData?.allocations) ? fundsData.allocations.length : 0;
+  if (badgeEl) {
+    badgeEl.textContent = allocationsCount;
+    badgeEl.style.display = allocationsCount > 0 ? "inline-flex" : "none";
+  }
+
   const listEl = document.getElementById("allocateHistoryList");
+  if (!listEl) return;
   listEl.innerHTML = "";
 
-  if (fundsData.allocations.length === 0) {
+  if (allocationsCount === 0) {
     const empty = document.createElement("div");
     empty.className = "app-empty-state";
     empty.innerHTML = `
@@ -18875,7 +18716,7 @@ function renderAllocateHistory() {
   const sorted = [...fundsData.allocations].sort(
     (a, b) => b.createdAt - a.createdAt,
   );
-  const recent = sorted.slice(0, 10);
+  const recent = sorted.slice(0, 15);
 
   for (const alloc of recent) {
     const fund = fundsData.funds.find((f) => f.id === alloc.fundId);
@@ -18903,6 +18744,23 @@ function renderAllocateHistory() {
     listEl.appendChild(item);
   }
 }
+
+function openAllocateHistoryModal() {
+  renderAllocateHistory();
+  const modal = document.getElementById("allocateHistoryModal");
+  if (modal) {
+    modal.style.display = "flex";
+  }
+}
+window.openAllocateHistoryModal = openAllocateHistoryModal;
+
+function closeAllocateHistoryModal() {
+  const modal = document.getElementById("allocateHistoryModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+}
+window.closeAllocateHistoryModal = closeAllocateHistoryModal;
 
 // Initialize fund color picker
 (function initFundColorPicker() {
@@ -18993,6 +18851,13 @@ function renderAllocateHistory() {
   if (allocateModal) {
     allocateModal.addEventListener("click", (e) => {
       if (e.target === allocateModal) closeAllocateModal();
+    });
+  }
+
+  const allocateHistoryModal = document.getElementById("allocateHistoryModal");
+  if (allocateHistoryModal) {
+    allocateHistoryModal.addEventListener("click", (e) => {
+      if (e.target === allocateHistoryModal) closeAllocateHistoryModal();
     });
   }
 
@@ -19316,6 +19181,7 @@ function loadCountdownOnDemand() {
 function loadQuickNotesOnDemand() {
   if (LAZY_LOAD.quickNotes) return;
   if (!isUserLoggedIn()) return;
+  ensureQuickNotesFirebaseSynced();
   showSkeleton('quicknotesSkeleton');
   LAZY_LOAD.quickNotes = true;
   renderQuickNotes();
@@ -19341,6 +19207,7 @@ function loadCashflowOnDemand() {
 function loadFundsOnDemand() {
   if (LAZY_LOAD.funds) return;
   if (!isUserLoggedIn()) return;
+  ensureFundsFirebaseSynced();
   showSkeleton('fundsSkeleton');
   LAZY_LOAD.funds = true;
   renderFundsDashboard();
@@ -19374,12 +19241,14 @@ function loadNewsOnDemand() {
 function loadTranslateOnDemand() {
   if (LAZY_LOAD.translate) return;
   if (!isUserLoggedIn()) return;
+  ensureTranslateFirebaseSynced();
   LAZY_LOAD.translate = true;
 }
 
 function loadProjectsOnDemand() {
   if (LAZY_LOAD.projects) return;
   if (!isUserLoggedIn()) return;
+  ensureProjectsFirebaseSynced();
   showSkeleton('projectsSkeleton');
   LAZY_LOAD.projects = true;
 
@@ -19820,6 +19689,7 @@ function openTranslateModal() {
 function openTranslateHistoryModal() {
   const modal = document.getElementById("translateHistoryModal");
   modal.style.display = "flex";
+  ensureTranslateFirebaseSynced();
   updateTranslateHistoryBadge();
   renderTranslateHistoryModal();
 }
@@ -22842,6 +22712,10 @@ function selectLearnLanguageAndOpen(lang) {
   const modal = document.getElementById("learnModal");
   modal.style.display = "flex";
   document.body.style.overflow = "hidden";
+
+  if (lang === "zh") {
+    ensureSrsFirebaseSynced();
+  }
 
   // Apply chosen language (cập nhật giao diện, hiển thị nút tab Nhập môn nếu là tiếng Trung)
   switchLearnLanguage(lang);

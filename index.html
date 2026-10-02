@@ -24,12 +24,12 @@
   <link rel="icon" type="image/png" href="public/favicon.png" />
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-  <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+  <script defer src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
   <!-- Cropper.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
   <!-- KaTeX for Math formula rendering -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -2388,7 +2388,7 @@
             </div>
             <div class="funds-header-text">
               <h3 id="fundsModalTitle">Qũy</h3>
-              <p class="funds-header-sub">Phân bổ ngân sách, theo dõi các hũ quỹ tài chính gia đình</p>
+              <p class="funds-header-sub">Phân bổ ngân sách</p>
             </div>
           </div>
           <button class="modal-close funds-modal-close" onclick="closeFundsModal()" aria-label="Đóng">×</button>
@@ -2418,7 +2418,7 @@
                     <div class="funds-balance-card funds-metric-item">
                       <div class="funds-metric-header">
                         <span class="funds-metric-dot dot-income"></span>
-                        <div class="funds-balance-label">Chênh lệch thu chi</div>
+                        <div class="funds-balance-label">Tổng dư</div>
                       </div>
                       <div class="funds-balance-value" id="fundsTotalIncome">0 đ</div>
                     </div>
@@ -2432,7 +2432,7 @@
                     <div class="funds-balance-card funds-metric-item">
                       <div class="funds-metric-header">
                         <span class="funds-metric-dot dot-available"></span>
-                        <div class="funds-balance-label">Còn khả dụng</div>
+                        <div class="funds-balance-label">Khả dụng</div>
                       </div>
                       <div class="funds-balance-value is-available" id="fundsAvailable">0 đ</div>
                     </div>
@@ -2454,9 +2454,6 @@
 
             <!-- Danh sách Quỹ -->
             <div class="funds-list-section">
-              <div class="funds-section-header">
-                <h4>Danh sách Quỹ</h4>
-              </div>
               <div class="funds-skeleton" id="fundsSkeleton">
                 <div class="skeleton-fund-card">
                   <div class="skeleton-fund-name"></div>
@@ -2541,56 +2538,107 @@
       </div>
     </div>
 
-    <!-- Allocate Funds Modal -->
-    <div id="allocateModal" class="modal">
-      <div class="modal-content event-modal-wrapper">
-        <div class="event-modal-header">
-          <div>
-            <h3>Phân bổ vào Quỹ</h3>
+    <!-- Allocate Funds Modal (Full Screen Main Modal) -->
+    <div id="allocateModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="allocateModalTitle">
+      <div class="modal-content allocate-modal-shell">
+        <div class="funds-modal-header allocate-modal-header">
+          <div class="funds-header-left allocate-header-title-box">
+            <div class="funds-header-icon allocate-header-icon">
+              <i class="fi fi-rr-coins"></i>
+            </div>
+            <div class="funds-header-text allocate-header-text">
+              <h3 id="allocateModalTitle">Phân bổ vào Quỹ</h3>
+              <p class="funds-header-sub allocate-header-sub">Chuyển tiền từ số dư khả dụng vào các quỹ mục tiêu</p>
+            </div>
           </div>
-          <button class="modal-close event-modal-close" onclick="closeAllocateModal()">
+          <button class="modal-close allocate-modal-close" onclick="closeAllocateModal()" aria-label="Đóng">
             ×
           </button>
         </div>
 
-        <div class="allocate-container">
-          <div class="allocate-balance-info">
-            <span>Số dư khả dụng:</span>
-            <strong id="allocateAvailableAmount">0 đ</strong>
-          </div>
-
-          <div class="allocate-form">
-            <label class="allocate-input-item">
-              <span>Chọn Quỹ</span>
-              <select id="allocateFundSelect" onchange="onAllocateFundSelectChange()">
-                <option value="">-- Chọn quỹ --</option>
-              </select>
-            </label>
-            <div class="allocate-fund-detail-info" id="allocateFundDetailInfo" style="display: none; justify-content: space-between; align-items: center; padding: 7px 10px; background: rgba(255, 255, 255, 0.04); border-radius: 8px; font-size: 11.5px; border: 1px solid rgba(255, 255, 255, 0.06); margin-top: -4px;">
-              <span id="allocateFundCurrentBalText" style="color: var(--muted, #94a3b8);">Số dư quỹ: <strong style="color: #10b981;">0 đ</strong></span>
-              <span id="allocateFundRemainingTargetText" style="color: #60a5fa; font-weight: 500;"></span>
+        <div class="allocate-container allocate-modal-body">
+          <div class="allocate-content-wrap">
+            <div class="allocate-balance-info">
+              <span>Số dư khả dụng:</span>
+              <strong id="allocateAvailableAmount">0 đ</strong>
             </div>
-            <label class="allocate-input-item">
-              <span>Số tiền phân bổ</span>
-              <input type="text" id="allocateAmount" placeholder="VD: 500.000" inputmode="numeric" />
-            </label>
-          </div>
 
-          <div class="allocate-actions">
-            <button class="confirm-cancel-btn" onclick="closeAllocateModal()">
+            <div class="allocate-form">
+              <label class="allocate-input-item">
+                <span>Chọn Quỹ</span>
+                <select id="allocateFundSelect" onchange="onAllocateFundSelectChange()">
+                  <option value="">-- Chọn quỹ --</option>
+                </select>
+              </label>
+              <div class="allocate-fund-detail-info" id="allocateFundDetailInfo"
+                style="display: none; justify-content: space-between; align-items: center; padding: 7px 10px; background: rgba(255, 255, 255, 0.04); border-radius: 8px; font-size: 11.5px; border: 1px solid rgba(255, 255, 255, 0.06); margin-top: -4px;">
+                <span id="allocateFundCurrentBalText" style="color: var(--muted, #94a3b8);">Số dư quỹ: <strong
+                    style="color: #10b981;">0 đ</strong></span>
+                <span id="allocateFundRemainingTargetText" style="color: #60a5fa; font-weight: 500;"></span>
+              </div>
+              <label class="allocate-input-item">
+                <span>Số tiền phân bổ</span>
+                <input type="text" id="allocateAmount" placeholder="VD: 500.000" inputmode="numeric" />
+              </label>
+            </div>
+
+            <!-- Nút bấm mở popup xem lịch sử phân bổ gần đây -->
+            <button type="button" class="allocate-history-trigger-btn" onclick="openAllocateHistoryModal()">
+              <div class="allocate-history-trigger-left">
+                <div class="allocate-history-trigger-icon">
+                  <i class="fi fi-rr-time-past"></i>
+                </div>
+                <div class="allocate-history-trigger-text">
+                  <span class="allocate-history-trigger-title">Lịch sử phân bổ gần đây</span>
+                  <span class="allocate-history-trigger-desc">Xem các lần nạp và lấy ra từ quỹ</span>
+                </div>
+              </div>
+              <div class="allocate-history-trigger-right">
+                <span class="allocate-history-badge" id="allocateHistoryBadge">0</span>
+                <i class="fi fi-rr-angle-small-right"></i>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Footer cố định phía dưới (CSS tương tự modal quỹ) -->
+        <div class="funds-modal-footer allocate-modal-footer">
+          <div class="funds-footer-inner allocate-footer-inner">
+            <button type="button" class="funds-footer-btn allocate-footer-btn-cancel" onclick="closeAllocateModal()">
               Hủy
             </button>
-            <button class="funds-btn-add" onclick="confirmAllocate()">
-              Phân bổ
+            <button type="button" class="funds-footer-btn funds-footer-btn-allocate allocate-footer-btn-confirm" onclick="confirmAllocate()">
+              <i class="fi fi-rr-check"></i> <span>Phân bổ</span>
             </button>
           </div>
+        </div>
+      </div>
+    </div>
 
-          <div class="allocate-history-section">
-            <div class="allocate-history-header">Lịch sử phân bổ gần đây</div>
-            <div id="allocateHistoryList" class="allocate-history-list">
-              <!-- History items rendered here -->
+    <!-- Allocate History Popup Modal -->
+    <div id="allocateHistoryModal" class="modal allocate-history-modal" style="display: none;" onclick="if(event.target===this) closeAllocateHistoryModal()">
+      <div class="modal-content allocate-history-dialog">
+        <div class="allocate-history-dialog-header">
+          <div class="allocate-history-dialog-title-box">
+            <div class="allocate-history-dialog-icon">
+              <i class="fi fi-rr-time-past"></i>
+            </div>
+            <div class="allocate-history-dialog-text">
+              <h3>Lịch sử phân bổ</h3>
+              <p>Chi tiết các giao dịch nạp / rút từ quỹ</p>
             </div>
           </div>
+          <button type="button" class="modal-close allocate-history-dialog-close" onclick="closeAllocateHistoryModal()" aria-label="Đóng">×</button>
+        </div>
+        <div class="allocate-history-dialog-body">
+          <div id="allocateHistoryList" class="allocate-history-list">
+            <!-- History items rendered here -->
+          </div>
+        </div>
+        <div class="allocate-history-dialog-footer">
+          <button type="button" class="allocate-history-close-btn" onclick="closeAllocateHistoryModal()">
+            Đóng
+          </button>
         </div>
       </div>
     </div>
@@ -2621,15 +2669,20 @@
           <h3 id="topupFundModalTitle">Thêm vào quỹ</h3>
         </div>
         <div class="fund-form">
-          <div class="topup-fund-info-bar" id="topupFundBalanceInfo" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; margin-bottom: 12px; font-size: 12.5px;">
+          <div class="topup-fund-info-bar" id="topupFundBalanceInfo"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; margin-bottom: 12px; font-size: 12.5px;">
             <span style="color: var(--muted, #94a3b8);">Số dư hiện có của quỹ:</span>
-            <strong id="topupFundCurrentBalance" style="color: #10b981; font-family: 'Space Grotesk', sans-serif;">0 đ</strong>
+            <strong id="topupFundCurrentBalance" style="color: #10b981; font-family: 'Space Grotesk', sans-serif;">0
+              đ</strong>
           </div>
           <label class="fund-input-item">
             <span id="topupFundAmountLabel">Số tiền thêm vào</span>
             <div style="position: relative; display: flex; align-items: center; width: 100%;">
-              <input type="text" id="topupAmount" placeholder="VD: 500.000" autocomplete="off" inputmode="numeric" style="padding-right: 64px; width: 100%;" />
-              <button type="button" class="topup-max-btn" id="topupMaxBtn" onclick="setTopupMaxAmount()" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-size: 11px; font-weight: 600; cursor: pointer;">Tối đa</button>
+              <input type="text" id="topupAmount" placeholder="VD: 500.000" autocomplete="off" inputmode="numeric"
+                style="padding-right: 64px; width: 100%;" />
+              <button type="button" class="topup-max-btn" id="topupMaxBtn" onclick="setTopupMaxAmount()"
+                style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-size: 11px; font-weight: 600; cursor: pointer;">Tối
+                đa</button>
             </div>
           </label>
         </div>
@@ -4104,14 +4157,14 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
-  <script src="public/my-music-library.js"></script>
-  <script src="learn-en-data.js"></script>
-  <script src="learn-zh-data.js"></script>
-  <script src="data/zh/zh-hsk-data.js"></script>
-  <script src="chinese-tutor.js?v=20260924_tutor_lock_v3"></script>
-  <script src="zh-data-loader.js"></script>
+  <script defer src="public/my-music-library.js"></script>
+  <script defer src="learn-en-data.js"></script>
+  <script defer src="learn-zh-data.js"></script>
+  <script defer src="data/zh/zh-hsk-data.js"></script>
+  <script defer src="chinese-tutor.js?v=20260924_tutor_lock_v3"></script>
+  <script defer src="zh-data-loader.js"></script>
   <!-- Hanzi Writer for Interactive Chinese Stroke Animation & Practice -->
-  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
   <script src="senior-mode.js?v=20260916"></script>
   <script src="family-cookbook.js?v=20260917_search_pos"></script>
   <script src="family-health.js?v=20260918_latest_log_sync"></script>

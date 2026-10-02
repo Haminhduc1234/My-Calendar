@@ -323,6 +323,9 @@
 
   window.openSeniorCallModal = function () {
     if (typeof closeAllModals === "function") closeAllModals();
+    if (typeof window.ensureSeniorFirebaseSynced === "function") {
+      window.ensureSeniorFirebaseSynced();
+    }
     const modal = document.getElementById("seniorCallModal");
     if (!modal) return;
     renderSeniorCallList();
@@ -395,6 +398,9 @@
 
   window.openSeniorSettingsModal = function () {
     if (typeof closeAllModals === "function") closeAllModals();
+    if (typeof window.ensureSeniorFirebaseSynced === "function") {
+      window.ensureSeniorFirebaseSynced();
+    }
     const modal = document.getElementById("seniorSettingsModal");
     if (!modal) return;
     renderSeniorSettingsList();

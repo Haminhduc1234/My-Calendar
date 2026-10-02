@@ -316,6 +316,9 @@ function openChineseTutorModal() {
       return;
     }
 
+    if (typeof window.ensureChineseTutorFirebaseSynced === "function") {
+      window.ensureChineseTutorFirebaseSynced();
+    }
     // Khởi tạo kịch bản và dữ liệu gia sư AI
     if (typeof initChineseTutor === "function") {
       initChineseTutor();

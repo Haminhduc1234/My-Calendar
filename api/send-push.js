@@ -55,6 +55,8 @@ module.exports = async (req, res) => {
 
     const tokens = [];
     Object.entries(tokenMap).forEach(([devId, value]) => {
+      // Bỏ qua thiết bị hiện tại nếu là người tạo sự kiện (tránh bắn thông báo về chính máy thao tác)
+      if (senderDeviceId && devId === senderDeviceId) return;
       const t = typeof value === "string" ? value : value?.token;
       if (t && typeof t === "string" && t.length > 20 && !tokens.includes(t)) {
         tokens.push(t);
@@ -130,7 +132,7 @@ module.exports = async (req, res) => {
 
     const body = bodyParts.join(" | ") || "Có cập nhật mới từ thiết bị khác.";
     const eventId = String(eventData?.id || "");
-    const notificationTag = eventId ? `event-${eventId}` : `event-${Date.now()}`;
+    const notificationTag = eventId ? `event-${eventId}` : `notify-${type}-${dateKey || ""}`;
 
     // Loại bỏ trường image (base64) để tránh vượt giới hạn 4KB payload của FCM
     const safeEventData = { ...(eventData || {}) };

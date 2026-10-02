@@ -116,7 +116,7 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
                 icon: "/public/favicon.png",
                 badge: "/public/favicon.png",
                 tag: notificationTag,
-                renotify: true,
+                renotify: false,
                 vibrate: [200, 100, 200],
                 data: {
                     url: targetUrl,
@@ -132,22 +132,11 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
 
         messaging.onBackgroundMessage((payload) => {
             console.log("[FCM-SW] onBackgroundMessage received:", payload);
-            return handleIncomingPush(payload);
-        });
-
-        self.addEventListener("push", (event) => {
-            console.log("[FCM-SW] Native push event received:", event);
-            let payload = {};
-            if (event.data) {
-                try {
-                    payload = event.data.json();
-                } catch (e) {
-                    try {
-                        payload = { data: { text: event.data.text() } };
-                    } catch (e2) { }
-                }
+            if (payload.notification && payload.notification.title) {
+                console.log("[FCM-SW] Notification đã được Firebase SDK/Browser hiển thị tự động.");
+                return;
             }
-            event.waitUntil(handleIncomingPush(payload));
+            return handleIncomingPush(payload);
         });
     } catch (e) {
         console.error("[FCM-SW] Firebase messaging init failed:", e);

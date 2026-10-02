@@ -107,7 +107,7 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
                 icon: "/public/favicon.png",
                 badge: "/public/favicon.png",
                 tag: notificationTag,
-                renotify: true,
+                renotify: false,
                 vibrate: [200, 100, 200],
                 data: {
                     url: targetUrl,
@@ -120,23 +120,12 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
 
         messaging.onBackgroundMessage((payload) => {
             console.log("[SW] onBackgroundMessage received:", payload);
-            return handleIncomingPush(payload);
-        });
-
-        // Bổ sung listener push chuẩn W3C WebPush để bắt mọi gói tin đẩy kể cả khi Firebase SDK không trigger onBackgroundMessage
-        self.addEventListener("push", (event) => {
-            console.log("[SW] Native push event received:", event);
-            let payload = {};
-            if (event.data) {
-                try {
-                    payload = event.data.json();
-                } catch (e) {
-                    try {
-                        payload = { data: { text: event.data.text() } };
-                    } catch (e2) { }
-                }
+            // Nếu payload đã chứa block notification, browser / FCM SDK sẽ tự hiển thị
+            if (payload.notification && payload.notification.title) {
+                console.log("[SW] Notification đã được FCM SDK/Browser tự động hiển thị.");
+                return;
             }
-            event.waitUntil(handleIncomingPush(payload));
+            return handleIncomingPush(payload);
         });
     } catch (e) {
         console.error("[SW] Firebase messaging init failed:", e);

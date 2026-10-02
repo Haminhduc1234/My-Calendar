@@ -4851,8 +4851,14 @@ function setupNotificationQueueListener() {
       const data = snapshot.val();
       if (!data || !data.eventData) return;
 
+      const myDeviceId = getOrCreateDeviceId();
+      // Tuyệt đối không hiển thị thông báo trên chính thiết bị đã tạo ra hành động
+      if (data.senderDeviceId && data.senderDeviceId === myDeviceId) {
+        return;
+      }
+
       const mySessionId = getOrCreateTabSessionId();
-      // Nếu sự kiện được gửi từ tab khác hoặc thiết bị khác (Session ID khác nhau 100%)
+      // Nếu sự kiện được gửi từ thiết bị khác
       if (!data.senderSessionId || data.senderSessionId !== mySessionId) {
         console.log("[NotificationQueue] Nhận thông báo MỚI từ thiết bị/tab khác:", data);
         notifyNewEventFromRealtime(data.eventData, data.dateKey, data.notificationType);

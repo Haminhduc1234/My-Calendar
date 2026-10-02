@@ -2493,47 +2493,70 @@
       </div>
     </div>
 
-    <!-- Add/Edit Fund Modal -->
-    <div id="fundModal" class="modal">
-      <div class="modal-content confirm-modal-content">
-        <div class="confirm-modal-header">
-          <h3 id="fundModalTitle">Thêm Quỹ mới</h3>
-        </div>
-        <div class="fund-form">
-          <label class="fund-input-item">
-            <span>Tên Quỹ</span>
-            <input type="text" id="fundName" placeholder="VD: Quỹ du lịch, Quỹ tiết kiệm..." maxlength="50" />
-          </label>
-          <label class="fund-input-item" id="fundInitialAmountLabel" style="display: none">
-            <span>Số dư quỹ</span>
-            <input type="text" id="fundInitialAmount" placeholder="VD: 1.000.000" autocomplete="off" />
-          </label>
-          <label class="fund-input-item">
-            <span>Mục tiêu (VNĐ)</span>
-            <input type="text" id="fundTarget" placeholder="VD: 5.000.000 (để trống = không giới hạn)"
-              autocomplete="off" />
-          </label>
-          <label class="fund-input-item">
-            <span>Màu sắc</span>
-            <div class="fund-color-picker" id="fundColorPicker">
-              <button class="fund-color-btn active" data-color="#64B5F6" style="background: #64B5F6"></button>
-              <button class="fund-color-btn" data-color="#3b82f6" style="background: #3b82f6"></button>
-              <button class="fund-color-btn" data-color="#10b981" style="background: #10b981"></button>
-              <button class="fund-color-btn" data-color="#f59e0b" style="background: #f59e0b"></button>
-              <button class="fund-color-btn" data-color="#ef4444" style="background: #ef4444"></button>
-              <button class="fund-color-btn" data-color="#ec4899" style="background: #ec4899"></button>
-              <button class="fund-color-btn" data-color="#06b6d4" style="background: #06b6d4"></button>
-              <button class="fund-color-btn" data-color="#84cc16" style="background: #84cc16"></button>
+    <!-- Add/Edit Fund Modal (Full Screen Main Modal) -->
+    <div id="fundModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="fundModalTitle">
+      <div class="modal-content fund-modal-shell">
+        <!-- Header Sticky Top -->
+        <div class="funds-modal-header fund-modal-header">
+          <div class="funds-header-left fund-header-title-box">
+            <div class="funds-header-icon fund-header-icon" id="fundModalHeaderIcon">
+              <i class="fi fi-rr-wallet" id="fundModalIconGlyph"></i>
             </div>
-          </label>
+            <div class="funds-header-text fund-header-text">
+              <h3 id="fundModalTitle">Thêm Quỹ mới</h3>
+              <p class="funds-header-sub fund-header-sub" id="fundModalSub">Tạo quỹ tích lũy ngân sách theo mục tiêu</p>
+            </div>
+          </div>
+          <button class="modal-close fund-modal-close" onclick="closeFundModal()" aria-label="Đóng">
+            ×
+          </button>
         </div>
-        <div class="confirm-modal-actions">
-          <button class="confirm-cancel-btn" onclick="closeFundModal()">
-            Hủy
-          </button>
-          <button class="funds-btn-add" id="fundSaveBtn" onclick="saveFund()">
-            Lưu
-          </button>
+
+        <!-- Scrollable Body -->
+        <div class="fund-container fund-modal-body">
+          <div class="fund-modal-content-wrap">
+            <div class="fund-form-card">
+              <label class="fund-input-item">
+                <span>Tên Quỹ</span>
+                <input type="text" id="fundName" placeholder="VD: Quỹ du lịch, Quỹ tiết kiệm..." maxlength="50" autocomplete="off" />
+              </label>
+              <label class="fund-input-item" id="fundInitialAmountLabel" style="display: none">
+                <span>Số dư quỹ (VNĐ)</span>
+                <input type="text" id="fundInitialAmount" placeholder="VD: 1.000.000" autocomplete="off" inputmode="numeric" />
+              </label>
+              <label class="fund-input-item">
+                <span>Mục tiêu tích lũy (VNĐ)</span>
+                <input type="text" id="fundTarget" placeholder="VD: 5.000.000 (để trống = không giới hạn)" autocomplete="off" inputmode="numeric" />
+              </label>
+              <label class="fund-input-item">
+                <span>Màu sắc đại diện</span>
+                <div class="fund-color-picker" id="fundColorPicker">
+                  <button type="button" class="fund-color-btn active" data-color="#64B5F6" style="background: #64B5F6" aria-label="Màu xanh dương nhạt"></button>
+                  <button type="button" class="fund-color-btn" data-color="#3b82f6" style="background: #3b82f6" aria-label="Màu xanh dương"></button>
+                  <button type="button" class="fund-color-btn" data-color="#10b981" style="background: #10b981" aria-label="Màu xanh lá"></button>
+                  <button type="button" class="fund-color-btn" data-color="#f59e0b" style="background: #f59e0b" aria-label="Màu vàng cam"></button>
+                  <button type="button" class="fund-color-btn" data-color="#ef4444" style="background: #ef4444" aria-label="Màu đỏ"></button>
+                  <button type="button" class="fund-color-btn" data-color="#ec4899" style="background: #ec4899" aria-label="Màu hồng"></button>
+                  <button type="button" class="fund-color-btn" data-color="#06b6d4" style="background: #06b6d4" aria-label="Màu lam"></button>
+                  <button type="button" class="fund-color-btn" data-color="#84cc16" style="background: #84cc16" aria-label="Màu chanh"></button>
+                  <button type="button" class="fund-color-btn" data-color="#8b5cf6" style="background: #8b5cf6" aria-label="Màu tím"></button>
+                  <button type="button" class="fund-color-btn" data-color="#14b8a6" style="background: #14b8a6" aria-label="Màu mòng két"></button>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sticky Footer -->
+        <div class="funds-modal-footer fund-modal-footer">
+          <div class="funds-footer-inner fund-footer-inner">
+            <button type="button" class="funds-footer-btn fund-footer-btn-cancel" onclick="closeFundModal()">
+              Hủy
+            </button>
+            <button type="button" class="funds-footer-btn funds-footer-btn-create fund-footer-btn-save" id="fundSaveBtn" onclick="saveFund()">
+              <i class="fi fi-rr-check"></i> <span id="fundSaveBtnText">Lưu Quỹ</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -2662,37 +2685,70 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 
-    <!-- Topup/Withdraw Fund Modal -->
-    <div id="topupFundModal" class="modal">
-      <div class="modal-content confirm-modal-content">
-        <div class="confirm-modal-header">
-          <h3 id="topupFundModalTitle">Thêm vào quỹ</h3>
-        </div>
-        <div class="fund-form">
-          <div class="topup-fund-info-bar" id="topupFundBalanceInfo"
-            style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; margin-bottom: 12px; font-size: 12.5px;">
-            <span style="color: var(--muted, #94a3b8);">Số dư hiện có của quỹ:</span>
-            <strong id="topupFundCurrentBalance" style="color: #10b981; font-family: 'Space Grotesk', sans-serif;">0
-              đ</strong>
-          </div>
-          <label class="fund-input-item">
-            <span id="topupFundAmountLabel">Số tiền thêm vào</span>
-            <div style="position: relative; display: flex; align-items: center; width: 100%;">
-              <input type="text" id="topupAmount" placeholder="VD: 500.000" autocomplete="off" inputmode="numeric"
-                style="padding-right: 64px; width: 100%;" />
-              <button type="button" class="topup-max-btn" id="topupMaxBtn" onclick="setTopupMaxAmount()"
-                style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-size: 11px; font-weight: 600; cursor: pointer;">Tối
-                đa</button>
+    <!-- Topup/Withdraw Fund Modal (Full Screen Main Modal) -->
+    <div id="topupFundModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="topupFundModalTitle">
+      <div class="modal-content topup-modal-shell">
+        <div class="funds-modal-header topup-modal-header">
+          <div class="funds-header-left topup-header-title-box">
+            <div class="funds-header-icon topup-header-icon" id="topupFundHeaderIcon">
+              <i class="fi fi-rr-wallet-arrow" id="topupFundIconGlyph"></i>
             </div>
-          </label>
+            <div class="funds-header-text topup-header-text">
+              <h3 id="topupFundModalTitle">Thêm vào quỹ</h3>
+              <p class="funds-header-sub topup-header-sub" id="topupFundModalSub">Nạp thêm hoặc rút bớt tiền quỹ</p>
+            </div>
+          </div>
+          <button class="modal-close topup-modal-close" onclick="closeTopupFundModal()" aria-label="Đóng">
+            ×
+          </button>
         </div>
-        <div class="confirm-modal-actions">
-          <button class="confirm-cancel-btn" onclick="closeTopupFundModal()">
-            Hủy
-          </button>
-          <button class="funds-btn-add" id="topupFundConfirmBtn" onclick="confirmTopupFund()">
-            Xác nhận
-          </button>
+
+        <div class="topup-container topup-modal-body">
+          <div class="topup-content-wrap">
+            <!-- Khối hiển thị Số dư quỹ và Số dư khả dụng (2 cột trực quan) -->
+            <div class="topup-balance-cards-grid" id="topupFundBalanceInfo">
+              <div class="topup-balance-card">
+                <div class="topup-balance-card-header">
+                  <span class="topup-balance-card-icon icon-fund"><i class="fi fi-rr-wallet"></i></span>
+                  <span class="topup-balance-card-label">Số dư quỹ hiện có</span>
+                </div>
+                <div class="topup-balance-card-val" id="topupFundCurrentBalance">0 đ</div>
+              </div>
+              <div class="topup-balance-card">
+                <div class="topup-balance-card-header">
+                  <span class="topup-balance-card-icon icon-available"><i class="fi fi-rr-coins"></i></span>
+                  <span class="topup-balance-card-label">Số dư khả dụng</span>
+                </div>
+                <div class="topup-balance-card-val is-available" id="topupFundAvailableBalance">0 đ</div>
+              </div>
+            </div>
+
+            <!-- Form nhập số tiền -->
+            <div class="topup-form-card">
+              <label class="topup-input-item">
+                <span id="topupFundAmountLabel">Số tiền thêm vào</span>
+                <div class="topup-amount-input-wrap">
+                  <input type="text" id="topupAmount" placeholder="VD: 500.000" autocomplete="off" inputmode="numeric" />
+                  <button type="button" class="topup-max-btn" id="topupMaxBtn" onclick="setTopupMaxAmount()">
+                    Tối đa
+                  </button>
+                </div>
+              </label>
+              <div class="topup-fund-target-hint" id="topupFundTargetHint" style="display: none;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer cố định phía dưới -->
+        <div class="funds-modal-footer topup-modal-footer">
+          <div class="funds-footer-inner topup-footer-inner">
+            <button type="button" class="funds-footer-btn topup-footer-btn-cancel" onclick="closeTopupFundModal()">
+              Hủy
+            </button>
+            <button type="button" class="funds-footer-btn funds-footer-btn-allocate topup-footer-btn-confirm" id="topupFundConfirmBtn" onclick="confirmTopupFund()">
+              <i class="fi fi-rr-check"></i> <span id="topupFundConfirmText">Xác nhận</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

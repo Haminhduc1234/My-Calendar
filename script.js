@@ -1330,7 +1330,12 @@ async function ensureProfileKey() {
       currentUsername = storedUsername;
       const modal = document.getElementById("authModal");
       if (modal) modal.style.display = "none";
-      setTimeout(() => initProfileOnLoad(), 0);
+      setTimeout(() => {
+        initProfileOnLoad();
+        if (typeof loadFundsFromLocalStorage === "function") {
+          loadFundsFromLocalStorage();
+        }
+      }, 0);
       resolve(true);
       return;
     }
@@ -3491,6 +3496,9 @@ window.ensureProjectsFirebaseSynced = ensureProjectsFirebaseSynced;
 
 function ensureFundsFirebaseSynced() {
   if (FIREBASE_SYNCED.funds) return;
+  if (!userProfileKey) {
+    userProfileKey = localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE) || "";
+  }
   if (!firebaseDb || !userProfileKey) return;
   FIREBASE_SYNCED.funds = true;
   initFundsFirebase();
@@ -3570,6 +3578,59 @@ function ensureChineseTutorFirebaseSynced() {
   }
 }
 window.ensureChineseTutorFirebaseSynced = ensureChineseTutorFirebaseSynced;
+
+/**
+ * Tự động đồng bộ dòng tiền và dữ liệu quỹ theo thời gian thực (Realtime Multi-Device Sync)
+ * Khi thiết bị khác thêm/sửa/xoá khoản thu/chi, cập nhật tức thì vào modal Quỹ và Thu-Chi đang mở
+ */
+function syncRealtimeCashflowAndFunds() {
+  if (typeof reloadCashflowEntriesFromCache === "function") {
+    reloadCashflowEntriesFromCache();
+  }
+  if (typeof updateCashflowAvailableBalanceUI === "function") {
+    updateCashflowAvailableBalanceUI();
+  }
+
+  // 1. Cập nhật Dashboard thu chi nếu đang mở hoặc lazy loaded
+  if (typeof LAZY_LOAD === "object" && LAZY_LOAD.cashflow && typeof renderCashflowDashboard === "function") {
+    renderCashflowDashboard();
+  }
+
+  // 2. Cập nhật ngay modal Quỹ nếu đang hiển thị
+  const fundsModal = document.getElementById("fundsModal");
+  if (fundsModal && fundsModal.style.display !== "none" && typeof renderFundsDashboard === "function") {
+    renderFundsDashboard();
+  }
+
+  // 3. Cập nhật số dư khả dụng trong modal Thêm/Lấy ra từ quỹ nếu đang mở
+  const topupModal = document.getElementById("topupFundModal");
+  if (topupModal && topupModal.style.display !== "none" && typeof calculateAvailableFundBalance === "function") {
+    const availBalEl = document.getElementById("topupFundAvailableBalance");
+    if (availBalEl) {
+      const available = calculateAvailableFundBalance();
+      availBalEl.innerText = `${available.toLocaleString("vi-VN")} đ`;
+      availBalEl.style.color = available < 0 ? "#ef4444" : "#10b981";
+      if (typeof topupFundMode !== "undefined" && topupFundMode === "topup") {
+        const topupAmountInput = document.getElementById("topupAmount");
+        if (topupAmountInput && !topupAmountInput.value) {
+          topupAmountInput.placeholder = available > 0 ? `Tối đa ${available.toLocaleString("vi-VN")}` : "VD: 500.000";
+        }
+      }
+    }
+  }
+
+  // 4. Cập nhật số dư khả dụng trong modal Phân bổ quỹ nếu đang mở
+  const allocateModal = document.getElementById("allocateModal");
+  if (allocateModal && allocateModal.style.display !== "none" && typeof calculateAvailableFundBalance === "function") {
+    const avail = calculateAvailableFundBalance();
+    const availableEl = document.getElementById("allocateAvailableAmount");
+    if (availableEl) {
+      availableEl.innerText = `${avail.toLocaleString("vi-VN")} đ`;
+      availableEl.style.color = avail < 0 ? "#ef4444" : "#10b981";
+    }
+  }
+}
+window.syncRealtimeCashflowAndFunds = syncRealtimeCashflowAndFunds;
 
 async function initFirebaseRealtime() {
   console.log("[Firebase] Bắt đầu khởi tạo Firebase Realtime (Tối ưu tải nhẹ)...");
@@ -3663,9 +3724,8 @@ async function initFirebaseRealtime() {
     // Dùng Debounce render calendar mượt mà, không giật màn hình
     scheduleCalendarRender(50);
 
-    if (LAZY_LOAD.cashflow) {
-      renderCashflowDashboard();
-    }
+    // Đồng bộ tức thì dòng tiền và quỹ khi thiết bị khác thay đổi thu/chi
+    syncRealtimeCashflowAndFunds();
 
     // Nếu modal chi tiết ngày đang mở trên thiết bị này cho ngày vừa được cập nhật/xóa:
     if (selectedKey && document.getElementById("dayDetailsModal")?.style.display !== "none") {
@@ -3766,9 +3826,11 @@ async function reloadFirebaseForUser() {
   // Reload Recurring Events
   initRecurringEventsFirebase();
 
-  // Reload Cashflow categories & budgets
+  // Reload Cashflow categories & budgets & Funds
   loadCashflowCategoriesFromStorage();
   loadBudgetsFromStorage();
+  isFundsFirebaseLoaded = false;
+  loadFundsFromLocalStorage();
 
   // Setup profile listener
   setupProfileFirebaseListener();
@@ -3806,9 +3868,8 @@ async function reloadFirebaseForUser() {
     dateDataCache = nextCache;
     scheduleCalendarRender(50);
 
-    if (LAZY_LOAD.cashflow) {
-      renderCashflowDashboard();
-    }
+    // Đồng bộ tức thì dòng tiền và quỹ khi thiết bị khác thay đổi thu/chi
+    syncRealtimeCashflowAndFunds();
 
     if (selectedKey && document.getElementById("dayDetailsModal")?.style.display !== "none") {
       openDayDetails(selectedKey);
@@ -17222,16 +17283,21 @@ let fundsData = {
   allocations: [],
   totalIncome: 0,
 };
+let isFundsFirebaseLoaded = false;
 let editingFundId = "";
 let selectedFundColor = "#64B5F6";
 
 function initFundsFirebase() {
+  if (!userProfileKey) {
+    userProfileKey = localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE) || "";
+  }
   if (!firebaseDb || !userProfileKey) return;
   firebaseFundsRef = firebaseDb.ref(`${FIREBASE_FUNDS_PATH}/${userProfileKey}`);
 
   firebaseFundsRef.on(
     "value",
     (snapshot) => {
+      isFundsFirebaseLoaded = true;
       const data = snapshot.val();
       if (data) {
         fundsData = {
@@ -17243,15 +17309,18 @@ function initFundsFirebase() {
         fundsData = { funds: [], allocations: [], totalIncome: 0 };
       }
       normalizeFundsData();
-      const profileKey = userProfileKey || "default";
+      const profileKey = userProfileKey || localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE) || "default";
       try {
         localStorage.setItem(`funds_${profileKey}`, JSON.stringify(fundsData));
       } catch (_) { }
+      hideSkeleton("fundsSkeleton");
       renderFundsDashboard();
     },
     (error) => {
       console.error("Funds Firebase error:", error);
+      isFundsFirebaseLoaded = true;
       loadFundsFromLocalStorage();
+      hideSkeleton("fundsSkeleton");
       renderFundsDashboard();
     },
   );
@@ -17319,10 +17388,20 @@ function normalizeFundsData() {
 }
 
 function loadFundsFromLocalStorage() {
-  const profileKey = userProfileKey || "default";
+  const profileKey = userProfileKey || localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE) || "default";
   let stored = localStorage.getItem(`funds_${profileKey}`);
-  if (!stored) {
+  if (!stored && profileKey !== "default") {
     stored = localStorage.getItem("funds_default") || localStorage.getItem("funds_");
+  }
+  if (!stored) {
+    // Quét tìm bất kỳ key funds_ nào có sẵn nếu profileKey chưa khớp
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("funds_") && localStorage.getItem(k)) {
+        stored = localStorage.getItem(k);
+        break;
+      }
+    }
   }
   if (stored) {
     try {
@@ -17333,11 +17412,18 @@ function loadFundsFromLocalStorage() {
         totalIncome: parsed.totalIncome || 0,
       };
     } catch (e) {
+      console.warn("[Funds] Error parsing stored funds:", e);
       fundsData = { funds: [], allocations: [], totalIncome: 0 };
     }
   }
   normalizeFundsData();
+  return Boolean(fundsData && Array.isArray(fundsData.funds) && fundsData.funds.length > 0);
 }
+
+// Tự động nạp cache quỹ vào bộ nhớ ngay khi script chạy
+try {
+  loadFundsFromLocalStorage();
+} catch (_) {}
 
 function saveFundsToFirebase() {
   const profileKey = userProfileKey || "default";
@@ -17409,7 +17495,14 @@ function calculateAvailableFundBalance() {
 
 function openFundsModal() {
   closeAllModals();
+
+  // 1. Luôn nạp dữ liệu từ localStorage cache trước để đảm bảo có dữ liệu tức thì (0ms)
+  loadFundsFromLocalStorage();
+  reloadCashflowEntriesFromCache();
+
+  // 2. Kích hoạt đồng bộ Firebase nếu chưa kết nối
   ensureFundsFirebaseSynced();
+
   const modal = document.getElementById("fundsModal");
   modal.style.display = "flex";
 
@@ -17419,10 +17512,23 @@ function openFundsModal() {
     balanceSection.classList.add("is-loading");
   }
 
-  // Initial load from cache
-  reloadCashflowEntriesFromCache();
+  // 3. Xử lý Skeleton và hiển thị danh sách quỹ
+  if (fundsData && Array.isArray(fundsData.funds) && fundsData.funds.length > 0) {
+    hideSkeleton("fundsSkeleton");
+    renderFundsDashboard();
+  } else if (!isFundsFirebaseLoaded) {
+    // Chưa có dữ liệu quỹ trong cache và Firebase chưa tải xong snapshot đầu tiên
+    showSkeleton("fundsSkeleton");
+    const listEl = document.getElementById("fundsList");
+    if (listEl) listEl.innerHTML = "";
+    renderFundsDashboard();
+  } else {
+    // Firebase đã tải xong và thực sự không có quỹ nào
+    hideSkeleton("fundsSkeleton");
+    renderFundsDashboard();
+  }
 
-  // If cashflowEntries is still empty, wait for Firebase sync
+  // 4. Nếu cashflowEntries chưa có, đợi đồng bộ
   if (cashflowEntries.length === 0) {
     let attempts = 0;
     const maxAttempts = 10;
@@ -17438,20 +17544,12 @@ function openFundsModal() {
       }
     }, 200);
   } else {
-    // Small delay to show loading animation, then render
     setTimeout(() => {
       if (balanceSection) {
         balanceSection.classList.remove("is-loading");
       }
       renderFundsDashboard();
     }, 300);
-  }
-
-  // Load on demand only if not loaded yet
-  if (!LAZY_LOAD.funds) {
-    showSkeleton('fundsSkeleton');
-    LAZY_LOAD.funds = true;
-    hideSkeleton('fundsSkeleton');
   }
 }
 
@@ -17547,7 +17645,7 @@ function renderFundsChart(difference, totalAllocated, available) {
   // Nếu còn khả dụng dương, thêm phân đoạn khả dụng
   if (available > 0) {
     segments.push({
-      name: "Còn khả dụng",
+      name: "Khả dụng",
       amount: available,
       color: "#10b981",
       ratio: available / totalBase,
@@ -17582,7 +17680,7 @@ function renderFundsChart(difference, totalAllocated, available) {
     circle.setAttribute("cy", "80");
     circle.setAttribute("r", radius.toString());
     circle.setAttribute("stroke", seg.color);
-    circle.setAttribute("stroke-width", "14");
+    circle.setAttribute("stroke-width", "24");
     circle.setAttribute("fill", "none");
     circle.setAttribute("stroke-linecap", "round");
     circle.setAttribute("stroke-dasharray", `${segLength} ${circumference}`);
@@ -17619,9 +17717,15 @@ function renderFundsChart(difference, totalAllocated, available) {
 
 function renderFundsList() {
   const listEl = document.getElementById("fundsList");
+  if (!listEl) return;
   listEl.innerHTML = "";
 
-  if (fundsData.funds.length === 0) {
+  if (!fundsData.funds || fundsData.funds.length === 0) {
+    if (!isFundsFirebaseLoaded) {
+      showSkeleton("fundsSkeleton");
+      return;
+    }
+    hideSkeleton("fundsSkeleton");
     const empty = document.createElement("div");
     empty.className = "app-empty-state";
     empty.style.gridColumn = "1 / -1";
@@ -17632,6 +17736,8 @@ function renderFundsList() {
     listEl.appendChild(empty);
     return;
   }
+
+  hideSkeleton("fundsSkeleton");
 
   // Sort by sortOrder
   const sortedFunds = [...fundsData.funds].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
@@ -18098,6 +18204,20 @@ function closeCashflowActionDropdown() {
 function openAddFundModal() {
   editingFundId = "";
   document.getElementById("fundModalTitle").innerText = "Thêm Quỹ mới";
+  const subEl = document.getElementById("fundModalSub");
+  if (subEl) subEl.innerText = "Tạo quỹ tích lũy ngân sách theo mục tiêu";
+  const saveBtnText = document.getElementById("fundSaveBtnText");
+  if (saveBtnText) saveBtnText.innerText = "Lưu Quỹ";
+
+  const headerIcon = document.getElementById("fundModalHeaderIcon");
+  if (headerIcon) {
+    headerIcon.style.background = "rgba(59, 130, 246, 0.15)";
+    headerIcon.style.borderColor = "rgba(59, 130, 246, 0.3)";
+    headerIcon.style.color = "#3b82f6";
+  }
+  const glyph = document.getElementById("fundModalIconGlyph");
+  if (glyph) glyph.className = "fi fi-rr-wallet";
+
   document.getElementById("fundName").value = "";
   selectedFundColor = "#64B5F6";
 
@@ -18122,8 +18242,22 @@ function editFund(fundId) {
 
   editingFundId = fundId;
   document.getElementById("fundModalTitle").innerText = "Sửa Quỹ";
+  const subEl = document.getElementById("fundModalSub");
+  if (subEl) subEl.innerText = "Cập nhật tên, số dư, mục tiêu và màu sắc";
+  const saveBtnText = document.getElementById("fundSaveBtnText");
+  if (saveBtnText) saveBtnText.innerText = "Cập nhật Quỹ";
+
+  const headerIcon = document.getElementById("fundModalHeaderIcon");
+  if (headerIcon) {
+    headerIcon.style.background = "rgba(16, 185, 129, 0.15)";
+    headerIcon.style.borderColor = "rgba(16, 185, 129, 0.3)";
+    headerIcon.style.color = "#10b981";
+  }
+  const glyph = document.getElementById("fundModalIconGlyph");
+  if (glyph) glyph.className = "fi fi-rr-edit";
+
   document.getElementById("fundName").value = fund.name;
-  selectedFundColor = fund.color;
+  selectedFundColor = fund.color || "#64B5F6";
 
   // Show current balance as initial amount for editing
   document.getElementById("fundInitialAmountLabel").style.display = "flex";
@@ -18284,25 +18418,72 @@ function openTopupFundModal(fundId) {
   topupFundId = fundId;
   topupFundMode = "topup";
   const balance = getFundBalance(fundId);
+  const available = calculateAvailableFundBalance();
+
   document.getElementById("topupFundModalTitle").innerText = `Thêm vào "${fund.name}"`;
+  const subEl = document.getElementById("topupFundModalSub");
+  if (subEl) subEl.innerText = "Nạp thêm tiền vào quỹ từ số dư khả dụng";
   document.getElementById("topupFundAmountLabel").innerText = "Số tiền thêm vào";
-  document.getElementById("topupFundConfirmBtn").innerText = "Xác nhận";
+
+  const confirmBtn = document.getElementById("topupFundConfirmBtn");
+  if (confirmBtn) {
+    confirmBtn.className = "funds-footer-btn funds-footer-btn-allocate topup-footer-btn-confirm";
+  }
+  const confirmTextEl = document.getElementById("topupFundConfirmText");
+  if (confirmTextEl) confirmTextEl.innerText = "Thêm vào quỹ";
 
   const curBalEl = document.getElementById("topupFundCurrentBalance");
   if (curBalEl) curBalEl.innerText = `${balance.toLocaleString("vi-VN")} đ`;
 
+  const availBalEl = document.getElementById("topupFundAvailableBalance");
+  if (availBalEl) {
+    availBalEl.innerText = `${available.toLocaleString("vi-VN")} đ`;
+    availBalEl.style.color = available < 0 ? "#ef4444" : "#10b981";
+  }
+
+  const hintEl = document.getElementById("topupFundTargetHint");
   const maxBtn = document.getElementById("topupMaxBtn");
-  if (maxBtn) {
-    const target = Number(fund.target) || 0;
-    if (target > 0 && target > balance) {
-      maxBtn.innerText = "Đủ mục tiêu";
-      maxBtn.style.display = "block";
+  const target = Number(fund.target) || 0;
+
+  if (target > 0) {
+    const needed = target - balance;
+    if (needed > 0) {
+      if (hintEl) {
+        hintEl.style.display = "flex";
+        hintEl.innerHTML = `<i class="fi fi-rr-bullseye-arrow"></i> Mục tiêu: <strong>${target.toLocaleString("vi-VN")} đ</strong> (cần thêm <strong>${needed.toLocaleString("vi-VN")} đ</strong>)`;
+      }
+      if (maxBtn) {
+        maxBtn.innerText = "Đủ mục tiêu";
+        maxBtn.style.display = "block";
+      }
     } else {
-      maxBtn.style.display = "none";
+      if (hintEl) {
+        hintEl.style.display = "flex";
+        hintEl.innerHTML = `<i class="fi fi-rr-check-circle" style="color: #10b981;"></i> Quỹ đã đạt hoặc vượt mục tiêu (${target.toLocaleString("vi-VN")} đ)`;
+      }
+      if (maxBtn) {
+        maxBtn.innerText = "Tối đa";
+        maxBtn.style.display = available > 0 ? "block" : "none";
+      }
+    }
+  } else {
+    if (hintEl) hintEl.style.display = "none";
+    if (maxBtn) {
+      maxBtn.innerText = "Tối đa";
+      maxBtn.style.display = available > 0 ? "block" : "none";
     }
   }
 
-  document.getElementById("topupAmount").placeholder = "VD: 500.000";
+  const headerIcon = document.getElementById("topupFundHeaderIcon");
+  if (headerIcon) {
+    headerIcon.style.background = "rgba(16, 185, 129, 0.15)";
+    headerIcon.style.borderColor = "rgba(16, 185, 129, 0.3)";
+    headerIcon.style.color = "#10b981";
+  }
+  const glyph = document.getElementById("topupFundIconGlyph");
+  if (glyph) glyph.className = "fi fi-rr-wallet-arrow";
+
+  document.getElementById("topupAmount").placeholder = available > 0 ? `Tối đa ${available.toLocaleString("vi-VN")}` : "VD: 500.000";
   document.getElementById("topupAmount").value = "";
   document.getElementById("topupFundModal").style.display = "flex";
 }
@@ -18314,18 +18495,49 @@ function openWithdrawFundModal(fundId) {
   topupFundId = fundId;
   topupFundMode = "withdraw";
   const balance = getFundBalance(fundId);
+  const available = calculateAvailableFundBalance();
+
   document.getElementById("topupFundModalTitle").innerText = `Lấy ra từ "${fund.name}"`;
+  const subEl = document.getElementById("topupFundModalSub");
+  if (subEl) subEl.innerText = "Rút bớt tiền từ quỹ chuyển về số dư khả dụng";
   document.getElementById("topupFundAmountLabel").innerText = "Số tiền lấy ra";
-  document.getElementById("topupFundConfirmBtn").innerText = "Xác nhận";
+
+  const confirmBtn = document.getElementById("topupFundConfirmBtn");
+  if (confirmBtn) {
+    confirmBtn.className = "funds-footer-btn topup-footer-btn-withdraw";
+  }
+  const confirmTextEl = document.getElementById("topupFundConfirmText");
+  if (confirmTextEl) confirmTextEl.innerText = "Lấy ra từ quỹ";
 
   const curBalEl = document.getElementById("topupFundCurrentBalance");
   if (curBalEl) curBalEl.innerText = `${balance.toLocaleString("vi-VN")} đ`;
+
+  const availBalEl = document.getElementById("topupFundAvailableBalance");
+  if (availBalEl) {
+    availBalEl.innerText = `${available.toLocaleString("vi-VN")} đ`;
+    availBalEl.style.color = available < 0 ? "#ef4444" : "#10b981";
+  }
+
+  const hintEl = document.getElementById("topupFundTargetHint");
+  if (hintEl) {
+    hintEl.style.display = "flex";
+    hintEl.innerHTML = `<i class="fi fi-rr-info"></i> Sau khi lấy ra, số tiền sẽ được hoàn về số dư khả dụng`;
+  }
 
   const maxBtn = document.getElementById("topupMaxBtn");
   if (maxBtn) {
     maxBtn.innerText = "Tối đa";
     maxBtn.style.display = balance > 0 ? "block" : "none";
   }
+
+  const headerIcon = document.getElementById("topupFundHeaderIcon");
+  if (headerIcon) {
+    headerIcon.style.background = "rgba(245, 158, 11, 0.15)";
+    headerIcon.style.borderColor = "rgba(245, 158, 11, 0.3)";
+    headerIcon.style.color = "#f59e0b";
+  }
+  const glyph = document.getElementById("topupFundIconGlyph");
+  if (glyph) glyph.className = "fi fi-rr-arrow-up-from-bracket";
 
   document.getElementById("topupAmount").placeholder = `Tối đa ${balance.toLocaleString("vi-VN")}`;
   document.getElementById("topupAmount").value = "";
@@ -18343,11 +18555,14 @@ function setTopupMaxAmount() {
   if (topupFundMode === "withdraw") {
     input.value = balance.toLocaleString("vi-VN");
   } else {
+    const available = calculateAvailableFundBalance();
     const target = Number(fund.target) || 0;
     if (target > balance) {
-      input.value = (target - balance).toLocaleString("vi-VN");
+      const needed = target - balance;
+      const maxVal = (available > 0 && available < needed) ? available : needed;
+      input.value = maxVal.toLocaleString("vi-VN");
     } else {
-      input.value = balance.toLocaleString("vi-VN");
+      input.value = (available > 0 ? available : 0).toLocaleString("vi-VN");
     }
   }
   formatCurrencyInput(input);
@@ -18423,13 +18638,19 @@ function confirmTopupFund() {
   }
 
   // Topup logic
+  const available = calculateAvailableFundBalance();
+  if (amount > available) {
+    alert(`Số tiền vượt quá số dư khả dụng (${available.toLocaleString("vi-VN")} đ). Vui lòng nạp tối đa trong phạm vi số dư khả dụng.`);
+    return;
+  }
+
   const balance = getFundBalance(topupFundId);
   const target = fund.target || 0;
 
   if (target > 0) {
     const maxAllowed = target - balance;
     if (amount > maxAllowed) {
-      alert(`Số tiền vượt quá giới hạn khả dụng. Bạn chỉ có thể thêm tối đa ${maxAllowed.toLocaleString("vi-VN")} đ vào quỹ này.`);
+      alert(`Số tiền vượt quá giới hạn mục tiêu của quỹ. Bạn chỉ cần thêm tối đa ${maxAllowed.toLocaleString("vi-VN")} đ để hoàn thành mục tiêu.`);
       return;
     }
   }
@@ -18502,7 +18723,7 @@ function openAllocateModal() {
     const balance = getFundBalance(fund.id);
     const option = document.createElement("option");
     option.value = fund.id;
-    option.textContent = `${fund.name} (Hiện có: ${balance.toLocaleString("vi-VN")} đ${fund.target > 0 ? ` / Mục tiêu: ${fund.target.toLocaleString("vi-VN")} đ` : ""})`;
+    option.textContent = `${fund.name} (Hiện có: ${balance.toLocaleString("vi-VN")} đ)`;
     select.appendChild(option);
   }
 
@@ -19207,11 +19428,15 @@ function loadCashflowOnDemand() {
 function loadFundsOnDemand() {
   if (LAZY_LOAD.funds) return;
   if (!isUserLoggedIn()) return;
+  loadFundsFromLocalStorage();
   ensureFundsFirebaseSynced();
-  showSkeleton('fundsSkeleton');
   LAZY_LOAD.funds = true;
+  if (fundsData.funds.length === 0 && !isFundsFirebaseLoaded) {
+    showSkeleton('fundsSkeleton');
+  } else {
+    hideSkeleton('fundsSkeleton');
+  }
   renderFundsDashboard();
-  hideSkeleton('fundsSkeleton');
 }
 
 function loadGoldOnDemand() {

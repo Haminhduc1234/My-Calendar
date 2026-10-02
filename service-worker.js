@@ -16,14 +16,18 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
             return s;
         }
 
-        messaging.onBackgroundMessage((payload) => {
-            console.log("[SW] onBackgroundMessage received:", payload);
+        const _recentNotifTags = new Set();
+        function shouldShowNotification(tag) {
+            if (!tag) return true;
+            if (_recentNotifTags.has(tag)) return false;
+            _recentNotifTags.add(tag);
+            setTimeout(() => _recentNotifTags.delete(tag), 10000);
+            return true;
+        }
 
-            // Nếu payload đã chứa block notification, Firebase SDK sẽ tự động hiển thị thông báo.
-            if (payload.notification) {
-                console.log("[SW] Notification handled automatically by SDK.");
-                return;
-            }
+        async function handleIncomingPush(payload) {
+            if (!payload) return;
+            console.log("[SW] handleIncomingPush:", payload);
 
             let parsedEventData = {};
             if (payload.data?.eventDataJson) {
@@ -32,12 +36,12 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
 
             const type = payload.data?.notificationType || "event";
             const dateStr = cleanStr(payload.data?.dateKey || payload.data?.date || parsedEventData.date);
-            let rawTitle = cleanStr(payload.data?.title || parsedEventData.title);
+            let rawTitle = cleanStr(payload.notification?.title || payload.data?.title || parsedEventData.title);
             let title = rawTitle ? `🔔 ${rawTitle}` : "🔔 Sự kiện mới trên Lịch Việt";
             let targetUrl = payload.data?.url || payload.fcmOptions?.link || "./";
             const bodyParts = [];
 
-            const eventNote = cleanStr(payload.data?.text || payload.data?.note || parsedEventData.text || parsedData?.note || parsedEventData.note);
+            const eventNote = cleanStr(payload.notification?.body || payload.data?.text || payload.data?.note || parsedEventData.text || parsedData?.note || parsedEventData.note);
 
             if (type === "cashflow") {
                 const isExpense = (payload.data?.cashflowType || parsedEventData.cashflowType) === "expense";
@@ -91,20 +95,48 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
             const eventId = cleanStr(payload.data?.eventId || payload.data?.id);
             const notificationTag = payload.data?.tag || (eventId ? `event-${eventId}` : `notify-${type}-${dateStr || Date.now()}`);
 
+            if (!shouldShowNotification(notificationTag)) {
+                console.log("[SW] Bỏ qua thông báo trùng lặp:", notificationTag);
+                return;
+            }
+
+            const finalBody = cleanStr(payload.notification?.body) || (bodyParts.length > 0 ? bodyParts.join(" | ") : "Bạn có một thông báo mới");
+
             return self.registration.showNotification(title, {
-                body: bodyParts.join(" | ") || "Bạn có một thông báo mới",
+                body: finalBody,
                 icon: "/public/favicon.png",
                 badge: "/public/favicon.png",
                 tag: notificationTag,
-                renotify: false,
+                renotify: true,
                 vibrate: [200, 100, 200],
                 data: {
                     url: targetUrl,
                     dateKey: dateStr,
                     notificationType: type,
-                    eventData: payload.data
+                    eventData: payload.data || parsedEventData
                 }
             });
+        }
+
+        messaging.onBackgroundMessage((payload) => {
+            console.log("[SW] onBackgroundMessage received:", payload);
+            return handleIncomingPush(payload);
+        });
+
+        // Bổ sung listener push chuẩn W3C WebPush để bắt mọi gói tin đẩy kể cả khi Firebase SDK không trigger onBackgroundMessage
+        self.addEventListener("push", (event) => {
+            console.log("[SW] Native push event received:", event);
+            let payload = {};
+            if (event.data) {
+                try {
+                    payload = event.data.json();
+                } catch (e) {
+                    try {
+                        payload = { data: { text: event.data.text() } };
+                    } catch (e2) { }
+                }
+            }
+            event.waitUntil(handleIncomingPush(payload));
         });
     } catch (e) {
         console.error("[SW] Firebase messaging init failed:", e);

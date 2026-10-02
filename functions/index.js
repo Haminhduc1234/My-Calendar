@@ -75,8 +75,6 @@ async function getProfileTokens(profileKey, excludeDeviceId = "") {
   if (typeof tokenMap === "object") {
     // Có thể lưu dạng { deviceId: { token, updatedAt, ... } } hoặc { token: "..." }
     Object.entries(tokenMap).forEach(([deviceId, value]) => {
-      if (excludeDeviceId && deviceId === excludeDeviceId) return;
-
       if (typeof value === "string" && value.length > 20) {
         entries.push({ deviceId, token: value });
       } else if (value && typeof value.token === "string" && value.token.length > 20) {

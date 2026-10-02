@@ -55,8 +55,6 @@ module.exports = async (req, res) => {
 
     const tokens = [];
     Object.entries(tokenMap).forEach(([devId, value]) => {
-      // Bỏ qua thiết bị hiện tại nếu là người tạo sự kiện
-      if (senderDeviceId && devId === senderDeviceId) return;
       const t = typeof value === "string" ? value : value?.token;
       if (t && typeof t === "string" && t.length > 20 && !tokens.includes(t)) {
         tokens.push(t);

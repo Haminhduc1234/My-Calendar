@@ -17619,7 +17619,126 @@ function renderFundsDashboard() {
     }
   }
 
+  // Render biểu đồ Donut và phân bổ ngân sách
+  renderFundsChart(difference, totalAllocated, available);
+
   renderFundsList();
+}
+
+function renderFundsChart(difference, totalAllocated, available) {
+  const donutSegmentsEl = document.getElementById("fundsDonutSegments");
+  const donutPercentEl = document.getElementById("fundsDonutPercent");
+  const breakdownBarEl = document.getElementById("fundsBreakdownBar");
+  const breakdownLegendEl = document.getElementById("fundsBreakdownLegend");
+
+  if (!donutSegmentsEl || !donutPercentEl) return;
+
+  const radius = 58;
+  const circumference = 2 * Math.PI * radius; // ~364.42
+  donutSegmentsEl.innerHTML = "";
+
+  if (breakdownBarEl) breakdownBarEl.innerHTML = "";
+  if (breakdownLegendEl) breakdownLegendEl.innerHTML = "";
+
+  // Tính tỷ lệ đã phân bổ %
+  let percentAllocated = 0;
+  if (difference > 0) {
+    percentAllocated = Math.min(100, Math.max(0, Math.round((totalAllocated / difference) * 100)));
+  } else if (totalAllocated > 0) {
+    percentAllocated = 100;
+  }
+  donutPercentEl.innerText = `${percentAllocated}%`;
+
+  // Mẫu số tổng để chia tỷ lệ biểu đồ
+  const totalBase = Math.max(difference > 0 ? difference : 0, totalAllocated, 1);
+
+  // Chuẩn bị danh sách các phần tử trên biểu đồ
+  const segments = [];
+  const sortedFunds = [...fundsData.funds].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
+  for (const fund of sortedFunds) {
+    const bal = getFundBalance(fund.id);
+    if (bal > 0) {
+      segments.push({
+        name: fund.name,
+        amount: bal,
+        color: fund.color || "#3b82f6",
+        ratio: bal / totalBase
+      });
+    }
+  }
+
+  // Nếu còn khả dụng dương, thêm phân đoạn khả dụng
+  if (available > 0) {
+    segments.push({
+      name: "Còn khả dụng",
+      amount: available,
+      color: "#10b981",
+      ratio: available / totalBase,
+      isAvailable: true
+    });
+  }
+
+  if (segments.length === 0) {
+    donutSegmentsEl.innerHTML = `
+      <circle cx="80" cy="80" r="${radius}" 
+        stroke="rgba(255, 255, 255, 0.12)" 
+        stroke-width="14" 
+        stroke-dasharray="6 6" 
+        fill="none" />
+    `;
+    if (breakdownBarEl) {
+      breakdownBarEl.innerHTML = `<div class="funds-breakdown-seg" style="width: 100%; background: rgba(255,255,255,0.08);" title="Chưa có phân bổ"></div>`;
+    }
+    return;
+  }
+
+  // Vẽ các cung tròn SVG Donut
+  let accumulatedOffset = 0;
+  const gap = segments.length > 1 ? 2.5 : 0;
+
+  segments.forEach((seg) => {
+    const segLength = Math.max(0, seg.ratio * circumference - gap);
+    if (segLength <= 0) return;
+
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    circle.setAttribute("cx", "80");
+    circle.setAttribute("cy", "80");
+    circle.setAttribute("r", radius.toString());
+    circle.setAttribute("stroke", seg.color);
+    circle.setAttribute("stroke-width", "14");
+    circle.setAttribute("fill", "none");
+    circle.setAttribute("stroke-linecap", "round");
+    circle.setAttribute("stroke-dasharray", `${segLength} ${circumference}`);
+    circle.setAttribute("stroke-dashoffset", (-accumulatedOffset).toString());
+    circle.setAttribute("class", "funds-donut-slice");
+    circle.innerHTML = `<title>${seg.name}: ${seg.amount.toLocaleString("vi-VN")} đ (${(seg.ratio * 100).toFixed(1)}%)</title>`;
+
+    donutSegmentsEl.appendChild(circle);
+    accumulatedOffset += seg.ratio * circumference;
+
+    // Thêm vào thanh breakdown bar
+    if (breakdownBarEl) {
+      const segEl = document.createElement("div");
+      segEl.className = "funds-breakdown-seg";
+      segEl.style.width = `${Math.max(seg.ratio * 100, 1.5)}%`;
+      segEl.style.backgroundColor = seg.color;
+      segEl.title = `${seg.name}: ${seg.amount.toLocaleString("vi-VN")} đ (${(seg.ratio * 100).toFixed(1)}%)`;
+      breakdownBarEl.appendChild(segEl);
+    }
+
+    // Thêm chú thích mini (legend)
+    if (breakdownLegendEl) {
+      const legEl = document.createElement("div");
+      legEl.className = "funds-legend-chip";
+      legEl.innerHTML = `
+        <span class="funds-legend-dot" style="background-color: ${seg.color};"></span>
+        <span class="funds-legend-name">${seg.name}</span>
+        <span class="funds-legend-val">${(seg.ratio * 100).toFixed(0)}%</span>
+      `;
+      breakdownLegendEl.appendChild(legEl);
+    }
+  });
 }
 
 function renderFundsList() {
@@ -17629,6 +17748,7 @@ function renderFundsList() {
   if (fundsData.funds.length === 0) {
     const empty = document.createElement("div");
     empty.className = "app-empty-state";
+    empty.style.gridColumn = "1 / -1";
     empty.innerHTML = `
       <div class="app-empty-icon">🏺</div>
       <div class="app-empty-title">Chưa có quỹ nào</div>
@@ -17645,15 +17765,13 @@ function renderFundsList() {
     const target = fund.target || 0;
     // Percentage based on target (not total balance)
     const percentage = target > 0 ? Math.min((balance / target) * 100, 100) : 100;
-    const color = fund.color;
+    const color = fund.color || "#3b82f6";
     const colorRgb = hexToRgb(color);
 
     // Determine progress status
-    let progressClass = "";
     let progressText = "";
     if (target > 0) {
       if (balance >= target) {
-        progressClass = "is-complete";
         progressText = "✓ Đạt mục tiêu";
       } else {
         const remaining = target - balance;
@@ -17667,51 +17785,59 @@ function renderFundsList() {
     item.className = "fund-item";
     item.draggable = true;
     item.dataset.fundId = fund.id;
+    item.title = "Giữ để kéo thả sắp xếp vị trí";
     item.style.setProperty("--fund-color", color);
     item.style.setProperty("--fund-color-light", `rgba(${colorRgb}, 0.4)`);
     item.innerHTML = `
-      <div class="drag-controls">
-        <button class="fund-drag-handle" data-drag-handle="true" title="Kéo để sắp xếp">☰</button>
-      </div>
-      <div class="fund-jar">
-        <div class="fund-jar-lid"></div>
-        <div class="fund-jar-neck"></div>
-        <div class="fund-jar-body">
-          <div class="fund-jar-fill" style="height: ${Math.max(percentage, 5)}%;">
-            <div class="fund-jar-shine"></div>
+      <div class="fund-card-header">
+        <div class="fund-jar">
+          <div class="fund-jar-lid"></div>
+          <div class="fund-jar-neck"></div>
+          <div class="fund-jar-body">
+            <div class="fund-jar-fill" style="height: ${Math.max(percentage, 5)}%;">
+              <div class="fund-jar-shine"></div>
+            </div>
+            <div class="fund-percentage">${target > 0 ? percentage.toFixed(0) + '%' : '∞'}</div>
           </div>
-          <div class="fund-percentage">${percentage.toFixed(1)}%</div>
+          <div class="fund-jar-glow"></div>
         </div>
-        <div class="fund-jar-glow"></div>
+        <div class="fund-item-actions">
+          <button class="fund-action-btn" onclick="toggleFundAction(this, event)" title="Tùy chọn">
+            <i class="fi fi-rr-menu-dots-vertical"></i>
+          </button>
+          <div class="fund-action-dropdown">
+            <button class="fund-action-item" onclick="editFund('${fund.id}'); closeFundActionDropdown(this);">
+              <i class="fi fi-rr-pencil"></i>
+              Sửa quỹ
+            </button>
+            <button class="fund-action-item" onclick="openTopupFundModal('${fund.id}'); closeFundActionDropdown(this);">
+              <i class="fi fi-rr-plus"></i>
+              Thêm vào quỹ
+            </button>
+            <button class="fund-action-item" onclick="openWithdrawFundModal('${fund.id}'); closeFundActionDropdown(this);">
+              <i class="fi fi-rr-minus"></i>
+              Lấy ra từ quỹ
+            </button>
+            <button class="fund-action-item danger" onclick="confirmDeleteFund('${fund.id}'); closeFundActionDropdown(this);">
+              <i class="fi fi-rr-trash"></i>
+              Xóa quỹ
+            </button>
+          </div>
+        </div>
       </div>
       <div class="fund-item-info">
-        <div class="fund-item-name">${fund.name}</div>
+        <div class="fund-item-name" title="${fund.name}">${fund.name}</div>
         <div class="fund-item-balance">
-          <span>${balance.toLocaleString("vi-VN")}</span>
-          ${target > 0 ? ` / <span class="target-value">${target.toLocaleString("vi-VN")} đ</span>` : ` <span class="target-value">đ</span>`}
+          <span class="fund-current-amount">${balance.toLocaleString("vi-VN")} đ</span>
         </div>
-      </div>
-      <div class="fund-item-actions">
-        <button class="fund-action-btn" onclick="toggleFundAction(this, event)" title="Tùy chọn">
-          <i class="fi fi-rr-menu-dots-vertical"></i>
-        </button>
-        <div class="fund-action-dropdown">
-          <button class="fund-action-item" onclick="editFund('${fund.id}'); closeFundActionDropdown(this);">
-            <i class="fi fi-rr-pencil"></i>
-            Sửa quỹ
-          </button>
-          <button class="fund-action-item" onclick="openTopupFundModal('${fund.id}'); closeFundActionDropdown(this);">
-            <i class="fi fi-rr-plus"></i>
-            Thêm vào quỹ
-          </button>
-          <button class="fund-action-item" onclick="openWithdrawFundModal('${fund.id}'); closeFundActionDropdown(this);">
-            <i class="fi fi-rr-minus"></i>
-            Lấy ra từ quỹ
-          </button>
-          <button class="fund-action-item danger" onclick="confirmDeleteFund('${fund.id}'); closeFundActionDropdown(this);">
-            <i class="fi fi-rr-trash"></i>
-            Xóa quỹ
-          </button>
+        <div class="fund-target-row">
+          ${target > 0 
+            ? `<div class="fund-progress-track">
+                 <div class="fund-progress-fill" style="width: ${percentage}%;"></div>
+               </div>
+               <div class="fund-target-text ${balance >= target ? 'is-complete' : ''}">${progressText}</div>`
+            : `<div class="fund-target-text unconstrained">Không giới hạn</div>`
+          }
         </div>
       </div>
     `;
@@ -17735,7 +17861,13 @@ function attachFundDragEvents() {
   if (!listEl || listEl._dragAttached) return;
   listEl._dragAttached = true;
 
+  // Desktop Drag & Drop trên toàn bộ Card
   listEl.addEventListener("dragstart", (e) => {
+    // Không drag nếu click vào nút thao tác 3 chấm hoặc dropdown
+    if (e.target.closest(".fund-item-actions")) {
+      e.preventDefault();
+      return;
+    }
     const item = e.target.closest(".fund-item");
     if (!item) return;
     e.dataTransfer.effectAllowed = "move";
@@ -17743,7 +17875,7 @@ function attachFundDragEvents() {
     item.classList.add("dragging");
     listEl.classList.add("dragging-active");
     setTimeout(() => {
-      item.style.opacity = "0.4";
+      item.style.opacity = "0.35";
     }, 0);
   });
 
@@ -17755,22 +17887,16 @@ function attachFundDragEvents() {
     }
     listEl.classList.remove("dragging-active");
     listEl.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
-    listEl.querySelectorAll(".drag-placeholder").forEach((el) => el.remove());
+    finalizeFundOrder(listEl);
   });
 
   listEl.addEventListener("dragover", (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    const draggingItem = listEl.querySelector(".dragging");
+    const draggingItem = listEl.querySelector(".fund-item.dragging");
     if (!draggingItem) return;
 
-    // Remove previous indicators
-    listEl.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
-    listEl.querySelectorAll(".drag-position-indicator").forEach((el) => el.remove());
-
-    const afterElement = getDragAfterElement(listEl, e.clientY);
-
-    // Insert at new position (creates visual gap as items shift)
+    const afterElement = getGridDragAfterElement(listEl, e.clientX, e.clientY);
     if (afterElement == null) {
       listEl.appendChild(draggingItem);
     } else if (afterElement !== draggingItem) {
@@ -17778,178 +17904,123 @@ function attachFundDragEvents() {
     }
   });
 
-  listEl.addEventListener("dragleave", (e) => {
-    if (!listEl.contains(e.relatedTarget)) {
-      listEl.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
-    }
-  });
-
   listEl.addEventListener("drop", (e) => {
     e.preventDefault();
-    const draggedId = e.dataTransfer.getData("text/plain");
-    if (!draggedId) return;
-
-    listEl.querySelectorAll(".drag-over").forEach((el) => el.classList.remove("drag-over"));
-    const indicator = listEl.querySelector(".drag-position-indicator");
-    if (indicator) indicator.remove();
-
-    const newOrder = [...listEl.querySelectorAll(".fund-item")].map((el) => el.dataset.fundId);
-    newOrder.forEach((id, index) => {
-      const fund = fundsData.funds.find((f) => f.id === id);
-      if (fund) fund.sortOrder = index;
-    });
-
-    saveFundsToFirebase();
-    renderFundsList();
+    finalizeFundOrder(listEl);
   });
 
-  listEl.querySelectorAll(".fund-drag-handle").forEach((handle) => {
-    handle.addEventListener("touchstart", handleFundTouchStart, {
-      passive: false,
-    });
-    handle.addEventListener("touchmove", handleFundTouchMove, { passive: false });
-    handle.addEventListener("touchend", handleFundTouchEnd);
-    handle.addEventListener("touchcancel", handleFundTouchCancel);
-  });
+  // Mobile Touch Drag & Drop trên CẢ THẺ
+  listEl.addEventListener("touchstart", handleFundTouchStart, { passive: false });
+  listEl.addEventListener("touchmove", handleFundTouchMove, { passive: false });
+  listEl.addEventListener("touchend", handleFundTouchEnd);
+  listEl.addEventListener("touchcancel", handleFundTouchCancel);
 }
 
 let _fundTouchSrcEl = null;
-let _fundTouchSrcId = null;
-let _fundTouchDragging = false;
+let _fundTouchStartX = 0;
 let _fundTouchStartY = 0;
-let _fundTouchCurrentY = 0;
+let _fundTouchHoldTimer = null;
+let _fundTouchIsDragging = false;
 
 function handleFundTouchStart(e) {
-  const handle = e.target.closest(".fund-drag-handle");
-  if (!handle) return;
+  // Bỏ qua nếu bấm vào menu 3 chấm
+  if (e.target.closest(".fund-item-actions")) return;
 
-  const item = handle.closest(".fund-item");
+  const item = e.target.closest(".fund-item");
   if (!item) return;
 
-  e.preventDefault();
-
-  _fundTouchStartY = e.touches[0].clientY;
-  _fundTouchCurrentY = _fundTouchStartY;
+  const touch = e.touches[0];
+  _fundTouchStartX = touch.clientX;
+  _fundTouchStartY = touch.clientY;
   _fundTouchSrcEl = item;
-  _fundTouchSrcId = item.dataset.fundId;
-  _fundTouchDragging = false;
+  _fundTouchIsDragging = false;
 
-  _fundTouchSrcEl.classList.add("dragging");
-  _fundTouchSrcEl.style.opacity = "0.4";
-
-  document.querySelectorAll(".fund-item").forEach((el) => {
-    if (el.dataset.fundId !== _fundTouchSrcId) {
-      el.classList.add("drop-target");
+  clearTimeout(_fundTouchHoldTimer);
+  // Giữ 200ms để bắt đầu kéo, không chặn cuộn trang nếu chỉ vuốt lướt
+  _fundTouchHoldTimer = setTimeout(() => {
+    _fundTouchIsDragging = true;
+    if (navigator.vibrate) {
+      try { navigator.vibrate(35); } catch (_) {}
     }
-  });
+    if (_fundTouchSrcEl) {
+      _fundTouchSrcEl.classList.add("dragging", "touch-dragging");
+      const listEl = document.getElementById("fundsList");
+      if (listEl) listEl.classList.add("dragging-active");
+    }
+  }, 200);
 }
 
 function handleFundTouchMove(e) {
   if (!_fundTouchSrcEl) return;
+
+  const touch = e.touches[0];
+  const deltaX = Math.abs(touch.clientX - _fundTouchStartX);
+  const deltaY = Math.abs(touch.clientY - _fundTouchStartY);
+
+  if (!_fundTouchIsDragging) {
+    // Nếu di chuyển tay quá 8px trước khi timer nổ -> người dùng đang cuộn màn hình
+    if (deltaX > 8 || deltaY > 8) {
+      clearTimeout(_fundTouchHoldTimer);
+      _fundTouchSrcEl = null;
+    }
+    return;
+  }
+
+  // Đang kéo thẻ -> ngăn cuộn trang ngoài ý muốn
   e.preventDefault();
 
-  _fundTouchCurrentY = e.touches[0].clientY;
-  const diff = Math.abs(_fundTouchCurrentY - _fundTouchStartY);
+  const listEl = document.getElementById("fundsList");
+  if (!listEl) return;
 
-  if (diff > 10) {
-    _fundTouchDragging = true;
-    _fundTouchSrcEl.style.transform = `translateY(${_fundTouchCurrentY - _fundTouchStartY}px)`;
-    _fundTouchSrcEl.style.zIndex = "1000";
-    _fundTouchSrcEl.style.position = "relative";
-
-    const dragRect = _fundTouchSrcEl.getBoundingClientRect();
-    const dragMidY = dragRect.top + dragRect.height / 2;
-    const items = Array.from(document.querySelectorAll(".fund-item"));
-    const draggedIndex = items.indexOf(_fundTouchSrcEl);
-
-    items.forEach((item, index) => {
-      if (item === _fundTouchSrcEl) return;
-
-      item.style.transform = "";
-      item.style.transition = "";
-
-      const rect = item.getBoundingClientRect();
-      const midY = rect.top + rect.height / 2;
-      const itemHeight = rect.height;
-
-      if (draggedIndex !== -1 && index > draggedIndex && _fundTouchCurrentY > dragMidY) {
-        const distance = Math.min(_fundTouchCurrentY - dragMidY, itemHeight);
-        item.style.transform = `translateY(${distance}px)`;
-        item.style.transition = "transform 0.1s ease";
-      } else if (draggedIndex !== -1 && index < draggedIndex && _fundTouchCurrentY < dragMidY) {
-        const distance = Math.max(_fundTouchCurrentY - dragMidY, -itemHeight);
-        item.style.transform = `translateY(${distance}px)`;
-        item.style.transition = "transform 0.1s ease";
-      }
-    });
+  const afterElement = getGridDragAfterElement(listEl, touch.clientX, touch.clientY);
+  if (afterElement == null) {
+    listEl.appendChild(_fundTouchSrcEl);
+  } else if (afterElement !== _fundTouchSrcEl) {
+    listEl.insertBefore(_fundTouchSrcEl, afterElement);
   }
 }
 
 function handleFundTouchEnd(e) {
-  if (!_fundTouchSrcEl) return;
+  clearTimeout(_fundTouchHoldTimer);
 
-  _fundTouchSrcEl.classList.remove("dragging");
-  _fundTouchSrcEl.style.opacity = "";
-  _fundTouchSrcEl.style.transform = "";
-  _fundTouchSrcEl.style.zIndex = "";
-  _fundTouchSrcEl.style.position = "";
-
-  document.querySelectorAll(".fund-item").forEach((el) => {
-    el.style.transform = "";
-    el.style.transition = "";
-  });
-
-  document.querySelectorAll(".drop-target, .drag-over").forEach((el) => {
-    el.classList.remove("drop-target", "drag-over");
-    el.style.boxShadow = "";
-    el.style.zIndex = "";
-  });
-
-  if (_fundTouchDragging && _fundTouchSrcId) {
-    const touch = e.changedTouches[0];
-    const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
-    const targetItem = targetEl
-      ? targetEl.closest(".fund-item")
-      : null;
-
-    if (targetItem && targetItem.dataset.fundId !== _fundTouchSrcId) {
-      const targetId = targetItem.dataset.fundId;
-      const rect = targetItem.getBoundingClientRect();
-      const midY = rect.top + rect.height / 2;
-      const insertAbove = touch.clientY < midY;
-
-      performFundReorder(_fundTouchSrcId, targetId, insertAbove);
+  if (_fundTouchSrcEl && _fundTouchIsDragging) {
+    _fundTouchSrcEl.classList.remove("dragging", "touch-dragging");
+    const listEl = document.getElementById("fundsList");
+    if (listEl) {
+      listEl.classList.remove("dragging-active");
+      finalizeFundOrder(listEl);
     }
   }
 
   _fundTouchSrcEl = null;
-  _fundTouchSrcId = null;
-  _fundTouchDragging = false;
+  _fundTouchIsDragging = false;
 }
 
 function handleFundTouchCancel() {
+  clearTimeout(_fundTouchHoldTimer);
   if (_fundTouchSrcEl) {
-    _fundTouchSrcEl.classList.remove("dragging");
-    _fundTouchSrcEl.style.opacity = "";
-    _fundTouchSrcEl.style.transform = "";
-    _fundTouchSrcEl.style.zIndex = "";
-    _fundTouchSrcEl.style.position = "";
+    _fundTouchSrcEl.classList.remove("dragging", "touch-dragging");
+    const listEl = document.getElementById("fundsList");
+    if (listEl) listEl.classList.remove("dragging-active");
   }
-
-  document.querySelectorAll(".fund-item").forEach((el) => {
-    el.style.transform = "";
-    el.style.transition = "";
-  });
-
-  document.querySelectorAll(".drop-target, .drag-over").forEach((el) => {
-    el.classList.remove("drop-target", "drag-over");
-    el.style.boxShadow = "";
-    el.style.zIndex = "";
-  });
-
   _fundTouchSrcEl = null;
-  _fundTouchSrcId = null;
-  _fundTouchDragging = false;
+  _fundTouchIsDragging = false;
+}
+
+function finalizeFundOrder(listEl) {
+  const newOrder = [...listEl.querySelectorAll(".fund-item")].map((el) => el.dataset.fundId);
+  let changed = false;
+  newOrder.forEach((id, index) => {
+    const fund = fundsData.funds.find((f) => f.id === id);
+    if (fund && fund.sortOrder !== index) {
+      fund.sortOrder = index;
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    saveFundsToFirebase();
+  }
 }
 
 function performFundReorder(srcId, targetId, insertAbove) {
@@ -17981,19 +18052,46 @@ function performFundReorder(srcId, targetId, insertAbove) {
 }
 
 function resetFundTouchDrag() {
-  // Legacy function - kept for compatibility
+  // Kept for backward compatibility
+}
+
+function getGridDragAfterElement(container, x, y) {
+  const draggableElements = [...container.querySelectorAll(".fund-item:not(.dragging)")];
+  if (draggableElements.length === 0) return null;
+
+  let closestElement = null;
+  let closestDistance = Number.POSITIVE_INFINITY;
+  let insertBefore = true;
+
+  for (const child of draggableElements) {
+    const box = child.getBoundingClientRect();
+    const centerX = box.left + box.width / 2;
+    const centerY = box.top + box.height / 2;
+
+    const distance = Math.hypot(x - centerX, y - centerY);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestElement = child;
+
+      if (y < box.top + box.height * 0.25) {
+        insertBefore = true;
+      } else if (y > box.bottom - box.height * 0.25) {
+        insertBefore = false;
+      } else {
+        insertBefore = x < centerX;
+      }
+    }
+  }
+
+  if (closestElement) {
+    return insertBefore ? closestElement : closestElement.nextSibling;
+  }
+  return null;
 }
 
 function getDragAfterElement(container, y) {
-  const draggableElements = [...container.querySelectorAll(".fund-item:not(.dragging)")];
-  return draggableElements.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = y - box.top - box.height / 2;
-    if (offset < 0 && offset > closest.offset) {
-      return { offset, element: child };
-    }
-    return closest;
-  }, { offset: Number.NEGATIVE_INFINITY }).element;
+  return getGridDragAfterElement(container, window.innerWidth / 2, y);
 }
 
 function hexToRgb(hex) {

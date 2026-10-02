@@ -2397,22 +2397,52 @@
         <!-- Scrollable Body -->
         <div class="funds-container">
           <div class="funds-content-wrap">
-            <!-- Tổng dư khả dụng -->
-            <div class="funds-balance-section">
-              <div class="funds-balance-card">
-                <div class="funds-balance-label">Chênh lệch</div>
-                <div class="funds-balance-value" id="fundsTotalIncome">0 đ</div>
-              </div>
-              <div class="funds-balance-card">
-                <div class="funds-balance-label">Đã phân bổ</div>
-                <div class="funds-balance-value is-allocated" id="fundsTotalAllocated">
-                  0 đ
+            <!-- Biểu đồ & Thống kê Quỹ -->
+            <div class="funds-balance-section funds-chart-section">
+              <div class="funds-chart-card">
+                <div class="funds-chart-main">
+                  <!-- Biểu đồ Vành khuyên Donut SVG -->
+                  <div class="funds-donut-container">
+                    <svg class="funds-donut-svg" viewBox="0 0 160 160">
+                      <circle class="funds-donut-bg" cx="80" cy="80" r="58" />
+                      <g id="fundsDonutSegments"></g>
+                    </svg>
+                    <div class="funds-donut-center">
+                      <span class="funds-donut-percent" id="fundsDonutPercent">0%</span>
+                      <span class="funds-donut-label">Đã phân bổ</span>
+                    </div>
+                  </div>
+
+                  <!-- 3 Chỉ số chính (Chênh lệch, Đã phân bổ, Khả dụng) -->
+                  <div class="funds-metrics-grid">
+                    <div class="funds-balance-card funds-metric-item">
+                      <div class="funds-metric-header">
+                        <span class="funds-metric-dot dot-income"></span>
+                        <div class="funds-balance-label">Chênh lệch thu chi</div>
+                      </div>
+                      <div class="funds-balance-value" id="fundsTotalIncome">0 đ</div>
+                    </div>
+                    <div class="funds-balance-card funds-metric-item">
+                      <div class="funds-metric-header">
+                        <span class="funds-metric-dot dot-allocated"></span>
+                        <div class="funds-balance-label">Đã phân bổ</div>
+                      </div>
+                      <div class="funds-balance-value is-allocated" id="fundsTotalAllocated">0 đ</div>
+                    </div>
+                    <div class="funds-balance-card funds-metric-item">
+                      <div class="funds-metric-header">
+                        <span class="funds-metric-dot dot-available"></span>
+                        <div class="funds-balance-label">Còn khả dụng</div>
+                      </div>
+                      <div class="funds-balance-value is-available" id="fundsAvailable">0 đ</div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div class="funds-balance-card">
-                <div class="funds-balance-label">Khả dụng</div>
-                <div class="funds-balance-value is-available" id="fundsAvailable">
-                  0 đ
+
+                <!-- Thanh phân bổ ngân sách chi tiết theo quỹ -->
+                <div class="funds-breakdown-wrapper">
+                  <div class="funds-breakdown-bar" id="fundsBreakdownBar"></div>
+                  <div class="funds-breakdown-legend" id="fundsBreakdownLegend"></div>
                 </div>
               </div>
             </div>
@@ -2428,6 +2458,10 @@
                 <h4>Danh sách Quỹ</h4>
               </div>
               <div class="funds-skeleton" id="fundsSkeleton">
+                <div class="skeleton-fund-card">
+                  <div class="skeleton-fund-name"></div>
+                  <div class="skeleton-fund-balance"></div>
+                </div>
                 <div class="skeleton-fund-card">
                   <div class="skeleton-fund-name"></div>
                   <div class="skeleton-fund-balance"></div>

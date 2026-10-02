@@ -47,8 +47,16 @@ if (self.FIREBASE_WEB_CONFIG && self.FIREBASE_WEB_CONFIG.messagingSenderId) {
                 const amt = payload.data?.amount || parsedEventData.amount;
                 if (amt) bodyParts.push(`${Number(amt).toLocaleString("vi-VN")} đ`);
                 if (eventNote) bodyParts.push(eventNote);
-            } else if (type === "fund_allocation" || type === "funds") {
-                title = rawTitle || "📊 Phân bổ quỹ mới";
+            } else if (type === "fund_allocation" || type === "funds" || type === "fund_topup" || type === "fund_withdraw" || type === "fund_delete") {
+                if (type === "fund_withdraw") {
+                    title = rawTitle || "💸 Lấy tiền ra từ quỹ";
+                } else if (type === "fund_delete") {
+                    title = rawTitle || "🗑️ Xóa quỹ";
+                } else if (type === "fund_topup") {
+                    title = rawTitle || "💰 Thêm vào quỹ";
+                } else {
+                    title = rawTitle || "📊 Phân bổ quỹ mới";
+                }
                 const fn = cleanStr(payload.data?.fundName || parsedEventData.fundName);
                 if (fn) bodyParts.push(`Quỹ: ${fn}`);
                 const amt = payload.data?.amount || parsedEventData.amount;

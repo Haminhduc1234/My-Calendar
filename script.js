@@ -4215,7 +4215,7 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
     return;
   }
 
-  if (type === "fund_allocation" || type === "funds") {
+  if (type === "fund_allocation" || type === "funds" || type === "fund_topup" || type === "fund_withdraw" || type === "fund_delete") {
     if (typeof openFundsModal === "function") {
       openFundsModal();
     }
@@ -4352,8 +4352,16 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
     if (eventData.hasImage) bodyParts.push("📎 Kèm hình ảnh");
     notificationUrl = `./?action=cashflow&id=${encodeURIComponent(eventData.id || "")}&date=${encodeURIComponent(dateKey || "")}&amount=${encodeURIComponent(eventData.amount || "")}&category=${encodeURIComponent(eventData.category || "")}&cashflowType=${encodeURIComponent(eventData.cashflowType || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
     notificationTag = `cashflow-${eventData.id || dateKey || Date.now()}`;
-  } else if (type === "fund_allocation" || type === "funds") {
-    title = `📊 Phân bổ quỹ: ${eventData.fundName || "Quỹ"}`;
+  } else if (type === "fund_allocation" || type === "funds" || type === "fund_topup" || type === "fund_withdraw" || type === "fund_delete") {
+    if (type === "fund_withdraw") {
+      title = `💸 Lấy tiền ra từ quỹ: ${eventData.fundName || "Quỹ"}`;
+    } else if (type === "fund_delete") {
+      title = `🗑️ Xóa quỹ: ${eventData.fundName || "Quỹ"}`;
+    } else if (type === "fund_topup") {
+      title = `💰 Thêm vào quỹ: ${eventData.fundName || "Quỹ"}`;
+    } else {
+      title = `📊 Phân bổ quỹ: ${eventData.fundName || "Quỹ"}`;
+    }
     if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
     if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
     const cleanNote = String(eventData.text || eventData.note || "").replace(/^undefined$/i, "").trim();
@@ -4894,8 +4902,16 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
     const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
     if (cleanText) bodyParts.push(cleanText);
     if (payload.eventData.hasImage) bodyParts.push("📎 Kèm hình ảnh");
-  } else if (type === "funds" || type === "fund_allocation") {
-    notifTitle = `📊 Phân bổ quỹ: ${payload.eventData.fundName || "Quỹ"}`;
+  } else if (type === "funds" || type === "fund_allocation" || type === "fund_topup" || type === "fund_withdraw" || type === "fund_delete") {
+    if (type === "fund_withdraw") {
+      notifTitle = `💸 Lấy tiền ra từ quỹ: ${payload.eventData.fundName || "Quỹ"}`;
+    } else if (type === "fund_delete") {
+      notifTitle = `🗑️ Xóa quỹ: ${payload.eventData.fundName || "Quỹ"}`;
+    } else if (type === "fund_topup") {
+      notifTitle = `💰 Thêm vào quỹ: ${payload.eventData.fundName || "Quỹ"}`;
+    } else {
+      notifTitle = `📊 Phân bổ quỹ: ${payload.eventData.fundName || "Quỹ"}`;
+    }
     if (payload.eventData.amount) {
       bodyParts.push(`${Number(payload.eventData.amount).toLocaleString("vi-VN")} đ`);
     }
@@ -4965,6 +4981,9 @@ async function saveNotificationToHistory(notificationType, title, body, dateKey,
     if (!defaultTitle) {
       if (type === "cashflow") defaultTitle = "Giao dịch thu chi mới";
       else if (type === "funds" || type === "fund_allocation") defaultTitle = "Phân bổ quỹ mới";
+      else if (type === "fund_topup") defaultTitle = "Thêm vào quỹ";
+      else if (type === "fund_withdraw") defaultTitle = "Lấy tiền ra từ quỹ";
+      else if (type === "fund_delete") defaultTitle = "Xóa quỹ";
       else if (type === "reminder") defaultTitle = "Nhắc nhở sự kiện";
       else defaultTitle = "Sự kiện lịch mới";
     }
@@ -5332,7 +5351,7 @@ function renderNotificationList() {
       iconHtml = '<i class="fi fi-rr-donate"></i>';
       iconClass = "cashflow";
       typeLabel = "Thu chi";
-    } else if (type === "funds" || type === "fund_allocation") {
+    } else if (type === "funds" || type === "fund_allocation" || type === "fund_topup" || type === "fund_withdraw" || type === "fund_delete") {
       iconHtml = '<i class="fi fi-rr-wallet"></i>';
       iconClass = "funds";
       typeLabel = "Quỹ";
@@ -18162,6 +18181,7 @@ function saveFund() {
   saveFundsToFirebase();
   closeFundModal();
   renderFundsDashboard();
+  showToast(editingFundId ? `Đã cập nhật quỹ "${name}" thành công!` : `Đã thêm quỹ "${name}" thành công!`, 3000);
 }
 
 function confirmDeleteFund(fundId) {
@@ -18173,9 +18193,27 @@ function confirmDeleteFund(fundId) {
     `Bạn có chắc muốn xóa quỹ "${fund.name}"? Các khoản đã phân bổ vào quỹ này sẽ không bị mất.`,
     "Xóa",
     () => {
+      const fundName = fund.name;
       fundsData.funds = fundsData.funds.filter((f) => f.id !== fundId);
       saveFundsToFirebase();
       renderFundsDashboard();
+
+      // Bắn thông báo đẩy
+      try {
+        queueEventNotification({
+          id: `fund-delete-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          title: "Xóa quỹ",
+          text: `Đã xóa quỹ "${fundName}" thành công`,
+          note: `Đã xóa quỹ "${fundName}" thành công`,
+          fundName: fundName,
+          date: getTodayIsoDate(),
+          createdAt: Date.now()
+        }, "", "fund_delete");
+      } catch (errNotif) {
+        console.warn("[Funds] Lỗi queueEventNotification delete fund:", errNotif);
+      }
+
+      showToast(`Đã xóa quỹ "${fundName}" thành công!`, 3000);
     }
   );
 }
@@ -18252,9 +18290,30 @@ function confirmTopupFund() {
 
     fundsData.allocations.push(withdrawAllocation);
     saveFundsToFirebase();
+
+    // Bắn thông báo đẩy
+    try {
+      queueEventNotification({
+        id: withdrawAllocation.id,
+        title: "Lấy tiền ra từ quỹ",
+        text: `Đã lấy ${amount.toLocaleString("vi-VN")} đ từ quỹ ${fund.name} vào số dư khả dụng`,
+        note: `Đã lấy ${amount.toLocaleString("vi-VN")} đ từ quỹ ${fund.name} vào số dư khả dụng`,
+        fundName: fund.name,
+        amount: amount,
+        date: withdrawAllocation.date,
+        createdAt: withdrawAllocation.createdAt
+      }, "", "fund_withdraw");
+    } catch (errNotif) {
+      console.warn("[Funds] Lỗi queueEventNotification withdraw:", errNotif);
+    }
+
     closeTopupFundModal();
     renderAllocateHistory();
     renderFundsDashboard();
+    if (typeof updateCashflowAvailableBalanceUI === "function") {
+      updateCashflowAvailableBalanceUI();
+    }
+    showToast(`Đã lấy thành công ${amount.toLocaleString("vi-VN")} ₫ từ quỹ "${fund.name}"!`, 3000);
     return;
   }
 
@@ -18286,9 +18345,30 @@ function confirmTopupFund() {
 
   fundsData.allocations.push(topupAllocation);
   saveFundsToFirebase();
+
+  // Bắn thông báo đẩy
+  try {
+    queueEventNotification({
+      id: topupAllocation.id,
+      title: "Thêm vào quỹ",
+      text: `Đã thêm ${amount.toLocaleString("vi-VN")} đ vào quỹ ${fund.name}`,
+      note: `Đã thêm ${amount.toLocaleString("vi-VN")} đ vào quỹ ${fund.name}`,
+      fundName: fund.name,
+      amount: amount,
+      date: topupAllocation.date,
+      createdAt: topupAllocation.createdAt
+    }, "", "fund_topup");
+  } catch (errNotif) {
+    console.warn("[Funds] Lỗi queueEventNotification topup:", errNotif);
+  }
+
   closeTopupFundModal();
   renderAllocateHistory();
   renderFundsDashboard();
+  if (typeof updateCashflowAvailableBalanceUI === "function") {
+    updateCashflowAvailableBalanceUI();
+  }
+  showToast(`Đã thêm thành công ${amount.toLocaleString("vi-VN")} ₫ vào quỹ "${fund.name}"!`, 3000);
 }
 
 function openAllocateModal() {
@@ -18397,8 +18477,12 @@ function confirmAllocate() {
   amountInput.style.borderColor = "";
   renderAllocateHistory();
   renderFundsDashboard();
+  if (typeof updateCashflowAvailableBalanceUI === "function") {
+    updateCashflowAvailableBalanceUI();
+  }
 
   closeAllocateModal();
+  showToast(`Đã thêm thành công ${amount.toLocaleString("vi-VN")} ₫ vào quỹ "${fundName}"!`, 3000);
   openCelebrationModal(amount, fundName);
 }
 

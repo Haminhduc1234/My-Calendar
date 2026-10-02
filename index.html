@@ -2562,10 +2562,14 @@
           <div class="allocate-form">
             <label class="allocate-input-item">
               <span>Chọn Quỹ</span>
-              <select id="allocateFundSelect">
+              <select id="allocateFundSelect" onchange="onAllocateFundSelectChange()">
                 <option value="">-- Chọn quỹ --</option>
               </select>
             </label>
+            <div class="allocate-fund-detail-info" id="allocateFundDetailInfo" style="display: none; justify-content: space-between; align-items: center; padding: 7px 10px; background: rgba(255, 255, 255, 0.04); border-radius: 8px; font-size: 11.5px; border: 1px solid rgba(255, 255, 255, 0.06); margin-top: -4px;">
+              <span id="allocateFundCurrentBalText" style="color: var(--muted, #94a3b8);">Số dư quỹ: <strong style="color: #10b981;">0 đ</strong></span>
+              <span id="allocateFundRemainingTargetText" style="color: #60a5fa; font-weight: 500;"></span>
+            </div>
             <label class="allocate-input-item">
               <span>Số tiền phân bổ</span>
               <input type="text" id="allocateAmount" placeholder="VD: 500.000" inputmode="numeric" />
@@ -2617,9 +2621,16 @@
           <h3 id="topupFundModalTitle">Thêm vào quỹ</h3>
         </div>
         <div class="fund-form">
+          <div class="topup-fund-info-bar" id="topupFundBalanceInfo" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; margin-bottom: 12px; font-size: 12.5px;">
+            <span style="color: var(--muted, #94a3b8);">Số dư hiện có của quỹ:</span>
+            <strong id="topupFundCurrentBalance" style="color: #10b981; font-family: 'Space Grotesk', sans-serif;">0 đ</strong>
+          </div>
           <label class="fund-input-item">
             <span id="topupFundAmountLabel">Số tiền thêm vào</span>
-            <input type="text" id="topupAmount" placeholder="VD: 500.000" autocomplete="off" inputmode="numeric" />
+            <div style="position: relative; display: flex; align-items: center; width: 100%;">
+              <input type="text" id="topupAmount" placeholder="VD: 500.000" autocomplete="off" inputmode="numeric" style="padding-right: 64px; width: 100%;" />
+              <button type="button" class="topup-max-btn" id="topupMaxBtn" onclick="setTopupMaxAmount()" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.12); color: #38bdf8; font-size: 11px; font-weight: 600; cursor: pointer;">Tối đa</button>
+            </div>
           </label>
         </div>
         <div class="confirm-modal-actions">

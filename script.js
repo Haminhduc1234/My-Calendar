@@ -12190,7 +12190,9 @@ function checkCashflowAmountExceeded() {
  * Hoàn toàn độc lập trong form chi tiêu, không mở hay chuyển sang phần Quỹ
  */
 function openCashflowWithdrawFundModal(suggestedAmount = null) {
-  loadFundsFromLocalStorage();
+  if (!fundsData || !Array.isArray(fundsData.funds) || fundsData.funds.length === 0) {
+    loadFundsFromLocalStorage();
+  }
   const select = document.getElementById("cashflowWithdrawFundSelect");
   const amountInput = document.getElementById("cashflowWithdrawAmount");
   const infoEl = document.getElementById("cashflowWithdrawFundInfo");
@@ -17409,6 +17411,10 @@ function initFundsFirebase() {
         fundsData = { funds: [], allocations: [], totalIncome: 0 };
       }
       normalizeFundsData();
+      const profileKey = userProfileKey || "default";
+      try {
+        localStorage.setItem(`funds_${profileKey}`, JSON.stringify(fundsData));
+      } catch (_) {}
       renderFundsDashboard();
     },
     (error) => {
@@ -17420,27 +17426,62 @@ function initFundsFirebase() {
 }
 
 function normalizeFundsData() {
-  if (!fundsData || !Array.isArray(fundsData.funds)) return;
+  if (!fundsData) return;
+  if (!Array.isArray(fundsData.funds)) fundsData.funds = [];
+  if (!Array.isArray(fundsData.allocations)) fundsData.allocations = [];
+
   let hasChanges = false;
+
+  // 1. Chuẩn hóa quỹ (funds)
   for (const fund of fundsData.funds) {
-    // Nếu quỹ có initialAmount bị âm do trước đó bị trừ trực tiếp vào số gốc
-    if (typeof fund.initialAmount === "number" && fund.initialAmount < 0) {
-      const negativeAmount = Math.abs(fund.initialAmount);
+    const numInit = Number(fund.initialAmount) || 0;
+    if (fund.initialAmount !== numInit) {
+      fund.initialAmount = numInit;
+      hasChanges = true;
+    }
+    if (fund.initialAmount < 0) {
       fund.initialAmount = 0;
-      if (!Array.isArray(fundsData.allocations)) fundsData.allocations = [];
-      fundsData.allocations.push({
-        id: `alloc-withdraw-fix-${Date.now()}-${fund.id}`,
-        fundId: fund.id,
-        amount: -negativeAmount,
-        type: "withdraw",
-        note: `Khôi phục số tiền đã lấy ra từ quỹ ${fund.name}`,
-        date: getTodayIsoDate(),
-        createdAt: Date.now(),
-      });
+      hasChanges = true;
+    }
+    const numTarget = Number(fund.target) || 0;
+    if (fund.target !== numTarget) {
+      fund.target = numTarget;
       hasChanges = true;
     }
   }
-  if (hasChanges) {
+
+  // 2. Chuẩn hóa allocations: khử trùng lặp id và ép kiểu amount thành number
+  const seenIds = new Set();
+  const validAllocations = [];
+  for (const alloc of fundsData.allocations) {
+    if (!alloc || !alloc.fundId) continue;
+    if (alloc.id) {
+      if (seenIds.has(alloc.id)) {
+        hasChanges = true;
+        continue; // Bỏ qua bản ghi trùng lặp
+      }
+      seenIds.add(alloc.id);
+    }
+    const numAmt = Number(alloc.amount) || 0;
+    if (alloc.amount !== numAmt) {
+      alloc.amount = numAmt;
+      hasChanges = true;
+    }
+    validAllocations.push(alloc);
+  }
+
+  if (validAllocations.length !== fundsData.allocations.length) {
+    fundsData.allocations = validAllocations;
+    hasChanges = true;
+  }
+
+  // Đồng bộ ngay vào localStorage cache
+  const profileKey = userProfileKey || "default";
+  try {
+    localStorage.setItem(`funds_${profileKey}`, JSON.stringify(fundsData));
+  } catch (_) {}
+
+  if (hasChanges && firebaseFundsRef) {
     saveFundsToFirebase();
   }
 }
@@ -17507,11 +17548,13 @@ function calculateTotalAllocated() {
 
 function getFundBalance(fundId) {
   const fund = fundsData.funds.find((f) => f.id === fundId);
-  const initialAmount = fund ? fund.initialAmount || 0 : 0;
+  const initialAmount = fund ? Number(fund.initialAmount) || 0 : 0;
   let balance = initialAmount;
-  for (const alloc of fundsData.allocations) {
-    if (alloc.fundId === fundId) {
-      balance += alloc.amount;
+  if (Array.isArray(fundsData.allocations)) {
+    for (const alloc of fundsData.allocations) {
+      if (alloc.fundId === fundId) {
+        balance += Number(alloc.amount) || 0;
+      }
     }
   }
   return balance;
@@ -18407,9 +18450,25 @@ function openTopupFundModal(fundId) {
 
   topupFundId = fundId;
   topupFundMode = "topup";
-  document.getElementById("topupFundModalTitle").innerText = "Thêm vào quỹ";
+  const balance = getFundBalance(fundId);
+  document.getElementById("topupFundModalTitle").innerText = `Thêm vào "${fund.name}"`;
   document.getElementById("topupFundAmountLabel").innerText = "Số tiền thêm vào";
   document.getElementById("topupFundConfirmBtn").innerText = "Xác nhận";
+
+  const curBalEl = document.getElementById("topupFundCurrentBalance");
+  if (curBalEl) curBalEl.innerText = `${balance.toLocaleString("vi-VN")} đ`;
+
+  const maxBtn = document.getElementById("topupMaxBtn");
+  if (maxBtn) {
+    const target = Number(fund.target) || 0;
+    if (target > 0 && target > balance) {
+      maxBtn.innerText = "Đủ mục tiêu";
+      maxBtn.style.display = "block";
+    } else {
+      maxBtn.style.display = "none";
+    }
+  }
+
   document.getElementById("topupAmount").placeholder = "VD: 500.000";
   document.getElementById("topupAmount").value = "";
   document.getElementById("topupFundModal").style.display = "flex";
@@ -18421,12 +18480,45 @@ function openWithdrawFundModal(fundId) {
 
   topupFundId = fundId;
   topupFundMode = "withdraw";
-  document.getElementById("topupFundModalTitle").innerText = "Lấy ra từ quỹ";
+  const balance = getFundBalance(fundId);
+  document.getElementById("topupFundModalTitle").innerText = `Lấy ra từ "${fund.name}"`;
   document.getElementById("topupFundAmountLabel").innerText = "Số tiền lấy ra";
   document.getElementById("topupFundConfirmBtn").innerText = "Xác nhận";
-  document.getElementById("topupAmount").placeholder = "VD: 500.000";
+
+  const curBalEl = document.getElementById("topupFundCurrentBalance");
+  if (curBalEl) curBalEl.innerText = `${balance.toLocaleString("vi-VN")} đ`;
+
+  const maxBtn = document.getElementById("topupMaxBtn");
+  if (maxBtn) {
+    maxBtn.innerText = "Tối đa";
+    maxBtn.style.display = balance > 0 ? "block" : "none";
+  }
+
+  document.getElementById("topupAmount").placeholder = `Tối đa ${balance.toLocaleString("vi-VN")}`;
   document.getElementById("topupAmount").value = "";
   document.getElementById("topupFundModal").style.display = "flex";
+}
+
+function setTopupMaxAmount() {
+  if (!topupFundId) return;
+  const fund = fundsData.funds.find((f) => f.id === topupFundId);
+  if (!fund) return;
+  const balance = getFundBalance(topupFundId);
+  const input = document.getElementById("topupAmount");
+  if (!input) return;
+
+  if (topupFundMode === "withdraw") {
+    input.value = balance.toLocaleString("vi-VN");
+  } else {
+    const target = Number(fund.target) || 0;
+    if (target > balance) {
+      input.value = (target - balance).toLocaleString("vi-VN");
+    } else {
+      input.value = balance.toLocaleString("vi-VN");
+    }
+  }
+  formatCurrencyInput(input);
+  input.focus();
 }
 
 function closeTopupFundModal() {
@@ -18566,20 +18658,60 @@ function openAllocateModal() {
   }
 
   document.getElementById("allocateAmount").value = "";
+  const detailEl = document.getElementById("allocateFundDetailInfo");
+  if (detailEl) detailEl.style.display = "none";
 
-  // Populate fund select
+  // Populate fund select kèm số dư hiện có
   const select = document.getElementById("allocateFundSelect");
   select.innerHTML = '<option value="">-- Chọn quỹ --</option>';
 
   for (const fund of fundsData.funds) {
+    const balance = getFundBalance(fund.id);
     const option = document.createElement("option");
     option.value = fund.id;
-    option.textContent = fund.name;
+    option.textContent = `${fund.name} (Hiện có: ${balance.toLocaleString("vi-VN")} đ${fund.target > 0 ? ` / Mục tiêu: ${fund.target.toLocaleString("vi-VN")} đ` : ""})`;
     select.appendChild(option);
   }
 
   document.getElementById("allocateModal").style.display = "flex";
   renderAllocateHistory();
+}
+
+function onAllocateFundSelectChange() {
+  const select = document.getElementById("allocateFundSelect");
+  const detailEl = document.getElementById("allocateFundDetailInfo");
+  const balTextEl = document.getElementById("allocateFundCurrentBalText");
+  const targetTextEl = document.getElementById("allocateFundRemainingTargetText");
+  if (!select || !detailEl) return;
+
+  const fundId = select.value;
+  if (!fundId) {
+    detailEl.style.display = "none";
+    return;
+  }
+
+  const fund = fundsData.funds.find((f) => f.id === fundId);
+  if (!fund) {
+    detailEl.style.display = "none";
+    return;
+  }
+
+  const balance = getFundBalance(fundId);
+  detailEl.style.display = "flex";
+  if (balTextEl) {
+    balTextEl.innerHTML = `Số dư quỹ: <strong style="color: #10b981;">${balance.toLocaleString("vi-VN")} đ</strong>`;
+  }
+  if (targetTextEl) {
+    const target = Number(fund.target) || 0;
+    if (target > 0) {
+      const remain = Math.max(0, target - balance);
+      targetTextEl.innerText = remain === 0 ? "✓ Đã đạt mục tiêu" : `Còn thiếu: ${remain.toLocaleString("vi-VN")} đ`;
+      targetTextEl.style.color = remain === 0 ? "#10b981" : "#60a5fa";
+    } else {
+      targetTextEl.innerText = "Không giới hạn mục tiêu";
+      targetTextEl.style.color = "var(--muted, #94a3b8)";
+    }
+  }
 }
 
 function closeAllocateModal() {

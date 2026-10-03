@@ -10541,7 +10541,7 @@ input[type="datetime-local"] {
   z-index: 50;
 }
 
-/* 1. Nắp hũ (Jar Cap & Neck) */
+/* 1. Nắp hũ (Thiết kế thủy tinh mờ tinh xảo & cân đối) */
 .fund-jar-cap {
   display: flex;
   flex-direction: column;
@@ -10553,165 +10553,98 @@ input[type="datetime-local"] {
 }
 
 .fund-jar-cap-lid {
-  width: 58px;
+  width: 72%;
   height: 9px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, rgba(203, 213, 225, 0.2) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 6px 6px 3px 3px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(148, 163, 184, 0.12) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 7px 7px 3px 3px;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  position: relative;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Vệt phản quang ánh bạc tinh tế ở tâm nắp */
+.fund-jar-cap-lid::after {
+  content: "";
+  position: absolute;
+  top: 1.5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36%;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 99px;
+}
+
+.fund-item:hover .fund-jar-cap-lid {
+  border-color: rgba(255, 255, 255, 0.42);
+  box-shadow: 
+    inset 0 1px 1.5px rgba(255, 255, 255, 0.75),
+    0 3px 10px rgba(0, 0, 0, 0.38);
 }
 
 .fund-jar-neck {
-  width: 44px;
-  height: 5px;
-  background: rgba(255, 255, 255, 0.08);
+  width: 56%;
+  height: 4px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, rgba(255, 255, 255, 0.08) 100%);
   border-left: 1px solid rgba(255, 255, 255, 0.2);
   border-right: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
 }
 
-/* 2. Thân hũ thủy tinh (Glass Vessel Body) */
+/* 2. Thân hũ (Body Wrap) - Tối giản, phẳng, thanh lịch */
 .fund-jar-body-wrap {
   width: 100%;
-  min-height: 184px;
-  border-radius: 18px 18px 24px 24px;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.075) 0%, rgba(255, 255, 255, 0.02) 65%, rgba(255, 255, 255, 0.06) 100%);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1.5px solid rgba(255, 255, 255, 0.16);
-  box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.2),
-    inset 0 -8px 20px rgba(0, 0, 0, 0.35),
-    0 8px 22px rgba(0, 0, 0, 0.26),
-    0 0 18px var(--fund-color-glow, rgba(59, 130, 246, 0.22));
+  min-height: 165px;
+  border-radius: 16px;
+  background: rgba(13, 22, 42, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 10px 10px 12px 10px;
+  padding: 12px;
   box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .fund-item:hover .fund-jar-body-wrap {
-  border-color: rgba(255, 255, 255, 0.32);
-  box-shadow:
-    inset 0 2px 6px rgba(255, 255, 255, 0.28),
-    inset 0 -8px 22px rgba(0, 0, 0, 0.42),
-    0 10px 28px rgba(0, 0, 0, 0.34),
-    0 0 24px var(--fund-color-glow, rgba(59, 130, 246, 0.35));
+  border-color: rgba(255, 255, 255, 0.26);
+  background: rgba(18, 30, 56, 0.85);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
 }
 
-/* 3. Mực nước trong hũ (Liquid Fill) */
+/* 3. Mực nước dâng: Đơn giản, phẳng, êm ái */
 .fund-jar-liquid {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(180deg,
-      var(--fund-color-light, rgba(59, 130, 246, 0.5)) 0%,
-      var(--fund-color, #3b82f6) 42%,
-      var(--fund-color-dark, rgba(30, 58, 138, 0.9)) 100%);
-  border-radius: 0 0 22px 22px;
-  transition: height 0.65s cubic-bezier(0.34, 1.3, 0.64, 1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, var(--fund-color, #3b82f6) 100%);
+  opacity: 0.42;
+  border-radius: 0 0 15px 15px;
+  transition: height 0.5s ease;
   pointer-events: none;
   z-index: 1;
-  overflow: hidden;
 }
 
-.fund-jar-liquid-surface {
-  position: absolute;
-  top: 0;
-  left: -25%;
-  width: 150%;
-  height: 8px;
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.4) 50%,
-      transparent 100%);
-  border-radius: 50%;
-  animation: fund-liquid-shimmer 3s ease-in-out infinite alternate;
-}
-
-@keyframes fund-liquid-shimmer {
-  0% {
-    transform: translateX(-4%);
-    opacity: 0.35;
-  }
-
-  100% {
-    transform: translateX(4%);
-    opacity: 0.85;
-  }
-}
-
-.fund-jar-liquid-bubble {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.35);
-  pointer-events: none;
-  animation: fund-bubble-rise 4.5s ease-in infinite;
-}
-
-.fund-jar-liquid-bubble.bubble-1 {
-  width: 5px;
-  height: 5px;
-  left: 22%;
-  bottom: 12%;
-  animation-delay: 0.4s;
-}
-
-.fund-jar-liquid-bubble.bubble-2 {
-  width: 7px;
-  height: 7px;
-  right: 25%;
-  bottom: 22%;
-  animation-delay: 2.2s;
-}
-
-@keyframes fund-bubble-rise {
-  0% {
-    transform: translateY(0);
-    opacity: 0;
-  }
-
-  35% {
-    opacity: 0.6;
-  }
-
-  100% {
-    transform: translateY(-34px);
-    opacity: 0;
-  }
-}
-
-/* 4. Vệt bóng sáng thủy tinh (Glass Reflection) */
-.fund-jar-shine-left {
-  position: absolute;
-  top: 10px;
-  left: 7px;
-  width: 5px;
-  height: 48px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.06) 100%);
-  border-radius: 99px;
-  pointer-events: none;
-  z-index: 2;
-  opacity: 0.75;
-}
-
+/* Ẩn các chi tiết rườm rà (sóng shimmer, bong bóng, bóng phản chiếu) */
+.fund-jar-liquid-surface,
+.fund-jar-liquid-bubble,
+.fund-jar-shine-left,
 .fund-jar-shine-corner {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 65px;
-  height: 65px;
-  background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.14) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 2;
+  display: none !important;
 }
 
-/* 5. Thanh vai hũ (Shoulder bar) */
+/* 4. Thanh vai hũ */
 .fund-jar-shoulder-bar {
   position: relative;
   z-index: 5;
@@ -10721,62 +10654,28 @@ input[type="datetime-local"] {
   width: 100%;
 }
 
-.fund-jar-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2.5px 8px;
-  border-radius: 99px;
-  background: rgba(15, 23, 42, 0.76);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  font-size: 11px;
-  font-weight: 700;
-  color: #f1f5f9;
-  letter-spacing: 0.2px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-
-.fund-jar-badge.is-complete {
-  background: rgba(16, 185, 129, 0.25);
-  border-color: rgba(16, 185, 129, 0.55);
-  color: #34d399;
-}
-
-.fund-jar-badge i {
-  position: relative;
-  top: 1px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  font-size: 11px;
-}
-
 .fund-jar-infinite {
   font-size: 14px;
   line-height: 1;
   color: var(--fund-color, #38bdf8);
 }
 
-/* 6. Chiếc tem dán nhãn thông tin trung tâm hũ (Jar Label Card) */
+/* 5. Thông tin trung tâm hũ: Liền mạch, phẳng, không hộp trong hộp */
 .fund-jar-label-card {
   position: relative;
   z-index: 4;
-  margin: auto 0 2px 0;
-  padding: 8px 8px 7px 8px;
-  background: rgba(15, 23, 42, 0.82);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  margin-top: auto;
+  padding: 4px 0 0 0;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  box-shadow: none !important;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 3px;
+  gap: 4px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -10785,37 +10684,36 @@ input[type="datetime-local"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 6px;
   width: 100%;
   max-width: 100%;
 }
 
 .fund-jar-color-tag {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
-  box-shadow: 0 0 6px currentColor;
 }
 
 .fund-jar-name-text {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #f8fafc;
   line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: calc(100% - 14px);
+  max-width: calc(100% - 16px);
 }
 
 .fund-jar-balance {
-  margin: 1px 0 0 0;
+  margin: 2px 0 0 0;
   width: 100%;
 }
 
 .fund-jar-balance-val {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   color: #10b981;
   letter-spacing: -0.3px;
@@ -10830,28 +10728,14 @@ input[type="datetime-local"] {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   align-items: center;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
-.fund-jar-progress-track {
-  width: 100%;
-  height: 3.5px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 99px;
-  overflow: hidden;
-}
-
-.fund-jar-progress-bar {
-  height: 100%;
-  background: var(--fund-color, #38bdf8);
-  border-radius: 99px;
-  transition: width 0.4s ease;
-}
 
 .fund-jar-target-desc {
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--muted, #94a3b8);
   line-height: 1.2;
   overflow: hidden;
@@ -12215,8 +12099,6 @@ input[type="datetime-local"] {
 .topup-max-btn {
   position: absolute;
   right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
   padding: 5px 10px;
   border-radius: 7px;
   border: 1px solid rgba(56, 189, 248, 0.35);

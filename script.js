@@ -17881,17 +17881,21 @@ function renderFundsList() {
     let progressText = "";
     if (target > 0) {
       if (balance >= target) {
-        progressText = "✓ Đạt mục tiêu";
+        progressText = "✓ Đã đủ";
       } else {
         const remaining = target - balance;
-        progressText = `Còn ${remaining.toLocaleString("vi-VN")} đ`;
+        progressText = `Thiếu ${remaining.toLocaleString("vi-VN")} đ`;
       }
     } else {
       progressText = "Không giới hạn";
     }
 
-    const fillHeight = balance <= 0 ? 0 : (target > 0 ? Math.max(12, Math.min(percentage, 95)) : 55);
     const isCompleted = target > 0 && balance >= target;
+    const fillHeight = balance <= 0
+      ? 0
+      : (target > 0
+        ? (isCompleted ? 100 : Math.max(12, Math.min(percentage, 95)))
+        : (balance > 0 ? 55 : 0));
 
     const item = document.createElement("div");
     item.className = "fund-item fund-jar-item";
@@ -17924,10 +17928,6 @@ function renderFundsList() {
 
         <!-- Thanh vai trên hũ: Huy hiệu % và Nút menu 3 chấm -->
         <div class="fund-jar-shoulder-bar">
-          <div class="fund-jar-badge ${isCompleted ? 'is-complete' : ''}">
-            ${target > 0 ? (isCompleted ? '<i class="fi fi-rr-check"></i> 100%' : `${percentage.toFixed(0)}%`) : '<span class="fund-jar-infinite">∞</span>'}
-          </div>
-
           <div class="fund-item-actions">
             <button class="fund-action-btn" onclick="toggleFundAction(this, event)" title="Tùy chọn">
               <i class="fi fi-rr-menu-dots-vertical"></i>
@@ -17966,9 +17966,6 @@ function renderFundsList() {
 
           <div class="fund-jar-target-info">
             ${target > 0 ? `
-              <div class="fund-jar-progress-track">
-                <div class="fund-jar-progress-bar" style="width: ${Math.min(percentage, 100)}%;"></div>
-              </div>
               <div class="fund-jar-target-desc ${isCompleted ? 'is-complete' : ''}">${progressText}</div>
             ` : `
               <div class="fund-jar-target-desc unconstrained">Tích lũy tự do</div>

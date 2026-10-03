@@ -4238,6 +4238,18 @@ function openEventDateFromPush(dateKey) {
 }
 window.openEventDateFromPush = openEventDateFromPush;
 
+function formatNotificationDateString(dateKey) {
+  if (!dateKey) return "";
+  const parts = String(dateKey).split("-").map(Number);
+  if (parts.length === 3 && !parts.some(isNaN)) {
+    const d = String(parts[2]).padStart(2, "0");
+    const m = String(parts[1]).padStart(2, "0");
+    const y = parts[0];
+    return `${d}/${m}/${y}`;
+  }
+  return dateKey;
+}
+
 /**
  * Xử lý bắn thông báo Realtime đa thiết bị (Hỗ trợ 100% gói miễn phí Spark)
  */
@@ -4262,7 +4274,7 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
     title = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
     if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
     if (eventData.category) bodyParts.push(eventData.category);
-    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+    if (dateKey) bodyParts.push(formatNotificationDateString(dateKey));
     const cleanNote = String(eventData.text || eventData.note || "").replace(/^undefined$/i, "").trim();
     if (cleanNote) bodyParts.push(cleanNote);
     if (eventData.hasImage) bodyParts.push("📎 Kèm hình ảnh");
@@ -4291,7 +4303,7 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
       title = `📊 Phân bổ quỹ: ${eventData.fundName || "Quỹ"}`;
     }
     if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
-    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+    if (dateKey) bodyParts.push(formatNotificationDateString(dateKey));
     const cleanNote = String(eventData.text || eventData.note || "").replace(/^undefined$/i, "").trim();
     if (cleanNote) bodyParts.push(cleanNote);
     notificationUrl = `./?action=funds&id=${encodeURIComponent(eventData.id || "")}&fundName=${encodeURIComponent(eventData.fundName || "")}&amount=${encodeURIComponent(eventData.amount || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
@@ -4299,7 +4311,7 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
   } else {
     // event (mặc định)
     title = eventData.title ? `🔔 ${eventData.title}` : "🔔 Sự kiện mới từ thiết bị khác";
-    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+    if (dateKey) bodyParts.push(formatNotificationDateString(dateKey));
     if (eventData.eventDateTime) {
       try {
         const dt = new Date(eventData.eventDateTime);
@@ -4832,7 +4844,7 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
     if (payload.eventData.category) {
       bodyParts.push(payload.eventData.category);
     }
-    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+    if (dateKey) bodyParts.push(formatNotificationDateString(dateKey));
     const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
     if (cleanText) bodyParts.push(cleanText);
     if (payload.eventData.hasImage) bodyParts.push("📎 Kèm hình ảnh");
@@ -4861,12 +4873,12 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
     if (payload.eventData.amount) {
       bodyParts.push(`${Number(payload.eventData.amount).toLocaleString("vi-VN")} đ`);
     }
-    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+    if (dateKey) bodyParts.push(formatNotificationDateString(dateKey));
     const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
     if (cleanText) bodyParts.push(cleanText);
   } else {
     notifTitle = payload.eventData.title ? `🔔 ${payload.eventData.title}` : "🔔 Sự kiện mới";
-    if (dateKey) bodyParts.push(`Ngày ${dateKey}`);
+    if (dateKey) bodyParts.push(formatNotificationDateString(dateKey));
     if (payload.eventData.eventDateTime) {
       try {
         const dt = new Date(payload.eventData.eventDateTime);
@@ -5045,7 +5057,7 @@ function syncCombinedNotifications() {
       const cat = sanitizeString(item.eventData.category);
       if (cat) parts.push(cat);
       const dk = sanitizeString(item.dateKey || item.eventData.date);
-      if (dk) parts.push(`Ngày ${dk}`);
+      if (dk) parts.push(formatNotificationDateString(dk));
       const noteStr = sanitizeString(item.eventData.text || item.eventData.note);
       if (noteStr) parts.push(noteStr);
       cleanBody = parts.join(" | ");
@@ -5054,14 +5066,14 @@ function syncCombinedNotifications() {
       const amt = item.eventData.amount;
       if (amt) parts.push(`${Number(amt).toLocaleString("vi-VN")} đ`);
       const dk = sanitizeString(item.dateKey || item.eventData.date);
-      if (dk) parts.push(`Ngày ${dk}`);
+      if (dk) parts.push(formatNotificationDateString(dk));
       const noteStr = sanitizeString(item.eventData.text || item.eventData.note);
       if (noteStr) parts.push(noteStr);
       cleanBody = parts.join(" | ");
     } else if (!cleanBody && item.eventData) {
       const parts = [];
       const dk = sanitizeString(item.dateKey || item.eventData.date);
-      if (dk) parts.push(`Ngày ${dk}`);
+      if (dk) parts.push(formatNotificationDateString(dk));
       if (item.eventData.eventDateTime) {
         try {
           const dt = new Date(item.eventData.eventDateTime);
@@ -5318,7 +5330,11 @@ function renderNotificationList() {
     }
 
     const title = escapeHtml(item.title || "Thông báo");
-    const body = escapeHtml(item.body || "");
+    let rawBody = String(item.body || "");
+    rawBody = rawBody.replace(/Ngày\s+(\d{4})-(\d{1,2})-(\d{1,2})/g, (match, y, m, d) => {
+      return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+    });
+    const body = escapeHtml(rawBody);
     const timeStr = formatRelativeTime(item.createdAt);
     const delayStyle = `animation-delay: ${Math.min(index * 0.04, 0.3)}s;`;
 

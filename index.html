@@ -1924,17 +1924,32 @@
         </div>
         <div class="cashflow-submodal-body">
           <div class="cashflow-submodal-search-row">
-            <!-- Trạng thái ban đầu: Xem tất cả bên trái, Icon Search bên phải -->
+            <!-- Trạng thái ban đầu: Xem tất cả bên trái, Lọc ngày + Icon Search bên phải -->
             <div class="cashflow-history-actions" id="cashflowHistoryActions">
               <button type="button" class="cashflow-history-toggle" id="cashflowViewAllBtn"
                 onclick="openCashflowAllTransactionsModal()">
                 <i class="fi fi-rr-list-check"></i>
                 <span>Xem tất cả (đầy đủ)</span>
               </button>
-              <button type="button" class="cashflow-search-trigger-btn" id="cashflowSearchTriggerBtn"
-                onclick="openCashflowSearchBox()" title="Tìm kiếm giao dịch" aria-label="Tìm kiếm giao dịch">
-                <i class="fi fi-rr-search"></i>
-              </button>
+              <div class="cashflow-history-right-tools">
+                <!-- Nút Lọc theo ngày -->
+                <div class="cashflow-date-filter-box" id="cashflowDateFilterBox">
+                  <button type="button" class="cashflow-date-filter-btn" id="cashflowDateFilterBtn"
+                    onclick="openCashflowDateFilterModal()" title="Lọc theo ngày" aria-label="Lọc theo ngày">
+                    <i class="fi fi-rr-calendar"></i>
+                    <span class="cashflow-date-filter-label" id="cashflowDateFilterLabel">Lọc ngày</span>
+                  </button>
+                  <button type="button" class="cashflow-date-filter-clear-btn" id="cashflowDateFilterClearBtn"
+                    onclick="clearCashflowDateFilter(event)" title="Bỏ lọc theo ngày" aria-label="Bỏ lọc theo ngày" style="display: none;">
+                    <i class="fi fi-rr-cross"></i>
+                  </button>
+                </div>
+                <!-- Nút Tìm kiếm -->
+                <button type="button" class="cashflow-search-trigger-btn" id="cashflowSearchTriggerBtn"
+                  onclick="openCashflowSearchBox()" title="Tìm kiếm giao dịch" aria-label="Tìm kiếm giao dịch">
+                  <i class="fi fi-rr-search"></i>
+                </button>
+              </div>
             </div>
 
             <!-- Khi click search: Mở full box input search -->
@@ -1954,6 +1969,62 @@
             </div>
           </div>
           <div class="cashflow-recent-list" id="cashflowRecentList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup Lịch chọn ngày để lọc giao dịch trong lịch sử -->
+    <div id="cashflowDateFilterModal" class="modal cashflow-submodal" style="display: none;"
+      onclick="if(event.target===this) closeCashflowDateFilterModal()">
+      <div class="cashflow-submodal-dialog cashflow-calendar-filter-dialog" style="max-width: 380px;">
+        <div class="cashflow-submodal-header">
+          <div class="cashflow-submodal-header-left">
+            <div class="cashflow-submodal-icon is-history" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+              <i class="fi fi-rr-calendar"></i>
+            </div>
+            <div>
+              <h3 class="cashflow-submodal-title">Chọn ngày lọc</h3>
+              <p class="cashflow-submodal-subtitle">Chạm vào ngày để xem giao dịch</p>
+            </div>
+          </div>
+          <button type="button" class="cashflow-submodal-close" onclick="closeCashflowDateFilterModal()"
+            aria-label="Đóng">×</button>
+        </div>
+        <div class="cashflow-submodal-body cashflow-calendar-filter-body">
+          <!-- Calendar Widget -->
+          <div class="cf-calendar-widget">
+            <!-- Header chuyển tháng -->
+            <div class="cf-cal-nav-bar">
+              <button type="button" class="cf-cal-nav-btn" onclick="changeCashflowCalendarMonth(-1)" title="Tháng trước" aria-label="Tháng trước">
+                <i class="fi fi-rr-angle-left"></i>
+              </button>
+              <div class="cf-cal-month-title" id="cfCalMonthTitle">Tháng 10, 2026</div>
+              <button type="button" class="cf-cal-nav-btn" onclick="changeCashflowCalendarMonth(1)" title="Tháng sau" aria-label="Tháng sau">
+                <i class="fi fi-rr-angle-right"></i>
+              </button>
+            </div>
+
+            <!-- Các thứ trong tuần -->
+            <div class="cf-cal-weekdays">
+              <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span class="is-sunday">CN</span>
+            </div>
+
+            <!-- Lưới ngày trong tháng -->
+            <div class="cf-cal-days-grid" id="cfCalDaysGrid"></div>
+          </div>
+        </div>
+        <div class="cashflow-submodal-actions-bar cf-cal-actions-bar">
+          <div class="cf-cal-quick-group">
+            <button type="button" class="cf-cal-quick-btn" onclick="selectCashflowCalendarToday()">
+              <i class="fi fi-rr-calendar-day"></i> <span>Hôm nay</span>
+            </button>
+            <button type="button" class="cf-cal-quick-btn is-clear" onclick="clearCashflowDateFilterAndClose()">
+              <i class="fi fi-rr-rotate-left"></i> <span>Bỏ lọc</span>
+            </button>
+          </div>
+          <button type="button" class="cashflow-submodal-cancel-btn" onclick="closeCashflowDateFilterModal()" style="margin: 0;">
+            Đóng
+          </button>
         </div>
       </div>
     </div>

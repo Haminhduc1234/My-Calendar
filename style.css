@@ -5049,26 +5049,27 @@ body::before {
 /* Funds Skeleton */
 .funds-skeleton {
   display: none;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  flex-direction: column;
   gap: 12px;
   margin-bottom: 12px;
+  width: 100%;
 }
 
 .funds-skeleton.is-loading {
-  display: grid;
+  display: flex;
 }
 
 @media (max-width: 480px) {
   .funds-skeleton {
-    gap: 9px;
+    gap: 10px;
   }
 }
 
 .funds-skeleton .skeleton-fund-card {
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 18px 18px 24px 24px;
-  padding: 12px;
-  min-height: 184px;
+  border-radius: 16px;
+  padding: 14px 16px;
+  min-height: 106px;
   margin-bottom: 0;
   position: relative;
   overflow: hidden;
@@ -5076,6 +5077,8 @@ body::before {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 10px;
+  box-sizing: border-box;
 }
 
 .funds-skeleton .skeleton-fund-card::after {
@@ -5092,20 +5095,41 @@ body::before {
   animation: skeletonLoading 1.5s infinite;
 }
 
+.funds-skeleton .skeleton-fund-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
 .funds-skeleton .skeleton-fund-name {
-  height: 14px;
-  width: 75%;
+  height: 16px;
+  width: 42%;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 6px;
+  margin: 0;
+}
+
+.funds-skeleton .skeleton-fund-action {
+  height: 28px;
+  width: 28px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.06);
-  border-radius: 4px;
-  margin-top: 10px;
-  margin-bottom: 8px;
 }
 
 .funds-skeleton .skeleton-fund-balance {
-  height: 20px;
-  width: 55%;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
+  height: 22px;
+  width: 36%;
+  background: rgba(255, 255, 255, 0.09);
+  border-radius: 6px;
+  margin: 2px 0;
+}
+
+.funds-skeleton .skeleton-fund-progress {
+  height: 6px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
 }
 
 @keyframes appInitSpinReverse {
@@ -10378,15 +10402,16 @@ input[type="datetime-local"] {
 }
 
 .funds-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 12px;
+  width: 100%;
   touch-action: pan-y;
 }
 
 @media (max-width: 480px) {
   .funds-list {
-    gap: 9px;
+    gap: 10px;
   }
 }
 
@@ -10506,27 +10531,35 @@ input[type="datetime-local"] {
   }
 }
 
-/* ==================== PHONG CÁCH HŨ TIẾT KIỆM (FUNDS JAR CARD) ==================== */
+/* ==================== DANH SÁCH QUỸ - CARD FULL WIDTH 1 CỘT ==================== */
 
-.fund-item.fund-jar-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.fund-item {
   position: relative;
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  padding: 0;
+  width: 100%;
+  box-sizing: border-box;
+  background: rgba(15, 23, 42, 0.76);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-left: 4.5px solid var(--fund-color, #3b82f6);
+  border-radius: 16px;
+  padding: 14px 16px;
   user-select: none;
   -webkit-user-select: none;
   cursor: grab;
   touch-action: pan-y;
-  box-sizing: border-box;
-  min-width: 0;
-  transition: opacity 0.2s ease, filter 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.fund-item.fund-jar-item:active {
+.fund-item:hover {
+  background: rgba(22, 34, 60, 0.9);
+  border-color: rgba(255, 255, 255, 0.18);
+  border-left-color: var(--fund-color, #3b82f6);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.32);
+}
+
+.fund-item:active {
   cursor: grabbing;
 }
 
@@ -10541,217 +10574,229 @@ input[type="datetime-local"] {
   z-index: 50;
 }
 
-/* 1. Nắp hũ (Thiết kế thủy tinh mờ tinh xảo & cân đối) */
-.fund-jar-cap {
+.fund-card-inner {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 10px;
   width: 100%;
-  position: relative;
-  z-index: 6;
-  margin-bottom: -1px;
 }
 
-.fund-jar-cap-lid {
-  width: 72%;
-  height: 9px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(148, 163, 184, 0.12) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 7px 7px 3px 3px;
-  box-shadow: 
-    inset 0 1px 1px rgba(255, 255, 255, 0.55),
-    0 2px 6px rgba(0, 0, 0, 0.3);
-  position: relative;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-/* Vệt phản quang ánh bạc tinh tế ở tâm nắp */
-.fund-jar-cap-lid::after {
-  content: "";
-  position: absolute;
-  top: 1.5px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 36%;
-  height: 1.5px;
-  background: rgba(255, 255, 255, 0.65);
-  border-radius: 99px;
-}
-
-.fund-item:hover .fund-jar-cap-lid {
-  border-color: rgba(255, 255, 255, 0.42);
-  box-shadow: 
-    inset 0 1px 1.5px rgba(255, 255, 255, 0.75),
-    0 3px 10px rgba(0, 0, 0, 0.38);
-}
-
-.fund-jar-neck {
-  width: 56%;
-  height: 4px;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, rgba(255, 255, 255, 0.08) 100%);
-  border-left: 1px solid rgba(255, 255, 255, 0.2);
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
-}
-
-/* 2. Thân hũ (Body Wrap) - Tối giản, phẳng, thanh lịch */
-.fund-jar-body-wrap {
-  width: 100%;
-  min-height: 165px;
-  border-radius: 16px;
-  background: rgba(13, 22, 42, 0.72);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 12px;
-  box-sizing: border-box;
-  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-}
-
-.fund-item:hover .fund-jar-body-wrap {
-  border-color: rgba(255, 255, 255, 0.26);
-  background: rgba(18, 30, 56, 0.85);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-}
-
-/* 3. Mực nước dâng: Đơn giản, phẳng, êm ái */
-.fund-jar-liquid {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, var(--fund-color, #3b82f6) 100%);
-  opacity: 0.42;
-  border-radius: 0 0 15px 15px;
-  transition: height 0.5s ease;
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* Ẩn các chi tiết rườm rà (sóng shimmer, bong bóng, bóng phản chiếu) */
-.fund-jar-liquid-surface,
-.fund-jar-liquid-bubble,
-.fund-jar-shine-left,
-.fund-jar-shine-corner {
-  display: none !important;
-}
-
-/* 4. Thanh vai hũ */
-.fund-jar-shoulder-bar {
-  position: relative;
-  z-index: 5;
+/* 1. Header Thẻ Quỹ: Tên quỹ, Dot màu, Badge & Nút thao tác */
+.fund-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   width: 100%;
 }
 
-.fund-jar-infinite {
-  font-size: 14px;
-  line-height: 1;
-  color: var(--fund-color, #38bdf8);
-}
-
-/* 5. Thông tin trung tâm hũ: Liền mạch, phẳng, không hộp trong hộp */
-.fund-jar-label-card {
-  position: relative;
-  z-index: 4;
-  margin-top: auto;
-  padding: 4px 0 0 0;
-  background: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 4px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.fund-jar-name {
+.fund-card-identity {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  max-width: 100%;
+  gap: 9px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
-.fund-jar-color-tag {
-  width: 8px;
-  height: 8px;
+.fund-card-dot {
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+  box-shadow: 0 0 8px var(--fund-color, #3b82f6);
 }
 
-.fund-jar-name-text {
-  font-size: 13.5px;
+.fund-card-name {
+  font-size: 15px;
   font-weight: 700;
   color: #f8fafc;
-  line-height: 1.25;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: calc(100% - 16px);
 }
 
-.fund-jar-balance {
-  margin: 2px 0 0 0;
+.fund-card-badge-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2.5px 8px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.16);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.fund-card-badge-success i {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 10px;
+}
+
+/* Các nút điều khiển góc phải header */
+.fund-card-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.fund-quick-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+}
+
+.fund-quick-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.fund-quick-btn i {
+  position: static;
+  top: 0;
+  font-size: 11px;
+}
+
+/* 2. Dữ liệu số dư & mục tiêu */
+.fund-card-data-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
   width: 100%;
 }
 
-.fund-jar-balance-val {
-  font-size: 16px;
+.fund-card-balance-col,
+.fund-card-target-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.fund-card-target-col {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.fund-card-data-label {
+  font-size: 11px;
+  color: var(--muted, #94a3b8);
+  font-weight: 500;
+  margin-bottom: 2px;
+  letter-spacing: 0.01em;
+}
+
+.fund-card-balance-text {
+  font-size: 19px;
   font-weight: 800;
   color: #10b981;
   letter-spacing: -0.3px;
   line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: block;
 }
 
-.fund-jar-target-info {
-  width: 100%;
+.fund-card-target-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1.2;
+}
+
+.fund-card-target-text.unconstrained {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+/* 3. Thanh tiến độ ngang mượt mà */
+.fund-card-progress-section {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  align-items: center;
+  gap: 5px;
+  width: 100%;
   margin-top: 2px;
 }
 
-
-.fund-jar-target-desc {
-  font-size: 11px;
-  color: var(--muted, #94a3b8);
-  line-height: 1.2;
+.fund-card-progress-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 100%;
 }
 
-.fund-jar-target-desc.is-complete {
+.fund-card-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--fund-color, #3b82f6), var(--fund-color-light, var(--fund-color, #3b82f6)));
+  transition: width 0.4s ease;
+}
+
+.fund-card-progress-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+}
+
+.fund-card-progress-status {
+  color: var(--muted, #94a3b8);
+  font-size: 11px;
+}
+
+.fund-card-progress-status.is-complete {
   color: #10b981;
   font-weight: 600;
 }
 
-.fund-jar-target-desc.unconstrained {
+.fund-card-progress-percent {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+/* 4. Dòng ghi chú tự do */
+.fund-card-unconstrained-bar {
+  padding-top: 2px;
+}
+
+.fund-card-unconstrained-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.45);
   font-style: italic;
+}
+
+.fund-card-unconstrained-text i {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 12px;
+  color: var(--fund-color, #38bdf8);
 }
 
 /* 7. Nút hành động 3 chấm (Fund Actions) */

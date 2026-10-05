@@ -73,6 +73,7 @@ function getOpenModalId() {
     "fundModal",
     "allocateModal",
     "allocateHistoryModal",
+    "fundDetailModal",
     "topupFundModal",
     "profileSettingsModal",
     "cropModal",
@@ -3936,6 +3937,8 @@ function closeAllModals() {
     "fundsModal",
     "fundModal",
     "allocateModal",
+    "allocateHistoryModal",
+    "fundDetailModal",
     "congratulationsModal",
     "modalNotificationList",
     "recurringEventsModal",
@@ -12000,31 +12003,68 @@ function updateCashflowAvailableBalanceUI() {
   const withdrawBtn = document.getElementById("cashflowWithdrawBtn");
   const addBtn = document.getElementById("cashflowMobileAddBtn");
   const typeSelect = document.getElementById("cashflowType");
+  const categorySelect = document.getElementById("cashflowCategory");
 
   if (!bar || !valEl) return;
 
   const currentType = typeSelect ? typeSelect.value : "expense";
   const available = calculateAvailableFundBalance();
 
-  valEl.innerText = `${available.toLocaleString("vi-VN")} ₫`;
-
   if (currentType === "expense") {
     bar.style.display = "flex";
-    if (available > 0) {
-      bar.classList.add("is-positive");
-      bar.classList.remove("is-empty");
-      if (withdrawBtn) withdrawBtn.style.display = "none";
-      if (addBtn) {
-        addBtn.classList.remove("is-disabled");
-        addBtn.removeAttribute("title");
+    const selectedCatVal = categorySelect ? String(categorySelect.value || "").trim() : "";
+    const catList = cashflowCategories.expense || [];
+    const matchedCat = catList.find((c) => c.id === selectedCatVal || c.name === selectedCatVal);
+    const fund = matchedCat && matchedCat.fundId && Array.isArray(fundsData?.funds)
+      ? fundsData.funds.find((f) => f.id === matchedCat.fundId)
+      : null;
+
+    const labelEl = bar.querySelector(".cashflow-available-label");
+
+    if (fund) {
+      const fundBalance = typeof getFundBalance === "function" ? getFundBalance(fund.id) : 0;
+      valEl.innerText = `${fundBalance.toLocaleString("vi-VN")} ₫`;
+      if (labelEl) {
+        labelEl.innerHTML = `<i class="fi fi-rr-wallet" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; color: ${fund.color || '#38bdf8'};"></i> <span>Quỹ "${fund.name}":</span>`;
+      }
+      if (fundBalance > 0) {
+        bar.classList.add("is-positive");
+        bar.classList.remove("is-empty");
+        if (withdrawBtn) withdrawBtn.style.display = "none";
+        if (addBtn) {
+          addBtn.classList.remove("is-disabled");
+          addBtn.removeAttribute("title");
+        }
+      } else {
+        bar.classList.remove("is-positive");
+        bar.classList.add("is-empty");
+        if (withdrawBtn) withdrawBtn.style.display = "none";
+        if (addBtn) {
+          addBtn.classList.add("is-disabled");
+          addBtn.setAttribute("title", `Số dư quỹ "${fund.name}" đã hết. Vui lòng nạp thêm tiền vào quỹ.`);
+        }
       }
     } else {
-      bar.classList.remove("is-positive");
-      bar.classList.add("is-empty");
-      if (withdrawBtn) withdrawBtn.style.display = "inline-flex";
-      if (addBtn) {
-        addBtn.classList.add("is-disabled");
-        addBtn.setAttribute("title", "Số dư khả dụng bằng 0. Vui lòng lấy ra từ quỹ để chi tiêu.");
+      valEl.innerText = `${available.toLocaleString("vi-VN")} ₫`;
+      if (labelEl) {
+        labelEl.innerHTML = `<i class="fi fi-rr-wallet" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i> <span>Khả dụng:</span>`;
+      }
+      if (available > 0) {
+        bar.classList.add("is-positive");
+        bar.classList.remove("is-empty");
+        if (withdrawBtn) withdrawBtn.style.display = "none";
+        if (addBtn) {
+          addBtn.classList.remove("is-disabled");
+          addBtn.removeAttribute("title");
+        }
+      } else {
+        bar.classList.remove("is-positive");
+        bar.classList.add("is-empty");
+        if (withdrawBtn) withdrawBtn.style.display = "inline-flex";
+        if (addBtn) {
+          addBtn.classList.add("is-disabled");
+          addBtn.setAttribute("title", "Số dư khả dụng bằng 0. Vui lòng lấy ra từ quỹ để chi tiêu.");
+        }
       }
     }
   } else {
@@ -12091,6 +12131,7 @@ function openCashflowExceededModalFromHint() {
 function checkCashflowAmountExceeded() {
   const typeSelect = document.getElementById("cashflowType");
   const amountInput = document.getElementById("cashflowAmount");
+  const categorySelect = document.getElementById("cashflowCategory");
   const hintBtn = document.getElementById("cashflowAmountWarningHint");
   const hintVal = document.getElementById("cashflowAmountWarningVal");
 
@@ -12103,14 +12144,40 @@ function checkCashflowAmountExceeded() {
   }
 
   const amount = parseInt(amountInput.value.replace(/\D/g, ""), 10) || 0;
-  const available = calculateAvailableFundBalance();
+  const selectedCatVal = categorySelect ? String(categorySelect.value || "").trim() : "";
+  const catList = cashflowCategories.expense || [];
+  const matchedCat = catList.find((c) => c.id === selectedCatVal || c.name === selectedCatVal);
+  const fund = matchedCat && matchedCat.fundId && Array.isArray(fundsData?.funds)
+    ? fundsData.funds.find((f) => f.id === matchedCat.fundId)
+    : null;
 
-  if (amount > 0 && (available <= 0 || amount > available)) {
-    const shortage = Math.max(amount - available, 0);
-    if (hintVal) hintVal.innerText = `Thiếu ${shortage.toLocaleString("vi-VN")} ₫`;
-    hintBtn.style.display = "inline-flex";
+  if (fund) {
+    let fundBalance = typeof getFundBalance === "function" ? getFundBalance(fund.id) : 0;
+    if (editingCashflowId) {
+      const located = findCashflowEntryLocation(editingCashflowId);
+      if (located?.entry?.fundWithdrawAllocId) {
+        const oldAlloc = fundsData.allocations?.find((a) => a.id === located.entry.fundWithdrawAllocId);
+        if (oldAlloc && oldAlloc.fundId === fund.id) {
+          fundBalance += Math.abs(Number(oldAlloc.amount) || 0);
+        }
+      }
+    }
+    if (amount > 0 && amount > fundBalance) {
+      const shortage = amount - fundBalance;
+      if (hintVal) hintVal.innerText = `Thiếu ${shortage.toLocaleString("vi-VN")} ₫ (Quỹ: ${fund.name})`;
+      hintBtn.style.display = "inline-flex";
+    } else {
+      hintBtn.style.display = "none";
+    }
   } else {
-    hintBtn.style.display = "none";
+    const available = calculateAvailableFundBalance();
+    if (amount > 0 && (available <= 0 || amount > available)) {
+      const shortage = Math.max(amount - available, 0);
+      if (hintVal) hintVal.innerText = `Thiếu ${shortage.toLocaleString("vi-VN")} ₫`;
+      hintBtn.style.display = "inline-flex";
+    } else {
+      hintBtn.style.display = "none";
+    }
   }
 }
 
@@ -12378,15 +12445,6 @@ function addCashflowEntry() {
   const image = getCashflowImageData();
   const targetDateKey = isoDateToDateKey(date);
 
-  // Kiểm tra số dư khả dụng đối với khoản Chi: hiển thị popup thông báo và hướng dẫn mở popup lấy ra từ quỹ
-  if (type === "expense") {
-    const available = calculateAvailableFundBalance();
-    if (available <= 0 || amount > available) {
-      openCashflowExceededBalanceModal(amount, available);
-      return;
-    }
-  }
-
   if (!date || !targetDateKey) {
     alert("Vui lòng chọn ngày giao dịch");
     return;
@@ -12400,6 +12458,104 @@ function addCashflowEntry() {
     return;
   }
 
+  // Xác định danh mục và quỹ liên kết (nếu có)
+  let linkedFund = null;
+  let matchedCat = null;
+  if (type === "expense") {
+    const catList = cashflowCategories.expense || [];
+    matchedCat = catList.find((c) => c.id === category || c.name === category);
+    if (matchedCat && matchedCat.fundId) {
+      if (!fundsData || !Array.isArray(fundsData.funds) || fundsData.funds.length === 0) {
+        if (typeof loadFundsFromLocalStorage === "function") loadFundsFromLocalStorage();
+      }
+      linkedFund = fundsData?.funds?.find((f) => f.id === matchedCat.fundId) || null;
+    }
+
+    if (linkedFund) {
+      let currentFundBalance = typeof getFundBalance === "function" ? getFundBalance(linkedFund.id) : 0;
+      if (editingCashflowId) {
+        const located = findCashflowEntryLocation(editingCashflowId);
+        if (located?.entry?.fundWithdrawAllocId) {
+          const oldAlloc = fundsData.allocations?.find((a) => a.id === located.entry.fundWithdrawAllocId);
+          if (oldAlloc && oldAlloc.fundId === linkedFund.id) {
+            currentFundBalance += Math.abs(Number(oldAlloc.amount) || 0);
+          }
+        }
+      }
+
+      if (amount > currentFundBalance) {
+        alert(
+          `Số tiền chi tiêu (${amount.toLocaleString("vi-VN")} ₫) vượt quá số dư hiện có của quỹ "${linkedFund.name}" (${currentFundBalance.toLocaleString("vi-VN")} ₫).\n\nVui lòng nạp thêm tiền vào quỹ hoặc chọn danh mục khác.`
+        );
+        return;
+      }
+    } else {
+      const available = calculateAvailableFundBalance();
+      if (available <= 0 || amount > available) {
+        openCashflowExceededBalanceModal(amount, available);
+        return;
+      }
+    }
+  }
+
+  // Hàm helper trích tiền từ quỹ cho khoản chi
+  function applyFundWithdrawForExpense(entryObj) {
+    if (type !== "expense") return;
+
+    if (linkedFund) {
+      const expenseDetail = note || (matchedCat ? matchedCat.name : category) || "khoản chi";
+
+      const withdrawAlloc = {
+        id: `alloc-withdraw-cf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        fundId: linkedFund.id,
+        amount: -amount,
+        type: "withdraw",
+        note: `Chi: ${expenseDetail}`,
+        date: date,
+        createdAt: Date.now(),
+        cashflowEntryId: entryObj.id,
+        categoryName: matchedCat ? matchedCat.name : category,
+      };
+
+      if (!Array.isArray(fundsData.allocations)) {
+        fundsData.allocations = [];
+      }
+      fundsData.allocations.push(withdrawAlloc);
+      saveFundsToFirebase();
+
+      entryObj.fundId = linkedFund.id;
+      entryObj.fundName = linkedFund.name;
+      entryObj.fundWithdrawAllocId = withdrawAlloc.id;
+
+      try {
+        queueEventNotification(
+          {
+            id: withdrawAlloc.id,
+            title: "Trích tiền từ quỹ cho khoản chi",
+            text: `Đã tự động trích ${amount.toLocaleString("vi-VN")} đ từ quỹ "${linkedFund.name}" cho chi tiêu "${expenseDetail}"`,
+            note: expenseDetail,
+            fundName: linkedFund.name,
+            amount: amount,
+            date: date,
+            createdAt: withdrawAlloc.createdAt,
+          },
+          targetDateKey,
+          "fund_withdraw",
+        );
+      } catch (errNotif) {
+        console.warn("[Cashflow] Lỗi queueEventNotification withdraw:", errNotif);
+      }
+    } else {
+      delete entryObj.fundId;
+      delete entryObj.fundName;
+      delete entryObj.fundWithdrawAllocId;
+    }
+
+    renderAllocateHistory();
+    renderFundsDashboard();
+    if (typeof renderFundsList === "function") renderFundsList();
+  }
+
   if (editingCashflowId) {
     const located = findCashflowEntryLocation(editingCashflowId);
     if (!located) {
@@ -12407,6 +12563,18 @@ function addCashflowEntry() {
       syncCashflowFormMode();
       alert("Giao dịch cần sửa không còn tồn tại.");
       return;
+    }
+
+    // Hoàn trả / xóa bỏ allocation trích quỹ cũ của giao dịch đang sửa (nếu có)
+    if (Array.isArray(fundsData?.allocations)) {
+      const oldAllocId = located.entry?.fundWithdrawAllocId;
+      const initialCount = fundsData.allocations.length;
+      fundsData.allocations = fundsData.allocations.filter(
+        (a) => a.id !== oldAllocId && a.cashflowEntryId !== editingCashflowId
+      );
+      if (fundsData.allocations.length !== initialCount) {
+        saveFundsToFirebase();
+      }
     }
 
     const previousDateKey = located.dateKey;
@@ -12422,6 +12590,7 @@ function addCashflowEntry() {
       entry.note = note;
       entry.image = image;
       entry.updatedAt = Date.now();
+      applyFundWithdrawForExpense(entry);
       saveDateData(targetDateKey, data);
     } else {
       const previousData = getDateData(previousDateKey);
@@ -12429,7 +12598,7 @@ function addCashflowEntry() {
       saveDateData(previousDateKey, previousData);
 
       const targetData = getDateData(targetDateKey);
-      targetData.cashflowEntries.push({
+      const newEntry = {
         id: located.entry.id,
         date,
         type,
@@ -12439,7 +12608,9 @@ function addCashflowEntry() {
         image,
         createdAt: located.entry.createdAt || Date.now(),
         updatedAt: Date.now(),
-      });
+      };
+      applyFundWithdrawForExpense(newEntry);
+      targetData.cashflowEntries.push(newEntry);
       saveDateData(targetDateKey, targetData);
     }
   } else {
@@ -12454,6 +12625,8 @@ function addCashflowEntry() {
       createdAt: Date.now(),
     };
 
+    applyFundWithdrawForExpense(entry);
+
     const data = getDateData(targetDateKey);
     data.cashflowEntries.push(entry);
     saveDateData(targetDateKey, data);
@@ -12464,25 +12637,29 @@ function addCashflowEntry() {
       const catList = Array.isArray(cashflowCategories[type])
         ? cashflowCategories[type]
         : Object.values(cashflowCategories[type] || {});
-      const matched = catList.find(c => c && (c.id === category || c.name === category));
+      const matched = catList.find((c) => c && (c.id === category || c.name === category));
       if (matched && matched.name) categoryName = matched.name;
     } catch (e) {
       console.warn("[Cashflow] Lỗi tìm tên danh mục:", e);
     }
 
     try {
-      queueEventNotification({
-        id: entry.id,
-        title: type === "expense" ? "Chi tiêu mới" : "Thu nhập mới",
-        text: note || "",
-        note: note || "",
-        date: date,
-        cashflowType: type,
-        category: categoryName,
-        amount: amount,
-        image: image || "",
-        createdAt: entry.createdAt || Date.now()
-      }, targetDateKey, "cashflow");
+      queueEventNotification(
+        {
+          id: entry.id,
+          title: type === "expense" ? "Chi tiêu mới" : "Thu nhập mới",
+          text: note || "",
+          note: note || "",
+          date: date,
+          cashflowType: type,
+          category: categoryName,
+          amount: amount,
+          image: image || "",
+          createdAt: entry.createdAt || Date.now(),
+        },
+        targetDateKey,
+        "cashflow",
+      );
     } catch (errNotif) {
       console.warn("[Cashflow] Lỗi queueEventNotification:", errNotif);
     }
@@ -12495,6 +12672,7 @@ function addCashflowEntry() {
   resetCashflowForm();
 
   renderCashflowDashboard();
+  updateCashflowAvailableBalanceUI();
 
   if (wasEditing) {
     showToast("Đã cập nhật giao dịch thành công!", 2500);
@@ -12762,6 +12940,22 @@ function removeCashflowEntry(id) {
       const located = findCashflowEntryLocation(id);
       if (!located) return;
 
+      // Hoàn trả tiền vào quỹ nếu giao dịch này đã trích từ quỹ
+      const entryToDelete = located.entry;
+      if (entryToDelete && Array.isArray(fundsData?.allocations)) {
+        const oldAllocId = entryToDelete.fundWithdrawAllocId;
+        const initialCount = fundsData.allocations.length;
+        fundsData.allocations = fundsData.allocations.filter(
+          (a) => a.id !== oldAllocId && a.cashflowEntryId !== id
+        );
+        if (fundsData.allocations.length !== initialCount) {
+          saveFundsToFirebase();
+          renderAllocateHistory();
+          renderFundsDashboard();
+          if (typeof renderFundsList === "function") renderFundsList();
+        }
+      }
+
       const data = getDateData(located.dateKey);
       data.cashflowEntries.splice(located.index, 1);
       saveDateData(located.dateKey, data);
@@ -12776,6 +12970,7 @@ function removeCashflowEntry(id) {
         resetCashflowForm();
       }
       renderCashflowDashboard();
+      updateCashflowAvailableBalanceUI();
     }
   );
 }
@@ -14717,6 +14912,16 @@ function renderCashflowAllTransactionsList() {
     topLineEl.appendChild(typeBadgeEl);
     topLineEl.appendChild(categoryBadgeEl);
 
+    if (entry.fundName) {
+      const fundBadgeEl = document.createElement("span");
+      fundBadgeEl.className = "cashflow-row-category";
+      fundBadgeEl.style.background = "rgba(59, 130, 246, 0.15)";
+      fundBadgeEl.style.color = "#93c5fd";
+      fundBadgeEl.style.borderColor = "rgba(59, 130, 246, 0.35)";
+      fundBadgeEl.innerHTML = `<i class="fi fi-rr-wallet" style="position: relative; top: 1px; margin-right: 3px;"></i> ${entry.fundName}`;
+      topLineEl.appendChild(fundBadgeEl);
+    }
+
     const noteEl = document.createElement("div");
     noteEl.className = "cashflow-row-note";
     noteEl.innerText = entry.note || "Không có ghi chú";
@@ -16438,6 +16643,12 @@ function renderCashflowQuickView() {
         <span class="cashflow-quickview-label">Cập nhật</span>
         <strong>${updatedLabel}</strong>
       </div>
+      ${entry.fundName ? `
+      <div class="cashflow-quickview-item cashflow-quickview-item-full" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 8px 12px;">
+        <span class="cashflow-quickview-label" style="color: #60a5fa;">Nguồn tiền trích từ quỹ</span>
+        <strong style="color: #93c5fd; display: inline-flex; align-items: center; gap: 6px;"><i class="fi fi-rr-wallet" style="position: relative; top: 1px;"></i> Quỹ: ${entry.fundName}</strong>
+      </div>
+      ` : ""}
       <div class="cashflow-quickview-item cashflow-quickview-item-full">
         <span class="cashflow-quickview-label">Mã giao dịch</span>
         <strong>${entry.id}</strong>
@@ -16739,6 +16950,11 @@ function setCashflowCategoryManagerType(type) {
   if (btnExpense) btnExpense.classList.toggle("active", type === "expense");
   if (btnIncome) btnIncome.classList.toggle("active", type === "income");
 
+  const fundGroup = document.getElementById("cashflowCatFundGroup");
+  if (fundGroup) {
+    fundGroup.style.display = type === "expense" ? "flex" : "none";
+  }
+
   renderCategoryList();
 }
 
@@ -16786,6 +17002,29 @@ let categoryTouchDragState = {
   startedFromHandle: false,
 };
 
+function populateCategoryFundSelect(selectedFundId = "") {
+  const select = document.getElementById("newCategoryFundId");
+  if (!select) return;
+
+  if (!fundsData || !Array.isArray(fundsData.funds) || fundsData.funds.length === 0) {
+    if (typeof loadFundsFromLocalStorage === "function") {
+      loadFundsFromLocalStorage();
+    }
+  }
+
+  const funds = Array.isArray(fundsData?.funds) ? fundsData.funds : [];
+  let html = '<option value="">-- Không gắn quỹ (Dùng số dư khả dụng) --</option>';
+
+  funds.forEach((fund) => {
+    const balance = typeof getFundBalance === "function" ? getFundBalance(fund.id) : 0;
+    const isSelected = String(fund.id) === String(selectedFundId);
+    html += `<option value="${fund.id}" ${isSelected ? "selected" : ""}>${fund.name} (Số dư: ${balance.toLocaleString("vi-VN")} ₫)</option>`;
+  });
+
+  select.innerHTML = html;
+  select.value = selectedFundId || "";
+}
+
 function renderCategoryList() {
   const type = document.getElementById("cashflowCategoryType").value;
   const list = document.getElementById("cashflowCategoryList");
@@ -16806,6 +17045,14 @@ function renderCategoryList() {
     .map(
       (cat, index) => {
         const iconClass = cat.icon || getCashflowCategoryIcon(cat.name, cat.id);
+        const linkedFund = cat.fundId && Array.isArray(fundsData?.funds)
+          ? fundsData.funds.find((f) => f.id === cat.fundId)
+          : null;
+        const fundBadge = linkedFund
+          ? `<span class="cat-item-fund-badge" style="color: ${linkedFund.color || '#38bdf8'};">
+               <i class="fi fi-rr-wallet"></i> Quỹ: ${linkedFund.name}
+             </span>`
+          : "";
         return `
     <div 
       draggable="true" 
@@ -16823,7 +17070,10 @@ function renderCategoryList() {
       <div class="cat-item-icon-box">
         <i class="fi ${iconClass}"></i>
       </div>
-      <span class="cat-item-name">${cat.name}</span>
+      <div class="cat-item-content">
+        <span class="cat-item-name">${cat.name}</span>
+        ${fundBadge}
+      </div>
       <div class="cat-item-actions">
         <button onclick="editCategory('${cat.id}')" title="Sửa" class="cat-btn-edit">✏️ Sửa</button>
         <button onclick="deleteCategory('${cat.id}')" title="Xóa" class="cat-btn-delete">🗑️ Xóa</button>
@@ -17114,6 +17364,13 @@ function openAddCategoryForm() {
   const nameInput = document.getElementById("newCategoryName");
   if (nameInput) nameInput.value = "";
 
+  const type = document.getElementById("cashflowCategoryType")?.value || "expense";
+  const fundGroup = document.getElementById("cashflowCatFundGroup");
+  if (fundGroup) {
+    fundGroup.style.display = type === "expense" ? "flex" : "none";
+  }
+  populateCategoryFundSelect("");
+
   selectCashflowFormIcon("fi-rr-folder");
   openCashflowCategoryEditModal();
 
@@ -17138,18 +17395,21 @@ function saveCategory() {
   const editingId = document.getElementById("editingCategoryId")?.value;
   const icon = document.getElementById("newCategoryIcon")?.value || getCashflowCategoryIcon(name);
   const type = document.getElementById("cashflowCategoryType")?.value || "expense";
+  const fundId = type === "expense" ? (document.getElementById("newCategoryFundId")?.value || "") : "";
 
   if (editingId) {
     const cat = cashflowCategories[type].find((c) => c.id === editingId);
     if (cat) {
       cat.name = name;
       cat.icon = icon;
+      cat.fundId = fundId;
     }
   } else {
     cashflowCategories[type].push({
       id: `${type}-${Date.now()}`,
       name,
       icon,
+      fundId,
     });
   }
 
@@ -17157,6 +17417,7 @@ function saveCategory() {
   renderCategoryList();
   closeCashflowCategoryEditModal();
   updateCashflowCategoryDropdowns();
+  updateCashflowAvailableBalanceUI();
 }
 
 function editCategory(id) {
@@ -17181,6 +17442,12 @@ function editCategory(id) {
 
   const nameInput = document.getElementById("newCategoryName");
   if (nameInput) nameInput.value = cat.name;
+
+  const fundGroup = document.getElementById("cashflowCatFundGroup");
+  if (fundGroup) {
+    fundGroup.style.display = type === "expense" ? "flex" : "none";
+  }
+  populateCategoryFundSelect(cat.fundId || "");
 
   const selectedIcon = cat.icon || getCashflowCategoryIcon(cat.name, cat.id);
   selectCashflowFormIcon(selectedIcon);
@@ -17345,6 +17612,8 @@ function selectCashflowCategory(catId) {
     categorySelect.dispatchEvent(new Event("change", { bubbles: true }));
   }
   renderCashflowCategoryChips();
+  updateCashflowAvailableBalanceUI();
+  checkCashflowAmountExceeded();
 }
 
 function openCashflowCategoryPickerModal() {
@@ -17993,6 +18262,24 @@ function renderFundsList() {
     `;
     item.style.opacity = "0";
     item.style.transform = "translateY(12px)";
+
+    // Click vào card quỹ để xem chi tiết lịch sử nạp / rút của quỹ đó
+    item.addEventListener("click", (e) => {
+      // Không mở modal nếu click trúng dropdown menu 3 chấm hoặc nút nạp/rút nhanh
+      if (
+        e.target.closest(".fund-item-actions") ||
+        e.target.closest(".fund-quick-btn") ||
+        e.target.closest(".fund-action-dropdown")
+      ) {
+        return;
+      }
+      // Không mở nếu vừa kéo thả hoặc đang kéo thả
+      if (item.classList.contains("dragging") || _fundTouchIsDragging || _fundWasJustDragged) {
+        return;
+      }
+      openFundDetailModal(fund.id);
+    });
+
     listEl.appendChild(item);
 
     // Animate in
@@ -18005,6 +18292,8 @@ function renderFundsList() {
 
   attachFundDragEvents();
 }
+
+let _fundWasJustDragged = false;
 
 function attachFundDragEvents() {
   const listEl = document.getElementById("fundsList");
@@ -18030,6 +18319,10 @@ function attachFundDragEvents() {
   });
 
   listEl.addEventListener("dragend", (e) => {
+    _fundWasJustDragged = true;
+    setTimeout(() => {
+      _fundWasJustDragged = false;
+    }, 350);
     const item = e.target.closest(".fund-item");
     if (item) {
       item.classList.remove("dragging");
@@ -18134,6 +18427,10 @@ function handleFundTouchEnd(e) {
   clearTimeout(_fundTouchHoldTimer);
 
   if (_fundTouchSrcEl && _fundTouchIsDragging) {
+    _fundWasJustDragged = true;
+    setTimeout(() => {
+      _fundWasJustDragged = false;
+    }, 350);
     _fundTouchSrcEl.classList.remove("dragging", "touch-dragging");
     const listEl = document.getElementById("fundsList");
     if (listEl) {
@@ -19122,15 +19419,32 @@ function renderAllocateHistory() {
 
     const item = document.createElement("div");
     item.className = "allocate-history-item";
+    const noteHtml = alloc.note
+      ? `<span style="display: block; font-size: 11.5px; color: #94a3b8; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${alloc.note}</span>`
+      : "";
     item.innerHTML = `
       <div class="allocate-history-item-info">
         <div class="allocate-history-item-color" style="background: ${fund.color}"></div>
-        <span class="allocate-history-item-name">${fund.name}</span>
+        <div style="min-width: 0; flex: 1;">
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <span class="allocate-history-item-name">${fund.name}</span>
+            ${withdrawBadge}
+          </div>
+          ${noteHtml}
+        </div>
       </div>
       <span class="allocate-history-item-amount" style="color: ${amountColor} !important;">${amountSign}${absAmount.toLocaleString("vi-VN")} đ</span>
       <span class="allocate-history-item-date">${formatCashflowDate(alloc.date)}</span>
     `;
     listEl.appendChild(item);
+  }
+
+  // Tự động làm mới modal chi tiết quỹ nếu đang mở
+  if (activeFundDetailId) {
+    const modal = document.getElementById("fundDetailModal");
+    if (modal && modal.style.display === "flex") {
+      renderFundDetailContent(activeFundDetailId);
+    }
   }
 }
 
@@ -19150,6 +19464,317 @@ function closeAllocateHistoryModal() {
   }
 }
 window.closeAllocateHistoryModal = closeAllocateHistoryModal;
+
+// ==================== CHI TIẾT LỊCH SỬ THÊM / LẤY RA QUỸ ====================
+let activeFundDetailId = null;
+let activeFundDetailFilter = "all"; // 'all' | 'in' | 'out'
+
+function openFundDetailModal(fundId) {
+  const fund = fundsData.funds ? fundsData.funds.find((f) => f.id === fundId) : null;
+  if (!fund) return;
+
+  activeFundDetailId = fundId;
+  activeFundDetailFilter = "all";
+
+  // Cập nhật trạng thái active của các nút lọc
+  const pills = document.querySelectorAll(".fund-detail-filter-btn");
+  pills.forEach((p) => {
+    p.classList.toggle("active", p.dataset.filter === "all");
+  });
+
+  renderFundDetailContent(fundId);
+
+  const modal = document.getElementById("fundDetailModal");
+  if (modal) {
+    modal.style.display = "flex";
+  }
+}
+window.openFundDetailModal = openFundDetailModal;
+
+function closeFundDetailModal() {
+  const modal = document.getElementById("fundDetailModal");
+  if (modal) {
+    modal.style.display = "none";
+  }
+  activeFundDetailId = null;
+}
+window.closeFundDetailModal = closeFundDetailModal;
+
+function filterFundDetailHistory(filterType, btn) {
+  activeFundDetailFilter = filterType;
+  const pills = document.querySelectorAll(".fund-detail-filter-btn");
+  pills.forEach((p) => p.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+
+  if (activeFundDetailId) {
+    renderFundDetailHistoryList(activeFundDetailId);
+  }
+}
+window.filterFundDetailHistory = filterFundDetailHistory;
+
+function renderFundDetailContent(fundId) {
+  const fund = fundsData.funds ? fundsData.funds.find((f) => f.id === fundId) : null;
+  if (!fund) return;
+
+  const modal = document.getElementById("fundDetailModal");
+  const dialog = modal ? modal.querySelector(".fund-detail-dialog") : null;
+  const color = fund.color || "#3b82f6";
+  const colorRgb = hexToRgb(color);
+
+  if (dialog) {
+    dialog.style.setProperty("--fund-color", color);
+    dialog.style.setProperty("--fund-color-rgb", colorRgb);
+  }
+
+  // Header
+  const titleEl = document.getElementById("fundDetailModalTitle");
+  if (titleEl) {
+    titleEl.innerText = fund.name;
+    titleEl.title = fund.name;
+  }
+  const dotEl = document.getElementById("fundDetailDot");
+  if (dotEl) {
+    dotEl.style.background = color;
+  }
+
+  const balance = getFundBalance(fundId);
+  const target = Number(fund.target) || 0;
+  const isCompleted = target > 0 && balance >= target;
+
+  const statusBadge = document.getElementById("fundDetailStatusBadge");
+  if (statusBadge) {
+    if (target > 0) {
+      if (isCompleted) {
+        statusBadge.className = "fund-detail-status-badge badge-success";
+        statusBadge.innerHTML = `<i class="fi fi-rr-check"></i> Đạt mục tiêu`;
+      } else {
+        statusBadge.className = "fund-detail-status-badge";
+        statusBadge.innerText = "Đang tích lũy";
+      }
+    } else {
+      statusBadge.className = "fund-detail-status-badge badge-free";
+      statusBadge.innerText = "Tích lũy tự do";
+    }
+  }
+
+  // Overview Card: Số dư hiện tại & Mục tiêu
+  const balEl = document.getElementById("fundDetailBalance");
+  if (balEl) balEl.innerText = `${balance.toLocaleString("vi-VN")} đ`;
+
+  const targetLabelEl = document.getElementById("fundDetailTargetLabel");
+  const targetEl = document.getElementById("fundDetailTarget");
+  if (targetLabelEl) targetLabelEl.innerText = target > 0 ? "Mục tiêu tích lũy" : "Hình thức quỹ";
+  if (targetEl) targetEl.innerText = target > 0 ? `${target.toLocaleString("vi-VN")} đ` : "Tích lũy tự do";
+
+  // Progress Bar
+  const progressWrap = document.getElementById("fundDetailProgressWrap");
+  if (progressWrap) {
+    if (target > 0) {
+      progressWrap.style.display = "block";
+      const percentage = Math.min((balance / target) * 100, 100);
+      const fillEl = document.getElementById("fundDetailProgressFill");
+      if (fillEl) fillEl.style.width = `${percentage}%`;
+
+      const statusEl = document.getElementById("fundDetailProgressStatus");
+      if (statusEl) {
+        if (isCompleted) {
+          statusEl.innerText = "✓ Đã hoàn thành mục tiêu";
+          statusEl.style.color = "#34d399";
+        } else {
+          const remaining = target - balance;
+          statusEl.innerText = `Còn thiếu ${remaining.toLocaleString("vi-VN")} đ`;
+          statusEl.style.color = "#94a3b8";
+        }
+      }
+      const percentEl = document.getElementById("fundDetailProgressPercent");
+      if (percentEl) percentEl.innerText = `${Math.round(percentage)}%`;
+    } else {
+      progressWrap.style.display = "none";
+    }
+  }
+
+  // Tính tổng nạp (thêm vào) & tổng rút (lấy ra)
+  const allAllocs = Array.isArray(fundsData.allocations) ? fundsData.allocations.filter((a) => a.fundId === fundId) : [];
+  const inAllocs = allAllocs.filter((a) => Number(a.amount) > 0);
+  const outAllocs = allAllocs.filter((a) => Number(a.amount) < 0 || a.type === "withdraw");
+
+  const initialAmt = Number(fund.initialAmount) || 0;
+  const totalIn = initialAmt + inAllocs.reduce((sum, a) => sum + Number(a.amount), 0);
+  const totalOut = Math.abs(outAllocs.reduce((sum, a) => sum + (Number(a.amount) || 0), 0));
+
+  const totalInEl = document.getElementById("fundDetailTotalIn");
+  if (totalInEl) totalInEl.innerText = `+${totalIn.toLocaleString("vi-VN")} đ`;
+
+  const totalOutEl = document.getElementById("fundDetailTotalOut");
+  if (totalOutEl) totalOutEl.innerText = `-${totalOut.toLocaleString("vi-VN")} đ`;
+
+  // Render danh sách lịch sử
+  renderFundDetailHistoryList(fundId);
+}
+
+function renderFundDetailHistoryList(fundId) {
+  const fund = fundsData.funds ? fundsData.funds.find((f) => f.id === fundId) : null;
+  if (!fund) return;
+
+  const listEl = document.getElementById("fundDetailHistoryList");
+  if (!listEl) return;
+  listEl.innerHTML = "";
+
+  // Tạo danh sách các giao dịch của quỹ này
+  const rawAllocs = Array.isArray(fundsData.allocations) ? fundsData.allocations.filter((a) => a.fundId === fundId) : [];
+  const items = [];
+
+  for (const alloc of rawAllocs) {
+    const isWithdraw = Number(alloc.amount) < 0 || alloc.type === "withdraw";
+    const absAmount = Math.abs(Number(alloc.amount) || 0);
+    const direction = isWithdraw ? "out" : "in";
+
+    let title = "";
+    let badgeText = "";
+    let badgeClass = "";
+    let iconClass = "";
+    let glyph = "";
+
+    if (isWithdraw) {
+      const isExpense = alloc.cashflowEntryId || (alloc.note && alloc.note.toLowerCase().includes("chi tiêu"));
+      title = isExpense ? "Chi tiêu qua quỹ" : "Lấy ra từ quỹ";
+      badgeText = isExpense ? "Chi tiêu" : "Lấy ra";
+      badgeClass = "badge-out";
+      iconClass = "out";
+      glyph = "fi fi-rr-arrow-up-right";
+    } else {
+      if (alloc.type === "topup") {
+        title = "Nạp thêm vào quỹ";
+        badgeText = "Nạp vào";
+        badgeClass = "badge-in";
+        iconClass = "in";
+        glyph = "fi fi-rr-arrow-down-left";
+      } else if (alloc.type === "allocate") {
+        title = "Phân bổ từ số dư";
+        badgeText = "Phân bổ";
+        badgeClass = "badge-in";
+        iconClass = "in";
+        glyph = "fi fi-rr-layers";
+      } else if (alloc.type === "expense_withdraw_refund") {
+        title = "Hoàn tiền về quỹ";
+        badgeText = "Hoàn tiền";
+        badgeClass = "badge-in";
+        iconClass = "in";
+        glyph = "fi fi-rr-rotate-left";
+      } else {
+        title = "Thêm vào quỹ";
+        badgeText = "Thêm vào";
+        badgeClass = "badge-in";
+        iconClass = "in";
+        glyph = "fi fi-rr-arrow-down-left";
+      }
+    }
+
+    items.push({
+      id: alloc.id,
+      direction: direction,
+      title: title,
+      badgeText: badgeText,
+      badgeClass: badgeClass,
+      iconClass: iconClass,
+      glyph: glyph,
+      note: alloc.note || "",
+      amount: absAmount,
+      date: alloc.date,
+      createdAt: alloc.createdAt || 0,
+      isInitial: false,
+    });
+  }
+
+  // Nếu quỹ có số dư ban đầu khi khởi tạo
+  const initialAmt = Number(fund.initialAmount) || 0;
+  if (initialAmt > 0) {
+    items.push({
+      id: `initial-${fund.id}`,
+      direction: "in",
+      title: "Số dư khởi tạo quỹ",
+      badgeText: "Khởi tạo",
+      badgeClass: "badge-initial",
+      iconClass: "initial",
+      glyph: "fi fi-rr-wallet",
+      note: "Thiết lập số dư ban đầu khi tạo quỹ",
+      amount: initialAmt,
+      date: fund.createdAt ? new Date(fund.createdAt).toISOString().slice(0, 10) : "",
+      createdAt: fund.createdAt || 1,
+      isInitial: true,
+    });
+  }
+
+  // Sắp xếp mới nhất lên đầu
+  items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  // Lọc theo activeFundDetailFilter
+  const filtered = items.filter((item) => {
+    if (activeFundDetailFilter === "in") return item.direction === "in";
+    if (activeFundDetailFilter === "out") return item.direction === "out";
+    return true;
+  });
+
+  // Cập nhật số lượng giao dịch
+  const countEl = document.getElementById("fundDetailTxCount");
+  if (countEl) countEl.innerText = filtered.length;
+
+  if (filtered.length === 0) {
+    let emptyMsg = "Chưa có giao dịch nào cho quỹ này";
+    if (activeFundDetailFilter === "in") emptyMsg = "Chưa có giao dịch thêm vào nào";
+    if (activeFundDetailFilter === "out") emptyMsg = "Chưa có giao dịch lấy ra nào";
+
+    const empty = document.createElement("div");
+    empty.className = "fund-detail-empty";
+    empty.innerHTML = `
+      <div class="fund-detail-empty-icon">📜</div>
+      <div class="fund-detail-empty-text">${emptyMsg}</div>
+    `;
+    listEl.appendChild(empty);
+    return;
+  }
+
+  for (const item of filtered) {
+    const sign = item.direction === "out" ? "-" : "+";
+    const amountClass = item.isInitial ? "initial" : item.direction;
+    const dateFormatted = item.date ? formatCashflowDate(item.date) : "Khởi tạo";
+    const noteHtml = item.note ? `<div class="fund-detail-history-item-note">${escapeHtml(item.note)}</div>` : "";
+
+    const el = document.createElement("div");
+    el.className = "fund-detail-history-item";
+    el.innerHTML = `
+      <div class="fund-detail-history-item-left">
+        <div class="fund-detail-history-item-icon ${item.iconClass}">
+          <i class="${item.glyph}"></i>
+        </div>
+        <div class="fund-detail-history-item-content">
+          <div class="fund-detail-history-item-top">
+            <span class="fund-detail-history-item-title">${item.title}</span>
+            <span class="fund-detail-history-item-badge ${item.badgeClass}">${item.badgeText}</span>
+          </div>
+          ${noteHtml}
+          <div class="fund-detail-history-item-date">${dateFormatted}</div>
+        </div>
+      </div>
+      <div class="fund-detail-history-item-right">
+        <span class="fund-detail-history-item-amount ${amountClass}">${sign}${item.amount.toLocaleString("vi-VN")} đ</span>
+      </div>
+    `;
+    listEl.appendChild(el);
+  }
+}
+
+function handleFundDetailTopup() {
+  if (!activeFundDetailId) return;
+  openTopupFundModal(activeFundDetailId);
+}
+window.handleFundDetailTopup = handleFundDetailTopup;
+
+function handleFundDetailWithdraw() {
+  if (!activeFundDetailId) return;
+  openWithdrawFundModal(activeFundDetailId);
+}
+window.handleFundDetailWithdraw = handleFundDetailWithdraw;
 
 // Initialize fund color picker
 (function initFundColorPicker() {
@@ -19247,6 +19872,13 @@ window.closeAllocateHistoryModal = closeAllocateHistoryModal;
   if (allocateHistoryModal) {
     allocateHistoryModal.addEventListener("click", (e) => {
       if (e.target === allocateHistoryModal) closeAllocateHistoryModal();
+    });
+  }
+
+  const fundDetailModal = document.getElementById("fundDetailModal");
+  if (fundDetailModal) {
+    fundDetailModal.addEventListener("click", (e) => {
+      if (e.target === fundDetailModal) closeFundDetailModal();
     });
   }
 
@@ -19976,6 +20608,12 @@ document.addEventListener("keydown", function (e) {
     const confirmPopup = document.getElementById("confirmPopup");
     if (confirmPopup && confirmPopup.classList.contains("show")) {
       closeConfirmPopup();
+      return;
+    }
+
+    const fundDetailModal = document.getElementById("fundDetailModal");
+    if (fundDetailModal && fundDetailModal.style.display === "flex") {
+      closeFundDetailModal();
       return;
     }
 

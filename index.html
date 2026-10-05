@@ -1940,7 +1940,8 @@
                     <span class="cashflow-date-filter-label" id="cashflowDateFilterLabel">Lọc ngày</span>
                   </button>
                   <button type="button" class="cashflow-date-filter-clear-btn" id="cashflowDateFilterClearBtn"
-                    onclick="clearCashflowDateFilter(event)" title="Bỏ lọc theo ngày" aria-label="Bỏ lọc theo ngày" style="display: none;">
+                    onclick="clearCashflowDateFilter(event)" title="Bỏ lọc theo ngày" aria-label="Bỏ lọc theo ngày"
+                    style="display: none;">
                     <i class="fi fi-rr-cross"></i>
                   </button>
                 </div>
@@ -1979,7 +1980,8 @@
       <div class="cashflow-submodal-dialog cashflow-calendar-filter-dialog" style="max-width: 380px;">
         <div class="cashflow-submodal-header">
           <div class="cashflow-submodal-header-left">
-            <div class="cashflow-submodal-icon is-history" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+            <div class="cashflow-submodal-icon is-history"
+              style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
               <i class="fi fi-rr-calendar"></i>
             </div>
             <div>
@@ -1995,18 +1997,21 @@
           <div class="cf-calendar-widget">
             <!-- Header chuyển tháng -->
             <div class="cf-cal-nav-bar">
-              <button type="button" class="cf-cal-nav-btn" onclick="changeCashflowCalendarMonth(-1)" title="Tháng trước" aria-label="Tháng trước">
+              <button type="button" class="cf-cal-nav-btn" onclick="changeCashflowCalendarMonth(-1)" title="Tháng trước"
+                aria-label="Tháng trước">
                 <i class="fi fi-rr-angle-left"></i>
               </button>
               <div class="cf-cal-month-title" id="cfCalMonthTitle">Tháng 10, 2026</div>
-              <button type="button" class="cf-cal-nav-btn" onclick="changeCashflowCalendarMonth(1)" title="Tháng sau" aria-label="Tháng sau">
+              <button type="button" class="cf-cal-nav-btn" onclick="changeCashflowCalendarMonth(1)" title="Tháng sau"
+                aria-label="Tháng sau">
                 <i class="fi fi-rr-angle-right"></i>
               </button>
             </div>
 
             <!-- Các thứ trong tuần -->
             <div class="cf-cal-weekdays">
-              <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span class="is-sunday">CN</span>
+              <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span
+                class="is-sunday">CN</span>
             </div>
 
             <!-- Lưới ngày trong tháng -->
@@ -2022,7 +2027,8 @@
               <i class="fi fi-rr-rotate-left"></i> <span>Bỏ lọc</span>
             </button>
           </div>
-          <button type="button" class="cashflow-submodal-cancel-btn" onclick="closeCashflowDateFilterModal()" style="margin: 0;">
+          <button type="button" class="cashflow-submodal-cancel-btn" onclick="closeCashflowDateFilterModal()"
+            style="margin: 0;">
             Đóng
           </button>
         </div>
@@ -2426,6 +2432,19 @@
               </div>
             </div>
 
+            <!-- Gắn với quỹ nguồn (chỉ áp dụng cho loại Chi) -->
+            <div class="cashflow-cat-input-group" id="cashflowCatFundGroup">
+              <label class="cashflow-cat-field-label">Gắn với quỹ chi tiêu (Tùy chọn)</label>
+              <div class="cashflow-cat-fund-select-wrap">
+                <select id="newCategoryFundId" class="cashflow-cat-fund-select">
+                  <option value="">-- Không gắn quỹ (Dùng số dư khả dụng) --</option>
+                </select>
+              </div>
+              <p class="cashflow-cat-field-hint">
+                <i class="fi fi-rr-info"></i> Tự động trích tiền từ quỹ này mỗi khi phát sinh khoản chi.
+              </p>
+            </div>
+
             <div class="cashflow-cat-icon-section">
               <div class="cashflow-cat-icon-label-row">
                 <span class="cashflow-cat-field-label">Chọn biểu tượng:</span>
@@ -2756,6 +2775,114 @@
         </div>
         <div class="allocate-history-dialog-footer">
           <button type="button" class="allocate-history-close-btn" onclick="closeAllocateHistoryModal()">
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fund Detail History Modal (Xem chi tiết lịch sử thêm & lấy ra của từng quỹ) -->
+    <div id="fundDetailModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="fundDetailModalTitle"
+      style="display: none;" onclick="if(event.target===this) closeFundDetailModal()">
+      <div class="modal-content fund-detail-dialog">
+        <!-- Header -->
+        <div class="fund-detail-dialog-header">
+          <div class="fund-detail-dialog-title-box">
+            <div class="fund-detail-dialog-icon" id="fundDetailHeaderIcon">
+              <span id="fundDetailDot" class="fund-detail-header-dot"></span>
+              <i class="fi fi-rr-wallet" id="fundDetailHeaderGlyph"></i>
+            </div>
+            <div class="fund-detail-dialog-text">
+              <div class="fund-detail-title-line">
+                <h3 id="fundDetailModalTitle">Chi tiết quỹ</h3>
+              </div>
+              <p id="fundDetailModalSub">Lịch sử giao dịch thêm & lấy ra</p>
+            </div>
+          </div>
+          <button type="button" class="modal-close fund-detail-dialog-close" onclick="closeFundDetailModal()"
+            aria-label="Đóng">×</button>
+        </div>
+
+        <!-- Body -->
+        <div class="fund-detail-dialog-body">
+          <!-- Overview Card -->
+          <div class="fund-detail-overview-card" id="fundDetailOverviewCard">
+            <div class="fund-detail-overview-top">
+              <div class="fund-detail-balance-col">
+                <span class="fund-detail-overview-label">Số dư hiện có</span>
+                <div class="fund-detail-balance-val" id="fundDetailBalance">0 đ</div>
+              </div>
+              <div class="fund-detail-target-col">
+                <span class="fund-detail-overview-label" id="fundDetailTargetLabel">Mục tiêu</span>
+                <div class="fund-detail-target-val" id="fundDetailTarget">Tích lũy tự do</div>
+              </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="fund-detail-progress-wrap" id="fundDetailProgressWrap">
+              <div class="fund-detail-progress-track">
+                <div class="fund-detail-progress-fill" id="fundDetailProgressFill" style="width: 0%;"></div>
+              </div>
+              <div class="fund-detail-progress-info">
+                <span id="fundDetailProgressStatus" class="fund-detail-progress-status">Tiến độ</span>
+                <span id="fundDetailProgressPercent" class="fund-detail-progress-percent">0%</span>
+              </div>
+            </div>
+
+            <!-- Mini Stats 2 cột: Tổng thêm vào & Tổng lấy ra -->
+            <div class="fund-detail-stats-grid">
+              <div class="fund-detail-stat-col in">
+                <div class="fund-detail-stat-icon-wrap in">
+                  <i class="fi fi-rr-arrow-down-left"></i>
+                </div>
+                <div class="fund-detail-stat-data">
+                  <span class="fund-detail-stat-title">Tổng thêm vào</span>
+                  <span class="fund-detail-stat-amount in" id="fundDetailTotalIn">+0 đ</span>
+                </div>
+              </div>
+              <div class="fund-detail-stat-col out">
+                <div class="fund-detail-stat-icon-wrap out">
+                  <i class="fi fi-rr-arrow-up-right"></i>
+                </div>
+                <div class="fund-detail-stat-data">
+                  <span class="fund-detail-stat-title">Tổng lấy ra / chi</span>
+                  <span class="fund-detail-stat-amount out" id="fundDetailTotalOut">-0 đ</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- History Section Header + Filter Tabs -->
+          <div class="fund-detail-history-header">
+            <div class="fund-detail-history-title-wrap">
+            </div>
+            <div class="fund-detail-filter-pills" role="tablist">
+              <button type="button" class="fund-detail-filter-btn active" data-filter="all"
+                onclick="filterFundDetailHistory('all', this)">Tất cả</button>
+              <button type="button" class="fund-detail-filter-btn" data-filter="in"
+                onclick="filterFundDetailHistory('in', this)">Thêm vào</button>
+              <button type="button" class="fund-detail-filter-btn" data-filter="out"
+                onclick="filterFundDetailHistory('out', this)">Lấy ra</button>
+            </div>
+          </div>
+
+          <!-- History List Container -->
+          <div id="fundDetailHistoryList" class="fund-detail-history-list">
+            <!-- Items rendered dynamically via script.js -->
+          </div>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="fund-detail-dialog-footer">
+          <div class="fund-detail-footer-actions">
+            <button type="button" class="fund-detail-btn-action topup" onclick="handleFundDetailTopup()">
+              <i class="fi fi-rr-plus"></i> Thêm vào quỹ
+            </button>
+            <button type="button" class="fund-detail-btn-action withdraw" onclick="handleFundDetailWithdraw()">
+              <i class="fi fi-rr-minus"></i> Lấy ra
+            </button>
+          </div>
+          <button type="button" class="fund-detail-close-btn" onclick="closeFundDetailModal()">
             Đóng
           </button>
         </div>

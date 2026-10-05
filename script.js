@@ -4028,12 +4028,14 @@ function playNotificationChime() {
 function handleNotificationNavigation(notificationType, dateKey, eventData, targetUrl) {
   let type = notificationType || "event";
   let dKey = dateKey || "";
+  let targetFundId = "";
 
   if (targetUrl) {
     try {
       const parsedUrl = new URL(targetUrl, window.location.origin);
       const action = parsedUrl.searchParams.get("action");
       const date = parsedUrl.searchParams.get("date");
+      const fId = parsedUrl.searchParams.get("fundId") || parsedUrl.searchParams.get("fund_id");
       if (action === "cashflow" || action === "expense" || action === "income") {
         type = "cashflow";
       } else if (action === "funds" || action === "fund") {
@@ -4042,10 +4044,13 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
       if (date) {
         dKey = date;
       }
+      if (fId) {
+        targetFundId = fId;
+      }
     } catch (e) { }
   }
 
-  console.log("[NotificationNav] Điều hướng tới:", { type, dKey, eventData, targetUrl });
+  console.log("[NotificationNav] Điều hướng tới:", { type, dKey, eventData, targetUrl, targetFundId });
 
   if (type === "cashflow") {
     // 1. Tải danh sách giao dịch từ cache & local
@@ -4135,8 +4140,49 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
     type === "fund_create" ||
     type === "fund_update"
   ) {
-    if (typeof openFundsModal === "function") {
-      openFundsModal();
+    // Đảm bảo dữ liệu quỹ được nạp từ LocalStorage nếu chưa có
+    if (!fundsData || !Array.isArray(fundsData.funds) || fundsData.funds.length === 0) {
+      loadFundsFromLocalStorage();
+    }
+
+    // 1. Tìm fundId từ tham số targetFundId hoặc eventData.fundId
+    let resolvedFundId = targetFundId || eventData?.fundId || "";
+
+    // 2. Nếu chưa có fundId, tìm theo fundName
+    if (!resolvedFundId && eventData?.fundName) {
+      const targetName = String(eventData.fundName).trim().toLowerCase();
+      const matched = (fundsData.funds || []).find(
+        (f) => String(f.name).trim().toLowerCase() === targetName
+      );
+      if (matched) resolvedFundId = matched.id;
+    }
+
+    // 3. Nếu vẫn chưa có, quét tên quỹ xuất hiện trong text, note hoặc title của thông báo
+    if (!resolvedFundId && eventData) {
+      const searchBlob = `${eventData.title || ""} ${eventData.text || ""} ${eventData.note || ""}`.toLowerCase();
+      const matched = (fundsData.funds || []).find(
+        (f) => f.name && searchBlob.includes(String(f.name).toLowerCase())
+      );
+      if (matched) resolvedFundId = matched.id;
+    }
+
+    closeAllModals();
+
+    const targetFund = resolvedFundId ? (fundsData.funds || []).find((f) => f.id === resolvedFundId) : null;
+    if (targetFund) {
+      // Mở modal Quản lý Quỹ ở tầng nền
+      if (typeof openFundsModal === "function") {
+        openFundsModal();
+      }
+      // Mở modal Chi tiết Quỹ tương ứng lên phía trước
+      if (typeof openFundDetailModal === "function") {
+        openFundDetailModal(targetFund.id);
+      }
+    } else {
+      // Nếu quỹ không còn tồn tại hoặc thông báo xóa quỹ: mở modal Quỹ chung
+      if (typeof openFundsModal === "function") {
+        openFundsModal();
+      }
     }
     return;
   }
@@ -4815,9 +4861,11 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
       // Thay vào đó chỉ gửi cờ hasImage để hiển thị text "Kèm hình ảnh"
       hasImage: !!(eventData.image && eventData.image.startsWith("data:")),
       // Dữ liệu bổ sung cho fund allocation
-      fundName: String(eventData.fundName || "")
+      fundName: String(eventData.fundName || ""),
+      fundId: String(eventData.fundId || "")
     },
     dateKey: String(dateKey || ""),
+    url: eventData.fundId ? `/?action=fund&fundId=${eventData.fundId}` : "",
     senderSessionId: getOrCreateTabSessionId(),
     senderDeviceId: getOrCreateDeviceId(),
     timestamp: Date.now()
@@ -5580,6 +5628,7 @@ function checkUrlParamsForDateNavigation() {
     const params = new URLSearchParams(window.location.search);
     const dateParam = params.get("date");
     const actionParam = params.get("action");
+    const fundIdParam = params.get("fundId") || params.get("fund_id");
     const idParam = params.get("id");
     const amountParam = params.get("amount");
     const categoryParam = params.get("category");
@@ -5591,12 +5640,13 @@ function checkUrlParamsForDateNavigation() {
     const colorParam = params.get("color");
     const createdAtParam = params.get("createdAt");
 
-    if (!dateParam && !actionParam && !idParam && !titleParam && !textParam) return;
+    if (!dateParam && !actionParam && !idParam && !titleParam && !textParam && !fundIdParam) return;
 
     let eventData = null;
-    if (idParam || amountParam || categoryParam || cashflowTypeParam || noteParam || titleParam || textParam || eventDateTimeParam || colorParam || createdAtParam) {
+    if (idParam || fundIdParam || amountParam || categoryParam || cashflowTypeParam || noteParam || titleParam || textParam || eventDateTimeParam || colorParam || createdAtParam) {
       eventData = {
         id: idParam || "",
+        fundId: fundIdParam || "",
         amount: Number(amountParam || 0),
         category: categoryParam || "",
         cashflowType: cashflowTypeParam || "",
@@ -12358,6 +12408,7 @@ function confirmCashflowWithdrawFund() {
   try {
     queueEventNotification({
       id: withdrawAllocation.id,
+      fundId: fund.id,
       title: "Lấy tiền ra từ quỹ",
       text: `Đã lấy ${amount.toLocaleString("vi-VN")} đ từ quỹ ${fund.name} vào số dư khả dụng`,
       note: `Đã lấy ${amount.toLocaleString("vi-VN")} đ từ quỹ ${fund.name} vào số dư khả dụng`,
@@ -12531,6 +12582,7 @@ function addCashflowEntry() {
         queueEventNotification(
           {
             id: withdrawAlloc.id,
+            fundId: linkedFund.id,
             title: "Trích tiền từ quỹ cho khoản chi",
             text: `Đã tự động trích ${amount.toLocaleString("vi-VN")} đ từ quỹ "${linkedFund.name}" cho chi tiêu "${expenseDetail}"`,
             note: expenseDetail,
@@ -18788,6 +18840,7 @@ function saveFund() {
       try {
         queueEventNotification({
           id: `fund-edit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          fundId: fundsData.funds[fundIndex].id,
           title: `Cập nhật quỹ: ${name}`,
           text: `Đã cập nhật quỹ "${name}"${newTarget > 0 ? ` (Mục tiêu: ${newTarget.toLocaleString("vi-VN")} đ)` : ""}`,
           note: `Đã cập nhật quỹ "${name}"${newTarget > 0 ? ` (Mục tiêu: ${newTarget.toLocaleString("vi-VN")} đ)` : ""}`,
@@ -18820,6 +18873,7 @@ function saveFund() {
     try {
       queueEventNotification({
         id: newFund.id,
+        fundId: newFund.id,
         title: `Tạo quỹ mới: ${name}`,
         text: `Đã tạo mới quỹ "${name}"${target > 0 ? ` (Mục tiêu: ${target.toLocaleString("vi-VN")} đ)` : ""}`,
         note: `Đã tạo mới quỹ "${name}"${target > 0 ? ` (Mục tiêu: ${target.toLocaleString("vi-VN")} đ)` : ""}`,
@@ -18857,6 +18911,7 @@ function confirmDeleteFund(fundId) {
       try {
         queueEventNotification({
           id: `fund-delete-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          fundId: fundId,
           title: "Xóa quỹ",
           text: `Đã xóa quỹ "${fundName}" thành công`,
           note: `Đã xóa quỹ "${fundName}" thành công`,
@@ -19081,6 +19136,7 @@ function confirmTopupFund() {
     try {
       queueEventNotification({
         id: withdrawAllocation.id,
+        fundId: fund.id,
         title: "Lấy tiền ra từ quỹ",
         text: `Đã lấy ${amount.toLocaleString("vi-VN")} đ từ quỹ ${fund.name} vào số dư khả dụng`,
         note: `Đã lấy ${amount.toLocaleString("vi-VN")} đ từ quỹ ${fund.name} vào số dư khả dụng`,
@@ -19142,6 +19198,7 @@ function confirmTopupFund() {
   try {
     queueEventNotification({
       id: topupAllocation.id,
+      fundId: fund.id,
       title: "Thêm vào quỹ",
       text: `Đã thêm ${amount.toLocaleString("vi-VN")} đ vào quỹ ${fund.name}`,
       note: `Đã thêm ${amount.toLocaleString("vi-VN")} đ vào quỹ ${fund.name}`,
@@ -19295,6 +19352,7 @@ function confirmAllocate() {
   const fundName = fund ? fund.name : "";
   queueEventNotification({
     id: allocation.id,
+    fundId: fundId,
     title: "Phân bổ quỹ mới",
     text: `Đã phân bổ ${amount.toLocaleString("vi-VN")} đ vào quỹ ${fundName}`,
     note: `Đã phân bổ ${amount.toLocaleString("vi-VN")} đ vào quỹ ${fundName}`,

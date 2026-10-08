@@ -4325,7 +4325,7 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
     title = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
     if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
     if (eventData.category) bodyParts.push(eventData.category);
-    if (eventData.fundName) bodyParts.push(`Trích từ quỹ: ${eventData.fundName}`);
+    if (eventData.fundName) bodyParts.push(`Rút từ quỹ: ${eventData.fundName}`);
     if (dateKey) bodyParts.push(formatNotificationDateString(dateKey));
     const cleanNote = String(eventData.text || eventData.note || "").replace(/^undefined$/i, "").trim();
     if (cleanNote) bodyParts.push(cleanNote);
@@ -4901,7 +4901,7 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
       bodyParts.push(payload.eventData.category);
     }
     if (payload.eventData.fundName) {
-      bodyParts.push(`Trích từ quỹ: ${payload.eventData.fundName}`);
+      bodyParts.push(`Rút từ quỹ: ${payload.eventData.fundName}`);
     }
     if (dateKey) bodyParts.push(formatNotificationDateString(dateKey));
     const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
@@ -5115,19 +5115,91 @@ function syncCombinedNotifications() {
       if (amt) parts.push(`${Number(amt).toLocaleString("vi-VN")} đ`);
       const cat = sanitizeString(item.eventData.category);
       if (cat) parts.push(cat);
+
+      // Tra cứu và hiển thị quỹ liên kết
+      let fundName = sanitizeString(item.eventData.fundName);
+      const fundId = sanitizeString(item.eventData.fundId);
+
+      if (!fundName && fundId && Array.isArray(fundsData?.funds)) {
+        const found = fundsData.funds.find((f) => f.id === fundId);
+        if (found) fundName = found.name;
+      }
+
+      if (!fundName && item.eventData.id && Array.isArray(cashflowEntries)) {
+        const matched = cashflowEntries.find((e) => e.id === item.eventData.id);
+        if (matched) {
+          if (matched.fundName) fundName = matched.fundName;
+          else if (matched.fundId && Array.isArray(fundsData?.funds)) {
+            const found = fundsData.funds.find((f) => f.id === matched.fundId);
+            if (found) fundName = found.name;
+          }
+        }
+      }
+
+      if (!fundName && cat && Array.isArray(cashflowCategories?.expense) && Array.isArray(fundsData?.funds)) {
+        const matchedCat = cashflowCategories.expense.find((c) => c.name === cat || c.id === cat);
+        if (matchedCat && matchedCat.fundId) {
+          const found = fundsData.funds.find((f) => f.id === matchedCat.fundId);
+          if (found) fundName = found.name;
+        }
+      }
+
+      if (!fundName && item.body) {
+        const m = String(item.body).match(/(?:Rút từ quỹ|Trích từ quỹ|từ quỹ|lấy từ quỹ)[:\s]+([^|]+)/i);
+        if (m && m[1]) fundName = m[1].trim();
+      }
+
+      if (fundName) {
+        item.eventData.fundName = fundName;
+        parts.push(`Rút từ quỹ: ${fundName}`);
+      }
+
       const dk = sanitizeString(item.dateKey || item.eventData.date);
       if (dk) parts.push(formatNotificationDateString(dk));
       const noteStr = sanitizeString(item.eventData.text || item.eventData.note);
       if (noteStr) parts.push(noteStr);
       cleanBody = parts.join(" | ");
-    } else if ((type === "funds" || type === "fund_allocation") && item.eventData) {
+    } else if (
+      (type === "funds" ||
+        type === "fund_allocation" ||
+        type === "fund_topup" ||
+        type === "fund_withdraw" ||
+        type === "fund_delete" ||
+        type === "fund_create" ||
+        type === "fund_update") &&
+      item.eventData
+    ) {
       const parts = [];
       const amt = item.eventData.amount;
       if (amt) parts.push(`${Number(amt).toLocaleString("vi-VN")} đ`);
+
+      let fundName = sanitizeString(item.eventData.fundName);
+      if (!fundName && item.eventData.fundId && Array.isArray(fundsData?.funds)) {
+        const found = fundsData.funds.find((f) => f.id === item.eventData.fundId);
+        if (found) fundName = found.name;
+      }
+      if (!fundName && item.title) {
+        const m = String(item.title).match(/quỹ:\s*([^|]+)/i);
+        if (m && m[1]) fundName = m[1].trim();
+      }
+
+      if (fundName) {
+        item.eventData.fundName = fundName;
+        if (type === "fund_withdraw") {
+          parts.push(`Rút từ quỹ: ${fundName}`);
+        } else if (type === "fund_topup") {
+          parts.push(`Nạp vào quỹ: ${fundName}`);
+        } else {
+          parts.push(`Quỹ: ${fundName}`);
+        }
+      }
+
       const dk = sanitizeString(item.dateKey || item.eventData.date);
       if (dk) parts.push(formatNotificationDateString(dk));
       const noteStr = sanitizeString(item.eventData.text || item.eventData.note);
-      if (noteStr) parts.push(noteStr);
+      if (noteStr && !noteStr.startsWith("Đã lấy") && !noteStr.startsWith("Đã nạp") && !noteStr.startsWith("Đã phân bổ") && !noteStr.startsWith("Lấy ra")) {
+        parts.push(noteStr);
+      }
       cleanBody = parts.join(" | ");
     } else if (!cleanBody && item.eventData) {
       const parts = [];
@@ -5393,7 +5465,15 @@ function renderNotificationList() {
     rawBody = rawBody.replace(/Ngày\s+(\d{4})-(\d{1,2})-(\d{1,2})/g, (match, y, m, d) => {
       return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
     });
-    const body = escapeHtml(rawBody);
+    let body = escapeHtml(rawBody);
+    body = body.replace(/(R&uacute;t từ quỹ|Tr&iacute;ch từ quỹ|Rút từ quỹ|Trích từ quỹ):\s*([^|&<]+)/g, '<strong style="color: #fbbf24; font-weight: 600;">$1: $2</strong>');
+
+    let extraBadgeHtml = "";
+    const fundName = item.eventData?.fundName;
+    if (fundName && type === "cashflow") {
+      extraBadgeHtml = `<span class="notif-badge funds" title="Rút từ quỹ ${escapeHtml(fundName)}"><i class="fi fi-rr-wallet" style="margin-right: 3px; position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>${escapeHtml(fundName)}</span>`;
+    }
+
     const timeStr = formatRelativeTime(item.createdAt);
     const delayStyle = `animation-delay: ${Math.min(index * 0.04, 0.3)}s;`;
 
@@ -5404,6 +5484,7 @@ function renderNotificationList() {
           <div class="notif-item-title">
             <span>${title}</span>
             <span class="notif-badge ${iconClass}">${typeLabel}</span>
+            ${extraBadgeHtml}
           </div>
           <div class="notif-item-body">${body}</div>
           <div class="notif-item-time">

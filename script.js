@@ -4086,6 +4086,8 @@ function handleNotificationNavigation(notificationType, dateKey, eventData, targ
         amount: Number(eventData.amount || 0),
         note: eventData.text || eventData.note || "",
         image: eventData.image || "",
+        fundId: eventData.fundId || "",
+        fundName: eventData.fundName || "",
         createdAt: Number(eventData.createdAt || Date.now()),
         updatedAt: Number(eventData.updatedAt || eventData.createdAt || Date.now())
       };
@@ -4323,11 +4325,12 @@ function notifyNewEventFromRealtime(eventData, dateKey, notificationType) {
     title = isExpense ? "💸 Chi tiêu mới" : "💰 Thu nhập mới";
     if (eventData.amount) bodyParts.push(`${Number(eventData.amount).toLocaleString("vi-VN")} đ`);
     if (eventData.category) bodyParts.push(eventData.category);
+    if (eventData.fundName) bodyParts.push(`Trích từ quỹ: ${eventData.fundName}`);
     if (dateKey) bodyParts.push(formatNotificationDateString(dateKey));
     const cleanNote = String(eventData.text || eventData.note || "").replace(/^undefined$/i, "").trim();
     if (cleanNote) bodyParts.push(cleanNote);
     if (eventData.hasImage) bodyParts.push("📎 Kèm hình ảnh");
-    notificationUrl = `./?action=cashflow&id=${encodeURIComponent(eventData.id || "")}&date=${encodeURIComponent(dateKey || "")}&amount=${encodeURIComponent(eventData.amount || "")}&category=${encodeURIComponent(eventData.category || "")}&cashflowType=${encodeURIComponent(eventData.cashflowType || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}`;
+    notificationUrl = `./?action=cashflow&id=${encodeURIComponent(eventData.id || "")}&date=${encodeURIComponent(dateKey || "")}&amount=${encodeURIComponent(eventData.amount || "")}&category=${encodeURIComponent(eventData.category || "")}&cashflowType=${encodeURIComponent(eventData.cashflowType || "")}&note=${encodeURIComponent(eventData.text || eventData.note || "")}&createdAt=${encodeURIComponent(eventData.createdAt || Date.now())}${eventData.fundId ? `&fundId=${encodeURIComponent(eventData.fundId)}` : ""}${eventData.fundName ? `&fundName=${encodeURIComponent(eventData.fundName)}` : ""}`;
     notificationTag = `cashflow-${eventData.id || dateKey || Date.now()}`;
   } else if (
     type === "fund_allocation" ||
@@ -4865,7 +4868,9 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
       fundId: String(eventData.fundId || "")
     },
     dateKey: String(dateKey || ""),
-    url: eventData.fundId ? `/?action=fund&fundId=${eventData.fundId}` : "",
+    url: type === "cashflow"
+      ? `/?action=cashflow&id=${encodeURIComponent(eventData.id || "")}&date=${encodeURIComponent(dateKey || "")}${eventData.fundId ? `&fundId=${encodeURIComponent(eventData.fundId)}` : ""}`
+      : (eventData.fundId ? `/?action=fund&fundId=${eventData.fundId}` : ""),
     senderSessionId: getOrCreateTabSessionId(),
     senderDeviceId: getOrCreateDeviceId(),
     timestamp: Date.now()
@@ -4894,6 +4899,9 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
     }
     if (payload.eventData.category) {
       bodyParts.push(payload.eventData.category);
+    }
+    if (payload.eventData.fundName) {
+      bodyParts.push(`Trích từ quỹ: ${payload.eventData.fundName}`);
     }
     if (dateKey) bodyParts.push(formatNotificationDateString(dateKey));
     const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
@@ -12577,26 +12585,6 @@ function addCashflowEntry() {
       entryObj.fundId = linkedFund.id;
       entryObj.fundName = linkedFund.name;
       entryObj.fundWithdrawAllocId = withdrawAlloc.id;
-
-      try {
-        queueEventNotification(
-          {
-            id: withdrawAlloc.id,
-            fundId: linkedFund.id,
-            title: "Trích tiền từ quỹ cho khoản chi",
-            text: `Đã tự động trích ${amount.toLocaleString("vi-VN")} đ từ quỹ "${linkedFund.name}" cho chi tiêu "${expenseDetail}"`,
-            note: expenseDetail,
-            fundName: linkedFund.name,
-            amount: amount,
-            date: date,
-            createdAt: withdrawAlloc.createdAt,
-          },
-          targetDateKey,
-          "fund_withdraw",
-        );
-      } catch (errNotif) {
-        console.warn("[Cashflow] Lỗi queueEventNotification withdraw:", errNotif);
-      }
     } else {
       delete entryObj.fundId;
       delete entryObj.fundName;
@@ -12707,6 +12695,8 @@ function addCashflowEntry() {
           category: categoryName,
           amount: amount,
           image: image || "",
+          fundId: entry.fundId || (linkedFund ? linkedFund.id : ""),
+          fundName: entry.fundName || (linkedFund ? linkedFund.name : ""),
           createdAt: entry.createdAt || Date.now(),
         },
         targetDateKey,

@@ -5380,49 +5380,60 @@ window.filterNotifications = filterNotifications;
 function getNotificationDetails(item) {
   const rawType = item.notificationType || "event";
   const ed = item.eventData || {};
+  const titleStr = (item.title || "").toLowerCase();
+  const bodyStr = (item.body || "").toLowerCase();
+
+  // Xác định các thông báo liên quan đến quỹ (thêm/nạp vào quỹ, rút quỹ, phân bổ quỹ...)
+  const isFundAction =
+    rawType === "funds" ||
+    rawType === "fund_allocation" ||
+    rawType === "fund_topup" ||
+    rawType === "fund_withdraw" ||
+    rawType === "fund_delete" ||
+    rawType === "fund_create" ||
+    rawType === "fund_update" ||
+    titleStr.includes("thêm vào quỹ") ||
+    titleStr.includes("nạp vào quỹ") ||
+    titleStr.includes("lấy tiền ra từ quỹ") ||
+    titleStr.includes("phân bổ quỹ");
 
   let isIncome = false;
   let isExpense = false;
 
-  // 1. Kiểm tra trường cashflowType hoặc type trực tiếp
-  const cfType = ed.cashflowType || ed.type;
-  if (cfType === "income") isIncome = true;
-  else if (cfType === "expense") isExpense = true;
+  // Các thao tác quỹ KHÔNG được tính là Thu nhập hay Chi tiêu khi lọc Thu/Chi
+  if (!isFundAction) {
+    // 1. Kiểm tra trường cashflowType hoặc type trực tiếp
+    const cfType = ed.cashflowType || ed.type;
+    if (cfType === "income") isIncome = true;
+    else if (cfType === "expense") isExpense = true;
 
-  // 2. Kiểm tra thao tác quỹ có hướng tiền vào / ra rõ ràng
-  if (!isIncome && !isExpense) {
-    if (rawType === "fund_topup") isIncome = true;
-    else if (rawType === "fund_withdraw") isExpense = true;
-  }
-
-  // 3. Khớp với danh sách giao dịch cashflowEntries nếu có ID
-  if (!isIncome && !isExpense && ed.id && typeof cashflowEntries !== "undefined" && Array.isArray(cashflowEntries)) {
-    const entry = cashflowEntries.find((e) => e.id === ed.id);
-    if (entry) {
-      if (entry.type === "income" || entry.cashflowType === "income") isIncome = true;
-      else if (entry.type === "expense" || entry.cashflowType === "expense") isExpense = true;
+    // 2. Khớp với danh sách giao dịch cashflowEntries nếu có ID
+    if (!isIncome && !isExpense && ed.id && typeof cashflowEntries !== "undefined" && Array.isArray(cashflowEntries)) {
+      const entry = cashflowEntries.find((e) => e.id === ed.id);
+      if (entry) {
+        if (entry.type === "income" || entry.cashflowType === "income") isIncome = true;
+        else if (entry.type === "expense" || entry.cashflowType === "expense") isExpense = true;
+      }
     }
-  }
 
-  // 4. Nhận diện qua tiêu đề
-  const titleStr = (item.title || "").toLowerCase();
-  if (!isIncome && !isExpense) {
-    if (titleStr.includes("thu nhập") || titleStr.includes("thêm vào quỹ") || titleStr.includes("nạp vào quỹ") || titleStr.includes("💰")) {
-      isIncome = true;
-    } else if (titleStr.includes("chi tiêu") || titleStr.includes("rút từ quỹ") || titleStr.includes("lấy tiền ra") || titleStr.includes("💸")) {
-      isExpense = true;
+    // 3. Nhận diện qua tiêu đề (chỉ cho thu nhập/chi tiêu thực tế)
+    if (!isIncome && !isExpense) {
+      if (titleStr.includes("thu nhập")) {
+        isIncome = true;
+      } else if (titleStr.includes("chi tiêu") || titleStr.includes("💸")) {
+        isExpense = true;
+      }
     }
-  }
 
-  // 5. Nhận diện qua nội dung body
-  const bodyStr = (item.body || "").toLowerCase();
-  if (!isIncome && !isExpense && rawType === "cashflow") {
-    if (bodyStr.includes("thu nhập") || bodyStr.includes("tiền vào")) {
-      isIncome = true;
-    } else if (bodyStr.includes("chi tiêu") || bodyStr.includes("tiền ra") || bodyStr.includes("rút từ quỹ")) {
-      isExpense = true;
-    } else {
-      isExpense = true;
+    // 4. Nhận diện qua nội dung body
+    if (!isIncome && !isExpense && rawType === "cashflow") {
+      if (bodyStr.includes("thu nhập")) {
+        isIncome = true;
+      } else if (bodyStr.includes("chi tiêu") || bodyStr.includes("tiền ra")) {
+        isExpense = true;
+      } else {
+        isExpense = true;
+      }
     }
   }
 
@@ -5436,25 +5447,24 @@ function getNotificationDetails(item) {
   if (isExpense) {
     iconClass = "expense";
     iconHtml = '<i class="fi fi-rr-arrow-up-right"></i>';
-    typeLabel = rawType === "fund_withdraw" ? "Rút quỹ" : "Chi tiêu";
+    typeLabel = "Chi tiêu";
     amountPrefix = "-";
     amountClass = "expense";
   } else if (isIncome) {
     iconClass = "income";
     iconHtml = '<i class="fi fi-rr-arrow-down-left"></i>';
-    typeLabel = rawType === "fund_topup" ? "Nạp quỹ" : "Thu nhập";
+    typeLabel = "Thu nhập";
     amountPrefix = "+";
     amountClass = "income";
-  } else if (
-    rawType === "funds" ||
-    rawType === "fund_allocation" ||
-    rawType === "fund_delete" ||
-    rawType === "fund_create" ||
-    rawType === "fund_update"
-  ) {
+  } else if (isFundAction) {
     iconClass = "funds";
     iconHtml = '<i class="fi fi-rr-wallet"></i>';
-    typeLabel = "Quỹ";
+    typeLabel =
+      rawType === "fund_withdraw" || titleStr.includes("lấy tiền ra")
+        ? "Rút quỹ"
+        : rawType === "fund_topup" || titleStr.includes("thêm vào quỹ") || titleStr.includes("nạp vào quỹ")
+          ? "Nạp quỹ"
+          : "Quỹ";
     amountPrefix = "";
     amountClass = "funds";
   } else if (rawType === "reminder") {

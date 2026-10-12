@@ -4609,10 +4609,14 @@
         </div>
       </div>
       <div class="notification-tabs">
-        <button type="button" class="notif-tab active" data-filter="all" onclick="filterNotifications('all', this)">Tất
-          cả</button>
-        <button type="button" class="notif-tab" data-filter="unread" onclick="filterNotifications('unread', this)">Chưa
-          đọc</button>
+        <button type="button" class="notif-tab active" data-filter="all" onclick="filterNotifications('all', this)">Tất cả</button>
+        <button type="button" class="notif-tab" data-filter="unread" onclick="filterNotifications('unread', this)">Chưa đọc</button>
+        <button type="button" class="notif-tab tab-income" data-filter="income" onclick="filterNotifications('income', this)">
+          <i class="fi fi-rr-arrow-down-left"></i><span>Thu</span>
+        </button>
+        <button type="button" class="notif-tab tab-expense" data-filter="expense" onclick="filterNotifications('expense', this)">
+          <i class="fi fi-rr-arrow-up-right"></i><span>Chi</span>
+        </button>
       </div>
       <div id="notificationListBody" class="notification-list-body">
         <!-- Notification list rendered dynamically -->

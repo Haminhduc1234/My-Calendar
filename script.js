@@ -5149,10 +5149,10 @@ function syncCombinedNotifications() {
         if (m && m[1]) fundName = m[1].trim();
       }
 
-      if (fundName) {
-        item.eventData.fundName = fundName;
-        parts.push(`Rút từ quỹ: ${fundName}`);
-      }
+      // if (fundName) {
+      //   item.eventData.fundName = fundName;
+      //   parts.push(`Rút từ quỹ: ${fundName}`);
+      // }
 
       const dk = sanitizeString(item.dateKey || item.eventData.date);
       if (dk) parts.push(formatNotificationDateString(dk));
@@ -5377,6 +5377,124 @@ function filterNotifications(filterMode, tabBtn) {
 }
 window.filterNotifications = filterNotifications;
 
+function getNotificationDetails(item) {
+  const rawType = item.notificationType || "event";
+  const ed = item.eventData || {};
+
+  let isIncome = false;
+  let isExpense = false;
+
+  // 1. Kiểm tra trường cashflowType hoặc type trực tiếp
+  const cfType = ed.cashflowType || ed.type;
+  if (cfType === "income") isIncome = true;
+  else if (cfType === "expense") isExpense = true;
+
+  // 2. Kiểm tra thao tác quỹ có hướng tiền vào / ra rõ ràng
+  if (!isIncome && !isExpense) {
+    if (rawType === "fund_topup") isIncome = true;
+    else if (rawType === "fund_withdraw") isExpense = true;
+  }
+
+  // 3. Khớp với danh sách giao dịch cashflowEntries nếu có ID
+  if (!isIncome && !isExpense && ed.id && typeof cashflowEntries !== "undefined" && Array.isArray(cashflowEntries)) {
+    const entry = cashflowEntries.find((e) => e.id === ed.id);
+    if (entry) {
+      if (entry.type === "income" || entry.cashflowType === "income") isIncome = true;
+      else if (entry.type === "expense" || entry.cashflowType === "expense") isExpense = true;
+    }
+  }
+
+  // 4. Nhận diện qua tiêu đề
+  const titleStr = (item.title || "").toLowerCase();
+  if (!isIncome && !isExpense) {
+    if (titleStr.includes("thu nhập") || titleStr.includes("thêm vào quỹ") || titleStr.includes("nạp vào quỹ") || titleStr.includes("💰")) {
+      isIncome = true;
+    } else if (titleStr.includes("chi tiêu") || titleStr.includes("rút từ quỹ") || titleStr.includes("lấy tiền ra") || titleStr.includes("💸")) {
+      isExpense = true;
+    }
+  }
+
+  // 5. Nhận diện qua nội dung body
+  const bodyStr = (item.body || "").toLowerCase();
+  if (!isIncome && !isExpense && rawType === "cashflow") {
+    if (bodyStr.includes("thu nhập") || bodyStr.includes("tiền vào")) {
+      isIncome = true;
+    } else if (bodyStr.includes("chi tiêu") || bodyStr.includes("tiền ra") || bodyStr.includes("rút từ quỹ")) {
+      isExpense = true;
+    } else {
+      isExpense = true;
+    }
+  }
+
+  // Xác định biểu tượng, nhãn và màu sắc
+  let iconClass = "event";
+  let iconHtml = '<i class="fi fi-rr-calendar"></i>';
+  let typeLabel = "Sự kiện";
+  let amountPrefix = "";
+  let amountClass = "";
+
+  if (isExpense) {
+    iconClass = "expense";
+    iconHtml = '<i class="fi fi-rr-arrow-up-right"></i>';
+    typeLabel = rawType === "fund_withdraw" ? "Rút quỹ" : "Chi tiêu";
+    amountPrefix = "-";
+    amountClass = "expense";
+  } else if (isIncome) {
+    iconClass = "income";
+    iconHtml = '<i class="fi fi-rr-arrow-down-left"></i>';
+    typeLabel = rawType === "fund_topup" ? "Nạp quỹ" : "Thu nhập";
+    amountPrefix = "+";
+    amountClass = "income";
+  } else if (
+    rawType === "funds" ||
+    rawType === "fund_allocation" ||
+    rawType === "fund_delete" ||
+    rawType === "fund_create" ||
+    rawType === "fund_update"
+  ) {
+    iconClass = "funds";
+    iconHtml = '<i class="fi fi-rr-wallet"></i>';
+    typeLabel = "Quỹ";
+    amountPrefix = "";
+    amountClass = "funds";
+  } else if (rawType === "reminder") {
+    iconClass = "reminder";
+    iconHtml = '<i class="fi fi-rr-alarm-clock"></i>';
+    typeLabel = "Nhắc nhở";
+  }
+
+  // Trích xuất số tiền
+  let rawAmount = ed.amount;
+  if (!rawAmount && item.body) {
+    const m = String(item.body).match(/([\d.,]+)\s*đ/);
+    if (m) rawAmount = m[1];
+  }
+
+  let formattedAmount = "";
+  if (rawAmount !== undefined && rawAmount !== null && rawAmount !== "") {
+    const cleaned = String(rawAmount).replace(/[.,đ\s]/g, "");
+    const num = Number(cleaned);
+    if (!isNaN(num) && num > 0) {
+      formattedAmount = num.toLocaleString("vi-VN");
+    }
+  }
+
+  let amountChipHtml = "";
+  if (formattedAmount && (isExpense || isIncome || iconClass === "funds")) {
+    amountChipHtml = `<span class="notif-amount ${amountClass}">${amountPrefix}${formattedAmount} đ</span>`;
+  }
+
+  return {
+    isExpense,
+    isIncome,
+    iconClass,
+    iconHtml,
+    typeLabel,
+    amountChipHtml,
+    rawType
+  };
+}
+
 function renderNotificationList() {
   const bodyEl = document.getElementById("notificationListBody");
   if (!bodyEl) return;
@@ -5389,7 +5507,6 @@ function renderNotificationList() {
           <div class="skeleton-content">
             <div class="skeleton-line short"></div>
             <div class="skeleton-line long"></div>
-            <div class="skeleton-line time"></div>
           </div>
         </div>
         <div class="notification-skeleton-item">
@@ -5397,7 +5514,6 @@ function renderNotificationList() {
           <div class="skeleton-content">
             <div class="skeleton-line short"></div>
             <div class="skeleton-line long"></div>
-            <div class="skeleton-line time"></div>
           </div>
         </div>
         <div class="notification-skeleton-item">
@@ -5405,7 +5521,6 @@ function renderNotificationList() {
           <div class="skeleton-content">
             <div class="skeleton-line short"></div>
             <div class="skeleton-line long"></div>
-            <div class="skeleton-line time"></div>
           </div>
         </div>
       </div>
@@ -5416,15 +5531,24 @@ function renderNotificationList() {
   let items = combinedNotificationsList.length > 0 ? [...combinedNotificationsList] : [...userNotificationsCache];
   if (notificationFilterMode === "unread") {
     items = items.filter((item) => !item.read);
+  } else if (notificationFilterMode === "income") {
+    items = items.filter((item) => getNotificationDetails(item).isIncome);
+  } else if (notificationFilterMode === "expense") {
+    items = items.filter((item) => getNotificationDetails(item).isExpense);
   }
 
   if (items.length === 0) {
+    let emptyMsg = "Chưa có thông báo nào";
+    if (notificationFilterMode === "unread") emptyMsg = "Không có thông báo chưa đọc";
+    else if (notificationFilterMode === "income") emptyMsg = "Chưa có thông báo thu nhập nào";
+    else if (notificationFilterMode === "expense") emptyMsg = "Chưa có thông báo chi tiêu nào";
+
     bodyEl.innerHTML = `
       <div class="notification-empty-state">
         <div class="notification-empty-icon">
-          <i class="fi fi-rr-bell-slash" style="font-size: 28px;"></i>
+          <i class="fi fi-rr-bell-slash" style="font-size: 26px;"></i>
         </div>
-        <div class="notification-empty-text">${notificationFilterMode === "unread" ? "Không có thông báo chưa đọc" : "Chưa có thông báo nào"}</div>
+        <div class="notification-empty-text">${emptyMsg}</div>
       </div>
     `;
     return;
@@ -5433,32 +5557,7 @@ function renderNotificationList() {
   let html = "";
   items.forEach((item, index) => {
     const isUnread = !item.read;
-    const type = item.notificationType || "event";
-
-    let iconHtml = '<i class="fi fi-rr-calendar"></i>';
-    let iconClass = "event";
-    let typeLabel = "Sự kiện";
-    if (type === "cashflow") {
-      iconHtml = '<i class="fi fi-rr-donate"></i>';
-      iconClass = "cashflow";
-      typeLabel = "Thu chi";
-    } else if (
-      type === "funds" ||
-      type === "fund_allocation" ||
-      type === "fund_topup" ||
-      type === "fund_withdraw" ||
-      type === "fund_delete" ||
-      type === "fund_create" ||
-      type === "fund_update"
-    ) {
-      iconHtml = '<i class="fi fi-rr-wallet"></i>';
-      iconClass = "funds";
-      typeLabel = "Quỹ";
-    } else if (type === "reminder") {
-      iconHtml = '<i class="fi fi-rr-alarm-clock"></i>';
-      iconClass = "reminder";
-      typeLabel = "Nhắc nhở";
-    }
+    const notifInfo = getNotificationDetails(item);
 
     const title = escapeHtml(item.title || "Thông báo");
     let rawBody = String(item.body || "");
@@ -5466,35 +5565,45 @@ function renderNotificationList() {
       return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
     });
     let body = escapeHtml(rawBody);
-    body = body.replace(/(R&uacute;t từ quỹ|Tr&iacute;ch từ quỹ|Rút từ quỹ|Trích từ quỹ):\s*([^|&<]+)/g, '<strong style="color: #fbbf24; font-weight: 600;">$1: $2</strong>');
+
+    // Nếu đã hiển thị số tiền dạng chip ở dòng tiêu đề, loại bỏ tiền đầu chuỗi để tránh lặp và tiết kiệm diện tích
+    if (notifInfo.amountChipHtml) {
+      body = body.replace(/^[\d.,\s]+đ\s*(\|\s*)?/i, "");
+    }
+
+    body = body.replace(/(R&uacute;t từ quỹ|Tr&iacute;ch từ quỹ|Rút từ quỹ|Trích từ quỹ):\s*([^|&<]+)/g, '<span class="notif-fund-highlight"><i class="fi fi-rr-wallet"></i> $1: $2</span>');
+
+    // Chuyển dấu phân cách | thành dấu chấm bullet hiện đại, tiết kiệm diện tích
+    body = body.replace(/\s*\|\s*/g, ' <span class="notif-bullet">•</span> ');
 
     let extraBadgeHtml = "";
     const fundName = item.eventData?.fundName;
-    if (fundName && type === "cashflow") {
-      extraBadgeHtml = `<span class="notif-badge funds" title="Rút từ quỹ ${escapeHtml(fundName)}"><i class="fi fi-rr-wallet" style="margin-right: 3px; position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i>${escapeHtml(fundName)}</span>`;
+    if (fundName && (notifInfo.rawType === "cashflow" || notifInfo.isExpense || notifInfo.isIncome)) {
+      extraBadgeHtml = `<span class="notif-badge funds" title="Quỹ ${escapeHtml(fundName)}"><i class="fi fi-rr-wallet"></i>${escapeHtml(fundName)}</span>`;
     }
 
     const timeStr = formatRelativeTime(item.createdAt);
-    const delayStyle = `animation-delay: ${Math.min(index * 0.04, 0.3)}s;`;
+    const delayStyle = `animation-delay: ${Math.min(index * 0.03, 0.25)}s;`;
 
     html += `
-      <div class="notification-item type-${iconClass} ${isUnread ? "unread" : ""}" style="${delayStyle}" onclick="handleNotificationItemClick('${item.id}')">
-        <div class="notif-item-icon ${iconClass}">${iconHtml}</div>
+      <div class="notification-item type-${notifInfo.iconClass} ${isUnread ? "unread" : ""}" style="${delayStyle}" onclick="handleNotificationItemClick('${item.id}')">
+        <div class="notif-item-icon ${notifInfo.iconClass}">${notifInfo.iconHtml}</div>
         <div class="notif-item-content">
-          <div class="notif-item-title">
-            <span>${title}</span>
-            <span class="notif-badge ${iconClass}">${typeLabel}</span>
-            ${extraBadgeHtml}
+          <div class="notif-item-row-top">
+            <div class="notif-item-title-group">
+              <span class="notif-item-title-text" title="${title}">${title}</span>
+              ${notifInfo.amountChipHtml}
+              ${extraBadgeHtml}
+            </div>
+            <div class="notif-item-meta-group">
+              <span class="notif-item-time">${timeStr}</span>
+              <button type="button" class="notif-item-delete" title="Xóa thông báo" onclick="deleteNotificationItem('${item.id}', event)">
+                <i class="fi fi-rr-trash"></i>
+              </button>
+            </div>
           </div>
-          <div class="notif-item-body">${body}</div>
-          <div class="notif-item-time">
-            <i class="fi fi-rr-clock" style="font-size: 12px; margin-right: 4px;"></i>
-            <span>${timeStr}</span>
-          </div>
+          <div class="notif-item-body" title="${escapeHtml(rawBody)}">${body || "Chi tiết thông báo"}</div>
         </div>
-        <button type="button" class="notif-item-delete" title="Xóa thông báo" onclick="deleteNotificationItem('${item.id}', event)">
-          <i class="fi fi-rr-trash"></i>
-        </button>
       </div>
     `;
   });

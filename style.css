@@ -26290,7 +26290,7 @@ html {
   }
 }
 
-/* ==================== MODAL NOTIFICATION LIST (ULTRA PREMIUM GLASS DESIGN) ==================== */
+/* ==================== MODAL NOTIFICATION LIST (FLAT MINIMALIST SLATE DESIGN - NO GRADIENT) ==================== */
 .notification-modal-content {
   position: relative;
   overflow: hidden;
@@ -26299,40 +26299,14 @@ html {
   max-height: 88vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg-card-glass, rgba(15, 23, 42, 0.94));
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--bg-card-glass, rgba(15, 23, 42, 0.96));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 16px 18px;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 35px rgba(59, 130, 246, 0.15);
-  animation: modalScaleIn 0.26s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.notification-modal-content::before {
-  content: "";
-  position: absolute;
-  top: -80px;
-  right: -80px;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.22) 0%, rgba(37, 99, 235, 0) 70%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.notification-modal-content::after {
-  content: "";
-  position: absolute;
-  bottom: -80px;
-  left: -80px;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(168, 85, 247, 0.12) 0%, rgba(147, 51, 234, 0) 70%);
-  pointer-events: none;
-  z-index: 0;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  animation: modalScaleIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes modalScaleIn {
@@ -26369,27 +26343,24 @@ html {
 }
 
 .notification-modal-title span {
-  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #f8fafc;
 }
 
 .notification-title-badge-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.12));
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.28);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
 }
 
 .notification-title-badge-icon i,
 .notification-title-badge-icon svg {
   color: #60a5fa;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
   position: static;
   top: 0;
@@ -26416,7 +26387,7 @@ html {
   color: #94a3b8;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border-radius: 7px;
   cursor: pointer;
   transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
@@ -26437,11 +26408,10 @@ html {
   font-size: 11.5px;
   font-weight: 600;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: 7px;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
-  transition: background 0.2s ease, border-color 0.2s ease;
+  transition: background 0.18s ease, border-color 0.18s ease;
 }
 
 .notif-action-btn i {
@@ -26464,7 +26434,6 @@ html {
   background: #e11d48;
   border: 1px solid #e11d48;
   color: #ffffff;
-  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.25);
 }
 
 .notif-action-btn.danger:hover {
@@ -26489,22 +26458,23 @@ html {
   }
 }
 
+/* ==================== TABS (FLAT SOLID PILLS - NO GRADIENT) ==================== */
 .notification-tabs {
   position: relative;
   z-index: 1;
   display: flex;
   gap: 4px;
-  margin: 10px 0 8px 0;
+  margin: 10px 0 10px 0;
   padding: 3px;
   background: rgba(15, 23, 42, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  border-radius: 9px;
 }
 
 .notif-tab {
   flex: 1;
   padding: 5px 8px;
-  border-radius: 7px;
+  border-radius: 6px;
   background: transparent;
   border: none;
   color: #94a3b8;
@@ -26535,9 +26505,8 @@ html {
 }
 
 .notif-tab.active {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: #2563eb;
   color: #ffffff;
-  box-shadow: 0 3px 10px rgba(59, 130, 246, 0.35);
 }
 
 .notif-tab.tab-income i {
@@ -26545,9 +26514,8 @@ html {
 }
 
 .notif-tab.tab-income.active {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: #059669;
   color: #ffffff;
-  box-shadow: 0 3px 10px rgba(16, 185, 129, 0.35);
 }
 
 .notif-tab.tab-income.active i {
@@ -26559,20 +26527,21 @@ html {
 }
 
 .notif-tab.tab-expense.active {
-  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+  background: #e11d48;
   color: #ffffff;
-  box-shadow: 0 3px 10px rgba(244, 63, 94, 0.35);
 }
 
 .notif-tab.tab-expense.active i {
   color: #ffffff;
 }
 
+/* ==================== NOTIFICATION LIST (COMPACT SCROLL CONTAINER) ==================== */
 .notification-list-body {
   position: relative;
   z-index: 1;
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   margin-top: 2px;
   padding-right: 3px;
   max-height: calc(100vh - 40px);
@@ -26601,7 +26570,7 @@ html {
 @keyframes notifItemFadeIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(4px);
   }
 
   to {
@@ -26610,7 +26579,7 @@ html {
   }
 }
 
-/* ==================== NOTIFICATION ITEM (COMPACT HIGH-DENSITY DESIGN) ==================== */
+/* ==================== NOTIFICATION ITEM (FLAT MINIMALIST SLATE CARD) ==================== */
 .notification-item {
   display: flex;
   align-items: center;
@@ -26623,69 +26592,47 @@ html {
   cursor: pointer;
   position: relative;
   transition: background 0.18s ease, border-color 0.18s ease;
-  animation: notifItemFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: notifItemFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
   min-height: 50px;
   box-sizing: border-box;
 }
 
-/* Phân biệt loại: CHI TIÊU */
+.notification-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Vạch viền trái sắc nét phân biệt loại giao dịch */
 .notification-item.type-expense {
   border-left-color: #f43f5e;
-  background: rgba(244, 63, 94, 0.035);
 }
 
-.notification-item.type-expense:hover {
-  background: rgba(244, 63, 94, 0.08);
-  border-color: rgba(244, 63, 94, 0.25);
-}
-
-/* Phân biệt loại: THU NHẬP */
 .notification-item.type-income {
   border-left-color: #10b981;
-  background: rgba(16, 185, 129, 0.035);
 }
 
-.notification-item.type-income:hover {
-  background: rgba(16, 185, 129, 0.08);
-  border-color: rgba(16, 185, 129, 0.25);
-}
-
-/* Phân biệt loại: SỰ KIỆN */
 .notification-item.type-event {
   border-left-color: #3b82f6;
-  background: rgba(59, 130, 246, 0.035);
 }
 
-.notification-item.type-event:hover {
-  background: rgba(59, 130, 246, 0.08);
-  border-color: rgba(59, 130, 246, 0.25);
-}
-
-/* Phân biệt loại: QUỸ */
 .notification-item.type-funds {
   border-left-color: #f59e0b;
-  background: rgba(245, 158, 11, 0.035);
 }
 
-.notification-item.type-funds:hover {
-  background: rgba(245, 158, 11, 0.08);
-  border-color: rgba(245, 158, 11, 0.25);
-}
-
-/* Phân biệt loại: NHẮC NHỞ */
 .notification-item.type-reminder {
   border-left-color: #a855f7;
-  background: rgba(168, 85, 247, 0.035);
 }
 
-.notification-item.type-reminder:hover {
-  background: rgba(168, 85, 247, 0.08);
-  border-color: rgba(168, 85, 247, 0.25);
-}
-
-/* Trạng thái chưa đọc */
+/* Trạng thái chưa đọc (Flat Slate Highlight + Flat Dot) */
 .notification-item.unread {
+  background: rgba(255, 255, 255, 0.065);
+  border-color: rgba(255, 255, 255, 0.12);
   padding-left: 15px;
+}
+
+.notification-item.unread:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .notification-item.unread::before {
@@ -26694,63 +26641,38 @@ html {
   left: 5px;
   top: 50%;
   transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: #3b82f6;
-  box-shadow: 0 0 8px #3b82f6;
-}
-
-.notification-item.type-expense.unread {
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.13) 0%, rgba(225, 29, 72, 0.04) 100%);
-  border-color: rgba(244, 63, 94, 0.32);
 }
 
 .notification-item.type-expense.unread::before {
   background: #f43f5e;
-  box-shadow: 0 0 8px #f43f5e;
-}
-
-.notification-item.type-income.unread {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.13) 0%, rgba(5, 150, 105, 0.04) 100%);
-  border-color: rgba(16, 185, 129, 0.32);
 }
 
 .notification-item.type-income.unread::before {
   background: #10b981;
-  box-shadow: 0 0 8px #10b981;
-}
-
-.notification-item.type-funds.unread {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.13) 0%, rgba(217, 119, 6, 0.04) 100%);
-  border-color: rgba(245, 158, 11, 0.32);
 }
 
 .notification-item.type-funds.unread::before {
   background: #f59e0b;
-  box-shadow: 0 0 8px #f59e0b;
-}
-
-.notification-item.type-reminder.unread {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.13) 0%, rgba(147, 51, 234, 0.04) 100%);
-  border-color: rgba(168, 85, 247, 0.32);
 }
 
 .notification-item.type-reminder.unread::before {
   background: #a855f7;
-  box-shadow: 0 0 8px #a855f7;
 }
 
-/* Biểu tượng thông báo (gọn 32px) */
+/* Biểu tượng thông báo phẳng (Flat Solid Tint) */
 .notif-item-icon {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 13px;
   flex-shrink: 0;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -26766,32 +26688,32 @@ html {
 }
 
 .notif-item-icon.expense {
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.22), rgba(225, 29, 72, 0.12));
-  border: 1px solid rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.25);
   color: #fb7185;
 }
 
 .notif-item-icon.income {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(5, 150, 105, 0.12));
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
   color: #34d399;
 }
 
 .notif-item-icon.event {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(37, 99, 235, 0.12));
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(59, 130, 246, 0.25);
   color: #60a5fa;
 }
 
 .notif-item-icon.funds {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.12));
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
   color: #fbbf24;
 }
 
 .notif-item-icon.reminder {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(147, 51, 234, 0.12));
-  border: 1px solid rgba(168, 85, 247, 0.35);
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.25);
   color: #c084fc;
 }
 
@@ -26829,16 +26751,16 @@ html {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 170px;
+  max-width: 175px;
 }
 
-/* Huy hiệu loại thông báo */
+/* Huy hiệu loại thông báo (Flat) */
 .notif-badge {
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: 1.5px 6px;
-  border-radius: 5px;
+  padding: 1px 6px;
+  border-radius: 4px;
   font-size: 9.5px;
   font-weight: 700;
   text-transform: uppercase;
@@ -26860,41 +26782,41 @@ html {
 }
 
 .notif-badge.expense {
-  background: rgba(244, 63, 94, 0.16);
+  background: rgba(244, 63, 94, 0.12);
   color: #fda4af;
-  border: 1px solid rgba(244, 63, 94, 0.35);
+  border: 1px solid rgba(244, 63, 94, 0.25);
 }
 
 .notif-badge.income {
-  background: rgba(16, 185, 129, 0.16);
+  background: rgba(16, 185, 129, 0.12);
   color: #6ee7b7;
-  border: 1px solid rgba(16, 185, 129, 0.35);
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .notif-badge.event {
-  background: rgba(59, 130, 246, 0.16);
+  background: rgba(59, 130, 246, 0.12);
   color: #60a5fa;
-  border: 1px solid rgba(59, 130, 246, 0.35);
+  border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .notif-badge.funds {
-  background: rgba(245, 158, 11, 0.16);
+  background: rgba(245, 158, 11, 0.12);
   color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.35);
+  border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .notif-badge.reminder {
-  background: rgba(168, 85, 247, 0.16);
+  background: rgba(168, 85, 247, 0.12);
   color: #c084fc;
-  border: 1px solid rgba(168, 85, 247, 0.35);
+  border: 1px solid rgba(168, 85, 247, 0.25);
 }
 
-/* Chip số tiền giao dịch nổi bật */
+/* Chip số tiền giao dịch phẳng (Flat Chip) */
 .notif-amount {
   display: inline-flex;
   align-items: center;
-  padding: 1px 6px;
-  border-radius: 5px;
+  padding: 1px 5px;
+  border-radius: 4px;
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -26906,20 +26828,20 @@ html {
 
 .notif-amount.expense {
   color: #fb7185;
-  background: rgba(244, 63, 94, 0.12);
-  border: 1px solid rgba(244, 63, 94, 0.28);
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.22);
 }
 
 .notif-amount.income {
   color: #34d399;
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.28);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.22);
 }
 
 .notif-amount.funds {
   color: #fbbf24;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.22);
 }
 
 /* Nhóm meta bên phải hàng trên: Thời gian + Nút xóa */
@@ -26973,7 +26895,7 @@ html {
   border-color: rgba(239, 68, 68, 0.4);
 }
 
-/* Hàng dưới: Nội dung chi tiết (1 dòng thu gọn, chữ nhỏ gọn gàng) */
+/* Hàng dưới: Nội dung chi tiết */
 .notif-item-body {
   font-size: 11.5px;
   color: var(--muted, #94a3b8);
@@ -27020,15 +26942,15 @@ html {
 }
 
 .notification-empty-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  background: rgba(59, 130, 246, 0.08);
-  border: 1px solid rgba(59, 130, 246, 0.15);
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #3b82f6;
+  color: #64748b;
   margin-bottom: 2px;
 }
 
@@ -27038,7 +26960,7 @@ html {
   color: #94a3b8;
 }
 
-/* Skeleton Loading State for Notifications */
+/* Skeleton Loading State (Flat Pulse Cards - NO GRADIENT) */
 .notification-skeleton-container {
   display: flex;
   flex-direction: column;
@@ -27055,37 +26977,24 @@ html {
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 10px;
   position: relative;
-  overflow: hidden;
   min-height: 50px;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
 }
 
-.notification-skeleton-item::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  transform: translateX(-100%);
-  background-image: linear-gradient(90deg,
-      rgba(255, 255, 255, 0) 0,
-      rgba(255, 255, 255, 0.04) 20%,
-      rgba(255, 255, 255, 0.08) 60%,
-      rgba(255, 255, 255, 0));
-  animation: skeletonShimmer 1.5s infinite;
-}
-
-@keyframes skeletonShimmer {
-  100% {
-    transform: translateX(100%);
+@keyframes skeletonPulse {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.75;
   }
 }
 
 .skeleton-icon {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.07);
   flex-shrink: 0;
 }
 
@@ -27097,18 +27006,18 @@ html {
 }
 
 .skeleton-line {
-  height: 10px;
-  border-radius: 5px;
-  background: rgba(255, 255, 255, 0.08);
+  height: 9px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .skeleton-line.short {
-  width: 40%;
-  height: 11px;
+  width: 35%;
+  height: 10px;
 }
 
 .skeleton-line.long {
-  width: 80%;
+  width: 75%;
 }
 
 @media (max-width: 480px) {
@@ -27125,7 +27034,7 @@ html {
     width: 28px;
     height: 28px;
     min-width: 28px;
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .notif-amount {

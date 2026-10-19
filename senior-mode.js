@@ -322,6 +322,7 @@
   // ==========================================
 
   window.openSeniorCallModal = function () {
+    if (typeof window.requireLogin === "function" && !window.requireLogin("Danh bạ người thân")) return;
     if (typeof closeAllModals === "function") closeAllModals();
     if (typeof window.ensureSeniorFirebaseSynced === "function") {
       window.ensureSeniorFirebaseSynced();
@@ -397,6 +398,7 @@
   // ==========================================
 
   window.openSeniorSettingsModal = function () {
+    if (typeof window.requireLogin === "function" && !window.requireLogin("Cài đặt liên hệ")) return;
     if (typeof closeAllModals === "function") closeAllModals();
     if (typeof window.ensureSeniorFirebaseSynced === "function") {
       window.ensureSeniorFirebaseSynced();

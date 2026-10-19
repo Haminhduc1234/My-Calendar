@@ -466,33 +466,16 @@ body::before {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
   width: 100%;
   max-width: 380px;
-  background: rgba(13, 25, 48, 0.94);
-  border: 1px solid rgba(143, 184, 255, 0.22);
   border-radius: 22px;
   padding: 36px 28px 28px;
-  box-shadow:
-    0 24px 64px rgba(0, 0, 0, 0.65),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 0 35px rgba(56, 189, 248, 0.18);
-  animation: appInitCardIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
 }
 
-@keyframes appInitCardIn {
-  from {
-    opacity: 0;
-    transform: scale(0.94) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* Animated Vertical Bars Equalizer */
+/* Animated Vertical Bars Equalizer - Tối ưu GPU Compositing */
 .app-init-bars-wrap {
   position: relative;
   display: flex;
@@ -502,6 +485,7 @@ body::before {
   height: 58px;
   margin-bottom: 22px;
   padding: 0 10px;
+  contain: layout paint;
 }
 
 .app-init-bar {
@@ -509,8 +493,13 @@ body::before {
   height: 48px;
   border-radius: 6px;
   background: linear-gradient(180deg, #38bdf8 0%, #818cf8 100%);
-  animation: appInitBarWave 1.2s ease-in-out infinite;
   transform-origin: center;
+  transform: translateZ(0) scaleY(0.24);
+  -webkit-transform: translateZ(0) scaleY(0.24);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  animation: appInitBarWave 1.15s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
   box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
 }
 
@@ -545,12 +534,15 @@ body::before {
 }
 
 @keyframes appInitBarWave {
-  0%, 100% {
-    transform: scaleY(0.24);
+
+  0%,
+  100% {
+    transform: translateZ(0) scaleY(0.24);
     opacity: 0.45;
   }
+
   50% {
-    transform: scaleY(1);
+    transform: translateZ(0) scaleY(1);
     opacity: 1;
   }
 }
@@ -602,9 +594,11 @@ body::before {
   0% {
     left: -45%;
   }
+
   50% {
     left: 40%;
   }
+
   100% {
     left: 105%;
   }
@@ -1078,7 +1072,7 @@ body::before {
   color: #ffffff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   display: block;
-  line-height: 1.15;
+  line-height: 1.5;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2489,30 +2483,56 @@ body::before {
   width: 100%;
   padding: 13px 14px 13px 44px;
   border-radius: 14px;
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  background: #111827 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
   font-size: 15px;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
   box-sizing: border-box;
   font-family: inherit;
+  color-scheme: dark;
 }
 
 .auth-field-wrapper input::placeholder {
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.35);
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.35) !important;
   font-size: 14px;
 }
 
 .auth-field-wrapper input:focus {
   outline: none;
-  border-color: rgba(168, 85, 247, 0.7);
-  background: rgba(139, 92, 246, 0.06);
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+  border-color: rgba(56, 189, 248, 0.8);
+  background: #0f172a !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
 }
 
 .auth-field-wrapper input:focus+.auth-field-icon,
 .auth-field-wrapper:focus-within .auth-field-icon {
-  color: rgba(168, 85, 247, 0.7);
+  color: #38bdf8;
+}
+
+/* Xử lý triệt để tình trạng autofill / lưu tài khoản của trình duyệt làm nền trắng và chữ trắng */
+.auth-field-wrapper input:-webkit-autofill,
+.auth-field-wrapper input:-webkit-autofill:hover,
+.auth-field-wrapper input:-webkit-autofill:focus,
+.auth-field-wrapper input:-webkit-autofill:active {
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px #111827 inset !important;
+  box-shadow: 0 0 0 1000px #111827 inset !important;
+  transition: background-color 50000s ease-in-out 0s;
+  caret-color: #ffffff !important;
+  border-color: rgba(56, 189, 248, 0.5) !important;
+}
+
+.auth-field-wrapper input:autofill {
+  -webkit-text-fill-color: #ffffff !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 1000px #111827 inset !important;
+  caret-color: #ffffff !important;
 }
 
 /* Password toggle inside field wrapper */
@@ -35114,5 +35134,203 @@ html.app-is-logging-out #logoutLoadingOverlay {
     width: 38px;
     height: 38px;
     font-size: 18px;
+  }
+}
+
+/* ==================== GUEST MODE STYLES ==================== */
+.today-guest-login-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #38bdf8;
+  font-weight: 500;
+  font-size: 12px;
+  transition: color 0.15s ease;
+}
+
+.today-guest-login-link i {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.today-guest-login-link:hover {
+  color: #7dd3fc;
+}
+
+.btn-guest-login-prompt {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 9px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-guest-login-prompt i {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.btn-guest-login-prompt:hover {
+  background: rgba(56, 189, 248, 0.22);
+  border-color: rgba(56, 189, 248, 0.6);
+  color: #ffffff;
+}
+
+.dropdown-item.item-login {
+  color: #38bdf8;
+  font-weight: 600;
+}
+
+.dropdown-item.item-login:hover {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+}
+
+body.is-guest-mode .bottom-nav,
+html.is-guest-mode .bottom-nav {
+  display: none !important;
+}
+
+/* Ẩn hoàn toàn khối thông tin cá nhân (avatar, placeholder, tên, bio) và text "Chưa đăng nhập" */
+body.is-guest-mode .today-top-bar,
+html.is-guest-mode .today-top-bar,
+body.is-guest-mode .today-profile,
+html.is-guest-mode .today-profile {
+  display: none !important;
+}
+
+/* Tinh chỉnh lề trên của khối lịch hôm nay để cân đối khi ẩn top bar */
+body.is-guest-mode .today-date.today-twin-widgets {
+  margin-top: 4px;
+}
+
+/* ==================== GUEST BOTTOM LOGIN SECTION ==================== */
+.guest-bottom-login-section,
+.guest-scroll-sentinel {
+  display: none;
+}
+
+body.is-guest-mode .guest-bottom-login-section {
+  display: flex;
+}
+
+body.is-guest-mode .guest-scroll-sentinel {
+  display: block;
+  height: 1px;
+  width: 100%;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Nút Đăng Nhập dạng Capsule hiện đại, sang trọng */
+.guest-bottom-login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.45), 0 2px 6px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  user-select: none;
+  pointer-events: auto;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Căn chỉnh quang học cho icon theo quy tắc GEMINI.md */
+.guest-bottom-login-btn i {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 15px;
+}
+
+/* Trạng thái hover tuân thủ quy tắc không jitter/movement theo GEMINI.md */
+.guest-bottom-login-btn:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #1d4ed8 100%);
+  border-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 10px 28px rgba(2, 132, 199, 0.55), 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+
+.guest-bottom-login-btn:active {
+  background: linear-gradient(135deg, #075985 0%, #1e40af 100%);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+}
+
+/* Trên màn hình điện thoại & tablet (< 1024px): Chỉ hiện khi cuộn xuống dưới cùng */
+@media (max-width: 1023px) {
+  body.is-guest-mode .app-wrapper {
+    padding-bottom: 96px;
+  }
+
+  body.is-guest-mode .guest-bottom-login-section {
+    position: fixed;
+    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+    pointer-events: none;
+  }
+
+  body.is-guest-mode .guest-bottom-login-section .guest-bottom-login-btn {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(28px);
+  }
+
+  body.is-guest-mode .guest-bottom-login-section.is-at-bottom .guest-bottom-login-btn {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+}
+
+/* Trên màn hình Desktop (>= 1024px): Đặt cố định ở góc dưới cùng bên phải màn hình chính */
+@media (min-width: 1024px) {
+  body.is-guest-mode .guest-bottom-login-section {
+    position: fixed;
+    bottom: 24px;
+    right: 28px;
+    z-index: 1000;
+    pointer-events: auto;
+  }
+
+  body.is-guest-mode .guest-bottom-login-section .guest-bottom-login-btn {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: none;
   }
 }

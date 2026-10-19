@@ -2354,6 +2354,7 @@
 
   // --- MỞ / ĐÓNG MODAL CHÍNH ---
   function openFamilyHealthModal() {
+    if (typeof window.requireLogin === "function" && !window.requireLogin("Sức khỏe gia đình")) return;
     if (!firebaseHealthMembersRef && window.firebaseDb && window.userProfileKey) {
       initFamilyHealthFirebase(window.firebaseDb, window.userProfileKey);
     }

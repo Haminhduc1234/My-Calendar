@@ -607,6 +607,10 @@ function renderCalendar() {
 
     calDom.appendChild(div);
   }
+
+  if (typeof checkGuestScrollBottom === "function") {
+    checkGuestScrollBottom();
+  }
 }
 
 /* ========================== THÁNG ========================== */
@@ -923,12 +927,217 @@ window.showRegisterForm = showRegisterForm;
 window.showUpgradeForm = showUpgradeForm;
 
 function isUserLoggedIn() {
-  return !!(localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE) && localStorage.getItem("calendarUsername"));
+  if (userProfileKey && currentUsername) return true;
+  const storedKey = localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE);
+  const storedUser = localStorage.getItem("calendarUsername");
+  return !!(storedKey && storedUser);
+}
+window.isUserLoggedIn = isUserLoggedIn;
+
+function requireLogin(featureName = "tính năng này") {
+  if (!isUserLoggedIn()) {
+    showToast(`Vui lòng đăng nhập để sử dụng ${featureName}`, "info");
+    showLoginForm();
+    return false;
+  }
+  return true;
+}
+window.requireLogin = requireLogin;
+
+function handleProfileClick() {
+  if (isUserLoggedIn()) {
+    openProfileSettingsModal();
+  } else {
+    showLoginForm();
+  }
+}
+window.handleProfileClick = handleProfileClick;
+
+function updateAuthUI() {
+  const loggedIn = isUserLoggedIn();
+
+  if (loggedIn) {
+    document.documentElement.classList.remove("is-guest-mode");
+    document.body.classList.remove("is-guest-mode");
+  } else {
+    document.documentElement.classList.add("is-guest-mode");
+    document.body.classList.add("is-guest-mode");
+  }
+
+  const nameEl = document.getElementById("todayProfileName");
+  const bioEl = document.getElementById("todayProfileBio");
+  const avatarEl = document.getElementById("todayProfileAvatar");
+  const placeholderEl = document.getElementById("todayProfilePlaceholder");
+  const badgeEl = document.getElementById("todayProfileBadge");
+  const menuAuthBtn = document.getElementById("menuAuthBtn");
+  const guestBottomSection = document.getElementById("guestBottomLoginSection");
+
+  if (guestBottomSection) {
+    guestBottomSection.style.display = loggedIn ? "none" : "";
+  }
+
+  if (!loggedIn) {
+    if (nameEl) {
+      nameEl.textContent = "";
+    }
+    if (bioEl) {
+      bioEl.innerHTML = "";
+    }
+    if (avatarEl) {
+      avatarEl.style.display = "none";
+      avatarEl.src = "";
+    }
+    if (placeholderEl) {
+      placeholderEl.style.display = "none";
+      placeholderEl.innerHTML = "";
+    }
+    if (badgeEl) {
+      badgeEl.style.display = "none";
+    }
+  } else {
+    // Khi đã đăng nhập: hiển thị ngay tên và avatar placeholder nếu chưa có ảnh
+    const storedUsername = currentUsername || localStorage.getItem("calendarUsername") || "";
+    if (nameEl && !nameEl.textContent.trim()) {
+      const cached = (typeof profileSettingsCache === "object" && profileSettingsCache) || (typeof loadProfileSettings === "function" && loadProfileSettings());
+      nameEl.textContent = (cached && cached.displayName) || storedUsername;
+    }
+    if (placeholderEl && (!avatarEl || avatarEl.style.display === "none" || !avatarEl.src)) {
+      placeholderEl.style.display = "flex";
+      placeholderEl.innerHTML = '<i class="fi fi-rr-user" style="font-size: 22px; color: #38bdf8;"></i>';
+      placeholderEl.title = "Cài đặt hồ sơ";
+    }
+  }
+
+  if (menuAuthBtn) {
+    if (loggedIn) {
+      menuAuthBtn.className = "dropdown-item item-logout danger";
+      menuAuthBtn.onclick = () => { logoutProfileSession(); closeMoreMenu(); };
+      const displayUser = currentUsername ? ` (${escapeHtml(currentUsername)})` : "";
+      menuAuthBtn.innerHTML = `
+        <span class="menu-icon-wrap"><i class="fi fi-rr-sign-out-alt"></i></span>
+        <span>Đăng Xuất${displayUser}</span>
+      `;
+    } else {
+      menuAuthBtn.className = "dropdown-item item-login";
+      menuAuthBtn.onclick = () => { showLoginForm(); closeMoreMenu(); };
+      menuAuthBtn.innerHTML = `
+        <span class="menu-icon-wrap" style="color: #38bdf8;"><i class="fi fi-rr-sign-in-alt"></i></span>
+        <span style="font-weight: 600; color: #38bdf8;">Đăng Nhập</span>
+      `;
+    }
+  }
+
+  if (typeof checkGuestScrollBottom === "function") {
+    checkGuestScrollBottom();
+  }
+}
+window.updateAuthUI = updateAuthUI;
+
+function checkGuestScrollBottom() {
+  const btnSection = document.getElementById("guestBottomLoginSection");
+  if (!btnSection) return;
+
+  if (typeof isUserLoggedIn === "function" && isUserLoggedIn()) {
+    btnSection.classList.remove("is-at-bottom");
+    return;
+  }
+
+  // Desktop (>= 1024px): handled via CSS media query, add class for consistency
+  if (window.innerWidth >= 1024) {
+    btnSection.classList.add("is-at-bottom");
+    return;
+  }
+
+  const scrollY = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  const docHeight = Math.max(
+    document.body.scrollHeight,
+    document.documentElement.scrollHeight,
+    document.body.offsetHeight,
+    document.documentElement.offsetHeight,
+    document.body.clientHeight,
+    document.documentElement.clientHeight
+  );
+
+  // If page does not require scrolling (e.g. very tall screen)
+  if (docHeight <= viewportHeight + 40) {
+    btnSection.classList.add("is-at-bottom");
+    return;
+  }
+
+  // Mobile threshold: within 90px of bottom
+  const distanceFromBottom = docHeight - (scrollY + viewportHeight);
+  if (distanceFromBottom <= 90) {
+    btnSection.classList.add("is-at-bottom");
+  } else {
+    btnSection.classList.remove("is-at-bottom");
+  }
+}
+window.checkGuestScrollBottom = checkGuestScrollBottom;
+
+function initGuestScrollObserver() {
+  const sentinel = document.getElementById("guestScrollSentinel");
+  const btnSection = document.getElementById("guestBottomLoginSection");
+  if (!sentinel || !btnSection) return;
+
+  if ("IntersectionObserver" in window) {
+    try {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            btnSection.classList.add("is-at-bottom");
+          } else {
+            checkGuestScrollBottom();
+          }
+        });
+      }, {
+        root: null,
+        rootMargin: "0px 0px 80px 0px",
+        threshold: 0
+      });
+      observer.observe(sentinel);
+    } catch (e) { }
+  }
+
+  window.addEventListener("scroll", checkGuestScrollBottom, { passive: true });
+  window.addEventListener("resize", checkGuestScrollBottom, { passive: true });
+  window.addEventListener("touchmove", checkGuestScrollBottom, { passive: true });
 }
 
-function closeAuthModal() {
-  document.getElementById("authModal").style.display = "none";
+// Khởi chạy lắng nghe cuộn trang khi DOM sẵn sàng
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => {
+    initGuestScrollObserver();
+    checkGuestScrollBottom();
+  });
+} else {
+  initGuestScrollObserver();
+  checkGuestScrollBottom();
 }
+
+// Khởi tạo ngay class is-guest-mode để tránh chớp giật giao diện khi tải trang
+try {
+  if (!isUserLoggedIn()) {
+    document.documentElement.classList.add("is-guest-mode");
+    if (document.body) document.body.classList.add("is-guest-mode");
+  }
+} catch (e) { }
+
+function closeAuthModal() {
+  const modal = document.getElementById("authModal");
+  if (modal) modal.style.display = "none";
+}
+window.closeAuthModal = closeAuthModal;
+
+// Đóng modal đăng nhập khi click vào vùng mờ bên ngoài
+(function setupAuthModalBackdrop() {
+  const modal = document.getElementById("authModal");
+  if (modal) {
+    modal.addEventListener("click", function (e) {
+      if (e.target === this) closeAuthModal();
+    });
+  }
+})();
 
 function logoutAndStartFresh() {
   showConfirmPopup(
@@ -1205,8 +1414,15 @@ async function handleRegister() {
     localStorage.setItem("calendarUsername", username);
     userProfileKey = userId;
     currentUsername = username;
+    window.userProfileKey = userId;
+    window.currentUsername = username;
 
     document.getElementById("authModal").style.display = "none";
+
+    // Cập nhật ngay Auth UI và load dữ liệu người dùng
+    updateAuthUI();
+    initProfileOnLoad();
+
     await reloadFirebaseForUser();
     showToast("Đăng ký thành công! Chào mừng " + username + "!", "success");
 
@@ -1274,8 +1490,15 @@ async function handleLogin() {
     localStorage.setItem("calendarUsername", username);
     userProfileKey = foundUserId;
     currentUsername = username;
+    window.userProfileKey = foundUserId;
+    window.currentUsername = username;
 
     document.getElementById("authModal").style.display = "none";
+
+    // Cập nhật ngay Auth UI và load dữ liệu người dùng
+    updateAuthUI();
+    initProfileOnLoad();
+
     await reloadFirebaseForUser();
 
     // Auto-fix migrated data if this user was upgraded from legacy
@@ -1329,6 +1552,8 @@ async function ensureProfileKey() {
     if (storedProfileKey && storedUsername) {
       userProfileKey = storedProfileKey;
       currentUsername = storedUsername;
+      window.userProfileKey = userProfileKey;
+      window.currentUsername = currentUsername;
       const modal = document.getElementById("authModal");
       if (modal) modal.style.display = "none";
       setTimeout(() => {
@@ -1337,53 +1562,23 @@ async function ensureProfileKey() {
           loadFundsFromLocalStorage();
         }
       }, 0);
+      updateAuthUI();
       resolve(true);
       return;
     }
 
-    // Check for legacy user (has profile key but no username)
-    if (storedProfileKey && /^u_[0-9a-f]{8}$/.test(storedProfileKey)) {
-      // Check if this legacy profile has already been upgraded on another device
-      // by querying Firebase for any user with upgradedFrom === this legacy key
-      const checkUpgraded = async () => {
-        try {
-          const usersSnapshot = await firebaseUsersRef.orderByChild("upgradedFrom").equalTo(storedProfileKey).once("value");
-          if (usersSnapshot.exists()) {
-            // This legacy account has been upgraded, show login form
-            legacyProfileKey = storedProfileKey;
-            showLoginForm();
-          } else {
-            // Not upgraded yet, need to upgrade
-            legacyProfileKey = storedProfileKey;
-            showUpgradeForm();
-          }
-        } catch (err) {
-          console.error("[Auth] Error checking upgrade status:", err);
-          // Fallback to upgrade form
-          legacyProfileKey = storedProfileKey;
-          showUpgradeForm();
-        }
-      };
-
-      checkUpgraded().then(() => {
-        const checkReady = setInterval(() => {
-          if (userProfileKey) {
-            clearInterval(checkReady);
-            resolve(true);
-          }
-        }, 100);
-      });
-      return;
-    } else {
-      showLoginForm();
-    }
-
-    const checkReady = setInterval(() => {
-      if (userProfileKey) {
-        clearInterval(checkReady);
-        resolve(true);
-      }
-    }, 100);
+    // Guest / Chưa đăng nhập: Cho phép vào app xem lịch âm dương cơ bản ngay mà không bắt buộc đăng nhập
+    userProfileKey = "";
+    currentUsername = "";
+    window.userProfileKey = "";
+    window.currentUsername = "";
+    const modal = document.getElementById("authModal");
+    if (modal) modal.style.display = "none";
+    setTimeout(() => {
+      initProfileOnLoad();
+    }, 0);
+    updateAuthUI();
+    resolve(false);
   });
 }
 
@@ -1474,6 +1669,7 @@ function saveProfileSettingsData(settings) {
 }
 
 function openProfileSettingsModal() {
+  if (!requireLogin("Cài đặt hồ sơ")) return;
   loadProfileOnDemand();
 
   const modal = document.getElementById("profileSettingsModal");
@@ -1901,7 +2097,7 @@ function applyProfileToUI(settings) {
 
   // Update name and bio
   if (nameEl) {
-    nameEl.textContent = settings.displayName || "";
+    nameEl.textContent = settings.displayName || currentUsername || localStorage.getItem("calendarUsername") || "";
   }
   if (bioEl) {
     bioEl.textContent = settings.bio || "";
@@ -1918,7 +2114,11 @@ function applyProfileToUI(settings) {
       };
       avatarEl.onerror = () => {
         avatarEl.style.display = "none";
-        if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
+        if (avatarPlaceholder) {
+          avatarPlaceholder.style.display = "flex";
+          avatarPlaceholder.innerHTML = '<i class="fi fi-rr-user" style="font-size: 22px; color: #38bdf8;"></i>';
+          avatarPlaceholder.title = "Cài đặt hồ sơ";
+        }
         if (badgeEl) badgeEl.style.display = "none";
       };
       avatarEl.src = settings.avatar;
@@ -1936,7 +2136,11 @@ function applyProfileToUI(settings) {
       avatarEl.src = "";
       avatarEl.style.display = "none";
     }
-    if (avatarPlaceholder) avatarPlaceholder.style.display = "none";
+    if (avatarPlaceholder) {
+      avatarPlaceholder.style.display = "flex";
+      avatarPlaceholder.innerHTML = '<i class="fi fi-rr-user" style="font-size: 22px; color: #38bdf8;"></i>';
+      avatarPlaceholder.title = "Cài đặt hồ sơ";
+    }
     if (badgeEl) badgeEl.style.display = "none";
   }
 
@@ -1958,6 +2162,10 @@ function applyProfileToUI(settings) {
 }
 
 function initProfileOnLoad() {
+  if (!isUserLoggedIn()) {
+    updateAuthUI();
+    return;
+  }
   const settings = loadProfileSettings();
   if (Object.keys(settings).length > 0) {
     profileSettingsCache = settings;
@@ -1974,6 +2182,7 @@ function initProfileOnLoad() {
     const badgeEl = document.getElementById("todayProfileBadge");
     if (badgeEl) badgeEl.style.display = "none";
   }
+  updateAuthUI();
 
   // Setup file input listeners
   document
@@ -2015,6 +2224,10 @@ let avatarPreviewState = {
 function openAvatarPreviewModal(event) {
   if (event) {
     event.stopPropagation();
+  }
+  if (!isUserLoggedIn()) {
+    showLoginForm();
+    return;
   }
   const avatarEl = document.getElementById("todayProfileAvatar");
   let avatarSrc = "";
@@ -2643,6 +2856,7 @@ async function getAllDateDataForExport() {
 }
 
 async function exportEventsCsv() {
+  if (!requireLogin("Xuất CSV sự kiện")) return;
   const rows = [];
   const allDateData = await getAllDateDataForExport();
   const dateKeys = Object.keys(allDateData).sort((a, b) => {
@@ -3312,6 +3526,7 @@ function getNextOccurrenceDate(rec) {
 }
 
 function getEventsForDate(dateKey) {
+  if (!isUserLoggedIn()) return [];
   const data = getDateData(dateKey);
   const directEvents = (data && Array.isArray(data.events)) ? [...data.events] : [];
   const recurringInstances = getMatchingRecurringEventInstances(dateKey);
@@ -3319,6 +3534,7 @@ function getEventsForDate(dateKey) {
 }
 
 function getOvertimeHoursForDateKey(dateKey) {
+  if (!isUserLoggedIn()) return 0;
   const data = getDateData(dateKey);
   return data.overtimeHours || 0;
 }
@@ -3678,9 +3894,13 @@ async function initFirebaseRealtime() {
   // Users collection reference (for authentication)
   firebaseUsersRef = firebaseDb.ref(FIREBASE_USERS_PATH);
 
-  // Show auth modal BEFORE checking profile key
-  // This ensures firebaseUsersRef is available for login/register
+  // Kiểm tra thông tin phiên người dùng
   await ensureProfileKey();
+
+  if (!userProfileKey) {
+    console.log("[Firebase] Chế độ khách (chưa đăng nhập): Chỉ xem lịch âm dương cơ bản.");
+    return;
+  }
 
   firebaseDatesRef = firebaseDb.ref(
     `${FIREBASE_EVENTS_PATH}/${userProfileKey}/dates`,
@@ -3816,6 +4036,13 @@ async function reloadFirebaseForUser() {
 
   console.log("[Firebase] Reloading Firebase data for user:", userProfileKey);
 
+  window.userProfileKey = userProfileKey;
+  window.currentUsername = currentUsername;
+
+  // Cập nhật ngay Auth UI và hiển thị profile
+  updateAuthUI();
+  initProfileOnLoad();
+
   // Clear existing caches
   dateDataCache = {};
   quickNotesCache = [];
@@ -3860,6 +4087,17 @@ async function reloadFirebaseForUser() {
   loadFundsFromLocalStorage();
   ensureFundsFirebaseSynced();
 
+  // Đồng bộ lại các phân hệ tính năng cho user mới
+  if (typeof initCookbookFirebase === "function") {
+    try { initCookbookFirebase(firebaseDb, userProfileKey); } catch (e) { console.warn(e); }
+  }
+  if (typeof initFamilyHealthFirebase === "function") {
+    try { initFamilyHealthFirebase(firebaseDb, userProfileKey); } catch (e) { console.warn(e); }
+  }
+  if (typeof initSeniorFirebase === "function") {
+    try { initSeniorFirebase(firebaseDb, userProfileKey); } catch (e) { console.warn(e); }
+  }
+
   // Setup profile listener
   setupProfileFirebaseListener();
   loadProfileSettingsFromFirebase();
@@ -3895,6 +4133,7 @@ async function reloadFirebaseForUser() {
 
     dateDataCache = nextCache;
     scheduleCalendarRender(50);
+    renderTodayEvents();
 
     // Đồng bộ tức thì dòng tiền và quỹ khi thiết bị khác thay đổi thu/chi
     syncRealtimeCashflowAndFunds();
@@ -3909,6 +4148,13 @@ async function reloadFirebaseForUser() {
     const k = localStorage.key(i);
     if (k && isDateKey(k)) localStorage.removeItem(k);
   }
+
+  // Render ngay lập tức dữ liệu giao diện
+  renderToday();
+  renderTodayEvents();
+  renderCalendar();
+  renderOvertime();
+  renderOvertimeSalary();
 
   // Re-sync Push Notification token for the new user profile
   initFirebaseMessaging();
@@ -5363,6 +5609,7 @@ function updateNotificationBadgeUI(unreadCount) {
 }
 
 function openNotificationModal() {
+  if (!requireLogin("Thông báo")) return;
   const modal = document.getElementById("modalNotificationList");
   if (!modal) return;
   closeAllModals();
@@ -6067,12 +6314,14 @@ if (document.readyState === "loading") {
 }
 
 function openAddEventModalFromDayDetails() {
+  if (!requireLogin("Thêm sự kiện")) return;
   if (!selectedKey) return;
   const [y, m, d] = selectedKey.split("-").map(Number);
   openAddEventModal(selectedKey, d, m, y);
 }
 
 function openEditEventModal(eventIndex) {
+  if (!requireLogin("Chỉnh sửa sự kiện")) return;
   closeAllModals();
   if (!selectedKey) return;
 
@@ -6097,6 +6346,11 @@ function openEditEventModal(eventIndex) {
 }
 
 function toggleDayHoliday() {
+  if (!requireLogin("Đánh dấu ngày nghỉ lễ")) {
+    const checkbox = document.getElementById("dayIsHoliday");
+    if (checkbox) checkbox.checked = false;
+    return;
+  }
   if (!selectedKey) return;
   const data = getDateData(selectedKey);
   const checkbox = document.getElementById("dayIsHoliday");
@@ -6111,7 +6365,20 @@ function toggleDayHoliday() {
 // Day Details Modal - shows events list and overtime editor
 function renderDayDetailsModalUI(dateKey, d, m, y, data) {
   const dateEl = document.getElementById("dayDetailsDate");
-  if (dateEl) dateEl.innerText = `${d}/${m}/${y}`;
+  const lunar = convertSolarToLunar(d, m, y);
+  const canChiYear = getCanChiYear(lunar.lunarYear);
+  const leapText = lunar.lunarLeap ? " (Nhuận)" : "";
+  const holiday = SOLAR_HOLIDAYS[`${d}-${m}`] || LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`] || "";
+
+  if (dateEl) {
+    dateEl.innerHTML = `
+      <div style="font-size: 13px; line-height: 1.5;">
+        <span style="font-weight: 700; color: #60a5fa;">${d}/${m}/${y} (Dương lịch)</span>
+        <span style="color: #cbd5e1; margin-left: 6px;">• Âm lịch: ${lunar.lunarDay}/${lunar.lunarMonth}${leapText} (${canChiYear})</span>
+      </div>
+      ${holiday ? `<div style="margin-top: 3px; font-size: 12px; font-weight: 600; color: #ef4444;">🇻🇳 ${escapeHtml(holiday)}</div>` : ""}
+    `;
+  }
   const otEl = document.getElementById("dayOvertimeHours");
   if (otEl) otEl.value = data.overtimeHours || 0;
 
@@ -6120,72 +6387,76 @@ function renderDayDetailsModalUI(dateKey, d, m, y, data) {
     holidayCheckbox.checked = !!data.isHoliday;
   }
 
-  // Render Thực Đơn Bữa Cơm Gia Đình
+  // Render Thực Đơn Bữa Cơm Gia Đình (chỉ hiện khi đã đăng nhập)
   const mealSection = document.getElementById("dayMealSection");
   if (mealSection) {
-    const dayMeals = typeof window.getMealForDate === "function" ? window.getMealForDate(dateKey) : null;
-    if (dayMeals && dayMeals.length > 0) {
-      mealSection.style.display = "block";
-      mealSection.innerHTML = `
-        <div class="day-meal-card">
-          <div class="day-meal-header">
-            <div class="day-meal-title">
-              <span class="day-meal-icon-tag">🍲</span>
-              <span>Thực Đơn Gia Đình</span>
-            </div>
-            <button type="button" class="day-meal-add-btn" onclick="if(window.openAssignMealModalForDay) window.openAssignMealModalForDay('${dateKey}')" title="Thêm món khác vào ngày này">
-              <i class="fi fi-rr-plus"></i> <span>Thêm món</span>
-            </button>
-          </div>
-          <div class="day-meal-list">
-            ${dayMeals.map((meal) => {
-        const typeBadge = meal.mealType === 'breakfast' ? 'Bữa Sáng 🌅' : meal.mealType === 'lunch' ? 'Bữa Trưa ☀️' : 'Bữa Tối 🌙';
-        return `
-                <div class="day-meal-group">
-                  <div class="day-meal-group-header">
-                    <div class="day-meal-header-meta" onclick="if(window.editCalendarMeal) window.editCalendarMeal('${dateKey}', '${meal.id}')" title="Bấm để chỉnh sửa bữa ăn này">
-                      <span class="day-meal-type-pill meal-type-${meal.mealType}">${typeBadge}</span>
-                    </div>
-                    <div class="day-meal-actions">
-                      <button type="button" class="day-meal-action-btn day-meal-edit-btn" onclick="if(window.editCalendarMeal) window.editCalendarMeal('${dateKey}', '${meal.id}')" title="Chỉnh sửa bữa cơm này" aria-label="Chỉnh sửa bữa cơm này">
-                        <i class="fi fi-rr-pencil"></i>
-                      </button>
-                      <button type="button" class="day-meal-action-btn day-meal-delete-btn" onclick="window.removeMealFromDate('${dateKey}', '${meal.id}')" title="Xóa thực đơn bữa này" aria-label="Xóa thực đơn bữa này">
-                        <i class="fi fi-rr-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-                  <div class="day-meal-dishes">
-                    ${(meal.dishes || []).map(dish => `
-                      <div class="day-meal-dish-item" onclick="closeDayDetailsModal(); if(window.openCookbookRecipeDetail) window.openCookbookRecipeDetail('${dish.id}')" title="Bấm để xem công thức nấu">
-                        <img src="${dish.coverImage || 'public/favicon.png'}" alt="${escapeHtml(dish.title)}" />
-                        <div class="day-meal-dish-info">
-                          <div class="day-meal-dish-name">${escapeHtml(dish.title)}</div>
-                          <div class="day-meal-dish-sub"><i class="fi fi-rr-clock"></i> <span>${dish.cookTime ? `${dish.cookTime}p` : 'Gia đình'}</span></div>
-                        </div>
-                      </div>
-                    `).join('')}
-                  </div>
-                </div>
-              `;
-      }).join('')}
-          </div>
-        </div>
-      `;
+    if (!isUserLoggedIn()) {
+      mealSection.style.display = "none";
     } else {
-      mealSection.style.display = "block";
-      mealSection.innerHTML = `
-        <div class="day-meal-empty-card" onclick="if(window.openAssignMealModalForDay) window.openAssignMealModalForDay('${dateKey}')" title="Lên thực đơn bữa cơm cho ngày này">
-          <div class="day-meal-empty-left">
-            <span class="day-meal-empty-icon">🍲</span>
-            <div>
-              <div class="day-meal-empty-title">Chưa có thực đơn hôm nay</div>
-              <div class="day-meal-empty-desc">Bấm để chọn món hoặc lên mâm cơm 🍲</div>
+      const dayMeals = typeof window.getMealForDate === "function" ? window.getMealForDate(dateKey) : null;
+      if (dayMeals && dayMeals.length > 0) {
+        mealSection.style.display = "block";
+        mealSection.innerHTML = `
+          <div class="day-meal-card">
+            <div class="day-meal-header">
+              <div class="day-meal-title">
+                <span class="day-meal-icon-tag">🍲</span>
+                <span>Thực Đơn Gia Đình</span>
+              </div>
+              <button type="button" class="day-meal-add-btn" onclick="if(window.openAssignMealModalForDay) window.openAssignMealModalForDay('${dateKey}')" title="Thêm món khác vào ngày này">
+                <i class="fi fi-rr-plus"></i> <span>Thêm món</span>
+              </button>
+            </div>
+            <div class="day-meal-list">
+              ${dayMeals.map((meal) => {
+          const typeBadge = meal.mealType === 'breakfast' ? 'Bữa Sáng 🌅' : meal.mealType === 'lunch' ? 'Bữa Trưa ☀️' : 'Bữa Tối 🌙';
+          return `
+                  <div class="day-meal-group">
+                    <div class="day-meal-group-header">
+                      <div class="day-meal-header-meta" onclick="if(window.editCalendarMeal) window.editCalendarMeal('${dateKey}', '${meal.id}')" title="Bấm để chỉnh sửa bữa ăn này">
+                        <span class="day-meal-type-pill meal-type-${meal.mealType}">${typeBadge}</span>
+                      </div>
+                      <div class="day-meal-actions">
+                        <button type="button" class="day-meal-action-btn day-meal-edit-btn" onclick="if(window.editCalendarMeal) window.editCalendarMeal('${dateKey}', '${meal.id}')" title="Chỉnh sửa bữa cơm này" aria-label="Chỉnh sửa bữa cơm này">
+                          <i class="fi fi-rr-pencil"></i>
+                        </button>
+                        <button type="button" class="day-meal-action-btn day-meal-delete-btn" onclick="window.removeMealFromDate('${dateKey}', '${meal.id}')" title="Xóa thực đơn bữa này" aria-label="Xóa thực đơn bữa này">
+                          <i class="fi fi-rr-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="day-meal-dishes">
+                      ${(meal.dishes || []).map(dish => `
+                        <div class="day-meal-dish-item" onclick="closeDayDetailsModal(); if(window.openCookbookRecipeDetail) window.openCookbookRecipeDetail('${dish.id}')" title="Bấm để xem công thức nấu">
+                          <img src="${dish.coverImage || 'public/favicon.png'}" alt="${escapeHtml(dish.title)}" />
+                          <div class="day-meal-dish-info">
+                            <div class="day-meal-dish-name">${escapeHtml(dish.title)}</div>
+                            <div class="day-meal-dish-sub"><i class="fi fi-rr-clock"></i> <span>${dish.cookTime ? `${dish.cookTime}p` : 'Gia đình'}</span></div>
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `;
+        }).join('')}
             </div>
           </div>
-          <button type="button" class="day-meal-empty-btn" title="Thêm thực đơn"><i class="fi fi-rr-plus"></i></button>
-        </div>
-      `;
+        `;
+      } else {
+        mealSection.style.display = "block";
+        mealSection.innerHTML = `
+          <div class="day-meal-empty-card" onclick="if(window.openAssignMealModalForDay) window.openAssignMealModalForDay('${dateKey}')" title="Lên thực đơn bữa cơm cho ngày này">
+            <div class="day-meal-empty-left">
+              <span class="day-meal-empty-icon">🍲</span>
+              <div>
+                <div class="day-meal-empty-title">Chưa có thực đơn hôm nay</div>
+                <div class="day-meal-empty-desc">Bấm để chọn món hoặc lên mâm cơm 🍲</div>
+              </div>
+            </div>
+            <button type="button" class="day-meal-empty-btn" title="Thêm thực đơn"><i class="fi fi-rr-plus"></i></button>
+          </div>
+        `;
+      }
     }
   }
 
@@ -6196,10 +6467,21 @@ function renderDayDetailsModalUI(dateKey, d, m, y, data) {
 
   const allDayEvents = getEventsForDate(dateKey);
 
-  // Toggle header "+ Thêm" button depending on whether events exist
+  // Toggle header "+ Thêm" button depending on whether events exist and logged in
   const headerAddBtn = document.querySelector("#dayDetailsModal .btn-add-event");
 
-  if (!allDayEvents || allDayEvents.length === 0) {
+  if (!isUserLoggedIn()) {
+    if (headerAddBtn) headerAddBtn.style.display = "none";
+    eventsList.innerHTML = `
+      <div class="empty-events-state">
+        <div class="empty-events-text" style="color: #94a3b8; font-size: 13px;">Đăng nhập để thêm sự kiện, ghi chú và quản lý lịch trình cá nhân.</div>
+        <button type="button" class="btn-guest-login-prompt" onclick="showLoginForm()" title="Đăng nhập" style="margin-top: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 9px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 13px; font-weight: 600; cursor: pointer;">
+          <i class="fi fi-rr-sign-in-alt" style="position: relative; top: 1px;"></i>
+          <span>Đăng nhập ngay</span>
+        </button>
+      </div>
+    `;
+  } else if (!allDayEvents || allDayEvents.length === 0) {
     if (headerAddBtn) headerAddBtn.style.display = "none";
     eventsList.innerHTML = `
       <div class="empty-events-state">
@@ -6446,6 +6728,7 @@ function renderEventQuickView(eventObj, dateKey, eventIndex) {
 }
 
 function deleteEventFromQuickView(dateKey, eventIndex) {
+  if (!requireLogin("Xóa sự kiện")) return;
   const dKey = dateKey || selectedKey;
   showConfirmPopup(
     "Xóa sự kiện",
@@ -6465,6 +6748,7 @@ function deleteEventFromQuickView(dateKey, eventIndex) {
 window.deleteEventFromQuickView = deleteEventFromQuickView;
 
 function saveDayOvertime() {
+  if (!requireLogin("Ghi nhận tăng ca")) return;
   const hours =
     parseInt(document.getElementById("dayOvertimeHours").value, 10) || 0;
   updateOvertimeForDate(selectedKey, Math.max(0, hours));
@@ -6473,6 +6757,7 @@ function saveDayOvertime() {
 }
 
 function deleteEventFromDateUI(eventIndex) {
+  if (!requireLogin("Xóa sự kiện")) return;
   showConfirmPopup(
     "Xóa sự kiện",
     "Bạn có chắc chắn muốn xóa sự kiện này không?",
@@ -6664,6 +6949,7 @@ window.updateAddModalRecurrencePreview = updateAddModalRecurrencePreview;
 
 // Add Event Modal - for creating new event
 function openAddEventModal(dateKey, d, m, y) {
+  if (!requireLogin("Thêm sự kiện")) return;
   closeAllModals();
   selectedKey = dateKey;
   selectedEventIndex = -1;
@@ -6785,6 +7071,7 @@ function saveNewEvent() {
 /* ========================== RECURRING EVENTS MANAGER MODAL ========================== */
 
 function openRecurringEventsModal() {
+  if (!requireLogin("Sự kiện lặp lại")) return;
   closeAllModals();
   renderRecurringEventsList();
   const modal = document.getElementById("recurringEventsModal");
@@ -7333,6 +7620,7 @@ function saveRecurringEventForm() {
 window.saveRecurringEventForm = saveRecurringEventForm;
 
 function deleteRecurringEventUI(id) {
+  if (!requireLogin("Xóa sự kiện lặp lại")) return;
   showConfirmPopup(
     "Xóa sự kiện lặp lại",
     "Bạn có chắc chắn muốn xóa quy tắc lặp lại này không? Sự kiện sẽ không còn hiển thị trên lịch nữa.",
@@ -7358,6 +7646,7 @@ function closeModal() {
 }
 
 function openOvertimeModal() {
+  if (!requireLogin("Quản lý tăng ca")) return;
   closeAllModals();
   document.getElementById("overtimeModal").style.display = "flex";
 }
@@ -7369,6 +7658,7 @@ function closeOvertimeModal() {
 // ===================== PROJECT MANAGEMENT =====================
 
 function openProjectsModal() {
+  if (!requireLogin("Quản lý dự án")) return;
   closeAllModals();
   ensureProjectsFirebaseSynced();
   document.getElementById("projectsModal").style.display = "flex";
@@ -8968,6 +9258,7 @@ function handleTaskDragEnd(e) {
 }
 
 function openGoldModal() {
+  if (!requireLogin("Giá vàng")) return;
   closeAllModals();
   document.getElementById("goldModal").style.display = "flex";
   hideGoldTooltip();
@@ -9238,6 +9529,7 @@ function forceCloseQuickNoteModal() {
 }
 
 function openQuickNoteModal() {
+  if (!requireLogin("Ghi chú nhanh")) return;
   closeAllModals();
   ensureQuickNotesFirebaseSynced();
   loadQuickNotesOnDemand();
@@ -9872,6 +10164,7 @@ function closeMoreMenu() {
 }
 
 function openFamilyCookbookModal() {
+  if (!requireLogin("Thực đơn gia đình")) return;
   closeAllModals();
   ensureCookbookFirebaseSynced();
   const modal = document.getElementById("familyCookbookModal");
@@ -12194,6 +12487,7 @@ function initCashflowDateFormatted() {
 }
 
 async function openCashflowModal() {
+  if (!requireLogin("Sổ thu chi")) return;
   closeAllModals();
   const modal = document.getElementById("cashflowModal");
   if (!modal) return;
@@ -18264,6 +18558,7 @@ function calculateAvailableFundBalance() {
 }
 
 function openFundsModal() {
+  if (!requireLogin("Quản lý quỹ")) return;
   closeAllModals();
 
   // 1. Luôn nạp dữ liệu từ localStorage cache trước để đảm bảo có dữ liệu tức thì (0ms)
@@ -20680,7 +20975,7 @@ function loadTodayLunarOnDemand() {
 /* ========================== INIT ========================= */
 (function initApp() {
   const initStartTime = Date.now();
-  setAppInitLoading(true, "Đang tải dữ liệu mới nhất...");
+  setAppInitLoading(true, "");
 
   let appInitDismissed = false;
   const dismissAppLoading = () => {
@@ -20690,7 +20985,7 @@ function loadTodayLunarOnDemand() {
   };
 
   // Tối đa 2.2 giây tự động tắt loading để đảm bảo người dùng luôn vào được app ngay cả khi mạng chậm hoặc offline
-  const maxLoadingTimer = setTimeout(dismissAppLoading, 2200);
+  const maxLoadingTimer = setTimeout(dismissAppLoading, 1200);
 
   // Callback đóng loading khi dữ liệu sẵn sàng
   window.notifyAppInitDataReady = () => {
@@ -20703,46 +20998,48 @@ function loadTodayLunarOnDemand() {
     }, remaining);
   };
 
-  // Step 1: Show main page weather skeleton initially for loading state
-  showSkeleton('weatherSkeleton');
+  // Nhường frame đầu tiên cho GPU bắt đầu render hiệu ứng 5 cột mượt mà, không bị khựng do nghẽn CPU
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      // Step 1: Show main page weather skeleton initially for loading state
+      showSkeleton('weatherSkeleton');
 
-  // Step 2: Render UI immediately (no waiting)
-  initQuickNoteModal();
-  renderToday();
+      // Step 2: Render UI immediately (no waiting)
+      initQuickNoteModal();
+      renderToday();
 
-  // Step 3: Render calendar immediately
-  console.log("[Init] Rendering calendar...");
-  renderCalendar();
-  renderOvertime();
-  renderOvertimeSalary();
-  setInterval(renderTodayEvents, 30000);
-  console.log("[Init] Calendar rendered");
+      // Step 3: Render calendar immediately
+      console.log("[Init] Rendering calendar...");
+      renderCalendar();
+      renderOvertime();
+      renderOvertimeSalary();
+      setInterval(renderTodayEvents, 30000);
+      console.log("[Init] Calendar rendered");
 
-  // Step 4: Initialize Firebase in background
-  initFirebaseServices()
-    .then(() => {
-      if (typeof window.notifyAppInitDataReady === "function") {
-        window.notifyAppInitDataReady();
-      }
-    })
-    .catch((err) => {
-      console.error("[Init] Firebase error:", err);
-      if (typeof window.notifyAppInitDataReady === "function") {
-        window.notifyAppInitDataReady();
-      }
-    });
+      // Step 4: Initialize Firebase in background
+      initFirebaseServices()
+        .then(() => {
+          if (typeof window.notifyAppInitDataReady === "function") {
+            window.notifyAppInitDataReady();
+          }
+        })
+        .catch((err) => {
+          console.error("[Init] Firebase error:", err);
+          if (typeof window.notifyAppInitDataReady === "function") {
+            window.notifyAppInitDataReady();
+          }
+        });
 
-  // Step 4: Load essential items on demand (when user interacts)
-  // These will be triggered by user actions, not upfront
+      // Step 5: Load essential items on demand in background
+      setTimeout(() => loadWeatherOnDemand(), 1000);
+      setTimeout(() => loadQuoteOnDemand(), 500);
+      setTimeout(() => loadCountdownOnDemand(), 800);
+      setTimeout(() => loadTodayLunarOnDemand(), 600);
+      LAZY_LOAD.calendar = true;
 
-  // Step 5: Load weather data in background (low priority)
-  setTimeout(() => loadWeatherOnDemand(), 1000);
-
-  // Step 6: Load quote in background
-  setTimeout(() => loadQuoteOnDemand(), 500);
-
-  // Step 7: Load countdown in background
-  setTimeout(() => loadCountdownOnDemand(), 800);
+      console.log("[Init] App started - calendar rendered smoothly");
+    }, 16);
+  });
 
   // Step 8: Load lunar calendar in background
   setTimeout(() => loadTodayLunarOnDemand(), 600);
@@ -20798,6 +21095,7 @@ let newsCache = {
 };
 
 function openNewsModal() {
+  if (!requireLogin("Tin tức")) return;
   closeAllModals();
   document.getElementById("newsModal").style.display = "flex";
   loadNewsOnDemand();
@@ -21104,6 +21402,7 @@ document.addEventListener("click", function (e) {
 });
 
 function openTranslateModal() {
+  if (!requireLogin("Công cụ dịch")) return;
   const modal = document.getElementById("translateModal");
   modal.style.display = "flex";
   loadTranslateOnDemand();
@@ -24121,6 +24420,7 @@ async function translateViToEn(text) {
 
 // Open Language Picker Modal (shown first when user clicks "Học Tiếng")
 function openLearnModal() {
+  if (!requireLogin("Công cụ học tiếng")) return;
   const picker = document.getElementById("learnLangPickerModal");
   picker.style.display = "flex";
   document.body.style.overflow = "hidden";
@@ -26976,6 +27276,7 @@ async function clearCountdown() {
 }
 
 function loadCountdownFromLocal() {
+  if (!isUserLoggedIn()) return;
   try {
     const stored = localStorage.getItem("countdown");
     if (stored) {

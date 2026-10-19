@@ -1454,6 +1454,7 @@
   window.renderCookbookContent = renderCookbookContent;
 
   window.openFamilyCookbookModal = function () {
+    if (typeof window.requireLogin === "function" && !window.requireLogin("Thực đơn gia đình")) return;
     if (typeof closeAllModals === "function") closeAllModals();
     closeCookbookHeaderSearch();
     const modal = document.getElementById("familyCookbookModal");
@@ -1813,6 +1814,7 @@
   }
 
   function getMealForDate(dateKey) {
+    if (typeof window.isUserLoggedIn === "function" && !window.isUserLoggedIn()) return null;
     if (!dateKey || !calendarMealsCache) return null;
     const meals = calendarMealsCache[dateKey];
     if (Array.isArray(meals) && meals.length > 0) return meals;
@@ -1824,6 +1826,7 @@
   }
 
   function removeMealFromDate(dateKey, mealId) {
+    if (typeof window.requireLogin === "function" && !window.requireLogin("Xóa thực đơn")) return;
     if (!dateKey || !calendarMealsCache[dateKey]) return;
     if (mealId) {
       calendarMealsCache[dateKey] = calendarMealsCache[dateKey].filter((m) => m.id !== mealId);
@@ -1884,6 +1887,7 @@
   }
 
   function openAssignMealToCalendarModal(sourceType, param) {
+    if (typeof window.requireLogin === "function" && !window.requireLogin("Lên thực đơn")) return;
     let dishesToAssign = [];
     let initialDateKey = "";
     let initialMealType = "dinner";

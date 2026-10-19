@@ -426,119 +426,188 @@ body::before {
   overflow-x: hidden;
 }
 
+/* ========================== APP FULL-SCREEN INIT LOADING ========================== */
 .app-init-loading {
-  position: fixed;
-  inset: 0;
-  display: none;
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  z-index: 99998 !important;
+  display: flex !important;
   align-items: center;
   justify-content: center;
-  background: rgba(8, 8, 15, 0.75);
-  backdrop-filter: blur(6px);
-  z-index: 900;
+  box-sizing: border-box;
+  padding: 20px;
+  opacity: 1;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.app-init-loading.is-visible {
-  display: flex;
+.app-init-loading:not(.is-visible) {
+  display: none !important;
 }
 
-.app-init-loading-hero {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 132px;
-  height: 132px;
-  margin: 0 auto;
+.app-init-loading.is-fading-out {
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
-.app-init-hero-ring {
+.app-init-loading-backdrop {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 100, 200, 0.35);
+  background: radial-gradient(circle at center, rgba(14, 27, 56, 0.96) 0%, rgba(6, 12, 24, 0.99) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
-.app-init-hero-ring.ring-a {
-  animation: appInitSpin 8s linear infinite;
-}
-
-.app-init-hero-ring.ring-b {
-  inset: 12px;
-  border-style: dashed;
-  border-color: rgba(255, 180, 50, 0.34);
-  animation: appInitSpinReverse 6s linear infinite;
-}
-
-.app-init-hero-core {
+.app-init-loading-card {
   position: relative;
   z-index: 2;
-  display: grid;
-  place-items: center;
-  width: 76px;
-  height: 76px;
-  border-radius: 50%;
-  background: linear-gradient(160deg,
-      rgba(255, 100, 100, 0.3),
-      rgba(100, 100, 255, 0.3));
-  border: 1px solid rgba(255, 200, 255, 0.3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  max-width: 380px;
+  background: rgba(13, 25, 48, 0.94);
+  border: 1px solid rgba(143, 184, 255, 0.22);
+  border-radius: 22px;
+  padding: 36px 28px 28px;
   box-shadow:
-    0 16px 32px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
-  animation: appInitFloat 2.2s ease-in-out infinite;
+    0 24px 64px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 35px rgba(56, 189, 248, 0.18);
+  animation: appInitCardIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
 }
 
-.app-init-hero-core::before {
-  content: "";
+@keyframes appInitCardIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Animated Vertical Bars Equalizer */
+.app-init-bars-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 58px;
+  margin-bottom: 22px;
+  padding: 0 10px;
+}
+
+.app-init-bar {
+  width: 7px;
+  height: 48px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #38bdf8 0%, #818cf8 100%);
+  animation: appInitBarWave 1.2s ease-in-out infinite;
+  transform-origin: center;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+}
+
+.app-init-bar.bar-1 {
+  background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+  animation-delay: 0s;
+}
+
+.app-init-bar.bar-2 {
+  background: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.45);
+  animation-delay: 0.15s;
+}
+
+.app-init-bar.bar-3 {
+  background: linear-gradient(180deg, #818cf8 0%, #4f46e5 100%);
+  box-shadow: 0 0 14px rgba(129, 140, 248, 0.5);
+  animation-delay: 0.3s;
+}
+
+.app-init-bar.bar-4 {
+  background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%);
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.45);
+  animation-delay: 0.45s;
+}
+
+.app-init-bar.bar-5 {
+  background: linear-gradient(180deg, #f43f5e 0%, #be123c 100%);
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.4);
+  animation-delay: 0.6s;
+}
+
+@keyframes appInitBarWave {
+  0%, 100% {
+    transform: scaleY(0.24);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.app-init-loading-text-wrap {
+  margin-bottom: 8px;
+}
+
+.app-init-loading-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #f8fafc;
+  font-family: "Space Grotesk", "Be Vietnam Pro", sans-serif;
+}
+
+.app-init-loading-subtitle {
+  margin: 7px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.app-init-loading-progress-bar {
+  position: relative;
+  width: 100%;
+  max-width: 220px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 18px;
+}
+
+.app-init-loading-progress-line {
   position: absolute;
-  inset: -12px;
-  border-radius: 28px;
-  background: radial-gradient(circle,
-      rgba(255, 100, 200, 0.35),
-      transparent 68%);
-  z-index: -1;
-  animation: appInitGlow 1.8s ease-in-out infinite;
+  top: 0;
+  bottom: 0;
+  width: 45%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #38bdf8, #818cf8);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+  animation: appInitProgress 1.4s ease-in-out infinite;
 }
 
-.app-init-hero-core svg {
-  width: 38px;
-  height: 38px;
-  fill: none;
-  filter: drop-shadow(0 4px 10px rgba(10, 18, 34, 0.28));
-}
-
-.app-init-spinning-icon {
-  animation: appInitSpin 0.85s linear infinite;
-}
-
-.app-init-hero-spark {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #64B5F6, #90CAF9);
-  box-shadow: 0 0 18px rgba(100, 181, 246, 0.6);
-}
-
-.app-init-hero-spark.spark-a {
-  top: 10px;
-  right: 18px;
-  animation: appInitSpark 2.4s ease-in-out infinite;
-}
-
-.app-init-hero-spark.spark-b {
-  bottom: 20px;
-  left: 10px;
-  width: 8px;
-  height: 8px;
-  animation: appInitSpark 2.1s ease-in-out infinite 0.35s;
-}
-
-.app-init-hero-spark.spark-c {
-  bottom: 8px;
-  right: 28px;
-  width: 6px;
-  height: 6px;
-  animation: appInitSpark 2.8s ease-in-out infinite 0.55s;
+@keyframes appInitProgress {
+  0% {
+    left: -45%;
+  }
+  50% {
+    left: 40%;
+  }
+  100% {
+    left: 105%;
+  }
 }
 
 /* ========================== MAIN PANELS ========================== */
@@ -26600,13 +26669,11 @@ html {
   bottom: 24px;
   left: 18px;
   width: 2px;
-  background: linear-gradient(
-    180deg,
-    rgba(59, 130, 246, 0.45) 0%,
-    rgba(255, 255, 255, 0.12) 8%,
-    rgba(255, 255, 255, 0.12) 90%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(59, 130, 246, 0.45) 0%,
+      rgba(255, 255, 255, 0.12) 8%,
+      rgba(255, 255, 255, 0.12) 90%,
+      rgba(255, 255, 255, 0.02) 100%);
   z-index: 0;
   pointer-events: none;
 }
@@ -26824,9 +26891,12 @@ html {
 }
 
 @keyframes notifPulseDot {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.65;
   }
@@ -27200,9 +27270,12 @@ html {
 }
 
 @keyframes skeletonPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.35;
   }
+
   50% {
     opacity: 0.75;
   }

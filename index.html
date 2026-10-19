@@ -47,19 +47,23 @@
 
 <body>
 
-  <!-- Minimal loading indicator (replaced by on-demand loading) -->
-  <div id="appInitLoading" class="app-init-loading" style="display: none;" aria-live="polite" aria-busy="false">
-    <div class="app-init-loading-hero" aria-hidden="true">
-      <span class="app-init-hero-ring ring-a"></span>
-      <span class="app-init-hero-ring ring-b"></span>
-      <span class="app-init-hero-spark spark-a"></span>
-      <span class="app-init-hero-spark spark-b"></span>
-      <span class="app-init-hero-spark spark-c"></span>
-      <div class="app-init-hero-core">
-        <svg class="app-init-spinning-icon" viewBox="0 0 24 24" fill="none" focusable="false" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" stroke="rgba(168,196,255,0.18)" stroke-width="2.5" />
-          <path d="M12 3a9 9 0 0 1 9 9" stroke="#a8c8ff" stroke-width="2.5" stroke-linecap="round" />
-        </svg>
+  <!-- Full-screen App Init Loading Screen -->
+  <div id="appInitLoading" class="app-init-loading is-visible" aria-live="polite" aria-busy="true">
+    <div class="app-init-loading-backdrop"></div>
+    <div class="app-init-loading-card">
+      <div class="app-init-bars-wrap" aria-hidden="true">
+        <span class="app-init-bar bar-1"></span>
+        <span class="app-init-bar bar-2"></span>
+        <span class="app-init-bar bar-3"></span>
+        <span class="app-init-bar bar-4"></span>
+        <span class="app-init-bar bar-5"></span>
+      </div>
+      <div class="app-init-loading-text-wrap">
+        <h3 class="app-init-loading-title">Loading...</h3>
+        <p class="app-init-loading-subtitle" id="appInitLoadingSubtitle">Đang tải dữ liệu...</p>
+      </div>
+      <div class="app-init-loading-progress-bar">
+        <div class="app-init-loading-progress-line"></div>
       </div>
     </div>
   </div>
@@ -279,7 +283,7 @@
         <span class="nav-label">Quỹ</span>
       </button>
 
-      <button class="nav-item income-fab prominent" onclick="openCashflowModal()" aria-label="Mở quản lý thu chi">
+      <button class="nav-item income-fab prominent" onclick="openCashflowModal()" aria-label="Mở note thu chi">
         <div class="prominent-inner">
           <i class="fi fi-sr-donate"></i>
         </div>
@@ -1305,7 +1309,7 @@
               <i class="fi fi-rr-coins"></i>
             </div>
             <div class="cashflow-header-text">
-              <h3 id="cashflowModalTitle">Quản lý thu chi</h3>
+              <h3 id="cashflowModalTitle">Note thu chi</h3>
             </div>
           </div>
           <div class="cashflow-header-actions">
@@ -1537,7 +1541,7 @@
         <div class="cashflow-modal-footer cashflow-mobile-footer">
           <div class="cashflow-footer-inner">
             <button type="button" class="cashflow-footer-close-btn cashflow-mobile-close-btn"
-              onclick="closeCashflowModal()" aria-label="Đóng modal quản lý thu chi">
+              onclick="closeCashflowModal()" aria-label="Đóng modal note thu chi">
               Đóng
             </button>
             <button type="button" id="cashflowMobileAddBtn" class="cashflow-footer-add-btn cashflow-mobile-add-btn"
@@ -2826,28 +2830,6 @@
               <div class="fund-detail-progress-info">
                 <span id="fundDetailProgressStatus" class="fund-detail-progress-status">Tiến độ</span>
                 <span id="fundDetailProgressPercent" class="fund-detail-progress-percent">0%</span>
-              </div>
-            </div>
-
-            <!-- Mini Stats 2 cột: Tổng thêm vào & Tổng lấy ra -->
-            <div class="fund-detail-stats-grid">
-              <div class="fund-detail-stat-col in">
-                <div class="fund-detail-stat-icon-wrap in">
-                  <i class="fi fi-rr-arrow-down-left"></i>
-                </div>
-                <div class="fund-detail-stat-data">
-                  <span class="fund-detail-stat-title">Tổng thêm vào</span>
-                  <span class="fund-detail-stat-amount in" id="fundDetailTotalIn">+0 đ</span>
-                </div>
-              </div>
-              <div class="fund-detail-stat-col out">
-                <div class="fund-detail-stat-icon-wrap out">
-                  <i class="fi fi-rr-arrow-up-right"></i>
-                </div>
-                <div class="fund-detail-stat-data">
-                  <span class="fund-detail-stat-title">Tổng lấy ra / chi</span>
-                  <span class="fund-detail-stat-amount out" id="fundDetailTotalOut">-0 đ</span>
-                </div>
               </div>
             </div>
           </div>
@@ -4609,12 +4591,16 @@
         </div>
       </div>
       <div class="notification-tabs">
-        <button type="button" class="notif-tab active" data-filter="all" onclick="filterNotifications('all', this)">Tất cả</button>
-        <button type="button" class="notif-tab" data-filter="unread" onclick="filterNotifications('unread', this)">Chưa đọc</button>
-        <button type="button" class="notif-tab tab-income" data-filter="income" onclick="filterNotifications('income', this)">
+        <button type="button" class="notif-tab active" data-filter="all" onclick="filterNotifications('all', this)">Tất
+          cả</button>
+        <button type="button" class="notif-tab" data-filter="unread" onclick="filterNotifications('unread', this)">Chưa
+          đọc</button>
+        <button type="button" class="notif-tab tab-income" data-filter="income"
+          onclick="filterNotifications('income', this)">
           <i class="fi fi-rr-arrow-down-left"></i><span>Thu</span>
         </button>
-        <button type="button" class="notif-tab tab-expense" data-filter="expense" onclick="filterNotifications('expense', this)">
+        <button type="button" class="notif-tab tab-expense" data-filter="expense"
+          onclick="filterNotifications('expense', this)">
           <i class="fi fi-rr-arrow-up-right"></i><span>Chi</span>
         </button>
       </div>

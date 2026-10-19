@@ -3742,6 +3742,11 @@ async function initFirebaseRealtime() {
     // Dùng Debounce render calendar mượt mà, không giật màn hình
     scheduleCalendarRender(50);
 
+    // Báo hiệu dữ liệu lịch đã sẵn sàng để tắt loading toàn màn hình
+    if (typeof window.notifyAppInitDataReady === "function") {
+      window.notifyAppInitDataReady();
+    }
+
     // Đồng bộ tức thì dòng tiền và quỹ khi thiết bị khác thay đổi thu/chi
     syncRealtimeCashflowAndFunds();
 
@@ -3794,6 +3799,10 @@ async function initFirebaseRealtime() {
   initFirebaseMessaging();
   setupNotificationQueueListener();
   setupNotificationHistoryListener();
+
+  if (typeof window.notifyAppInitDataReady === "function") {
+    window.notifyAppInitDataReady();
+  }
 
   console.log("[Firebase] Realtime Database kết nối thành công (Tải nhanh Core Mode)");
 }
@@ -13266,7 +13275,7 @@ function syncCashflowFormMode() {
     }
     if (editNotice) editNotice.style.display = "flex";
   } else {
-    if (modalTitle) modalTitle.innerText = "Quản lý thu chi";
+    if (modalTitle) modalTitle.innerText = "Note thu chi";
     if (submitBtn) submitBtn.innerText = "Thêm giao dịch";
     if (cancelBtn) cancelBtn.style.display = "none";
     if (mobileAddBtn) mobileAddBtn.innerText = "Lưu";
@@ -19999,19 +20008,19 @@ function renderFundDetailHistoryList(fundId) {
       glyph = "fi fi-rr-arrow-up-right";
     } else {
       if (alloc.type === "topup") {
-        title = "Nạp thêm vào quỹ";
+        title = "Nạp thêm";
         badgeText = "Nạp vào";
         badgeClass = "badge-in";
         iconClass = "in";
         glyph = "fi fi-rr-arrow-down-left";
       } else if (alloc.type === "allocate") {
-        title = "Phân bổ từ số dư";
+        title = "Phân bổ";
         badgeText = "Phân bổ";
         badgeClass = "badge-in";
         iconClass = "in";
         glyph = "fi fi-rr-layers";
       } else if (alloc.type === "expense_withdraw_refund") {
-        title = "Hoàn tiền về quỹ";
+        title = "Hoàn tiền";
         badgeText = "Hoàn tiền";
         badgeClass = "badge-in";
         iconClass = "in";
@@ -20257,27 +20266,26 @@ window.handleFundDetailWithdraw = handleFundDetailWithdraw;
 setInterval(updateClock, 1000);
 updateClock();
 
-function setAppInitLoading(visible) {
+function setAppInitLoading(visible, subtitleText) {
   const loading = document.getElementById("appInitLoading");
   if (!loading) return;
   if (visible) {
+    if (subtitleText) {
+      const subEl = document.getElementById("appInitLoadingSubtitle");
+      if (subEl) subEl.textContent = subtitleText;
+    }
     loading.style.display = "flex";
+    loading.classList.remove("is-fading-out");
     loading.classList.add("is-visible");
   } else {
-    loading.classList.remove("is-visible");
-    // After transition, fully hide from layout
-    loading.addEventListener("transitionend", function handler() {
-      if (!loading.classList.contains("is-visible")) {
-        loading.style.display = "none";
-        loading.removeEventListener("transitionend", handler);
-      }
-    });
-    // Fallback: force hide after 400ms (transition duration)
+    loading.classList.add("is-fading-out");
     setTimeout(() => {
+      loading.classList.remove("is-visible", "is-fading-out");
       loading.style.display = "none";
-    }, 400);
+    }, 420);
   }
 }
+window.setAppInitLoading = setAppInitLoading;
 
 /* ========================== CURRENCY DATA ========================== */
 const CURRENCY_DATA = {
@@ -20670,17 +20678,39 @@ function loadTodayLunarOnDemand() {
 }
 
 /* ========================== INIT ========================= */
-// Fast init - no blocking loading screen
 (function initApp() {
+  const initStartTime = Date.now();
+  setAppInitLoading(true, "Đang tải dữ liệu mới nhất...");
+
+  let appInitDismissed = false;
+  const dismissAppLoading = () => {
+    if (appInitDismissed) return;
+    appInitDismissed = true;
+    setAppInitLoading(false);
+  };
+
+  // Tối đa 2.2 giây tự động tắt loading để đảm bảo người dùng luôn vào được app ngay cả khi mạng chậm hoặc offline
+  const maxLoadingTimer = setTimeout(dismissAppLoading, 2200);
+
+  // Callback đóng loading khi dữ liệu sẵn sàng
+  window.notifyAppInitDataReady = () => {
+    const elapsed = Date.now() - initStartTime;
+    // Giữ loading tối thiểu 650ms để hiệu ứng chuyển cảnh mượt mà, không chớp giật
+    const remaining = Math.max(0, 650 - elapsed);
+    setTimeout(() => {
+      clearTimeout(maxLoadingTimer);
+      dismissAppLoading();
+    }, remaining);
+  };
+
   // Step 1: Show main page weather skeleton initially for loading state
   showSkeleton('weatherSkeleton');
-  // Note: calendar renders immediately, no skeleton needed
 
   // Step 2: Render UI immediately (no waiting)
   initQuickNoteModal();
   renderToday();
 
-  // Step 3: Render calendar immediately - no waiting for Firebase!
+  // Step 3: Render calendar immediately
   console.log("[Init] Rendering calendar...");
   renderCalendar();
   renderOvertime();
@@ -20688,10 +20718,19 @@ function loadTodayLunarOnDemand() {
   setInterval(renderTodayEvents, 30000);
   console.log("[Init] Calendar rendered");
 
-  // Step 4: Initialize Firebase in background (non-blocking)
-  initFirebaseServices().catch(err => {
-    console.error("[Init] Firebase error:", err);
-  });
+  // Step 4: Initialize Firebase in background
+  initFirebaseServices()
+    .then(() => {
+      if (typeof window.notifyAppInitDataReady === "function") {
+        window.notifyAppInitDataReady();
+      }
+    })
+    .catch((err) => {
+      console.error("[Init] Firebase error:", err);
+      if (typeof window.notifyAppInitDataReady === "function") {
+        window.notifyAppInitDataReady();
+      }
+    });
 
   // Step 4: Load essential items on demand (when user interacts)
   // These will be triggered by user actions, not upfront

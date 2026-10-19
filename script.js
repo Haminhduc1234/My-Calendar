@@ -5505,30 +5505,73 @@ function getNotificationDetails(item) {
   };
 }
 
+function getNotificationDateGroupInfo(timestamp) {
+  if (!timestamp) {
+    return { key: "earlier", label: "Trước đó", order: 999999 };
+  }
+  const date = new Date(Number(timestamp));
+  if (isNaN(date.getTime())) {
+    return { key: "earlier", label: "Trước đó", order: 999999 };
+  }
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const itemDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffTime = today.getTime() - itemDate.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    return { key: "today", label: "Hôm nay", order: 0 };
+  } else if (diffDays === 1) {
+    return { key: "yesterday", label: "Hôm qua", order: 1 };
+  } else if (diffDays > 1 && diffDays < 7) {
+    return { key: `days_${diffDays}`, label: `${diffDays} ngày trước`, order: diffDays };
+  } else {
+    const d = String(date.getDate()).padStart(2, "0");
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const y = date.getFullYear();
+    const dateKey = `${y}-${m}-${d}`;
+    return { key: dateKey, label: `${d}/${m}/${y}`, order: 100 + diffDays };
+  }
+}
+
+function getNotificationExactTime(timestamp) {
+  if (!timestamp) return "";
+  const d = new Date(Number(timestamp));
+  if (isNaN(d.getTime())) return "";
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 function renderNotificationList() {
   const bodyEl = document.getElementById("notificationListBody");
   if (!bodyEl) return;
 
   if (isNotificationsLoading) {
     bodyEl.innerHTML = `
-      <div class="notification-skeleton-container">
-        <div class="notification-skeleton-item">
-          <div class="skeleton-icon"></div>
-          <div class="skeleton-content">
+      <div class="notification-timeline-container is-skeleton">
+        <div class="notif-timeline-skeleton-item">
+          <div class="notif-timeline-axis">
+            <div class="skeleton-node"></div>
+          </div>
+          <div class="skeleton-card">
             <div class="skeleton-line short"></div>
             <div class="skeleton-line long"></div>
           </div>
         </div>
-        <div class="notification-skeleton-item">
-          <div class="skeleton-icon"></div>
-          <div class="skeleton-content">
+        <div class="notif-timeline-skeleton-item">
+          <div class="notif-timeline-axis">
+            <div class="skeleton-node"></div>
+          </div>
+          <div class="skeleton-card">
             <div class="skeleton-line short"></div>
             <div class="skeleton-line long"></div>
           </div>
         </div>
-        <div class="notification-skeleton-item">
-          <div class="skeleton-icon"></div>
-          <div class="skeleton-content">
+        <div class="notif-timeline-skeleton-item">
+          <div class="notif-timeline-axis">
+            <div class="skeleton-node"></div>
+          </div>
+          <div class="skeleton-card">
             <div class="skeleton-line short"></div>
             <div class="skeleton-line long"></div>
           </div>
@@ -5564,60 +5607,124 @@ function renderNotificationList() {
     return;
   }
 
-  let html = "";
-  items.forEach((item, index) => {
-    const isUnread = !item.read;
-    const notifInfo = getNotificationDetails(item);
+  // Sắp xếp thông báo mới nhất xếp trước
+  items.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 
-    const title = escapeHtml(item.title || "Thông báo");
-    let rawBody = String(item.body || "");
-    rawBody = rawBody.replace(/Ngày\s+(\d{4})-(\d{1,2})-(\d{1,2})/g, (match, y, m, d) => {
-      return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
-    });
-    let body = escapeHtml(rawBody);
+  // Nhóm thông báo theo mốc thời gian ngày
+  const dateGroupsMap = new Map();
+  const dateGroups = [];
 
-    // Nếu đã hiển thị số tiền dạng chip ở dòng tiêu đề, loại bỏ tiền đầu chuỗi để tránh lặp và tiết kiệm diện tích
-    if (notifInfo.amountChipHtml) {
-      body = body.replace(/^[\d.,\s]+đ\s*(\|\s*)?/i, "");
+  items.forEach((item) => {
+    const groupInfo = getNotificationDateGroupInfo(item.createdAt);
+    if (!dateGroupsMap.has(groupInfo.key)) {
+      const g = {
+        key: groupInfo.key,
+        label: groupInfo.label,
+        order: groupInfo.order,
+        items: []
+      };
+      dateGroupsMap.set(groupInfo.key, g);
+      dateGroups.push(g);
     }
+    dateGroupsMap.get(groupInfo.key).items.push(item);
+  });
 
-    body = body.replace(/(R&uacute;t từ quỹ|Tr&iacute;ch từ quỹ|Rút từ quỹ|Trích từ quỹ):\s*([^|&<]+)/g, '<span class="notif-fund-highlight"><i class="fi fi-rr-wallet"></i> $1: $2</span>');
+  dateGroups.sort((a, b) => a.order - b.order);
 
-    // Chuyển dấu phân cách | thành dấu chấm bullet hiện đại, tiết kiệm diện tích
-    body = body.replace(/\s*\|\s*/g, ' <span class="notif-bullet">•</span> ');
+  let html = `<div class="notification-timeline-container">`;
+  let globalIndex = 0;
 
-    let extraBadgeHtml = "";
-    const fundName = item.eventData?.fundName;
-    if (fundName && (notifInfo.rawType === "cashflow" || notifInfo.isExpense || notifInfo.isIncome)) {
-      extraBadgeHtml = `<span class="notif-badge funds" title="Quỹ ${escapeHtml(fundName)}"><i class="fi fi-rr-wallet"></i>${escapeHtml(fundName)}</span>`;
-    }
-
-    const timeStr = formatRelativeTime(item.createdAt);
-    const delayStyle = `animation-delay: ${Math.min(index * 0.03, 0.25)}s;`;
-
+  dateGroups.forEach((group) => {
     html += `
-      <div class="notification-item type-${notifInfo.iconClass} ${isUnread ? "unread" : ""}" style="${delayStyle}" onclick="handleNotificationItemClick('${item.id}')">
-        <div class="notif-item-icon ${notifInfo.iconClass}">${notifInfo.iconHtml}</div>
-        <div class="notif-item-content">
-          <div class="notif-item-row-top">
-            <div class="notif-item-title-group">
-              <span class="notif-item-title-text" title="${title}">${title}</span>
-              ${notifInfo.amountChipHtml}
-              ${extraBadgeHtml}
-            </div>
-            <div class="notif-item-meta-group">
-              <span class="notif-item-time">${timeStr}</span>
-              <button type="button" class="notif-item-delete" title="Xóa thông báo" onclick="deleteNotificationItem('${item.id}', event)">
-                <i class="fi fi-rr-trash"></i>
-              </button>
-            </div>
-          </div>
-          <div class="notif-item-body" title="${escapeHtml(rawBody)}">${body || "Chi tiết thông báo"}</div>
+      <div class="notif-timeline-milestone">
+        <div class="notif-timeline-milestone-node">
+          <i class="fi fi-rr-calendar"></i>
+        </div>
+        <div class="notif-timeline-milestone-badge">
+          <span class="milestone-label">${group.label}</span>
         </div>
       </div>
     `;
+
+    group.items.forEach((item) => {
+      const isUnread = !item.read;
+      const notifInfo = getNotificationDetails(item);
+
+      const rawTitle = item.title || "Thông báo";
+      const cleanTitleText = rawTitle.replace(/^[🔔💸📊⏰]\s*/, "");
+      const title = escapeHtml(cleanTitleText);
+
+      let rawBody = String(item.body || "");
+      rawBody = rawBody.replace(/Ngày\s+(\d{4})-(\d{1,2})-(\d{1,2})/g, (match, y, m, d) => {
+        return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+      });
+      let body = escapeHtml(rawBody);
+
+      // Nếu đã hiển thị số tiền dạng chip ở dòng tiêu đề, loại bỏ tiền đầu chuỗi để tránh lặp và tiết kiệm diện tích
+      if (notifInfo.amountChipHtml) {
+        body = body.replace(/^[\d.,\s]+đ\s*(\|\s*)?/i, "");
+      }
+
+      body = body.replace(/(R&uacute;t từ quỹ|Tr&iacute;ch từ quỹ|Rút từ quỹ|Trích từ quỹ):\s*([^|&<]+)/g, '<span class="notif-fund-highlight"><i class="fi fi-rr-wallet"></i> $1: $2</span>');
+      // Chuyển dấu phân cách | thành dấu chấm bullet hiện đại, tiết kiệm diện tích
+      body = body.replace(/\s*\|\s*/g, ' <span class="notif-bullet">•</span> ');
+
+      let extraBadgeHtml = "";
+      const fundName = item.eventData?.fundName;
+      if (fundName && (notifInfo.rawType === "cashflow" || notifInfo.isExpense || notifInfo.isIncome)) {
+        extraBadgeHtml = `<span class="notif-badge funds" title="Quỹ ${escapeHtml(fundName)}"><i class="fi fi-rr-wallet"></i>${escapeHtml(fundName)}</span>`;
+      }
+
+      const exactTime = getNotificationExactTime(item.createdAt);
+      const relTime = formatRelativeTime(item.createdAt);
+      let timeDisplay = relTime;
+      if (exactTime && relTime && !relTime.includes(exactTime)) {
+        timeDisplay = `${exactTime} • ${relTime}`;
+      } else if (exactTime && !relTime) {
+        timeDisplay = exactTime;
+      }
+
+      let fullDateTitle = "";
+      if (item.createdAt && !isNaN(Number(item.createdAt))) {
+        try {
+          fullDateTitle = new Date(Number(item.createdAt)).toLocaleString("vi-VN");
+        } catch { }
+      }
+
+      const delayStyle = `animation-delay: ${Math.min(globalIndex * 0.03, 0.25)}s;`;
+      globalIndex++;
+
+      html += `
+        <div class="notification-item notif-timeline-item type-${notifInfo.iconClass} ${isUnread ? "unread" : ""}" style="${delayStyle}" onclick="handleNotificationItemClick('${item.id}')">
+          <div class="notif-timeline-axis">
+            <div class="notif-timeline-node ${notifInfo.iconClass}" title="${notifInfo.typeLabel || "Thông báo"}">
+              ${notifInfo.iconHtml}
+              ${isUnread ? '<span class="notif-node-unread-dot" title="Chưa đọc"></span>' : ''}
+            </div>
+          </div>
+          <div class="notif-timeline-card">
+            <div class="notif-item-row-top">
+              <div class="notif-item-title-group">
+                <span class="notif-item-title-text" title="${title}">${title}</span>
+                ${notifInfo.amountChipHtml}
+                ${extraBadgeHtml}
+                ${isUnread ? '<span class="notif-unread-badge">Mới</span>' : ''}
+              </div>
+              <div class="notif-item-meta-group">
+                <span class="notif-item-time" title="${fullDateTitle}">${timeDisplay}</span>
+                <button type="button" class="notif-item-delete" title="Xóa thông báo" onclick="deleteNotificationItem('${item.id}', event)">
+                  <i class="fi fi-rr-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div class="notif-item-body" title="${escapeHtml(rawBody)}">${body || "Chi tiết thông báo"}</div>
+          </div>
+        </div>
+      `;
+    });
   });
 
+  html += `</div>`;
   bodyEl.innerHTML = html;
 }
 

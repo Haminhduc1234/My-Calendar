@@ -122,6 +122,8 @@ a:hover,
 .recurring-event-card:hover,
 .senior-contact-card:hover,
 .notification-item:hover,
+.notif-timeline-item:hover,
+.notif-timeline-card:hover,
 .project-item:hover,
 .task-item:hover,
 .learn-card:hover,
@@ -26579,106 +26581,68 @@ html {
   }
 }
 
-/* ==================== NOTIFICATION ITEM (FLAT MINIMALIST SLATE CARD) ==================== */
-.notification-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 7px 11px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-left: 3.5px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  cursor: pointer;
+/* ==================== NOTIFICATION TIMELINE SYSTEM ==================== */
+.notification-timeline-container {
   position: relative;
-  transition: background 0.18s ease, border-color 0.18s ease;
-  animation: notifItemFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
-  min-height: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 6px 14px 2px;
+  width: 100%;
   box-sizing: border-box;
 }
 
-.notification-item:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.14);
-}
-
-/* Vạch viền trái sắc nét phân biệt loại giao dịch */
-.notification-item.type-expense {
-  border-left-color: #f43f5e;
-}
-
-.notification-item.type-income {
-  border-left-color: #10b981;
-}
-
-.notification-item.type-event {
-  border-left-color: #3b82f6;
-}
-
-.notification-item.type-funds {
-  border-left-color: #f59e0b;
-}
-
-.notification-item.type-reminder {
-  border-left-color: #a855f7;
-}
-
-/* Trạng thái chưa đọc (Flat Slate Highlight + Flat Dot) */
-.notification-item.unread {
-  background: rgba(255, 255, 255, 0.065);
-  border-color: rgba(255, 255, 255, 0.12);
-  padding-left: 15px;
-}
-
-.notification-item.unread:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(255, 255, 255, 0.18);
-}
-
-.notification-item.unread::before {
+/* Trục Timeline thẳng đứng liên tục (Continuous Timeline Rail) */
+.notification-timeline-container::before {
   content: "";
   position: absolute;
-  left: 5px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 5px;
-  height: 5px;
+  top: 14px;
+  bottom: 24px;
+  left: 18px;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    rgba(59, 130, 246, 0.45) 0%,
+    rgba(255, 255, 255, 0.12) 8%,
+    rgba(255, 255, 255, 0.12) 90%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Mốc ngày (Timeline Date Milestone Marker) */
+.notif-timeline-milestone {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+  margin: 10px 0 2px 0;
+}
+
+.notif-timeline-milestone:first-child {
+  margin-top: 2px;
+}
+
+.notif-timeline-milestone-node {
+  width: 22px;
+  height: 22px;
+  margin-left: 7px;
+  margin-right: 5px;
   border-radius: 50%;
-  background: #3b82f6;
-}
-
-.notification-item.type-expense.unread::before {
-  background: #f43f5e;
-}
-
-.notification-item.type-income.unread::before {
-  background: #10b981;
-}
-
-.notification-item.type-funds.unread::before {
-  background: #f59e0b;
-}
-
-.notification-item.type-reminder.unread::before {
-  background: #a855f7;
-}
-
-/* Biểu tượng thông báo phẳng (Flat Solid Tint) */
-.notif-item-icon {
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
-  border-radius: 8px;
+  background: #0f172a;
+  border: 1.5px solid #3b82f6;
+  color: #60a5fa;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 10px;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 8px rgba(59, 130, 246, 0.35);
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.notif-item-icon i {
+.notif-timeline-milestone-node i {
   position: static;
   top: 0;
   display: inline-flex;
@@ -26687,44 +26651,286 @@ html {
   line-height: 1;
 }
 
-.notif-item-icon.expense {
-  background: rgba(244, 63, 94, 0.12);
-  border: 1px solid rgba(244, 63, 94, 0.25);
-  color: #fb7185;
+.notif-timeline-milestone-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #93c5fd;
+  letter-spacing: 0.02em;
 }
 
-.notif-item-icon.income {
-  background: rgba(16, 185, 129, 0.12);
-  border: 1px solid rgba(16, 185, 129, 0.25);
-  color: #34d399;
-}
-
-.notif-item-icon.event {
-  background: rgba(59, 130, 246, 0.12);
-  border: 1px solid rgba(59, 130, 246, 0.25);
+.notif-timeline-milestone-badge .milestone-count {
+  font-size: 10px;
+  font-weight: 600;
   color: #60a5fa;
+  background: rgba(59, 130, 246, 0.22);
+  padding: 1px 6px;
+  border-radius: 10px;
+  line-height: 1.2;
 }
 
-.notif-item-icon.funds {
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.25);
+/* Phần tử sự kiện trên Timeline (Timeline Item) */
+.notif-timeline-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+  animation: notifItemFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+  box-sizing: border-box;
+}
+
+/* Cột trục Timeline (Axis Column: Node & Mask) */
+.notif-timeline-axis {
+  width: 34px;
+  min-width: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 9px;
+  position: relative;
+  z-index: 2;
+}
+
+/* Node biểu tượng trên trục (Timeline Icon Node) */
+.notif-timeline-node {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  position: relative;
+  background: #0f172a;
+  box-shadow: 0 0 0 3px #0f172a, 0 2px 6px rgba(0, 0, 0, 0.4);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.notif-timeline-node i {
+  position: static;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Node màu sắc theo loại */
+.notif-timeline-node.expense {
+  background: #1a0f1d;
+  border-color: rgba(244, 63, 94, 0.55);
+  color: #fb7185;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 10px rgba(244, 63, 94, 0.2);
+}
+
+.notif-timeline-node.income {
+  background: #0b1f1a;
+  border-color: rgba(16, 185, 129, 0.55);
+  color: #34d399;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.notif-timeline-node.event {
+  background: #0d1b2e;
+  border-color: rgba(59, 130, 246, 0.55);
+  color: #60a5fa;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 10px rgba(59, 130, 246, 0.2);
+}
+
+.notif-timeline-node.funds {
+  background: #231908;
+  border-color: rgba(245, 158, 11, 0.55);
   color: #fbbf24;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 10px rgba(245, 158, 11, 0.2);
 }
 
-.notif-item-icon.reminder {
-  background: rgba(168, 85, 247, 0.12);
-  border: 1px solid rgba(168, 85, 247, 0.25);
+.notif-timeline-node.reminder {
+  background: #1c112b;
+  border-color: rgba(168, 85, 247, 0.55);
   color: #c084fc;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 10px rgba(168, 85, 247, 0.2);
 }
 
-/* Phần nội dung linh hoạt */
-.notif-item-content {
+/* Hover hiệu ứng Node: Tăng sáng, không dịch chuyển */
+.notif-timeline-item:hover .notif-timeline-node.expense {
+  border-color: #f43f5e;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 14px rgba(244, 63, 94, 0.4);
+}
+
+.notif-timeline-item:hover .notif-timeline-node.income {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 14px rgba(16, 185, 129, 0.4);
+}
+
+.notif-timeline-item:hover .notif-timeline-node.event {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 14px rgba(59, 130, 246, 0.4);
+}
+
+.notif-timeline-item:hover .notif-timeline-node.funds {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 14px rgba(245, 158, 11, 0.4);
+}
+
+.notif-timeline-item:hover .notif-timeline-node.reminder {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 3px #0f172a, 0 0 14px rgba(168, 85, 247, 0.4);
+}
+
+/* Chấm tròn chưa đọc trên Node */
+.notif-node-unread-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid #0f172a;
+  box-shadow: 0 0 8px #3b82f6;
+  animation: notifPulseDot 1.8s infinite;
+}
+
+.notif-timeline-node.expense .notif-node-unread-dot {
+  background: #f43f5e;
+  box-shadow: 0 0 8px #f43f5e;
+}
+
+.notif-timeline-node.income .notif-node-unread-dot {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.notif-timeline-node.funds .notif-node-unread-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 8px #f59e0b;
+}
+
+.notif-timeline-node.reminder .notif-node-unread-dot {
+  background: #a855f7;
+  box-shadow: 0 0 8px #a855f7;
+}
+
+@keyframes notifPulseDot {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.65;
+  }
+}
+
+/* Thẻ nội dung thông báo trên Timeline (Timeline Card) */
+.notif-timeline-card {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2px;
+  gap: 4px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-left: 3.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 11px;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+.notif-timeline-item:hover .notif-timeline-card {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Vạch màu định danh bên trái Thẻ */
+.notif-timeline-item.type-expense .notif-timeline-card {
+  border-left-color: #f43f5e;
+}
+
+.notif-timeline-item.type-income .notif-timeline-card {
+  border-left-color: #10b981;
+}
+
+.notif-timeline-item.type-event .notif-timeline-card {
+  border-left-color: #3b82f6;
+}
+
+.notif-timeline-item.type-funds .notif-timeline-card {
+  border-left-color: #f59e0b;
+}
+
+.notif-timeline-item.type-reminder .notif-timeline-card {
+  border-left-color: #a855f7;
+}
+
+/* Trạng thái chưa đọc của Thẻ */
+.notif-timeline-item.unread .notif-timeline-card {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.notif-timeline-item.unread:hover .notif-timeline-card {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Huy hiệu 'Mới' */
+.notif-unread-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.notif-timeline-item.type-expense .notif-unread-badge {
+  background: rgba(244, 63, 94, 0.2);
+  color: #fb7185;
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
+.notif-timeline-item.type-income .notif-unread-badge {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.notif-timeline-item.type-funds .notif-unread-badge {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.notif-timeline-item.type-reminder .notif-unread-badge {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.35);
+}
+
+/* Fallback tương thích ngược */
+.notification-item {
+  box-sizing: border-box;
 }
 
 /* Hàng trên cùng: Tiêu đề + Badges + Số tiền + Thời gian + Xóa */
@@ -26960,25 +27166,37 @@ html {
   color: #94a3b8;
 }
 
-/* Skeleton Loading State (Flat Pulse Cards - NO GRADIENT) */
-.notification-skeleton-container {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 2px 0;
+/* Skeleton Loading State Timeline */
+.notification-timeline-container.is-skeleton {
+  gap: 12px;
 }
 
-.notification-skeleton-item {
+.notif-timeline-skeleton-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 7px 11px;
+  position: relative;
+  z-index: 1;
+  animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+.skeleton-node {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 0 0 3px #0f172a;
+}
+
+.skeleton-card {
+  flex: 1;
+  padding: 10px 12px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  position: relative;
-  min-height: 50px;
-  animation: skeletonPulse 1.4s ease-in-out infinite;
+  border-radius: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 @keyframes skeletonPulse {
@@ -26988,21 +27206,6 @@ html {
   50% {
     opacity: 0.75;
   }
-}
-
-.skeleton-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.07);
-  flex-shrink: 0;
-}
-
-.skeleton-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
 }
 
 .skeleton-line {
@@ -27021,20 +27224,41 @@ html {
 }
 
 @media (max-width: 480px) {
-  .notif-item-title-text {
-    max-width: 110px;
+  .notification-timeline-container {
+    padding-left: 0;
   }
 
-  .notification-item {
-    padding: 6px 9px;
-    gap: 8px;
+  .notification-timeline-container::before {
+    left: 15px;
   }
 
-  .notif-item-icon {
+  .notif-timeline-milestone-node {
+    width: 20px;
+    height: 20px;
+    margin-left: 5px;
+    margin-right: 5px;
+    font-size: 9px;
+  }
+
+  .notif-timeline-axis {
+    width: 30px;
+    min-width: 30px;
+    padding-top: 8px;
+  }
+
+  .notif-timeline-node {
     width: 28px;
     height: 28px;
-    min-width: 28px;
+    border-radius: 8px;
     font-size: 12px;
+  }
+
+  .notif-timeline-card {
+    padding: 7px 10px;
+  }
+
+  .notif-item-title-text {
+    max-width: 115px;
   }
 
   .notif-amount {

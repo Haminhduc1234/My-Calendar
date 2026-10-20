@@ -242,10 +242,10 @@
             onclick="openTodayExtraModal()" aria-label="Xem thời tiết và trích dẫn">
             <span class="floating-btn-icon"><i class="fi fi-rr-cloud-sun"></i></span>
           </button>
-          <button type="button" id="btnSeniorOneTouch" class="senior-one-touch-top-btn" title="Gọi người thân một chạm"
+          <!-- <button type="button" id="btnSeniorOneTouch" class="senior-one-touch-top-btn" title="Gọi người thân một chạm"
             onclick="openSeniorCallModal()">
             <i class="fi fi-sr-heart"></i>
-          </button>
+          </button> -->
           <button type="button" id="btnNotificationBell" class="notification-bell-btn" title="Thông báo"
             onclick="openNotificationModal()">
             <i class="fi fi-rr-bell"></i>
@@ -256,7 +256,7 @@
       <div id="todayEvents" class="today-events-panel" style="display: none"></div>
       <div class="today-date today-twin-widgets">
         <!-- Khối 1: Lịch Dương (Bên trái) -->
-        <div class="desk-calendar-card is-solar">
+        <!-- <div class="desk-calendar-card is-solar">
           <div class="desk-calendar-rings" aria-hidden="true">
             <span class="desk-calendar-ring"></span>
             <span class="desk-calendar-ring"></span>
@@ -268,10 +268,10 @@
             <div class="desk-calendar-date" id="todayDate"></div>
             <div class="desk-calendar-subtext" id="todayWeekday"></div>
           </div>
-        </div>
+        </div> -->
 
         <!-- Khối 2: Lịch Âm (Bên phải - giống hệt lịch dương, khác màu) -->
-        <div class="desk-calendar-card is-lunar">
+        <!-- <div class="desk-calendar-card is-lunar">
           <div class="desk-calendar-rings" aria-hidden="true">
             <span class="desk-calendar-ring"></span>
             <span class="desk-calendar-ring"></span>
@@ -283,7 +283,7 @@
             <div class="desk-calendar-date" id="todayLunarDate"></div>
             <div class="desk-calendar-subtext" id="todayLunarYear"></div>
           </div>
-        </div>
+        </div> -->
 
         <!-- Các phần tử ẩn để bảo toàn tương thích JavaScript cũ -->
         <div id="clock" style="display: none;" aria-hidden="true"></div>
@@ -875,7 +875,7 @@
             <div class="events-list" id="dayEventsList"></div>
           </div>
 
-          <div class="overtime-section">
+          <!-- <div class="overtime-section">
             <label class="field-label" for="dayOvertimeHours">Giờ tăng ca hôm nay</label>
             <div class="overtime-input-group">
               <input id="dayOvertimeHours" type="number" min="0" step="1" inputmode="numeric" placeholder="VD: 3" />
@@ -898,7 +898,7 @@
                     user-select: none;
                   ">Đánh dấu là ngày nghỉ lễ 🇻🇳</label>
             </div>
-          </div>
+          </div> -->
         </div>
 
         <div class="modal-actions day-details-modal-actions">

@@ -1011,8 +1011,6 @@ body::before {
 
 /* ==================== TODAY DATE - TWIN DESK CALENDAR WIDGETS ==================== */
 .today-date.today-twin-widgets {
-  margin-top: 30px;
-  margin-bottom: 6px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
@@ -1388,27 +1386,60 @@ body::before {
 }
 
 .today {
-  border: 2px solid #64B5F6;
-  background: #2a3a5a !important;
+  border: 2px solid #38bdf8 !important;
+  background: linear-gradient(145deg, rgba(14, 165, 233, 0.24) 0%, rgba(37, 99, 235, 0.32) 50%, rgba(26, 42, 86, 0.95) 100%) !important;
   position: relative;
   box-shadow:
-    0 0 0 1px rgba(100, 181, 246, 0.2),
-    0 0 12px rgba(100, 181, 246, 0.25);
+    0 0 0 1.5px rgba(56, 189, 248, 0.45),
+    0 4px 18px rgba(14, 165, 233, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 0 16px rgba(56, 189, 248, 0.2) !important;
+  z-index: 2;
 }
 
-.today::before {
-  display: block;
+.today:not(.holiday)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20%;
+  right: 20%;
+  height: 2.5px;
+  border-radius: 0 0 4px 4px;
+  background: #38bdf8;
+  box-shadow: 0 0 8px #38bdf8;
+  pointer-events: none;
 }
 
 .today .solar {
-  color: #f5f9ff;
-  text-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 25px;
+  height: 25px;
+  padding: 0 4px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+  color: #ffffff !important;
+  font-size: 14.5px;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  line-height: 1;
 }
 
 .today .lunar {
-  color: #a8bce0;
-  font-weight: 400;
-  text-shadow: none;
+  color: #bae6fd !important;
+  font-weight: 600;
+  margin-top: 3px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.today:hover {
+  border-color: #7dd3fc !important;
+  box-shadow:
+    0 0 0 2px rgba(125, 211, 252, 0.6),
+    0 6px 22px rgba(14, 165, 233, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 0 18px rgba(56, 189, 248, 0.28) !important;
 }
 
 .holiday {
@@ -1443,7 +1474,17 @@ body::before {
 }
 
 .holiday.today {
-  border-color: rgba(255, 214, 214, 0.92);
+  border-color: rgba(255, 214, 214, 0.95) !important;
+  box-shadow:
+    0 0 0 1.5px rgba(244, 63, 94, 0.5),
+    0 4px 18px rgba(244, 63, 94, 0.5),
+    inset 0 0 14px rgba(244, 63, 94, 0.3) !important;
+}
+
+.holiday.today .solar {
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%) !important;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  color: #ffffff !important;
 }
 
 .has-event::after {
@@ -5331,6 +5372,14 @@ body::before {
 
   .solar {
     font-size: 14px;
+  }
+
+  .today .solar {
+    min-width: 22px;
+    height: 22px;
+    font-size: 13px;
+    border-radius: 6px;
+    padding: 0 3px;
   }
 
   .lunar {
@@ -25023,15 +25072,15 @@ input[type="datetime-local"] {
 
 .today-profile-avatar-wrapper {
   position: relative;
-  width: 62px;
-  height: 62px;
+  width: 42px;
+  height: 42px;
   flex-shrink: 0;
 }
 
 .today-profile-badge {
   position: absolute;
-  bottom: 0px;
-  right: 0px;
+  bottom: -5px;
+  right: -5px;
   width: 20px;
   height: 20px;
   display: flex;
@@ -25108,8 +25157,8 @@ input[type="datetime-local"] {
 }
 
 .today-profile-avatar {
-  width: 62px;
-  height: 62px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   object-fit: cover;
   background-color: #ffffff;
@@ -35202,11 +35251,11 @@ html.app-is-logging-out #logoutLoadingOverlay {
 }
 
 body.is-guest-mode .bottom-nav,
-html.is-guest-mode .bottom-nav {
-  display: none !important;
-}
-
-/* Ẩn hoàn toàn khối thông tin cá nhân (avatar, placeholder, tên, bio) và text "Chưa đăng nhập" */
+html.is-guest-mode .bottom-nav,
+body.is-guest-mode #todayPanel,
+html.is-guest-mode #todayPanel,
+body.is-guest-mode .today-panel,
+html.is-guest-mode .today-panel,
 body.is-guest-mode .today-top-bar,
 html.is-guest-mode .today-top-bar,
 body.is-guest-mode .today-profile,
@@ -35214,9 +35263,26 @@ html.is-guest-mode .today-profile {
   display: none !important;
 }
 
-/* Tinh chỉnh lề trên của khối lịch hôm nay để cân đối khi ẩn top bar */
-body.is-guest-mode .today-date.today-twin-widgets {
-  margin-top: 4px;
+/* Khi chưa đăng nhập: ô lịch chỉ để xem, không có con trỏ bấm hay hiệu ứng hover mở modal */
+body.is-guest-mode .day,
+html.is-guest-mode .day {
+  cursor: default;
+}
+
+body.is-guest-mode .day:hover,
+html.is-guest-mode .day:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+}
+
+body.is-guest-mode .today:hover,
+html.is-guest-mode .today:hover {
+  border-color: #38bdf8 !important;
+  box-shadow:
+    0 0 0 1.5px rgba(56, 189, 248, 0.45),
+    0 4px 18px rgba(14, 165, 233, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 0 16px rgba(56, 189, 248, 0.2) !important;
 }
 
 /* ==================== GUEST BOTTOM LOGIN SECTION ==================== */

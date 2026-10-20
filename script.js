@@ -603,7 +603,10 @@ function renderCalendar() {
   ${dotsHtml}
 `;
 
-    div.onclick = () => openModal(key, d, m, y);
+    div.onclick = () => {
+      if (!isUserLoggedIn()) return;
+      openModal(key, d, m, y);
+    };
 
     calDom.appendChild(div);
   }
@@ -6562,6 +6565,7 @@ function renderDayDetailsModalUI(dateKey, d, m, y, data) {
 }
 
 async function openDayDetailsModal(dateKey, d, m, y) {
+  if (!isUserLoggedIn()) return;
   closeAllModals();
   selectedKey = dateKey;
   const data = getDateData(dateKey);
@@ -7655,6 +7659,7 @@ window.deleteRecurringEventUI = deleteRecurringEventUI;
 
 
 function openModal(key, d, m, y) {
+  if (!isUserLoggedIn()) return;
   // Alias for backwards compatibility - now opens day details
   openDayDetailsModal(key, d, m, y);
 }

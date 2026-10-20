@@ -1419,11 +1419,21 @@ async function handleRegister() {
 
     document.getElementById("authModal").style.display = "none";
 
+    // Cuộn ngay lên đầu trang
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+
     // Cập nhật ngay Auth UI và load dữ liệu người dùng
     updateAuthUI();
     initProfileOnLoad();
 
     await reloadFirebaseForUser();
+    setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    }, 100);
     showToast("Đăng ký thành công! Chào mừng " + username + "!", "success");
 
   } catch (err) {
@@ -1495,11 +1505,21 @@ async function handleLogin() {
 
     document.getElementById("authModal").style.display = "none";
 
+    // Cuộn ngay lên đầu trang
+    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+
     // Cập nhật ngay Auth UI và load dữ liệu người dùng
     updateAuthUI();
     initProfileOnLoad();
 
     await reloadFirebaseForUser();
+    setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    }, 100);
 
     // Auto-fix migrated data if this user was upgraded from legacy
     if (foundUser.upgradedFrom) {
@@ -5961,10 +5981,8 @@ function renderNotificationList() {
           <div class="notif-timeline-card">
             <div class="notif-item-row-top">
               <div class="notif-item-title-group">
-                <span class="notif-item-title-text" title="${title}">${title}</span>
                 ${notifInfo.amountChipHtml}
                 ${extraBadgeHtml}
-                ${isUnread ? '<span class="notif-unread-badge">Mới</span>' : ''}
               </div>
               <div class="notif-item-meta-group">
                 <span class="notif-item-time" title="${fullDateTitle}">${timeDisplay}</span>

@@ -618,8 +618,8 @@ body::before {
 
 .today-panel {
   position: relative;
-  padding: 16px 18px;
-  margin-bottom: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
   animation: panelIn 0.5s ease both;
 }
 
@@ -645,14 +645,14 @@ body::before {
 }
 
 .calendar-container {
-  padding: 18px;
+  padding: 14px;
   margin-bottom: 12px;
   overflow: hidden;
   animation: panelIn 0.62s ease both;
 }
 
 .calendar-container {
-  padding: 18px;
+  padding: 14px;
   margin-bottom: 12px;
   overflow: hidden;
   animation: panelIn 0.62s ease both;
@@ -1400,11 +1400,11 @@ body::before {
 .today:not(.holiday)::before {
   content: "";
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 20%;
   right: 20%;
-  height: 2.5px;
-  border-radius: 0 0 4px 4px;
+  height: 6px;
+  border-radius: 4px 4px;
   background: #38bdf8;
   box-shadow: 0 0 8px #38bdf8;
   pointer-events: none;
@@ -25091,8 +25091,6 @@ input[type="datetime-local"] {
   pointer-events: none;
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-
-.today-profile-avatar-wrapper:hover .today-profile-badge {}
 
 .fb-verified-badge-svg {
   width: 100%;

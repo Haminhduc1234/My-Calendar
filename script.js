@@ -904,15 +904,16 @@ function hideLogoutLoadingOverlay() {
 }
 window.hideLogoutLoadingOverlay = hideLogoutLoadingOverlay;
 
-// Safety timeout: if page was reloaded during logout and something hung, guarantee login modal displays
+// Dọn dẹp cờ logout cũ nếu còn tồn tại trong sessionStorage
 try {
   if (sessionStorage.getItem("appLogoutInProgress") === "true") {
-    setTimeout(() => {
-      if (sessionStorage.getItem("appLogoutInProgress") === "true" || document.documentElement.classList.contains("app-is-logging-out")) {
-        hideLogoutLoadingOverlay();
-        showLoginForm();
-      }
-    }, 4500);
+    sessionStorage.removeItem("appLogoutInProgress");
+    document.documentElement.classList.remove("app-is-logging-out");
+    const overlay = document.getElementById("logoutLoadingOverlay");
+    if (overlay) {
+      overlay.style.display = "none";
+      overlay.classList.remove("is-visible", "is-fading-out");
+    }
   }
 } catch (e) { }
 
@@ -1611,27 +1612,21 @@ function logoutProfileSession() {
     "Bạn có chắc chắn muốn đăng xuất tài khoản hiện tại?",
     "Đăng xuất",
     async () => {
-      // 1. Hiển thị màn hình loading toàn trang ngay lập tức
-      showLogoutLoadingOverlay("Đang đăng xuất...", "Đang xử lý dọn dẹp phiên và bảo mật dữ liệu...");
-      try {
-        sessionStorage.setItem("appLogoutInProgress", "true");
-      } catch (e) { }
-
-      // Đóng dropdown menu nếu còn mở
+      // 1. Đóng dropdown menu và tất cả các modal ngay lập tức
       if (typeof closeMoreMenu === "function") {
         closeMoreMenu();
       }
+      closeAllModals();
 
-      // 2. Hủy đăng ký push notification FCM của thiết bị
+      // 2. Hủy đăng ký push notification FCM ngầm (không await chặn luồng chính)
       try {
         if (typeof unregisterDeviceNotificationToken === "function") {
-          await Promise.race([
-            unregisterDeviceNotificationToken(),
-            new Promise((resolve) => setTimeout(resolve, 1000)),
-          ]);
+          unregisterDeviceNotificationToken().catch((err) => {
+            console.warn("[Auth] Lỗi hủy token FCM khi đăng xuất:", err);
+          });
         }
       } catch (err) {
-        console.warn("[Auth] Lỗi hủy token FCM khi đăng xuất:", err);
+        console.warn("[Auth] Lỗi gọi unregisterDeviceNotificationToken:", err);
       }
 
       // 3. Tắt các realtime listener Firebase
@@ -1645,19 +1640,34 @@ function logoutProfileSession() {
         if (firebaseFundsRef) firebaseFundsRef.off();
       } catch (e) { }
 
-      // 4. Xóa thông tin đăng nhập trong localStorage
+      // 4. Xóa thông tin đăng nhập trong localStorage và bộ nhớ
       localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
       localStorage.removeItem("calendarUsername");
       localStorage.removeItem("currentProfileKey");
       localStorage.removeItem("tutorProfileKey");
       userProfileKey = "";
       currentUsername = "";
+      window.userProfileKey = "";
+      window.currentUsername = "";
+      profileSettingsCache = null;
       dateDataCache = {};
 
-      // 5. Tải lại trang sau thời gian ngắn để đảm bảo giao diện loading mượt mà
-      setTimeout(() => {
-        window.location.reload();
-      }, 300);
+      try {
+        sessionStorage.removeItem("appLogoutInProgress");
+      } catch (e) { }
+      document.documentElement.classList.remove("app-is-logging-out");
+
+      // 5. Cập nhật UI ngay lập tức sang chế độ Khách (Guest mode)
+      updateAuthUI();
+      initProfileOnLoad();
+      renderCalendar();
+
+      // 6. Cuộn mượt lên đầu trang
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+
+      showToast("Đã đăng xuất thành công!", "success");
     },
     undefined,
     { type: "warning", icon: "🚪", btnType: "danger" }

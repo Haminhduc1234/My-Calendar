@@ -472,197 +472,531 @@ function renderTodayEvents() {
   `;
 }
 
-function renderCalendar() {
-  const calDom = document.getElementById("calendar");
-  calDom.innerHTML = "";
-  renderTodayEvents();
+/* ========================== CONTINUOUS VERTICAL CALENDAR STREAM ========================== */
+let calendarRenderedRange = {
+  startYear: 0,
+  startMonth: 0,
+  endYear: 0,
+  endMonth: 0,
+};
+let isCalendarInitialized = false;
+let isPrependingMonths = false;
+let isAppendingMonths = false;
+let currentVisibleMonthKey = "";
+let userHasScrolledCalendar = false;
 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
+function createDayCellElement(d, m, y, today) {
+  const cellDate = new Date(y, m - 1, d);
+  const div = document.createElement("div");
+  div.className = "day";
 
-  document.getElementById("monthYear").innerText =
-    `Tháng ${month + 1} / ${year}`;
+  const lunar = convertSolarToLunar(d, m, y);
+  const key = `${y}-${m}-${d}`;
+  const dayEvents = getEventsForDate(key);
+  const recurringOnDay = dayEvents.filter((ev) => ev.isRecurring);
+
+  if (cellDate.getTime() === today.getTime()) div.classList.add("today");
+  if (dayEvents.length > 0) div.classList.add("has-event");
+  if (recurringOnDay.length > 0) div.classList.add("has-recurring-event");
+  if (getOvertimeHoursForDateKey(key) > 0) div.classList.add("has-overtime");
+
+  const isCustomHoliday = !!getDateData(key).isHoliday;
+
+  if (
+    SOLAR_HOLIDAYS[`${d}-${m}`] ||
+    LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`] ||
+    isCustomHoliday
+  ) {
+    div.classList.add("holiday");
+  }
+
+  let holidayName = "";
+  if (SOLAR_HOLIDAYS[`${d}-${m}`]) {
+    holidayName = SOLAR_HOLIDAYS[`${d}-${m}`];
+  }
+  if (LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`]) {
+    holidayName = LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`];
+  }
+  if (isCustomHoliday && !holidayName) {
+    holidayName = "Ngày nghỉ lễ";
+  }
+
+  const hasOvertime = getOvertimeHoursForDateKey(key) > 0;
+  const dayMeals = typeof window.getMealForDate === "function" ? window.getMealForDate(key) : null;
+  let mealBadgeHtml = "";
+  if (dayMeals && dayMeals.length > 0) {
+    const mealSummary = dayMeals
+      .map((mItem) => {
+        const typeLabel = mItem.mealType === "breakfast" ? "Bữa Sáng 🌅" : mItem.mealType === "lunch" ? "Bữa Trưa ☀️" : "Bữa Tối 🌙";
+        const dishesList = (mItem.dishes || []).map((dish) => dish.title).join(", ");
+        return `${typeLabel}: ${dishesList}`;
+      })
+      .join(" | ");
+    mealBadgeHtml = `<span class="day-rec-badge day-meal-badge" style="--badge-color: #f59e0b;" title="🍲 Thực đơn: ${escapeHtml(mealSummary)}">🍲</span>`;
+    div.classList.add("has-meal");
+  }
+
+  let recBadgesHtml = "";
+  if (recurringOnDay.length > 0 || mealBadgeHtml) {
+    const displayRecs = recurringOnDay.slice(0, 2);
+    const extraRecCount = recurringOnDay.length - displayRecs.length;
+    recBadgesHtml = `
+      <div class="day-rec-badges-container">
+        ${mealBadgeHtml}
+        ${displayRecs
+        .map((rec) => {
+          const catMeta = getCategoryMeta(rec.category);
+          const c = escapeHtml(rec.color || (catMeta ? catMeta.defaultColor : "#3b82f6"));
+          return `<span class="day-rec-badge" style="--badge-color: ${c};" title="${escapeHtml(rec.title || catMeta.name)}">${catMeta.icon}</span>`;
+        })
+        .join("")}
+        ${extraRecCount > 0 ? `<span class="day-rec-badge more" title="Còn ${extraRecCount} sự kiện lặp lại">+${extraRecCount}</span>` : ""}
+      </div>
+    `;
+  }
+
+  let dotsHtml = "";
+  if (dayEvents.length > 0 || hasOvertime) {
+    const displayDots = dayEvents.slice(0, 5);
+    const extraCount = dayEvents.length - displayDots.length;
+    const overtimeDot = hasOvertime
+      ? `<span class="day-event-dot day-overtime-dot" style="background-color: #4ade80; color: #4ade80;" title="Tăng ca"></span>`
+      : "";
+    dotsHtml = `
+      <div class="day-event-dots">
+        ${displayDots
+        .map((ev) => {
+          const isRec = Boolean(ev.isRecurring);
+          const catMeta = isRec ? getCategoryMeta(ev.category) : null;
+          const c = escapeHtml(ev.color || (catMeta ? catMeta.defaultColor : "#3b82f6"));
+          const prefix = catMeta ? `${catMeta.icon} ` : (isRec ? "🔄 " : "");
+          const recClass = isRec ? " day-rec-dot" : "";
+          return `<span class="day-event-dot${recClass}" style="background-color: ${c}; color: ${c};" title="${prefix}${escapeHtml(ev.title || "Sự kiện")}"></span>`;
+        })
+        .join("")}
+        ${extraCount > 0 ? `<span class="day-event-more">+${extraCount}</span>` : ""}
+        ${overtimeDot}
+      </div>
+    `;
+  }
+
+  div.innerHTML = `
+    <div class="solar">${d}</div>
+    <div class="lunar">${lunar.lunarDay}/${lunar.lunarMonth}${lunar.lunarLeap ? "N" : ""}</div>
+    ${recBadgesHtml}
+    ${dotsHtml}
+  `;
+
+  div.onclick = () => {
+    if (!isUserLoggedIn()) return;
+    openModal(key, d, m, y);
+  };
+
+  return div;
+}
+
+function createMonthBlockElement(year, month) {
+  const block = document.createElement("div");
+  block.className = "calendar-month-block";
+  block.dataset.year = year;
+  block.dataset.month = month;
+  block.id = `month-block-${year}-${month}`;
+
+  // Month Divider
+  const divider = document.createElement("div");
+  divider.className = "calendar-month-divider";
+  divider.innerHTML = `
+    <span class="month-divider-line"></span>
+  `;
+  block.appendChild(divider);
+
+  // Month Days Grid
+  const grid = document.createElement("div");
+  grid.className = "month-days-grid";
 
   let firstDayOfMonth = new Date(year, month, 1).getDay();
   // Chuyển Chủ Nhật (0) thành 6, Thứ Hai (1) thành 0... để tuần bắt đầu từ Thứ Hai
   firstDayOfMonth = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
-  const startDate = new Date(year, month, 1 - firstDayOfMonth);
 
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  for (let i = 0; i < 42; i++) {
-    const cellDate = new Date(startDate);
-    cellDate.setDate(startDate.getDate() + i);
-
-    const d = cellDate.getDate();
-    const m = cellDate.getMonth() + 1;
-    const y = cellDate.getFullYear();
-
-    const div = document.createElement("div");
-    div.className = "day";
-    if (cellDate.getMonth() !== month) div.classList.add("other-month");
-
-    const lunar = convertSolarToLunar(d, m, y);
-    const key = `${y}-${m}-${d}`;
-    const dayEvents = getEventsForDate(key);
-    const recurringOnDay = dayEvents.filter(ev => ev.isRecurring);
-
-    if (cellDate.getTime() === today.getTime()) div.classList.add("today");
-    if (dayEvents.length > 0) div.classList.add("has-event");
-    if (recurringOnDay.length > 0) div.classList.add("has-recurring-event");
-    if (getOvertimeHoursForDateKey(key) > 0) div.classList.add("has-overtime");
-
-    const isCustomHoliday = !!getDateData(key).isHoliday;
-
-    if (
-      SOLAR_HOLIDAYS[`${d}-${m}`] ||
-      LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`] ||
-      isCustomHoliday
-    ) {
-      div.classList.add("holiday");
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dayEl = createDayCellElement(d, month + 1, year, today);
+    if (d === 1 && firstDayOfMonth > 0) {
+      dayEl.style.gridColumnStart = String(firstDayOfMonth + 1);
     }
-
-    let holidayName = "";
-
-    if (SOLAR_HOLIDAYS[`${d}-${m}`]) {
-      holidayName = SOLAR_HOLIDAYS[`${d}-${m}`];
-    }
-
-    if (LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`]) {
-      holidayName = LUNAR_HOLIDAYS[`${lunar.lunarDay}-${lunar.lunarMonth}`];
-    }
-
-    if (isCustomHoliday && !holidayName) {
-      holidayName = "Ngày nghỉ lễ";
-    }
-
-    const hasOvertime = getOvertimeHoursForDateKey(key) > 0;
-    const dayMeals = typeof window.getMealForDate === "function" ? window.getMealForDate(key) : null;
-    let mealBadgeHtml = "";
-    if (dayMeals && dayMeals.length > 0) {
-      const mealSummary = dayMeals
-        .map((m) => {
-          const typeLabel = m.mealType === "breakfast" ? "Bữa Sáng 🌅" : m.mealType === "lunch" ? "Bữa Trưa ☀️" : "Bữa Tối 🌙";
-          const dishesList = (m.dishes || []).map((d) => d.title).join(", ");
-          return `${typeLabel}: ${dishesList}`;
-        })
-        .join(" | ");
-      mealBadgeHtml = `<span class="day-rec-badge day-meal-badge" style="--badge-color: #f59e0b;" title="🍲 Thực đơn: ${escapeHtml(mealSummary)}">🍲</span>`;
-      div.classList.add("has-meal");
-    }
-
-    let recBadgesHtml = "";
-    if (recurringOnDay.length > 0 || mealBadgeHtml) {
-      const displayRecs = recurringOnDay.slice(0, 2);
-      const extraRecCount = recurringOnDay.length - displayRecs.length;
-      recBadgesHtml = `
-        <div class="day-rec-badges-container">
-          ${mealBadgeHtml}
-          ${displayRecs
-          .map((rec) => {
-            const catMeta = getCategoryMeta(rec.category);
-            const c = escapeHtml(rec.color || (catMeta ? catMeta.defaultColor : "#3b82f6"));
-            return `<span class="day-rec-badge" style="--badge-color: ${c};" title="${escapeHtml(rec.title || catMeta.name)}">${catMeta.icon}</span>`;
-          })
-          .join("")}
-          ${extraRecCount > 0 ? `<span class="day-rec-badge more" title="Còn ${extraRecCount} sự kiện lặp lại">+${extraRecCount}</span>` : ""}
-        </div>
-      `;
-    }
-
-    let dotsHtml = "";
-    if (dayEvents.length > 0 || hasOvertime) {
-      const displayDots = dayEvents.slice(0, 5);
-      const extraCount = dayEvents.length - displayDots.length;
-      const overtimeDot = hasOvertime
-        ? `<span class="day-event-dot day-overtime-dot" style="background-color: #4ade80; color: #4ade80;" title="Tăng ca"></span>`
-        : "";
-      dotsHtml = `
-        <div class="day-event-dots">
-          ${displayDots
-          .map((ev) => {
-            const isRec = Boolean(ev.isRecurring);
-            const catMeta = isRec ? getCategoryMeta(ev.category) : null;
-            const c = escapeHtml(ev.color || (catMeta ? catMeta.defaultColor : "#3b82f6"));
-            const prefix = catMeta ? `${catMeta.icon} ` : (isRec ? "🔄 " : "");
-            const recClass = isRec ? " day-rec-dot" : "";
-            return `<span class="day-event-dot${recClass}" style="background-color: ${c}; color: ${c};" title="${prefix}${escapeHtml(ev.title || "Sự kiện")}"></span>`;
-          })
-          .join("")}
-          ${extraCount > 0 ? `<span class="day-event-more">+${extraCount}</span>` : ""}
-          ${overtimeDot}
-        </div>
-      `;
-    }
-
-    div.innerHTML = `
-  <div class="solar">${d}</div>
-  <div class="lunar">${lunar.lunarDay}/${lunar.lunarMonth}${lunar.lunarLeap ? "N" : ""}</div>
-  ${recBadgesHtml}
-  ${dotsHtml}
-`;
-
-    div.onclick = () => {
-      if (!isUserLoggedIn()) return;
-      openModal(key, d, m, y);
-    };
-
-    calDom.appendChild(div);
+    grid.appendChild(dayEl);
   }
 
-  if (typeof checkGuestScrollBottom === "function") {
-    checkGuestScrollBottom();
-  }
+  block.appendChild(grid);
+  return block;
 }
 
-/* ========================== THÁNG ========================== */
-function changeMonth(step) {
-  const calDom = document.getElementById("calendar");
-  if (!calDom) {
-    currentDate.setMonth(currentDate.getMonth() + step);
-    renderCalendar();
-    renderOvertime();
-    renderOvertimeSalary();
+
+function jumpToCurrentMonth(smooth = false) {
+  const wrapper = document.getElementById("calendarScrollWrapper");
+  if (!wrapper) return;
+
+  const now = new Date();
+  const curY = now.getFullYear();
+  const curM = now.getMonth();
+  const targetBlock = document.getElementById(`month-block-${curY}-${curM}`);
+  if (!targetBlock) return;
+
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const blockRect = targetBlock.getBoundingClientRect();
+  const targetTop = blockRect.top - wrapperRect.top + wrapper.scrollTop;
+
+  if (smooth) {
+    wrapper.scrollTo({
+      top: Math.max(0, targetTop - 2),
+      behavior: "smooth",
+    });
+  } else {
+    wrapper.scrollTop = Math.max(0, targetTop - 2);
+  }
+
+  currentVisibleMonthKey = `${curY}-${curM}`;
+  currentDate.setFullYear(curY);
+  currentDate.setMonth(curM);
+
+  const monthYearEl = document.getElementById("monthYear");
+  if (monthYearEl) {
+    monthYearEl.innerText = `Tháng ${curM + 1} / ${curY}`;
+  }
+
+  if (typeof renderOvertime === "function") renderOvertime();
+  if (typeof renderOvertimeSalary === "function") renderOvertimeSalary();
+}
+
+function setupCalendarScrollListener() {
+  const wrapper = document.getElementById("calendarScrollWrapper");
+  if (!wrapper || wrapper._hasScrollBound) return;
+  wrapper._hasScrollBound = true;
+
+  const onUserInteraction = () => {
+    userHasScrolledCalendar = true;
+  };
+
+  wrapper.addEventListener("touchstart", onUserInteraction, { passive: true });
+  wrapper.addEventListener("mousedown", onUserInteraction, { passive: true });
+  wrapper.addEventListener("wheel", onUserInteraction, { passive: true });
+  wrapper.addEventListener("pointerdown", onUserInteraction, { passive: true });
+
+  let isTicking = false;
+
+  wrapper.addEventListener("scroll", function () {
+    if (!isTicking) {
+      window.requestAnimationFrame(function () {
+        handleCalendarScroll(wrapper);
+        isTicking = false;
+      });
+      isTicking = true;
+    }
+  }, { passive: true });
+}
+
+function handleCalendarScroll(wrapper) {
+  if (!wrapper) return;
+
+  // Nếu người dùng chưa từng tương tác thì bỏ qua scroll event ngầm để giữ nguyên tháng hiện tại
+  if (!userHasScrolledCalendar) {
     return;
   }
 
-  // Hướng slide: step > 0 (tháng sau) → slide sang trái; step < 0 (tháng trước) → slide sang phải
-  const outClass = step > 0 ? "cal-slide-out-left" : "cal-slide-out-right";
-  const inClass = step > 0 ? "cal-slide-in-right" : "cal-slide-in-left";
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const checkLineY = wrapperRect.top + 70;
 
-  // Xoá class cũ nếu animation đang chạy dở
-  calDom.classList.remove(
-    "cal-slide-in-right", "cal-slide-in-left",
-    "cal-slide-out-left", "cal-slide-out-right"
-  );
+  const monthBlocks = wrapper.querySelectorAll(".calendar-month-block");
+  let activeBlock = null;
 
-  // Bước 1: slide out
-  calDom.classList.add(outClass);
+  for (let i = 0; i < monthBlocks.length; i++) {
+    const block = monthBlocks[i];
+    const rect = block.getBoundingClientRect();
+    if (rect.top <= checkLineY && rect.bottom > checkLineY) {
+      activeBlock = block;
+      break;
+    }
+  }
 
-  const onOutEnd = () => {
-    calDom.removeEventListener("animationend", onOutEnd);
-    calDom.classList.remove(outClass);
+  if (!activeBlock && monthBlocks.length > 0) {
+    if (wrapper.scrollTop <= 20) {
+      activeBlock = monthBlocks[0];
+    } else {
+      activeBlock = monthBlocks[monthBlocks.length - 1];
+    }
+  }
 
-    // Bước 2: đổi tháng và re-render
-    currentDate.setMonth(currentDate.getMonth() + step);
-    renderCalendar();
-    renderOvertime();
-    renderOvertimeSalary();
+  if (activeBlock) {
+    const y = parseInt(activeBlock.dataset.year, 10);
+    const m = parseInt(activeBlock.dataset.month, 10);
+    const key = `${y}-${m}`;
 
-    // Bước 3: slide in
-    // Dùng requestAnimationFrame để đảm bảo DOM đã cập nhật trước khi thêm class
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        calDom.classList.add(inClass);
-        calDom.addEventListener("animationend", () => {
-          calDom.classList.remove(inClass);
-        }, { once: true });
-      });
+    if (currentVisibleMonthKey !== key) {
+      currentVisibleMonthKey = key;
+      currentDate.setFullYear(y);
+      currentDate.setMonth(m);
+      const monthYearEl = document.getElementById("monthYear");
+      if (monthYearEl) {
+        monthYearEl.innerText = `Tháng ${m + 1} / ${y}`;
+      }
+      if (typeof renderOvertime === "function") renderOvertime();
+      if (typeof renderOvertimeSalary === "function") renderOvertimeSalary();
+    }
+  }
+
+  // Infinite scroll
+  if (wrapper.scrollTop < 160 && !isPrependingMonths) {
+    loadMorePreviousMonths(wrapper);
+  } else if (wrapper.scrollHeight - wrapper.scrollTop - wrapper.clientHeight < 260 && !isAppendingMonths) {
+    loadMoreNextMonths(wrapper);
+  }
+}
+
+function loadMorePreviousMonths(wrapper) {
+  if (isPrependingMonths) return;
+  isPrependingMonths = true;
+
+  const calDom = document.getElementById("calendar");
+  if (!calDom) {
+    isPrependingMonths = false;
+    return;
+  }
+
+  const prevScrollHeight = wrapper.scrollHeight;
+  const prevScrollTop = wrapper.scrollTop;
+
+  let curY = calendarRenderedRange.startYear;
+  let curM = calendarRenderedRange.startMonth;
+
+  const frag = document.createDocumentFragment();
+  const monthsToPrepend = 4;
+  const newMonths = [];
+
+  for (let i = 0; i < monthsToPrepend; i++) {
+    curM--;
+    if (curM < 0) {
+      curM = 11;
+      curY--;
+    }
+    newMonths.unshift({ year: curY, month: curM });
+  }
+
+  for (const item of newMonths) {
+    const block = createMonthBlockElement(item.year, item.month);
+    frag.appendChild(block);
+  }
+
+  calendarRenderedRange.startYear = newMonths[0].year;
+  calendarRenderedRange.startMonth = newMonths[0].month;
+
+  calDom.insertBefore(frag, calDom.firstChild);
+
+  // Giữ nguyên vị trí cuộn mượt mà không bị giật
+  const newScrollHeight = wrapper.scrollHeight;
+  wrapper.scrollTop = prevScrollTop + (newScrollHeight - prevScrollHeight);
+
+  setTimeout(() => {
+    isPrependingMonths = false;
+  }, 100);
+}
+
+function loadMoreNextMonths(wrapper) {
+  if (isAppendingMonths) return;
+  isAppendingMonths = true;
+
+  const calDom = document.getElementById("calendar");
+  if (!calDom) {
+    isAppendingMonths = false;
+    return;
+  }
+
+  let curY = calendarRenderedRange.endYear;
+  let curM = calendarRenderedRange.endMonth;
+
+  const frag = document.createDocumentFragment();
+  const monthsToAppend = 4;
+
+  for (let i = 0; i < monthsToAppend; i++) {
+    curM++;
+    if (curM > 11) {
+      curM = 0;
+      curY++;
+    }
+    const block = createMonthBlockElement(curY, curM);
+    frag.appendChild(block);
+  }
+
+  calendarRenderedRange.endYear = curY;
+  calendarRenderedRange.endMonth = curM;
+
+  calDom.appendChild(frag);
+
+  setTimeout(() => {
+    isAppendingMonths = false;
+  }, 100);
+}
+
+function renderCalendar(options = {}) {
+  const calDom = document.getElementById("calendar");
+  const scrollWrapper = document.getElementById("calendarScrollWrapper");
+  if (!calDom) return;
+
+  renderTodayEvents();
+
+  // Đảm bảo anchor luôn là tháng hiện tại khi khởi tạo hoặc chưa tương tác
+  const now = new Date();
+  const anchorYear = userHasScrolledCalendar ? currentDate.getFullYear() : now.getFullYear();
+  const anchorMonth = userHasScrolledCalendar ? currentDate.getMonth() : now.getMonth();
+
+  if (!userHasScrolledCalendar) {
+    currentDate = new Date();
+  }
+
+  // Đảm bảo listener cuộn đã được gắn
+  setupCalendarScrollListener();
+
+  // Nếu đã khởi tạo và chỉ cần cập nhật lại ngày (thêm/sửa/xóa event):
+  if (isCalendarInitialized && !options.reset && calDom.children.length > 0) {
+    const savedScrollTop = scrollWrapper ? scrollWrapper.scrollTop : 0;
+
+    const blocks = calDom.querySelectorAll(".calendar-month-block");
+    blocks.forEach((block) => {
+      const y = parseInt(block.dataset.year, 10);
+      const m = parseInt(block.dataset.month, 10);
+      const newBlock = createMonthBlockElement(y, m);
+      calDom.replaceChild(newBlock, block);
     });
-  };
 
-  calDom.addEventListener("animationend", onOutEnd, { once: true });
+    if (userHasScrolledCalendar && scrollWrapper) {
+      scrollWrapper.scrollTop = savedScrollTop;
+    } else {
+      jumpToCurrentMonth(false);
+    }
+
+    if (typeof checkGuestScrollBottom === "function") {
+      checkGuestScrollBottom();
+    }
+    return;
+  }
+
+  // Khởi tạo mới dải tháng (4 tháng trước và 7 tháng sau)
+  calDom.innerHTML = "";
+
+  const INITIAL_PREV_MONTHS = 4;
+  const INITIAL_NEXT_MONTHS = 7;
+
+  let startY = anchorYear;
+  let startM = anchorMonth - INITIAL_PREV_MONTHS;
+  while (startM < 0) {
+    startM += 12;
+    startY--;
+  }
+
+  let endY = anchorYear;
+  let endM = anchorMonth + INITIAL_NEXT_MONTHS;
+  while (endM > 11) {
+    endM -= 12;
+    endY++;
+  }
+
+  calendarRenderedRange.startYear = startY;
+  calendarRenderedRange.startMonth = startM;
+  calendarRenderedRange.endYear = endY;
+  calendarRenderedRange.endMonth = endM;
+
+  const frag = document.createDocumentFragment();
+
+  let curY = startY;
+  let curM = startM;
+
+  while (curY < endY || (curY === endY && curM <= endM)) {
+    const block = createMonthBlockElement(curY, curM);
+    frag.appendChild(block);
+
+    curM++;
+    if (curM > 11) {
+      curM = 0;
+      curY++;
+    }
+  }
+
+  calDom.appendChild(frag);
+  isCalendarInitialized = true;
+
+  currentVisibleMonthKey = `${anchorYear}-${anchorMonth}`;
+  const monthYearEl = document.getElementById("monthYear");
+  if (monthYearEl) {
+    monthYearEl.innerText = `Tháng ${anchorMonth + 1} / ${anchorYear}`;
+  }
+
+  // Căn chuẩn ngay lập tức đến tháng hiện tại
+  jumpToCurrentMonth(false);
+
+  requestAnimationFrame(() => {
+    jumpToCurrentMonth(false);
+    if (typeof checkGuestScrollBottom === "function") {
+      checkGuestScrollBottom();
+    }
+  });
+
+  setTimeout(() => jumpToCurrentMonth(false), 60);
+  setTimeout(() => jumpToCurrentMonth(false), 200);
+}
+
+function changeMonth(step) {
+  const wrapper = document.getElementById("calendarScrollWrapper");
+  if (!wrapper) return;
+
+  let targetYear = currentDate.getFullYear();
+  let targetMonth = currentDate.getMonth() + step;
+
+  if (targetMonth < 0) {
+    targetMonth = 11;
+    targetYear--;
+  } else if (targetMonth > 11) {
+    targetMonth = 0;
+    targetYear++;
+  }
+
+  let block = document.getElementById(`month-block-${targetYear}-${targetMonth}`);
+
+  if (!block) {
+    if (step < 0) {
+      while (!block && calendarRenderedRange.startYear >= targetYear - 1) {
+        loadMorePreviousMonths(wrapper);
+        block = document.getElementById(`month-block-${targetYear}-${targetMonth}`);
+      }
+    } else {
+      while (!block && calendarRenderedRange.endYear <= targetYear + 1) {
+        loadMoreNextMonths(wrapper);
+        block = document.getElementById(`month-block-${targetYear}-${targetMonth}`);
+      }
+    }
+  }
+
+  if (block) {
+    wrapper.scrollTo({
+      top: Math.max(0, block.offsetTop - 6),
+      behavior: "smooth",
+    });
+    currentDate.setFullYear(targetYear);
+    currentDate.setMonth(targetMonth);
+    currentVisibleMonthKey = `${targetYear}-${targetMonth}`;
+    const monthYearEl = document.getElementById("monthYear");
+    if (monthYearEl) {
+      monthYearEl.innerText = `Tháng ${targetMonth + 1} / ${targetYear}`;
+    }
+    if (typeof renderOvertime === "function") renderOvertime();
+    if (typeof renderOvertimeSalary === "function") renderOvertimeSalary();
+  }
+}
+
+function scrollToCurrentMonth() {
+  userHasScrolledCalendar = true;
+  jumpToCurrentMonth(true);
 }
 
 function isDateKey(key) {
@@ -21015,6 +21349,9 @@ function loadTodayLunarOnDemand() {
     if (appInitDismissed) return;
     appInitDismissed = true;
     setAppInitLoading(false);
+    if (!userHasScrolledCalendar && typeof jumpToCurrentMonth === "function") {
+      requestAnimationFrame(() => jumpToCurrentMonth(false));
+    }
   };
 
   // Tối đa 2.2 giây tự động tắt loading để đảm bảo người dùng luôn vào được app ngay cả khi mạng chậm hoặc offline
@@ -21082,34 +21419,10 @@ function loadTodayLunarOnDemand() {
 
   console.log("[Init] App started - calendar rendered immediately");
 
-  // Swipe gesture để chuyển tháng trên mobile
-  (function initCalendarSwipe() {
-    const calendarEl = document.getElementById("calendar");
-    if (!calendarEl) return;
-
-    let touchStartX = 0;
-    let touchStartY = 0;
-
-    calendarEl.addEventListener("touchstart", function (e) {
-      touchStartX = e.changedTouches[0].clientX;
-      touchStartY = e.changedTouches[0].clientY;
-    }, { passive: true });
-
-    calendarEl.addEventListener("touchend", function (e) {
-      const dx = e.changedTouches[0].clientX - touchStartX;
-      const dy = e.changedTouches[0].clientY - touchStartY;
-      const MIN_SWIPE = 50; // px tối thiểu để tính là vuốt
-
-      // Chỉ xử lý nếu vuốt ngang nhiều hơn dọc (tránh nhầm với cuộn)
-      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > MIN_SWIPE) {
-        if (dx > 0) {
-          changeMonth(-1); // Vuốt sang phải → tháng trước
-        } else {
-          changeMonth(1);  // Vuốt sang trái → tháng sau
-        }
-      }
-    }, { passive: true });
-  })();
+  // Khởi tạo bộ lắng nghe cuộn liên tục các tháng theo chiều dọc
+  if (typeof setupCalendarScrollListener === "function") {
+    setupCalendarScrollListener();
+  }
 })();
 
 /* ========================== TIN TỨC ========================== */

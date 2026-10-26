@@ -327,7 +327,7 @@
     <div class="calendar-container">
       <div class="header">
         <button onclick="changeMonth(-1)" aria-label="Tháng trước"><i class="fi fi-rr-angle-left"></i></button>
-        <h2 id="monthYear"></h2>
+        <h2 id="monthYear" onclick="scrollToCurrentMonth()" title="Bấm để quay về tháng hiện tại" style="cursor: pointer;"></h2>
         <button onclick="changeMonth(1)" aria-label="Tháng sau"><i class="fi fi-rr-angle-right"></i></button>
       </div>
 
@@ -341,8 +341,8 @@
         <div>CN</div>
       </div>
 
-      <div class="calendar-slide-wrapper">
-        <div class="days" id="calendar"></div>
+      <div class="calendar-scroll-wrapper" id="calendarScrollWrapper">
+        <div class="calendar-stream" id="calendar"></div>
       </div>
       <div id="calendarSkeleton" class="calendar-skeleton">
         <div class="skeleton-grid">

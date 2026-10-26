@@ -638,6 +638,18 @@ function createMonthBlockElement(year, month) {
 }
 
 
+function updateBackToCurrentMonthBtn(year, month) {
+  const btn = document.getElementById("btnBackToCurrentMonth");
+  if (!btn) return;
+  const now = new Date();
+  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
+  if (isCurrentMonth) {
+    btn.classList.remove("visible");
+  } else {
+    btn.classList.add("visible");
+  }
+}
+
 function scrollToMonth(year, month, smooth = true) {
   const wrapper = document.getElementById("calendarScrollWrapper");
   if (!wrapper) return;
@@ -678,6 +690,8 @@ function scrollToMonth(year, month, smooth = true) {
   currentDate.setFullYear(year);
   currentDate.setMonth(month);
   currentVisibleMonthKey = `${year}-${month}`;
+
+  updateBackToCurrentMonthBtn(year, month);
 
   const monthYearEl = document.getElementById("monthYear");
   if (monthYearEl) {
@@ -784,6 +798,8 @@ function handleCalendarScroll(wrapper) {
     const y = parseInt(activeBlock.dataset.year, 10);
     const m = parseInt(activeBlock.dataset.month, 10);
     const key = `${y}-${m}`;
+
+    updateBackToCurrentMonthBtn(y, m);
 
     if (currentVisibleMonthKey !== key) {
       currentVisibleMonthKey = key;

@@ -418,11 +418,10 @@ body::before {
 .app-wrapper {
   margin: 0 auto;
   position: relative;
-  min-height: 100vh;
+  height: calc(100vh - 132px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 80px;
   overflow-x: hidden;
 }
 
@@ -1275,8 +1274,8 @@ body::before {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  height: 520px;
-  max-height: calc(100dvh - 240px);
+  height: calc(100dvh - 300px);
+  max-height: calc(100dvh - 300px);
   min-height: 440px;
   padding-right: 2px;
   scrollbar-width: thin;
@@ -1365,6 +1364,88 @@ body::before {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 6px;
+}
+
+/* Nút tròn nổi "Hiện tại" ở góc dưới bên phải */
+.btn-back-to-current-month {
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  z-index: 25;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.96) 0%, rgba(37, 99, 235, 0.96) 100%);
+  color: #ffffff;
+  font-family: inherit;
+  border: 1.5px solid rgba(255, 255, 255, 0.38);
+  box-shadow:
+    0 8px 24px rgba(14, 165, 233, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  user-select: none;
+  white-space: nowrap;
+
+  /* Hiệu ứng nổi lên (float-up / pop-in) khi xuất hiện */
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(18px) scale(0.82);
+  transition:
+    opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+    visibility 0.3s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.btn-back-to-current-month.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+
+.btn-back-to-current-month i {
+  font-size: 15px;
+  line-height: 1;
+  position: relative;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.btn-back-to-current-month span {
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.2px;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.btn-back-to-current-month:hover {
+  background: linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 10px 28px rgba(14, 165, 233, 0.65),
+    0 4px 14px rgba(0, 0, 0, 0.45),
+    inset 0 1px 1px rgba(255, 255, 255, 0.55);
+}
+
+.btn-back-to-current-month:active {
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
 }
 
 .day {

@@ -327,7 +327,8 @@
     <div class="calendar-container">
       <div class="header">
         <button onclick="changeMonth(-1)" aria-label="Tháng trước"><i class="fi fi-rr-angle-left"></i></button>
-        <h2 id="monthYear" onclick="scrollToCurrentMonth()" title="Bấm để quay về tháng hiện tại" style="cursor: pointer;"></h2>
+        <h2 id="monthYear" onclick="scrollToCurrentMonth()" title="Bấm để quay về tháng hiện tại"
+          style="cursor: pointer;"></h2>
         <button onclick="changeMonth(1)" aria-label="Tháng sau"><i class="fi fi-rr-angle-right"></i></button>
       </div>
 
@@ -344,6 +345,11 @@
       <div class="calendar-scroll-wrapper" id="calendarScrollWrapper">
         <div class="calendar-stream" id="calendar"></div>
       </div>
+      <button type="button" id="btnBackToCurrentMonth" class="btn-back-to-current-month"
+        onclick="scrollToCurrentMonth()" aria-label="Về tháng hiện tại" title="Về tháng hiện tại">
+        <i class="fi fi-rr-calendar"></i>
+        <span>Hiện tại</span>
+      </button>
       <div id="calendarSkeleton" class="calendar-skeleton">
         <div class="skeleton-grid">
           <div class="skeleton-day"></div>
@@ -4539,10 +4545,10 @@
   </div>
 
   <footer class="app-footer">
-    <div class="footer-content">
+    <!-- <div class="footer-content">
       © <span id="year"></span> <strong>Lịch Việt</strong> · Made with ❤️ by
       <span class="author">Ha Vu Phuong Linh</span>
-    </div>
+    </div> -->
   </footer>
   <script src="firebase-config.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>

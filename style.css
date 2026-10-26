@@ -1323,6 +1323,10 @@ body::before {
   user-select: none;
 }
 
+.calendar-month-block:first-child .calendar-month-divider {
+  display: none;
+}
+
 .calendar-month-divider .month-divider-line {
   flex: 1;
   height: 1px;

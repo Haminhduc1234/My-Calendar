@@ -480,6 +480,9 @@ let calendarRenderedRange = {
   endMonth: 0,
 };
 let isCalendarInitialized = false;
+let isCalendarInitializing = false;
+let isProgrammaticScrolling = false;
+let programmaticScrollTimer = null;
 let isPrependingMonths = false;
 let isAppendingMonths = false;
 let currentVisibleMonthKey = "";
@@ -635,40 +638,78 @@ function createMonthBlockElement(year, month) {
 }
 
 
-function jumpToCurrentMonth(smooth = false) {
+function scrollToMonth(year, month, smooth = true) {
   const wrapper = document.getElementById("calendarScrollWrapper");
   if (!wrapper) return;
 
-  const now = new Date();
-  const curY = now.getFullYear();
-  const curM = now.getMonth();
-  const targetBlock = document.getElementById(`month-block-${curY}-${curM}`);
-  if (!targetBlock) return;
+  userHasScrolledCalendar = true;
+
+  let block = document.getElementById(`month-block-${year}-${month}`);
+
+  // Nếu tháng chưa có trong DOM (vượt quá dải đã render), render lại tập trung vào tháng đích
+  if (!block) {
+    currentDate = new Date(year, month, 1);
+    renderCalendar({ reset: true });
+    return;
+  }
 
   const wrapperRect = wrapper.getBoundingClientRect();
-  const blockRect = targetBlock.getBoundingClientRect();
-  const targetTop = blockRect.top - wrapperRect.top + wrapper.scrollTop;
+  const blockRect = block.getBoundingClientRect();
+  const targetTop = wrapper.scrollTop + (blockRect.top - wrapperRect.top);
+
+  isProgrammaticScrolling = true;
+  if (programmaticScrollTimer) clearTimeout(programmaticScrollTimer);
 
   if (smooth) {
     wrapper.scrollTo({
-      top: Math.max(0, targetTop - 2),
+      top: Math.max(0, Math.round(targetTop)),
       behavior: "smooth",
     });
+    programmaticScrollTimer = setTimeout(() => {
+      isProgrammaticScrolling = false;
+    }, 450);
   } else {
-    wrapper.scrollTop = Math.max(0, targetTop - 2);
+    wrapper.scrollTop = Math.max(0, Math.round(targetTop));
+    programmaticScrollTimer = setTimeout(() => {
+      isProgrammaticScrolling = false;
+    }, 50);
   }
 
-  currentVisibleMonthKey = `${curY}-${curM}`;
-  currentDate.setFullYear(curY);
-  currentDate.setMonth(curM);
+  currentDate.setFullYear(year);
+  currentDate.setMonth(month);
+  currentVisibleMonthKey = `${year}-${month}`;
 
   const monthYearEl = document.getElementById("monthYear");
   if (monthYearEl) {
-    monthYearEl.innerText = `Tháng ${curM + 1} / ${curY}`;
+    monthYearEl.innerText = `Tháng ${month + 1} / ${year}`;
   }
 
   if (typeof renderOvertime === "function") renderOvertime();
   if (typeof renderOvertimeSalary === "function") renderOvertimeSalary();
+}
+
+function jumpToCurrentMonth(smooth = false) {
+  const now = new Date();
+  scrollToMonth(now.getFullYear(), now.getMonth(), smooth);
+}
+
+function changeMonth(step) {
+  let targetYear = currentDate.getFullYear();
+  let targetMonth = currentDate.getMonth() + step;
+
+  if (targetMonth < 0) {
+    targetMonth = 11;
+    targetYear--;
+  } else if (targetMonth > 11) {
+    targetMonth = 0;
+    targetYear++;
+  }
+
+  scrollToMonth(targetYear, targetMonth, true);
+}
+
+function scrollToCurrentMonth() {
+  jumpToCurrentMonth(true);
 }
 
 function setupCalendarScrollListener() {
@@ -687,46 +728,56 @@ function setupCalendarScrollListener() {
 
   let isTicking = false;
 
-  wrapper.addEventListener("scroll", function () {
-    if (!isTicking) {
-      window.requestAnimationFrame(function () {
-        handleCalendarScroll(wrapper);
-        isTicking = false;
-      });
-      isTicking = true;
-    }
-  }, { passive: true });
+  wrapper.addEventListener(
+    "scroll",
+    function () {
+      if (!isTicking) {
+        window.requestAnimationFrame(function () {
+          handleCalendarScroll(wrapper);
+          isTicking = false;
+        });
+        isTicking = true;
+      }
+    },
+    { passive: true }
+  );
 }
 
 function handleCalendarScroll(wrapper) {
   if (!wrapper) return;
+  if (isCalendarInitializing || isProgrammaticScrolling) return;
 
-  // Nếu người dùng chưa từng tương tác thì bỏ qua scroll event ngầm để giữ nguyên tháng hiện tại
-  if (!userHasScrolledCalendar) {
-    return;
-  }
+  userHasScrolledCalendar = true;
 
   const wrapperRect = wrapper.getBoundingClientRect();
-  const checkLineY = wrapperRect.top + 70;
+  // Điểm ngắm tiêu điểm: 110px dưới đỉnh vùng cuộn (tương đương hàng thứ 2 của tháng)
+  const focusLineY = wrapperRect.top + Math.min(110, wrapperRect.height * 0.25);
 
   const monthBlocks = wrapper.querySelectorAll(".calendar-month-block");
   let activeBlock = null;
+  let maxVisibleHeight = -1;
+  let fallbackBlock = null;
 
   for (let i = 0; i < monthBlocks.length; i++) {
     const block = monthBlocks[i];
     const rect = block.getBoundingClientRect();
-    if (rect.top <= checkLineY && rect.bottom > checkLineY) {
+
+    if (rect.top <= focusLineY && rect.bottom > focusLineY) {
       activeBlock = block;
       break;
     }
+
+    const vTop = Math.max(wrapperRect.top, rect.top);
+    const vBottom = Math.min(wrapperRect.bottom, rect.bottom);
+    const vHeight = vBottom - vTop;
+    if (vHeight > maxVisibleHeight) {
+      maxVisibleHeight = vHeight;
+      fallbackBlock = block;
+    }
   }
 
-  if (!activeBlock && monthBlocks.length > 0) {
-    if (wrapper.scrollTop <= 20) {
-      activeBlock = monthBlocks[0];
-    } else {
-      activeBlock = monthBlocks[monthBlocks.length - 1];
-    }
+  if (!activeBlock) {
+    activeBlock = fallbackBlock || monthBlocks[0];
   }
 
   if (activeBlock) {
@@ -925,6 +976,7 @@ function renderCalendar(options = {}) {
 
   calDom.appendChild(frag);
   isCalendarInitialized = true;
+  isCalendarInitializing = true;
 
   currentVisibleMonthKey = `${anchorYear}-${anchorMonth}`;
   const monthYearEl = document.getElementById("monthYear");
@@ -943,60 +995,10 @@ function renderCalendar(options = {}) {
   });
 
   setTimeout(() => jumpToCurrentMonth(false), 60);
-  setTimeout(() => jumpToCurrentMonth(false), 200);
-}
-
-function changeMonth(step) {
-  const wrapper = document.getElementById("calendarScrollWrapper");
-  if (!wrapper) return;
-
-  let targetYear = currentDate.getFullYear();
-  let targetMonth = currentDate.getMonth() + step;
-
-  if (targetMonth < 0) {
-    targetMonth = 11;
-    targetYear--;
-  } else if (targetMonth > 11) {
-    targetMonth = 0;
-    targetYear++;
-  }
-
-  let block = document.getElementById(`month-block-${targetYear}-${targetMonth}`);
-
-  if (!block) {
-    if (step < 0) {
-      while (!block && calendarRenderedRange.startYear >= targetYear - 1) {
-        loadMorePreviousMonths(wrapper);
-        block = document.getElementById(`month-block-${targetYear}-${targetMonth}`);
-      }
-    } else {
-      while (!block && calendarRenderedRange.endYear <= targetYear + 1) {
-        loadMoreNextMonths(wrapper);
-        block = document.getElementById(`month-block-${targetYear}-${targetMonth}`);
-      }
-    }
-  }
-
-  if (block) {
-    wrapper.scrollTo({
-      top: Math.max(0, block.offsetTop - 6),
-      behavior: "smooth",
-    });
-    currentDate.setFullYear(targetYear);
-    currentDate.setMonth(targetMonth);
-    currentVisibleMonthKey = `${targetYear}-${targetMonth}`;
-    const monthYearEl = document.getElementById("monthYear");
-    if (monthYearEl) {
-      monthYearEl.innerText = `Tháng ${targetMonth + 1} / ${targetYear}`;
-    }
-    if (typeof renderOvertime === "function") renderOvertime();
-    if (typeof renderOvertimeSalary === "function") renderOvertimeSalary();
-  }
-}
-
-function scrollToCurrentMonth() {
-  userHasScrolledCalendar = true;
-  jumpToCurrentMonth(true);
+  setTimeout(() => {
+    jumpToCurrentMonth(false);
+    isCalendarInitializing = false;
+  }, 220);
 }
 
 function isDateKey(key) {

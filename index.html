@@ -425,9 +425,9 @@
         <span class="nav-label">Thu Chi</span>
       </button>
 
-      <button class="nav-item learn-fab" onclick="openLearnModal()" aria-label="Mở công cụ học tiếng">
-        <i class="fi fi-rr-graduation-cap"></i>
-        <span class="nav-label">Học Tiếng</span>
+      <button class="nav-item gold-fab" onclick="openGoldModal()" aria-label="Mở bảng giá vàng">
+        <i class="fi fi-rr-gem"></i>
+        <span class="nav-label">Giá Vàng</span>
       </button>
 
       <div class="nav-more-wrapper">
@@ -461,9 +461,9 @@
             <span class="menu-icon-wrap"><i class="fi fi-rr-coins"></i></span>
             <span>Tiền Tệ</span>
           </button> -->
-          <button class="dropdown-item item-gold" onclick="openGoldModal(); closeMoreMenu();" role="menuitem">
-            <span class="menu-icon-wrap"><i class="fi fi-rr-gem"></i></span>
-            <span>Giá Vàng</span>
+          <button class="dropdown-item item-learn" onclick="openLearnModal(); closeMoreMenu();" role="menuitem">
+            <span class="menu-icon-wrap"><i class="fi fi-rr-graduation-cap"></i></span>
+            <span>Học Tiếng</span>
           </button>
           <button class="dropdown-item item-overtime" onclick="openOvertimeModal(); closeMoreMenu();" role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-time-fast"></i></span>
@@ -1378,59 +1378,118 @@
       </div>
     </div>
 
-    <div id="goldModal" class="modal">
-      <div class="gold-modal-content">
-        <button class="modal-close" onclick="closeGoldModal()">×</button>
-        <h3>Giá vàng toàn quốc</h3>
-        <div id="goldUpdatedAt" class="gold-updated">Đang tải dữ liệu...</div>
-
-        <div class="gold-skeleton" id="goldSkeleton">
-          <div class="skeleton-card">
-            <div class="skeleton-text wide"></div>
-            <div class="skeleton-text price"></div>
+    <div id="goldModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="goldModalTitle">
+      <div class="gold-modal-content gold-modal-shell">
+        <!-- Sticky Top Header -->
+        <div class="gold-modal-header">
+          <div class="gold-header-left">
+            <div class="gold-header-icon">
+              <i class="fi fi-rr-gem"></i>
+            </div>
+            <div class="gold-header-text">
+              <h3 id="goldModalTitle">Giá Vàng</h3>
+              <div id="goldUpdatedAt" class="gold-updated">Đang tải dữ liệu...</div>
+            </div>
           </div>
-          <div class="skeleton-card">
-            <div class="skeleton-text wide"></div>
-            <div class="skeleton-text price"></div>
-          </div>
-        </div>
-
-        <div class="gold-summary-grid">
-          <div class="gold-card">
-            <div class="gold-card-title">Giá mua (tham khảo)</div>
-            <div class="gold-card-value" id="goldBuyLuong">--</div>
-            <div class="gold-card-sub">VNĐ/lượng</div>
-          </div>
-          <div class="gold-card">
-            <div class="gold-card-title">Giá bán (tham khảo)</div>
-            <div class="gold-card-value" id="goldSellLuong">--</div>
-            <div class="gold-card-sub">VNĐ/lượng</div>
+          <div class="gold-header-actions">
+            <button type="button" class="gold-refresh-btn" id="goldRefreshBtn" onclick="refreshAllGoldData()"
+              title="Làm mới dữ liệu" aria-label="Làm mới dữ liệu">
+              <i class="fi fi-rr-refresh"></i>
+            </button>
+            <button type="button" class="modal-close gold-modal-close" onclick="closeGoldModal()"
+              aria-label="Đóng">×</button>
           </div>
         </div>
 
-        <!-- Chart controls -->
-        <div class="gold-chart-controls">
-          <div class="gold-range-filter" id="goldRangeFilter" role="tablist" aria-label="Bộ lọc thời gian giá vàng">
-            <button type="button" class="gold-range-chip" data-range="week"
-              onclick="setGoldChartRange('week')">Tuần</button>
-            <button type="button" class="gold-range-chip active" data-range="month"
-              onclick="setGoldChartRange('month')">Tháng</button>
+        <!-- Sticky Bộ Lọc Khoảng Thời Gian Chung -->
+        <div class="gold-subtabs-bar">
+          <div class="gold-range-filter gold-shared-range-bar" id="goldRangeFilter" role="tablist"
+            aria-label="Bộ lọc khoảng thời gian chung cho biểu đồ giá vàng">
+            <button type="button" class="gold-range-chip is-realtime-chip" data-range="realtime"
+              onclick="setGoldChartRange('realtime')">
+              <span class="gold-live-dot" aria-hidden="true"></span>
+              <span>Real time</span>
+            </button>
+            <button type="button" class="gold-range-chip" data-range="7d"
+              onclick="setGoldChartRange('7d')">7 Ngày</button>
+            <button type="button" class="gold-range-chip active" data-range="30d"
+              onclick="setGoldChartRange('30d')">1 Tháng</button>
+            <button type="button" class="gold-range-chip" data-range="90d"
+              onclick="setGoldChartRange('90d')">3 Tháng</button>
+            <button type="button" class="gold-range-chip" data-range="180d"
+              onclick="setGoldChartRange('180d')">6 Tháng</button>
+            <button type="button" class="gold-range-chip" data-range="365d"
+              onclick="setGoldChartRange('365d')">1 Năm</button>
           </div>
         </div>
 
-        <div class="gold-chart-wrap">
-          <canvas id="goldChart" width="680" height="240"></canvas>
-          <div class="gold-chart-legend">
-            <span class="legend-item"><span class="legend-dot buy"></span>Mua vào</span>
-            <span class="legend-item"><span class="legend-dot sell"></span>Bán ra</span>
+        <!-- Scrollable Body (1 Trang Duy Nhất: Việt Nam + Thế Giới Realtime) -->
+        <div class="gold-modal-body">
+          <div class="gold-body-container">
+            <div id="goldUnifiedView" class="gold-tab-panel active">
+              <!-- ==================== PHẦN 1: GIÁ VÀNG VIỆT NAM & BIỂU ĐỒ ==================== -->
+              <!-- Khối Gộp Đơn Giản: Giá Mua + Giá Bán -->
+              <div class="gold-card gold-vn-merged-card">
+                <div class="gold-card-prices-row">
+                  <div class="gold-price-col">
+                    <div class="gold-card-title">Giá mua <span class="gold-card-unit-inline">(VNĐ/lượng)</span></div>
+                    <div class="gold-card-value is-buy" id="goldBuyLuong">--</div>
+                  </div>
+                  <div class="gold-price-divider"></div>
+                  <div class="gold-price-col">
+                    <div class="gold-card-title">Giá bán <span class="gold-card-unit-inline">(VNĐ/lượng)</span></div>
+                    <div class="gold-card-value is-sell" id="goldSellLuong">--</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Biểu đồ giá vàng Việt Nam -->
+              <div class="gold-section-panel">
+                <div class="gold-section-header">
+                  <div class="gold-section-title-group">
+                    <h4>
+                      <i class="fi fi-rr-chart-line-up"></i>
+                      <span id="goldChartTitleText">Biểu đồ giá vàng Việt Nam</span>
+                    </h4>
+                  </div>
+                </div>
+
+                <div class="gold-chart-wrap">
+                  <canvas id="goldChart" width="680" height="240"></canvas>
+                  <div class="gold-chart-legend">
+                    <span class="legend-item"><span class="legend-dot buy"></span>Mua vào</span>
+                    <span class="legend-item"><span class="legend-dot sell"></span>Bán ra</span>
+                  </div>
+                  <div class="gold-tooltip" id="goldTooltip" role="tooltip" aria-hidden="true"></div>
+                </div>
+              </div>
+
+              <!-- ==================== PHẦN 2: BIỂU ĐỒ GIÁ VÀNG THẾ GIỚI REALTIME (USDT) ==================== -->
+              <div class="gold-section-panel gold-world-chart-only-panel">
+                <div class="gold-section-header">
+                  <div class="gold-world-inline-header">
+                    <div class="gold-world-pair-badge">
+                      <span class="gold-live-pulse"></span>
+                      <span class="gold-world-symbol">Biểu đồ Vàng Thế Giới (GOLD / USDT)</span>
+                    </div>
+                    <div class="gold-world-inline-price-wrap">
+                      <span class="gold-world-spot-price" id="goldWorldSpotUsd">-- USDT</span>
+                      <span class="gold-world-change-badge" id="goldWorldChangeBadge">--</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="gold-chart-wrap">
+                  <canvas id="goldWorldChart" width="680" height="300"></canvas>
+                  <div class="gold-tooltip" id="goldWorldTooltip" role="tooltip" aria-hidden="true"></div>
+                </div>
+              </div>
+
+              <div class="gold-note" id="goldSourceNote">
+                Nguồn: giavang.now (Việt Nam) &amp; Binance PAXG/USDT Realtime (Thế giới)
+              </div>
+            </div>
           </div>
-          <div class="gold-tooltip" id="goldTooltip" role="tooltip" aria-hidden="true"></div>
-        </div>
-
-        <div class="gold-chart-summary" id="goldChartSummary"></div>
-
-        <div class="gold-note" id="goldSourceNote">
-          Nguồn: giavang.org (giá vàng trong nước SJC toàn quốc)
         </div>
       </div>
     </div>
@@ -1473,14 +1532,6 @@
                 <span class="cashflow-menu-text">
                   <span class="cashflow-menu-title">Quản lý danh mục</span>
                   <span class="cashflow-menu-desc">Thêm & chỉnh sửa nhóm thu chi</span>
-                </span>
-              </button>
-              <button type="button" class="cashflow-menu-item" role="menuitem"
-                onclick="handleCashflowMenuAction(openCashflowSummaryModal)">
-                <span class="cashflow-menu-icon is-summary"><i class="fi fi-rr-wallet"></i></span>
-                <span class="cashflow-menu-text">
-                  <span class="cashflow-menu-title">Tổng quan tài chính</span>
-                  <span class="cashflow-menu-desc">Số dư ví & dòng tiền tháng</span>
                 </span>
               </button>
               <button type="button" class="cashflow-menu-item" role="menuitem"
@@ -2170,69 +2221,6 @@
             style="margin: 0;">
             Đóng
           </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 2. Cashflow Summary Modal -->
-    <div id="cashflowSummaryModal" class="modal cashflow-submodal" style="display: none"
-      onclick="if (event.target === this) closeCashflowSummaryModal()">
-      <div class="cashflow-submodal-dialog">
-        <div class="cashflow-submodal-header">
-          <div class="cashflow-submodal-header-left">
-            <div class="cashflow-submodal-icon is-summary">
-              <i class="fi fi-rr-wallet"></i>
-            </div>
-            <div>
-              <h3 class="cashflow-submodal-title">Tổng quan tài chính</h3>
-              <p class="cashflow-submodal-subtitle">Thống kê thu, chi và chênh lệch theo thời gian</p>
-            </div>
-          </div>
-          <button type="button" class="cashflow-submodal-close" onclick="closeCashflowSummaryModal()"
-            aria-label="Đóng">×</button>
-        </div>
-        <div class="cashflow-submodal-body">
-          <div class="cashflow-section-head cashflow-section-head-stacked" style="margin-bottom: 14px;">
-            <div class="cashflow-range-filter" id="cashflowSummaryRangeFilter" role="tablist"
-              aria-label="Bộ lọc thời gian tổng quan thu chi">
-              <button type="button" class="cashflow-range-chip active" data-range="all"
-                onclick="setCashflowSummaryRange('all')">Tất cả</button>
-              <button type="button" class="cashflow-range-chip" data-range="year"
-                onclick="setCashflowSummaryRange('year')">Năm</button>
-              <button type="button" class="cashflow-range-chip" data-range="month"
-                onclick="setCashflowSummaryRange('month')">Tháng</button>
-              <button type="button" class="cashflow-range-chip" data-range="week"
-                onclick="setCashflowSummaryRange('week')">Tuần</button>
-            </div>
-          </div>
-          <div class="cashflow-summary-grid">
-            <div class="cashflow-summary-card">
-              <div class="cashflow-summary-label">Tổng Thu</div>
-              <div class="cashflow-summary-value is-income" id="cashflowIncomeMonth">0 đ</div>
-            </div>
-            <div class="cashflow-summary-card">
-              <div class="cashflow-summary-label">Tổng Chi</div>
-              <div class="cashflow-summary-value is-expense" id="cashflowExpenseMonth">0 đ</div>
-            </div>
-            <div class="cashflow-summary-card">
-              <div class="cashflow-summary-label">Chênh lệch (Dư)</div>
-              <div class="cashflow-summary-value" id="cashflowNetMonth">0 đ</div>
-            </div>
-          </div>
-          <div class="cashflow-skeleton" id="cashflowSkeleton">
-            <div class="skeleton-stat">
-              <div class="skeleton-label"></div>
-              <div class="skeleton-value"></div>
-            </div>
-            <div class="skeleton-stat">
-              <div class="skeleton-label"></div>
-              <div class="skeleton-value"></div>
-            </div>
-            <div class="skeleton-stat">
-              <div class="skeleton-label"></div>
-              <div class="skeleton-value"></div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

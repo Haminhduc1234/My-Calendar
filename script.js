@@ -4560,7 +4560,6 @@ function closeAllModals() {
     "myMusicModal",
     "cashflowModal",
     "cashflowHistoryModal",
-    "cashflowSummaryModal",
     "cashflowAnalysisModal",
     "cashflowChartModal",
     "cashflowQuickViewModal",
@@ -9645,22 +9644,35 @@ function handleTaskDragEnd(e) {
 function openGoldModal() {
   if (!requireLogin("Giá vàng")) return;
   closeAllModals();
-  document.getElementById("goldModal").style.display = "flex";
+  const modal = document.getElementById("goldModal");
+  if (modal) modal.style.display = "flex";
   hideGoldTooltip();
   loadGoldOnDemand();
+  if (typeof startGoldWorldRealtimeStream === "function") {
+    startGoldWorldRealtimeStream();
+  }
+  if (typeof loadGoldWorldChartData === "function") {
+    loadGoldWorldChartData();
+  }
 }
 
 function closeGoldModal() {
-  document.getElementById("goldModal").style.display = "none";
+  const modal = document.getElementById("goldModal");
+  if (modal) modal.style.display = "none";
   hideGoldTooltip();
+  if (typeof stopGoldWorldRealtimeStream === "function") {
+    stopGoldWorldRealtimeStream();
+  }
 }
 
 function hideGoldTooltip() {
-  const tooltip = document.getElementById("goldTooltip");
-  if (tooltip) {
-    tooltip.classList.remove("is-visible");
-    tooltip.setAttribute("aria-hidden", "true");
-  }
+  ["goldTooltip", "goldWorldTooltip"].forEach((id) => {
+    const tooltip = document.getElementById(id);
+    if (tooltip) {
+      tooltip.classList.remove("is-visible");
+      tooltip.setAttribute("aria-hidden", "true");
+    }
+  });
 }
 
 function getQuickNoteStorageKey() {
@@ -12290,6 +12302,104 @@ function drawGoldChart(canvasId, points) {
   ctx.fillText("● Bán", pad.left + 60, pad.top + 12);
 }
 
+/* ========================== HỆ THỐNG GIÁ VÀNG VIỆT NAM (TỈNH THÀNH) & THẾ GIỚI REALTIME ========================== */
+const GOLD_PROVINCES_META = {
+  hanoi: { name: "TP. Hà Nội", region: "hanoi", brandKey: "DOHNL", deltaBuy: 0, deltaSell: 0 },
+  haiphong: { name: "TP. Hải Phòng", region: "hanoi", brandKey: "DOHNL", deltaBuy: 0, deltaSell: 20000 },
+  quangninh: { name: "Quảng Ninh (Hạ Long)", region: "hanoi", brandKey: "DOHNL", deltaBuy: -20000, deltaSell: 20000 },
+  bacninh: { name: "Bắc Ninh", region: "hanoi", brandKey: "DOHNL", deltaBuy: 0, deltaSell: 0 },
+  haiduong: { name: "Hải Dương", region: "hanoi", brandKey: "DOHNL", deltaBuy: -10000, deltaSell: 10000 },
+  thainguyen: { name: "Thái Nguyên", region: "hanoi", brandKey: "DOHNL", deltaBuy: -20000, deltaSell: 20000 },
+  namdinh: { name: "Nam Định", region: "hanoi", brandKey: "DOHNL", deltaBuy: -10000, deltaSell: 10000 },
+
+  tphcm: { name: "TP. Hồ Chí Minh", region: "hochiminh", brandKey: "SJL1L10", deltaBuy: 0, deltaSell: 0 },
+  binhduong: { name: "Bình Dương", region: "dongnambo", brandKey: "DOHCML", deltaBuy: 0, deltaSell: 0 },
+  dongnai: { name: "Đồng Nai (Biên Hòa)", region: "dongnambo", brandKey: "DOHCML", deltaBuy: 0, deltaSell: 10000 },
+  vungtau: { name: "Bà Rịa - Vũng Tàu", region: "dongnambo", brandKey: "DOHCML", deltaBuy: -10000, deltaSell: 20000 },
+  tayninh: { name: "Tây Ninh", region: "dongnambo", brandKey: "DOHCML", deltaBuy: -20000, deltaSell: 20000 },
+
+  danang: { name: "TP. Đà Nẵng", region: "danang", brandKey: "SJL1L10", deltaBuy: 0, deltaSell: 20000 },
+  hue: { name: "Thừa Thiên Huế", region: "danang", brandKey: "SJL1L10", deltaBuy: -10000, deltaSell: 20000 },
+  khanhhoa: { name: "Khánh Hòa (Nha Trang)", region: "danang", brandKey: "SJL1L10", deltaBuy: 0, deltaSell: 20000 },
+  nghean: { name: "Nghệ An (TP. Vinh)", region: "danang", brandKey: "SJL1L10", deltaBuy: -10000, deltaSell: 20000 },
+  thanhhoa: { name: "Thanh Hóa", region: "danang", brandKey: "SJL1L10", deltaBuy: -10000, deltaSell: 20000 },
+  binhdinh: { name: "Bình Định (Quy Nhơn)", region: "danang", brandKey: "SJL1L10", deltaBuy: -20000, deltaSell: 20000 },
+  quangngai: { name: "Quảng Ngãi", region: "danang", brandKey: "SJL1L10", deltaBuy: -20000, deltaSell: 20000 },
+
+  daklak: { name: "Đắk Lắk (Buôn Ma Thuột)", region: "taynguyen", brandKey: "SJL1L10", deltaBuy: -20000, deltaSell: 30000 },
+  lamdong: { name: "Lâm Đồng (Đà Lạt)", region: "taynguyen", brandKey: "SJL1L10", deltaBuy: -20000, deltaSell: 30000 },
+  gialai: { name: "Gia Lai (Pleiku)", region: "taynguyen", brandKey: "SJL1L10", deltaBuy: -30000, deltaSell: 30000 },
+
+  cantho: { name: "TP. Cần Thơ", region: "cantho", brandKey: "SJL1L10", deltaBuy: 0, deltaSell: 0 },
+  angiang: { name: "An Giang (Long Xuyên)", region: "cantho", brandKey: "SJL1L10", deltaBuy: -10000, deltaSell: 10000 },
+  kiengiang: { name: "Kiên Giang (Rạch Giá)", region: "cantho", brandKey: "SJL1L10", deltaBuy: -10000, deltaSell: 20000 },
+  camau: { name: "Cà Mau", region: "cantho", brandKey: "SJL1L10", deltaBuy: 0, deltaSell: 20000 },
+  baclieu: { name: "Bạc Liêu", region: "cantho", brandKey: "SJL1L10", deltaBuy: -10000, deltaSell: 20000 },
+  tiengiang: { name: "Tiền Giang (Mỹ Tho)", region: "cantho", brandKey: "SJL1L10", deltaBuy: 0, deltaSell: 10000 },
+};
+
+const GOLD_REGION_DEFAULT_PROVINCE = {
+  hanoi: "hanoi",
+  hochiminh: "tphcm",
+  dongnambo: "binhduong",
+  danang: "danang",
+  taynguyen: "daklak",
+  cantho: "cantho",
+};
+
+const GOLD_VN_RANGE_DAYS = {
+  realtime: 7,
+  "7d": 7,
+  "30d": 30,
+  "90d": 90,
+  "180d": 180,
+  "365d": 365,
+  week: 7,
+  month: 30,
+};
+
+const GOLD_WORLD_TF_CONFIG = {
+  realtime: { interval: "1m", limit: 60, label: "Real time" },
+  "7d": { interval: "1h", limit: 168, label: "7 ngày qua" },
+  "30d": { interval: "4h", limit: 180, label: "1 tháng qua" },
+  "90d": { interval: "1d", limit: 90, label: "3 tháng qua" },
+  "180d": { interval: "1d", limit: 180, label: "6 tháng qua" },
+  "365d": { interval: "1d", limit: 365, label: "1 năm qua" },
+};
+
+let currentGoldProvince = localStorage.getItem("goldSelectedProvince") || "hanoi";
+let goldAllPricesCache = null;
+let goldChartRange = "30d";
+let goldChartData = [];
+let goldChartLoading = false;
+let goldChartPoints = [];
+
+// World gold realtime (USDT) state
+let goldWorldSocket = null;
+let goldWorldPollTimer = null;
+let goldWorldCurrentUsd = 0;
+let goldWorldOpen24h = 0;
+let goldWorldChange24h = 0;
+let goldWorldChangePct24h = 0;
+let goldWorldTimeframe = "30d";
+let goldWorldChartPoints = [];
+
+const GOLD_CHART_RANGE_KEY = "goldChartRange";
+
+async function refreshAllGoldData() {
+  const btn = document.getElementById("goldRefreshBtn");
+  if (btn) btn.classList.add("is-spinning");
+  try {
+    await Promise.allSettled([
+      loadGoldMarketData(),
+      fetchGoldWorldInitialSnapshot(),
+      loadGoldWorldChartData(),
+    ]);
+  } finally {
+    if (btn) setTimeout(() => btn.classList.remove("is-spinning"), 450);
+  }
+}
+
 async function fetchGoldApi(path) {
   const url = `https://giavang.now${path}`;
   const res = await fetch(url, { cache: "no-store" });
@@ -12297,26 +12407,74 @@ async function fetchGoldApi(path) {
   return res.json();
 }
 
-async function getRecentVietnamGoldHistory(limit = 30) {
-  const safeLimit = Math.min(limit, 30);
-  const data = await fetchGoldApi(`/api/prices?type=SJL1L10&days=${safeLimit}`);
+function selectGoldRegionZone(regionKey) {
+  const defaultProv = GOLD_REGION_DEFAULT_PROVINCE[regionKey] || "hanoi";
+  onGoldProvinceSelectChange(defaultProv);
+}
+
+function onGoldProvinceSelectChange(provinceKey) {
+  if (!GOLD_PROVINCES_META[provinceKey]) provinceKey = "hanoi";
+  currentGoldProvince = provinceKey;
+  try {
+    localStorage.setItem("goldSelectedProvince", provinceKey);
+  } catch { }
+
+  const selectEl = document.getElementById("goldProvinceSelect");
+  if (selectEl && selectEl.value !== provinceKey) {
+    selectEl.value = provinceKey;
+  }
+
+  const meta = GOLD_PROVINCES_META[provinceKey];
+  document.querySelectorAll("#goldRegionPills .gold-region-pill").forEach((pill) => {
+    pill.classList.toggle("active", pill.dataset.region === meta.region);
+  });
+
+  renderGoldVietnamView();
+  loadGoldChartData();
+}
+
+function renderGoldVietnamView() {
+  const prices = goldAllPricesCache?.prices || {};
+  const baseBrand = prices.SJL1L10 || prices.DOHNL || prices.DOHCML;
+  const buyEl = document.getElementById("goldBuyLuong");
+  const sellEl = document.getElementById("goldSellLuong");
+
+  if (baseBrand && Number.isFinite(baseBrand.buy) && Number.isFinite(baseBrand.sell)) {
+    if (buyEl) buyEl.innerText = formatVnd(baseBrand.buy);
+    if (sellEl) sellEl.innerText = formatVnd(baseBrand.sell);
+  }
+}
+
+async function getRecentVietnamGoldHistory(limit = 365) {
+  const safeLimit = Math.min(Math.max(limit, 7), 365);
+  const code = "SJL1L10";
+  const data = await fetchGoldApi(`/api/prices?type=${code}&days=${safeLimit}`);
   if (!data?.success || !Array.isArray(data.history)) {
     return [];
   }
+  const showYear = safeLimit > 90;
   return data.history
     .map((item) => {
-      const price = item?.prices?.SJL1L10;
+      const price = item?.prices?.[code] || item?.prices?.SJL1L10;
       if (!price || !Number.isFinite(price.buy) || !Number.isFinite(price.sell)) {
         return null;
       }
+      let label = "";
+      if (item.date) {
+        const dd = item.date.slice(8, 10);
+        const mm = item.date.slice(5, 7);
+        const yy = item.date.slice(2, 4);
+        label = showYear ? `${dd}/${mm}/${yy}` : `${dd}/${mm}`;
+      }
       return {
         date: item.date,
-        label: item.date ? item.date.slice(8, 10) + "/" + item.date.slice(5, 7) : "",
+        label,
         buyValue: price.buy,
         sellValue: price.sell,
       };
     })
-    .filter((point) => point != null);
+    .filter((point) => point != null)
+    .reverse();
 }
 
 async function loadGoldMarketData() {
@@ -12330,29 +12488,36 @@ async function loadGoldMarketData() {
     sellEl.classList.add("is-loading");
   }
 
-  updatedEl.innerText = "Đang tải dữ liệu giá vàng Việt Nam...";
-  buyEl.innerText = "--";
-  sellEl.innerText = "--";
+  if (updatedEl) updatedEl.innerText = "Đang tải dữ liệu giá vàng...";
 
   try {
-    const data = await fetchGoldApi("/api/prices?type=SJL1L10");
-    if (!data?.success) {
+    const allData = await fetchGoldApi("/api/prices");
+    if (!allData?.success || !allData?.prices) {
       throw new Error("Thiếu dữ liệu giá vàng Việt Nam hiện tại");
     }
 
-    const buyVnd = data.buy;
-    const sellVnd = data.sell;
-    const dateStr = data.date || new Date().toISOString().slice(0, 10);
-    const timeStr = data.time || "";
+    goldAllPricesCache = allData;
 
-    buyEl.innerText = formatVnd(buyVnd);
-    sellEl.innerText = formatVnd(sellVnd);
-    updatedEl.innerText = `Giá vàng SJC ${dateStr}${timeStr ? ' ' + timeStr : ''}`;
+    const dateStr = allData.date || new Date().toISOString().slice(0, 10);
+    const timeStr = allData.time || "";
+    if (updatedEl) {
+      updatedEl.innerText = `Cập nhật: ${dateStr}${timeStr ? " " + timeStr : ""} • Thế giới: Trực tiếp (LIVE)`;
+    }
+
+    const provSelect = document.getElementById("goldProvinceSelect");
+    if (provSelect) provSelect.value = currentGoldProvince;
+    const meta = GOLD_PROVINCES_META[currentGoldProvince] || GOLD_PROVINCES_META.hanoi;
+    document.querySelectorAll("#goldRegionPills .gold-region-pill").forEach((pill) => {
+      pill.classList.toggle("active", pill.dataset.region === meta.region);
+    });
+
+    renderGoldVietnamView();
 
     if (noteEl) {
-      noteEl.innerText = "Nguồn: giavang.now (giá vàng trong nước SJC, cập nhật 5 phút/lần).";
+      noteEl.innerText = "Nguồn: giavang.now (Việt Nam) & Binance PAXG/USDT Realtime (Thế giới)";
     }
-  } catch {
+  } catch (err) {
+    console.warn("[Gold] Lỗi tải dữ liệu:", err);
     if (noteEl) {
       noteEl.innerText = "Không thể tải giá vàng hiện tại. Vui lòng thử lại sau.";
     }
@@ -12364,78 +12529,47 @@ async function loadGoldMarketData() {
   }
 
   loadGoldChartData();
+  startGoldWorldRealtimeStream();
+  loadGoldWorldChartData();
 }
-
-let goldChartRange = "month";
-let goldChartData = [];
-let goldChartLoading = false;
-let goldChartPoints = [];
-
-const GOLD_CHART_RANGE_KEY = "goldChartRange";
 
 function restoreGoldChartRange() {
   try {
     const saved = localStorage.getItem(GOLD_CHART_RANGE_KEY);
-    if (["week", "month"].includes(saved)) {
+    if (saved === "week") goldChartRange = "7d";
+    else if (saved === "month") goldChartRange = "30d";
+    else if (GOLD_VN_RANGE_DAYS[saved]) {
       goldChartRange = saved;
     }
+    goldWorldTimeframe = GOLD_WORLD_TF_CONFIG[goldChartRange] ? goldChartRange : "30d";
   } catch { }
 }
 
 function saveGoldChartRange(range) {
-  goldChartRange = range;
-  localStorage.setItem(GOLD_CHART_RANGE_KEY, range);
+  goldChartRange = GOLD_VN_RANGE_DAYS[range] ? range : "30d";
+  goldWorldTimeframe = GOLD_WORLD_TF_CONFIG[goldChartRange] ? goldChartRange : "30d";
+  localStorage.setItem(GOLD_CHART_RANGE_KEY, goldChartRange);
   updateGoldRangeFilterUI();
 }
 
 function updateGoldRangeFilterUI() {
-  document.querySelectorAll(".gold-range-chip").forEach((chip) => {
+  document.querySelectorAll("#goldRangeFilter .gold-range-chip").forEach((chip) => {
     chip.classList.toggle("active", chip.dataset.range === goldChartRange);
   });
 }
 
 function setGoldChartRange(range) {
   saveGoldChartRange(range);
+  hideGoldTooltip();
   loadGoldChartData();
+  loadGoldWorldChartData();
 }
 
 function getGoldChartPointsForRange(range, rawData) {
   if (!rawData || rawData.length === 0) return [];
-
-  const now = new Date();
-
-  switch (range) {
-    case "week": {
-      const points = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(d.getDate() - i);
-        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-        const found = rawData.find((p) => p.date === dateStr);
-        if (found) {
-          points.push({ ...found, label: `${d.getDate()}/${d.getMonth() + 1}` });
-        }
-      }
-      return points;
-    }
-
-    case "month": {
-      const points = [];
-      for (let i = 29; i >= 0; i--) {
-        const d = new Date(now);
-        d.setDate(d.getDate() - i);
-        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-        const found = rawData.find((p) => p.date === dateStr);
-        if (found) {
-          points.push({ ...found, label: `${d.getDate()}/${d.getMonth() + 1}` });
-        }
-      }
-      return points;
-    }
-
-    default:
-      return [];
-  }
+  const days = GOLD_VN_RANGE_DAYS[range] || 30;
+  const sorted = [...rawData].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+  return sorted.slice(-days);
 }
 
 async function loadGoldChartData() {
@@ -12449,19 +12583,21 @@ async function loadGoldChartData() {
     return;
   }
 
-  summaryEl.innerHTML = '<div class="gold-chart-loading">Đang tải dữ liệu biểu đồ...</div>';
+  if (summaryEl) {
+    summaryEl.innerHTML = '<div class="gold-chart-loading">Đang tải dữ liệu biểu đồ...</div>';
+  }
 
   try {
-    const rawData = await getRecentVietnamGoldHistory(30);
-    console.log('Gold chart rawData:', rawData);
+    const daysToFetch = GOLD_VN_RANGE_DAYS[goldChartRange] || 30;
+    const rawData = await getRecentVietnamGoldHistory(daysToFetch);
     goldChartData = rawData;
     const points = getGoldChartPointsForRange(goldChartRange, rawData);
-    console.log('Gold chart points:', points);
     renderGoldChart(points);
-    renderGoldChartSummary(points, rawData);
   } catch (err) {
-    console.error('Gold chart error:', err);
-    summaryEl.innerHTML = '<div class="gold-chart-loading">Không thể tải dữ liệu. Vui lòng thử lại.</div>';
+    console.error("Gold chart error:", err);
+    if (summaryEl) {
+      summaryEl.innerHTML = '<div class="gold-chart-loading">Không thể tải dữ liệu biểu đồ. Vui lòng thử lại.</div>';
+    }
   } finally {
     goldChartLoading = false;
   }
@@ -12490,16 +12626,16 @@ function renderGoldChart(points) {
   const allValues = [...validBuy, ...validSell];
   const min = Math.min(...allValues);
   const max = Math.max(...allValues);
-  const padding = (max - min) * 0.1 || 1000000;
+  const padding = (max - min) * 0.12 || 1000000;
   const chartMin = min - padding;
   const chartMax = max + padding;
   const range = chartMax - chartMin || 1;
 
-  const pad = { top: 20, right: 12, bottom: 36, left: 12 };
+  const pad = { top: 20, right: 14, bottom: 34, left: 14 };
   const chartW = width - pad.left - pad.right;
   const chartH = height - pad.top - pad.bottom;
 
-  ctx.strokeStyle = "rgba(183, 208, 255, 0.15)";
+  ctx.strokeStyle = "rgba(183, 208, 255, 0.14)";
   ctx.lineWidth = 1;
   for (let i = 0; i <= 3; i++) {
     const y = pad.top + (chartH / 3) * i;
@@ -12508,10 +12644,10 @@ function renderGoldChart(points) {
     ctx.lineTo(width - pad.right, y);
     ctx.stroke();
     const val = chartMax - (range * i) / 3;
-    ctx.fillStyle = "rgba(183, 208, 255, 0.45)";
+    ctx.fillStyle = "rgba(183, 208, 255, 0.5)";
     ctx.font = "10px Be Vietnam Pro";
     ctx.textAlign = "left";
-    ctx.fillText(formatVnd(Math.round(val)), pad.left + 2, y - 3);
+    ctx.fillText(formatVnd(Math.round(val)), pad.left + 2, y - 4);
   }
 
   const toXY = (value, idx) => {
@@ -12532,49 +12668,64 @@ function renderGoldChart(points) {
       else ctx.lineTo(x, y);
     });
     ctx.strokeStyle = color;
-    ctx.lineWidth = 2;
+    ctx.lineWidth = points.length > 60 ? 1.8 : 2.2;
     ctx.stroke();
   };
 
-  drawLine("buyValue", "#7fd3ff");
-  drawLine("sellValue", "#ffe39c");
+  drawLine("buyValue", "#38bdf8");
+  drawLine("sellValue", "#fbbf24");
 
+  const showAllDots = points.length <= 40;
   const pointCoords = [];
 
   points.forEach((p, idx) => {
     const coords = [];
+    const isEndPoint = idx === 0 || idx === points.length - 1;
 
     if (p.buyValue != null && !p.isPlaceholder) {
       const { x, y } = toXY(p.buyValue, idx);
-      ctx.fillStyle = "#7fd3ff";
-      ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
-      ctx.fill();
+      if (showAllDots || isEndPoint) {
+        ctx.fillStyle = "#38bdf8";
+        ctx.beginPath();
+        ctx.arc(x, y, isEndPoint ? 4 : 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
       coords.push({ x, y, type: "Mua vào", value: p.buyValue });
     }
     if (p.sellValue != null && !p.isPlaceholder) {
       const { x, y } = toXY(p.sellValue, idx);
-      ctx.fillStyle = "#ffe39c";
-      ctx.beginPath();
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
-      ctx.fill();
+      if (showAllDots || isEndPoint) {
+        ctx.fillStyle = "#fbbf24";
+        ctx.beginPath();
+        ctx.arc(x, y, isEndPoint ? 4 : 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
       coords.push({ x, y, type: "Bán ra", value: p.sellValue });
     }
 
     if (coords.length > 0) {
-      pointCoords.push({ date: p.label, coords });
+      pointCoords.push({
+        date: p.date || p.label,
+        label: p.label,
+        buyValue: p.buyValue,
+        sellValue: p.sellValue,
+        x: coords[0].x,
+        y: coords[0].y,
+        coords,
+      });
     }
   });
 
-  ctx.fillStyle = "#9ab3e4";
+  ctx.fillStyle = "#94a3b8";
   ctx.font = "11px Be Vietnam Pro";
   const step = Math.max(1, Math.floor(points.length / 6));
 
   points.forEach((p, idx) => {
     if (idx % step === 0 || idx === points.length - 1) {
-      const { x } = toXY(p.buyValue != null ? p.buyValue : p.sellValue, idx);
+      const rawV = p.buyValue != null ? p.buyValue : p.sellValue;
+      const { x } = toXY(rawV, idx);
       ctx.textAlign = "center";
-      ctx.fillText(p.label, x, height - 6);
+      ctx.fillText(p.label, x, height - 8);
     }
   });
 
@@ -12583,43 +12734,42 @@ function renderGoldChart(points) {
   canvas.onclick = (event) => {
     const rect = canvas.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
-    const clickY = event.clientY - rect.top;
 
-    let hoveredPoint = null;
-    let hoveredCoord = null;
+    let nearestPoint = null;
+    let minDist = 9999;
 
     for (const point of goldChartPoints) {
-      for (const coord of point.coords) {
-        const distance = Math.sqrt((clickX - coord.x) ** 2 + (clickY - coord.y) ** 2);
-        if (distance <= 10) {
-          hoveredPoint = point;
-          hoveredCoord = coord;
-          break;
-        }
+      const dist = Math.abs(clickX - point.x);
+      if (dist < minDist && dist <= 24) {
+        minDist = dist;
+        nearestPoint = point;
       }
-      if (hoveredPoint) break;
     }
 
-    if (hoveredPoint && hoveredCoord && tooltip) {
+    if (nearestPoint && tooltip) {
       tooltip.innerHTML = `
         <div class="gold-tooltip-row">
           <span class="gold-tooltip-label">Ngày</span>
-          <span class="gold-tooltip-value">${hoveredPoint.date}</span>
+          <span class="gold-tooltip-value">${nearestPoint.date}</span>
         </div>
         <div class="gold-tooltip-row">
-          <span class="gold-tooltip-label">${hoveredCoord.type}</span>
-          <span class="gold-tooltip-value">${formatVnd(Math.round(hoveredCoord.value))} đ</span>
+          <span class="gold-tooltip-label">Mua vào</span>
+          <span class="gold-tooltip-value">${formatVnd(Math.round(nearestPoint.buyValue))} VNĐ</span>
+        </div>
+        <div class="gold-tooltip-row">
+          <span class="gold-tooltip-label">Bán ra</span>
+          <span class="gold-tooltip-value">${formatVnd(Math.round(nearestPoint.sellValue))} VNĐ</span>
         </div>
       `;
 
       const wrap = canvas.closest(".gold-chart-wrap");
       const wrapRect = wrap.getBoundingClientRect();
 
-      let left = hoveredCoord.x + 12;
-      let top = hoveredCoord.y - 12;
+      let left = nearestPoint.x + 12;
+      let top = nearestPoint.y - 16;
 
       if (left + tooltip.offsetWidth > wrapRect.width - 10) {
-        left = hoveredCoord.x - tooltip.offsetWidth - 12;
+        left = nearestPoint.x - tooltip.offsetWidth - 12;
       }
       if (top + tooltip.offsetHeight > wrapRect.height - 10) {
         top = wrapRect.height - tooltip.offsetHeight - 10;
@@ -12638,7 +12788,7 @@ function renderGoldChart(points) {
   };
 }
 
-function renderGoldChartSummary(points, rawData) {
+function renderGoldChartSummary(points) {
   const summaryEl = document.getElementById("goldChartSummary");
   if (!summaryEl || points.length === 0) return;
 
@@ -12652,9 +12802,7 @@ function renderGoldChartSummary(points, rawData) {
   const last = validPoints[validPoints.length - 1];
 
   const buyChange = first.buyValue ? ((last.buyValue - first.buyValue) / first.buyValue) * 100 : 0;
-  const sellChange = first.sellValue ? ((last.sellValue - first.sellValue) / first.sellValue) * 100 : 0;
   const avgBuy = validPoints.reduce((s, p) => s + p.buyValue, 0) / validPoints.length;
-  const avgSell = validPoints.reduce((s, p) => s + p.sellValue, 0) / validPoints.length;
   const maxBuy = Math.max(...validPoints.map((p) => p.buyValue));
   const minBuy = Math.min(...validPoints.map((p) => p.buyValue));
   const maxSell = Math.max(...validPoints.map((p) => p.sellValue));
@@ -12662,21 +12810,360 @@ function renderGoldChartSummary(points, rawData) {
 
   summaryEl.innerHTML = `
     <div class="gold-summary-stat">
-      <div class="stat-label">Giá mua TB</div>
+      <div class="stat-label">Giá mua TB (${validPoints.length} ngày)</div>
       <div class="stat-value">${formatVnd(Math.round(avgBuy))}</div>
-      <div class="stat-change ${buyChange >= 0 ? 'up' : 'down'}">${buyChange >= 0 ? "+" : ""}${buyChange.toFixed(2)}%</div>
+      <div class="stat-change ${buyChange >= 0 ? "up" : "down"}">${buyChange >= 0 ? "+" : ""}${buyChange.toFixed(2)}% trong kỳ</div>
     </div>
     <div class="gold-summary-stat">
-      <div class="stat-label">Cao nhất</div>
-      <div class="stat-value">${formatVnd(Math.round(maxBuy))}</div>
-      <div class="stat-change">Mua: ${formatVnd(Math.round(maxSell))}</div>
+      <div class="stat-label">Đỉnh trong kỳ</div>
+      <div class="stat-value">${formatVnd(Math.round(maxSell))}</div>
+      <div class="stat-change">Mua: ${formatVnd(Math.round(maxBuy))}</div>
     </div>
     <div class="gold-summary-stat">
-      <div class="stat-label">Thấp nhất</div>
-      <div class="stat-value">${formatVnd(Math.round(minBuy))}</div>
-      <div class="stat-change">Bán: ${formatVnd(Math.round(minSell))}</div>
+      <div class="stat-label">Đáy trong kỳ</div>
+      <div class="stat-value">${formatVnd(Math.round(minSell))}</div>
+      <div class="stat-change">Mua: ${formatVnd(Math.round(minBuy))}</div>
     </div>
   `;
+}
+
+/* ==================== BIỂU ĐỒ GIÁ VÀNG THẾ GIỚI REALTIME (USDT - DẢI THỜI GIAN RỘNG) ==================== */
+async function fetchGoldWorldInitialSnapshot() {
+  try {
+    const res = await fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=PAXGUSDT", { cache: "no-store" });
+    if (!res.ok) throw new Error("Binance 24hr error");
+    const data = await res.json();
+    const lastPrice = parseFloat(data.lastPrice);
+    if (Number.isFinite(lastPrice) && lastPrice > 0) {
+      goldWorldOpen24h = parseFloat(data.openPrice) || lastPrice;
+      goldWorldChange24h = parseFloat(data.priceChange) || 0;
+      goldWorldChangePct24h = parseFloat(data.priceChangePercent) || 0;
+      updateGoldWorldTickerUI(lastPrice);
+    }
+  } catch { }
+}
+
+function updateGoldWorldTickerUI(newPriceUsdt) {
+  if (!Number.isFinite(newPriceUsdt) || newPriceUsdt <= 0) return;
+
+  const prev = goldWorldCurrentUsd || newPriceUsdt;
+  const delta = newPriceUsdt - prev;
+  goldWorldCurrentUsd = newPriceUsdt;
+
+  if (goldWorldOpen24h > 0) {
+    goldWorldChange24h = newPriceUsdt - goldWorldOpen24h;
+    goldWorldChangePct24h = (goldWorldChange24h / goldWorldOpen24h) * 100;
+  }
+
+  const spotEl = document.getElementById("goldWorldSpotUsd");
+  if (spotEl) {
+    spotEl.innerText = `${newPriceUsdt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
+    if (Math.abs(delta) >= 0.01) {
+      spotEl.classList.remove("tick-up", "tick-down");
+      void spotEl.offsetWidth;
+      spotEl.classList.add(delta > 0 ? "tick-up" : "tick-down");
+    }
+  }
+
+  const badgeEl = document.getElementById("goldWorldChangeBadge");
+  if (badgeEl) {
+    const sign = goldWorldChange24h >= 0 ? "+" : "";
+    const arrow = goldWorldChange24h >= 0 ? "▲" : "▼";
+    badgeEl.className = `gold-world-change-badge ${goldWorldChange24h >= 0 ? "up" : "down"}`;
+    badgeEl.innerText = `${arrow} ${sign}${goldWorldChange24h.toFixed(2)} USDT (${sign}${goldWorldChangePct24h.toFixed(2)}% 24h)`;
+  }
+
+  if (goldWorldChartPoints.length > 0) {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, "0");
+    const min = String(now.getMinutes()).padStart(2, "0");
+    const ss = String(now.getSeconds()).padStart(2, "0");
+    const lastPt = goldWorldChartPoints[goldWorldChartPoints.length - 1];
+    if (goldWorldTimeframe === "realtime") {
+      const tickLabel = `${hh}:${min}:${ss}`;
+      if (lastPt.label !== tickLabel && Math.abs(delta) >= 0.01) {
+        goldWorldChartPoints.push({
+          label: `${hh}:${min}`,
+          fullTime: now.toLocaleString("vi-VN", { hour12: false }),
+          value: newPriceUsdt,
+        });
+        if (goldWorldChartPoints.length > 75) goldWorldChartPoints.shift();
+      } else {
+        lastPt.value = newPriceUsdt;
+      }
+    } else {
+      lastPt.value = newPriceUsdt;
+    }
+    renderGoldWorldChart(goldWorldChartPoints);
+  }
+}
+
+function startGoldWorldRealtimeStream() {
+  stopGoldWorldRealtimeStream();
+  fetchGoldWorldInitialSnapshot();
+
+  const statusEl = document.getElementById("goldWorldStreamStatus");
+  try {
+    goldWorldSocket = new WebSocket("wss://stream.binance.com:9443/ws/paxgusdt@trade");
+    goldWorldSocket.onopen = () => {
+      if (statusEl) statusEl.innerText = "LIVE";
+    };
+    goldWorldSocket.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        const price = parseFloat(msg.p);
+        if (Number.isFinite(price) && price > 0) {
+          updateGoldWorldTickerUI(price);
+        }
+      } catch { }
+    };
+  } catch { }
+
+  goldWorldPollTimer = setInterval(() => {
+    const modal = document.getElementById("goldModal");
+    if (!modal || modal.style.display === "none") {
+      stopGoldWorldRealtimeStream();
+      return;
+    }
+    fetchGoldWorldInitialSnapshot();
+  }, 4000);
+}
+
+function stopGoldWorldRealtimeStream() {
+  if (goldWorldSocket) {
+    try {
+      goldWorldSocket.onopen = null;
+      goldWorldSocket.onmessage = null;
+      goldWorldSocket.onerror = null;
+      goldWorldSocket.onclose = null;
+      goldWorldSocket.close();
+    } catch { }
+    goldWorldSocket = null;
+  }
+  if (goldWorldPollTimer) {
+    clearInterval(goldWorldPollTimer);
+    goldWorldPollTimer = null;
+  }
+}
+
+function setGoldWorldTimeframe(tf) {
+  goldWorldTimeframe = GOLD_WORLD_TF_CONFIG[tf] ? tf : "30d";
+  document.querySelectorAll("#goldWorldTimeframeFilter .gold-range-chip").forEach((chip) => {
+    chip.classList.toggle("active", chip.dataset.tf === goldWorldTimeframe);
+  });
+  loadGoldWorldChartData();
+}
+
+async function loadGoldWorldChartData() {
+  const canvas = document.getElementById("goldWorldChart");
+  if (!canvas) return;
+
+  try {
+    const cfg = GOLD_WORLD_TF_CONFIG[goldWorldTimeframe] || GOLD_WORLD_TF_CONFIG["30d"];
+    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=${cfg.interval}&limit=${cfg.limit}`, { cache: "no-store" });
+    if (!res.ok) throw new Error("Klines error");
+    const klines = await res.json();
+    goldWorldChartPoints = klines.map((k) => {
+      const d = new Date(k[0]);
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const yy = String(d.getFullYear()).slice(2);
+      const hh = String(d.getHours()).padStart(2, "0");
+      const min = String(d.getMinutes()).padStart(2, "0");
+
+      let label = `${hh}:${min}`;
+      if (goldWorldTimeframe === "7d" || goldWorldTimeframe === "30d" || goldWorldTimeframe === "90d") {
+        label = `${dd}/${mm}`;
+      } else if (goldWorldTimeframe === "180d" || goldWorldTimeframe === "365d") {
+        label = `${dd}/${mm}/${yy}`;
+      }
+
+      return {
+        label,
+        fullTime: d.toLocaleString("vi-VN", { hour12: false }),
+        value: parseFloat(k[4]),
+      };
+    });
+    if (goldWorldCurrentUsd > 0 && goldWorldChartPoints.length > 0) {
+      goldWorldChartPoints[goldWorldChartPoints.length - 1].value = goldWorldCurrentUsd;
+    }
+    renderGoldWorldChart(goldWorldChartPoints);
+  } catch (err) {
+    console.warn("[GoldWorld] Chart error:", err);
+  }
+}
+
+function renderGoldWorldChartSummary(points) {
+  const summaryEl = document.getElementById("goldWorldChartSummary");
+  if (!summaryEl || !points || points.length === 0) return;
+
+  const cfg = GOLD_WORLD_TF_CONFIG[goldWorldTimeframe] || GOLD_WORLD_TF_CONFIG["30d"];
+  const values = points.map((p) => p.value).filter((v) => Number.isFinite(v));
+  if (values.length === 0) return;
+
+  const first = values[0];
+  const last = values[values.length - 1];
+  const diff = last - first;
+  const pct = first > 0 ? (diff / first) * 100 : 0;
+  const maxVal = Math.max(...values);
+  const minVal = Math.min(...values);
+  const sign = diff >= 0 ? "+" : "";
+
+  summaryEl.innerHTML = `
+    <div class="gold-summary-stat">
+      <div class="stat-label">Biến động (${cfg.label})</div>
+      <div class="stat-value">${sign}${diff.toFixed(2)} USDT</div>
+      <div class="stat-change ${diff >= 0 ? "up" : "down"}">${sign}${pct.toFixed(2)}% trong kỳ</div>
+    </div>
+    <div class="gold-summary-stat">
+      <div class="stat-label">Đỉnh kỳ (${cfg.label})</div>
+      <div class="stat-value">${maxVal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT</div>
+      <div class="stat-change">Cao nhất</div>
+    </div>
+    <div class="gold-summary-stat">
+      <div class="stat-label">Đáy kỳ (${cfg.label})</div>
+      <div class="stat-value">${minVal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT</div>
+      <div class="stat-change">Thấp nhất</div>
+    </div>
+  `;
+}
+
+function renderGoldWorldChart(points) {
+  const canvas = document.getElementById("goldWorldChart");
+  const tooltip = document.getElementById("goldWorldTooltip");
+  if (!canvas || !points || points.length < 2) return;
+
+  const ratio = window.devicePixelRatio || 1;
+  const width = canvas.clientWidth || 680;
+  const height = 300;
+  canvas.width = Math.floor(width * ratio);
+  canvas.height = Math.floor(height * ratio);
+
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+
+  const values = points.map((p) => p.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const padVal = (max - min) * 0.15 || 2;
+  const chartMin = min - padVal;
+  const chartMax = max + padVal;
+  const range = chartMax - chartMin || 1;
+
+  const pad = { top: 24, right: 16, bottom: 36, left: 16 };
+  const chartW = width - pad.left - pad.right;
+  const chartH = height - pad.top - pad.bottom;
+
+  ctx.strokeStyle = "rgba(148, 163, 184, 0.14)";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (chartH / 4) * i;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(width - pad.right, y);
+    ctx.stroke();
+    const val = chartMax - (range * i) / 4;
+    ctx.fillStyle = "rgba(186, 230, 253, 0.55)";
+    ctx.font = "10.5px Be Vietnam Pro";
+    ctx.textAlign = "left";
+    ctx.fillText(`${val.toFixed(2)} USDT`, pad.left + 2, y - 4);
+  }
+
+  const toXY = (val, idx) => ({
+    x: pad.left + (chartW * idx) / Math.max(points.length - 1, 1),
+    y: pad.top + ((chartMax - val) / range) * chartH,
+  });
+
+  const isUp = points[points.length - 1].value >= points[0].value;
+  const strokeColor = isUp ? "#34d399" : "#f87171";
+
+  const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
+  grad.addColorStop(0, isUp ? "rgba(52, 211, 153, 0.28)" : "rgba(248, 113, 113, 0.28)");
+  grad.addColorStop(1, "rgba(15, 23, 42, 0.0)");
+
+  ctx.beginPath();
+  points.forEach((p, idx) => {
+    const { x, y } = toXY(p.value, idx);
+    if (idx === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  const lastXY = toXY(points[points.length - 1].value, points.length - 1);
+  const firstXY = toXY(points[0].value, 0);
+  ctx.lineTo(lastXY.x, pad.top + chartH);
+  ctx.lineTo(firstXY.x, pad.top + chartH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.beginPath();
+  const coords = [];
+  points.forEach((p, idx) => {
+    const { x, y } = toXY(p.value, idx);
+    coords.push({ x, y, point: p });
+    if (idx === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = points.length > 100 ? 1.8 : 2.3;
+  ctx.stroke();
+
+  // Điểm giá realtime hiện tại
+  ctx.fillStyle = strokeColor;
+  ctx.beginPath();
+  ctx.arc(lastXY.x, lastXY.y, 4.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "11px Be Vietnam Pro";
+  const step = Math.max(1, Math.floor(points.length / 6));
+  points.forEach((p, idx) => {
+    if (idx % step === 0 || idx === points.length - 1) {
+      const { x } = toXY(p.value, idx);
+      ctx.textAlign = "center";
+      ctx.fillText(p.label, x, height - 8);
+    }
+  });
+
+  canvas.onclick = (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    let nearest = null;
+    let minDist = 9999;
+    coords.forEach((c) => {
+      const d = Math.abs(clickX - c.x);
+      if (d < minDist && d <= 24) {
+        minDist = d;
+        nearest = c;
+      }
+    });
+
+    if (nearest && tooltip) {
+      tooltip.innerHTML = `
+        <div class="gold-tooltip-row">
+          <span class="gold-tooltip-label">Thời điểm</span>
+          <span class="gold-tooltip-value">${nearest.point.fullTime}</span>
+        </div>
+        <div class="gold-tooltip-row">
+          <span class="gold-tooltip-label">Giá</span>
+          <span class="gold-tooltip-value">${nearest.point.value.toFixed(2)} USDT</span>
+        </div>
+      `;
+      const wrap = canvas.closest(".gold-chart-wrap");
+      const wrapRect = wrap.getBoundingClientRect();
+      let left = nearest.x + 12;
+      let top = nearest.y - 16;
+      if (left + tooltip.offsetWidth > wrapRect.width - 10) left = nearest.x - tooltip.offsetWidth - 12;
+      if (top < 10) top = 10;
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+      tooltip.classList.add("is-visible");
+      tooltip.setAttribute("aria-hidden", "false");
+    } else if (tooltip) {
+      tooltip.classList.remove("is-visible");
+      tooltip.setAttribute("aria-hidden", "true");
+    }
+  };
 }
 
 restoreGoldChartRange();
@@ -12728,7 +13215,6 @@ let cashflowEntries = [];
 let editingCashflowId = "";
 let pendingDeleteCashflowId = "";
 let cashflowAnalyticsRange = "all";
-let cashflowSummaryRange = "all";
 let cashflowChartMonths = 12;
 let cashflowShowAllRecent = false;
 let selectedCashflowId = "";
@@ -12898,14 +13384,6 @@ async function openCashflowModal() {
   reloadCashflowEntriesFromCache();
   renderCashflowDashboard();
 
-  // 2. Nếu cache rỗng và có Firebase, hiện skeleton trong lúc tải dữ liệu
-  const isCacheEmpty = cashflowEntries.length === 0;
-  if (isCacheEmpty && firebaseDb && userProfileKey) {
-    showSkeleton('cashflowSkeleton');
-  } else {
-    hideSkeleton('cashflowSkeleton');
-  }
-
   // 3. Nếu đã đăng nhập Firebase, fetch dữ liệu mới nhất từ server để đồng bộ và cập nhật danh sách
   if (firebaseDb && userProfileKey) {
     try {
@@ -12935,8 +13413,6 @@ async function openCashflowModal() {
       }
     } catch (e) {
       console.warn("[Cashflow] Lỗi fetch Firebase:", e);
-    } finally {
-      hideSkeleton('cashflowSkeleton');
     }
   }
 }
@@ -12944,10 +13420,8 @@ async function openCashflowModal() {
 function closeCashflowModal() {
   closeCashflowMoreMenu();
   resetCashflowForm();
-  hideSkeleton('cashflowSkeleton');
   closeCashflowCategoryModal();
   closeCashflowHistoryModal();
-  closeCashflowSummaryModal();
   closeCashflowAnalysisModal();
   closeCashflowChartModal();
   closeCashflowAllTransactionsModal();
@@ -13727,7 +14201,6 @@ function startCashflowEdit(id) {
   closeCashflowQuickViewModal();
   closeCashflowAllTransactionsModal();
   closeCashflowHistoryModal();
-  closeCashflowSummaryModal();
   closeCashflowAnalysisModal();
   closeCashflowChartModal();
   closeCashflowCategoryModal();
@@ -14032,7 +14505,6 @@ function confirmRemoveCashflowEntry() {
 function renderCashflowDashboard() {
   reloadCashflowEntriesFromCache();
   updateCashflowAvailableBalanceUI();
-  renderCashflowMonthSummary();
   renderCashflowRecentList();
   renderCashflowPieCharts();
   renderCashflowChart();
@@ -14058,16 +14530,6 @@ function setCashflowAnalyticsRange(range) {
   cashflowAnalyticsRange = nextRange;
   syncCashflowRangeFilterUI();
   animateCashflowAnalyticsTransition();
-}
-
-function setCashflowSummaryRange(range) {
-  const allowedRanges = ["all", "year", "month", "week"];
-  const nextRange = allowedRanges.includes(range) ? range : "all";
-  if (nextRange === cashflowSummaryRange) return;
-
-  cashflowSummaryRange = nextRange;
-  syncCashflowRangeFilterUI();
-  renderCashflowMonthSummary();
 }
 
 function animateCashflowAnalyticsTransition() {
@@ -14105,14 +14567,6 @@ function syncCashflowRangeFilterUI() {
     chip.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
 
-  const summaryChips = document.querySelectorAll(
-    "#cashflowSummaryRangeFilter .cashflow-range-chip",
-  );
-  summaryChips.forEach((chip) => {
-    const isActive = chip.dataset.range === cashflowSummaryRange;
-    chip.classList.toggle("active", isActive);
-    chip.setAttribute("aria-pressed", isActive ? "true" : "false");
-  });
 }
 
 function getCashflowRangeMeta(range) {
@@ -14451,70 +14905,6 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#39;");
-}
-
-function renderCashflowMonthSummary() {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-
-  const today = new Date(currentYear, now.getMonth(), now.getDate());
-  const day = today.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() + mondayOffset);
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-
-  const weekStartStr = `${startOfWeek.getFullYear()}-${String(startOfWeek.getMonth() + 1).padStart(2, "0")}-${String(startOfWeek.getDate()).padStart(2, "0")}`;
-  const weekEndStr = `${endOfWeek.getFullYear()}-${String(endOfWeek.getMonth() + 1).padStart(2, "0")}-${String(endOfWeek.getDate()).padStart(2, "0")}`;
-
-  let income = 0;
-  let expense = 0;
-
-  for (const entry of cashflowEntries) {
-    const entryDate = entry.date;
-
-    if (cashflowSummaryRange === "all") {
-      if (entry.type === "income") income += entry.amount;
-      else expense += entry.amount;
-    } else if (cashflowSummaryRange === "year") {
-      const [y] = entryDate.split("-").map(Number);
-      if (y === currentYear) {
-        if (entry.type === "income") income += entry.amount;
-        else expense += entry.amount;
-      }
-    } else if (cashflowSummaryRange === "month") {
-      const [y, m] = entryDate.split("-").map(Number);
-      if (y === currentYear && m === currentMonth) {
-        if (entry.type === "income") income += entry.amount;
-        else expense += entry.amount;
-      }
-    } else if (cashflowSummaryRange === "week") {
-      if (entryDate >= weekStartStr && entryDate <= weekEndStr) {
-        if (entry.type === "income") income += entry.amount;
-        else expense += entry.amount;
-      }
-    }
-  }
-
-  const net = income - expense;
-  document.getElementById("cashflowIncomeMonth").innerText =
-    `${income.toLocaleString("vi-VN")} đ`;
-  document.getElementById("cashflowExpenseMonth").innerText =
-    `${expense.toLocaleString("vi-VN")} đ`;
-
-  const netEl = document.getElementById("cashflowNetMonth");
-  netEl.innerText = `${net.toLocaleString("vi-VN")} đ`;
-  netEl.style.color = net >= 0 ? "#8fe5b7" : "#ffb3b3";
-
-  const cards = document.querySelectorAll(".cashflow-summary-card");
-  cards.forEach((card) => {
-    card.classList.remove("is-animating");
-    void card.offsetWidth;
-    card.classList.add("is-animating");
-    setTimeout(() => card.classList.remove("is-animating"), 400);
-  });
 }
 
 let cashflowFilterDate = ""; // Ngày đang lọc (YYYY-MM-DD), rỗng = xem tất cả
@@ -14981,18 +15371,6 @@ function closeCashflowHistoryModal() {
   if (modal) modal.style.display = "none";
   closeCashflowSearchBox();
   closeCashflowDateFilterModal();
-}
-
-function openCashflowSummaryModal() {
-  const modal = document.getElementById("cashflowSummaryModal");
-  if (!modal) return;
-  modal.style.display = "flex";
-  renderCashflowMonthSummary();
-}
-
-function closeCashflowSummaryModal() {
-  const modal = document.getElementById("cashflowSummaryModal");
-  if (modal) modal.style.display = "none";
 }
 
 function openCashflowAnalysisModal() {
@@ -17764,6 +18142,14 @@ function renderCashflowQuickView() {
     const moreDropdown = document.getElementById("moreMenuDropdown");
     if (moreDropdown && moreDropdown.classList.contains("is-open")) {
       positionMoreMenu();
+    }
+    const gModal = document.getElementById("goldModal");
+    if (gModal && gModal.style.display === "flex") {
+      if (currentGoldMainTab === "world" && goldWorldChartPoints.length > 0) {
+        renderGoldWorldChart(goldWorldChartPoints);
+      } else if (goldChartData && goldChartData.length > 0) {
+        renderGoldChart(getGoldChartPointsForRange(goldChartRange, goldChartData));
+      }
     }
   });
 
@@ -21264,10 +21650,8 @@ function loadCashflowOnDemand() {
   if (!isUserLoggedIn()) return;
   loadFundsFromLocalStorage();
   ensureFundsFirebaseSynced();
-  showSkeleton('cashflowSkeleton');
   LAZY_LOAD.cashflow = true;
   renderCashflowDashboard();
-  hideSkeleton('cashflowSkeleton');
 }
 
 function loadFundsOnDemand() {
@@ -21284,13 +21668,16 @@ function loadFundsOnDemand() {
   renderFundsDashboard();
 }
 
-function loadGoldOnDemand() {
+async function loadGoldOnDemand() {
   if (LAZY_LOAD.gold) return;
   if (!isUserLoggedIn()) return;
   showSkeleton('goldSkeleton');
   LAZY_LOAD.gold = true;
-  loadGoldMarketData();
-  hideSkeleton('goldSkeleton');
+  try {
+    await loadGoldMarketData();
+  } finally {
+    hideSkeleton('goldSkeleton');
+  }
 }
 
 function loadNewsOnDemand() {

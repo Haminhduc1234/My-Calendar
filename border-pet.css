@@ -1,0 +1,866 @@
+/* ==========================================================================
+   Border Pet — Thú cưng chạy quanh viền màn hình
+   ========================================================================== */
+
+/* ---------- Lớp hiển thị phía trên mọi modal / dialog ---------- */
+.bp-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  pointer-events: none;
+  overflow: hidden;
+  contain: layout style;
+}
+
+.bp-mover {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 50% 100%;
+  will-change: transform;
+  pointer-events: auto;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.bp-shadow {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -2px;
+  height: 5px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.28), rgba(15, 23, 42, 0) 70%);
+}
+
+.bp-jumpwrap {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%;
+}
+
+.bp-jumpwrap.bp-jumping {
+  animation: bp-jump 0.62s cubic-bezier(0.3, 0.7, 0.4, 1) both;
+}
+
+.bp-flip {
+  width: 100%;
+  height: 100%;
+  transition: transform 0.18s ease;
+}
+
+.bp-pet {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.bp-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 0 1.2px rgba(255, 255, 255, 0.95)) drop-shadow(0 1px 1.5px rgba(15, 23, 42, 0.22));
+}
+
+/* ---------- Bộ phận chuyển động ---------- */
+.bp-pet {
+  --bp-step: 0.32s;
+}
+
+.bp-leg,
+.bp-tail,
+.bp-head,
+.bp-eyes,
+.bp-ears,
+.bp-wing,
+.bp-waddle,
+.bp-bob {
+  transform-box: fill-box;
+}
+
+.bp-leg {
+  transform-origin: 50% 8%;
+}
+
+.bp-head {
+  transform-origin: 30% 85%;
+}
+
+.bp-eyes {
+  transform-origin: 50% 50%;
+  animation: bp-blink 4.4s infinite;
+}
+
+.bp-ears {
+  transform-origin: 50% 100%;
+}
+
+.bp-waddle {
+  transform-origin: 50% 100%;
+}
+
+.bp-bob {
+  transform-origin: 50% 100%;
+}
+
+/* Đi bộ */
+.bp-walk .bp-leg-a {
+  animation: bp-swing var(--bp-step) ease-in-out infinite alternate;
+}
+
+.bp-walk .bp-leg-b {
+  animation: bp-swing var(--bp-step) ease-in-out infinite alternate;
+  animation-delay: calc(var(--bp-step) * -1);
+}
+
+.bp-walk .bp-bob {
+  animation: bp-bob calc(var(--bp-step) / 1) ease-in-out infinite alternate;
+}
+
+.bp-walk .bp-tail {
+  animation: bp-wag 0.5s ease-in-out infinite alternate;
+}
+
+.bp-walk .bp-ears {
+  animation: bp-ear-bounce calc(var(--bp-step) * 2) ease-in-out infinite;
+}
+
+/* Chạy */
+.bp-run {
+  --bp-step: 0.14s;
+}
+
+.bp-run .bp-leg-a {
+  animation: bp-swing-run var(--bp-step) ease-in-out infinite alternate;
+}
+
+.bp-run .bp-leg-b {
+  animation: bp-swing-run var(--bp-step) ease-in-out infinite alternate;
+  animation-delay: calc(var(--bp-step) * -1);
+}
+
+.bp-run .bp-bob {
+  animation: bp-bob-run var(--bp-step) ease-in-out infinite alternate;
+}
+
+.bp-run .bp-tail {
+  animation: bp-wag 0.22s ease-in-out infinite alternate;
+}
+
+.bp-run .bp-ears {
+  transform: rotate(-8deg) scaleY(0.88);
+}
+
+/* Đứng nghỉ */
+.bp-idle .bp-tail {
+  animation: bp-wag 0.9s ease-in-out infinite alternate;
+}
+
+.bp-idle .bp-head {
+  animation: bp-tilt 2.6s ease-in-out infinite alternate;
+}
+
+.bp-idle .bp-bob {
+  animation: bp-breathe 2.2s ease-in-out infinite;
+}
+
+/* Ngủ */
+.bp-sleep .bp-eyes {
+  animation: none;
+  transform: scaleY(0.12);
+}
+
+.bp-sleep .bp-bob {
+  animation: bp-breathe-deep 2.8s ease-in-out infinite;
+}
+
+.bp-sleep .bp-head {
+  transform: rotate(8deg) translateY(1.5px);
+}
+
+.bp-sleep .bp-tail {
+  transform: rotate(-12deg);
+}
+
+/* Gà con / Cánh cụt — dáng lạch bạch */
+.bp-biped.bp-walk {
+  --bp-step: 0.26s;
+}
+
+.bp-biped.bp-run {
+  --bp-step: 0.12s;
+}
+
+.bp-biped.bp-walk .bp-leg-a,
+.bp-biped.bp-walk .bp-leg-b,
+.bp-biped.bp-run .bp-leg-a,
+.bp-biped.bp-run .bp-leg-b {
+  animation-name: bp-step-biped;
+}
+
+.bp-biped.bp-walk .bp-waddle {
+  animation: bp-waddle calc(var(--bp-step) * 2) ease-in-out infinite;
+}
+
+.bp-biped.bp-run .bp-waddle {
+  animation: bp-waddle calc(var(--bp-step) * 2) ease-in-out infinite;
+}
+
+.bp-biped.bp-walk .bp-wing {
+  animation: bp-flap 0.45s ease-in-out infinite alternate;
+}
+
+.bp-biped.bp-run .bp-wing {
+  animation: bp-flap-fast 0.12s ease-in-out infinite alternate;
+}
+
+.bp-biped.bp-idle .bp-wing {
+  animation: bp-flap 1.4s ease-in-out infinite alternate;
+}
+
+/* ---------- Keyframes ---------- */
+@keyframes bp-swing {
+  from { transform: rotate(22deg); }
+  to { transform: rotate(-22deg); }
+}
+
+@keyframes bp-swing-run {
+  from { transform: rotate(38deg); }
+  to { transform: rotate(-38deg); }
+}
+
+@keyframes bp-step-biped {
+  from { transform: rotate(18deg) translateY(-0.6px); }
+  to { transform: rotate(-18deg); }
+}
+
+@keyframes bp-bob {
+  from { transform: translateY(0); }
+  to { transform: translateY(-1.4px); }
+}
+
+@keyframes bp-bob-run {
+  from { transform: translateY(0) rotate(-2deg); }
+  to { transform: translateY(-3px) rotate(2deg); }
+}
+
+@keyframes bp-wag {
+  from { transform: rotate(-12deg); }
+  to { transform: rotate(14deg); }
+}
+
+@keyframes bp-tilt {
+  0%, 30% { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(-9deg); }
+}
+
+@keyframes bp-breathe {
+  0%, 100% { transform: scale(1, 1); }
+  50% { transform: scale(1.015, 0.975); }
+}
+
+@keyframes bp-breathe-deep {
+  0%, 100% { transform: scale(1, 0.94) translateY(1px); }
+  50% { transform: scale(1.04, 0.9) translateY(1.5px); }
+}
+
+@keyframes bp-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+
+@keyframes bp-ear-bounce {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-5deg); }
+}
+
+@keyframes bp-waddle {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+
+@keyframes bp-flap {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-22deg); }
+}
+
+@keyframes bp-flap-fast {
+  from { transform: rotate(10deg); }
+  to { transform: rotate(-45deg); }
+}
+
+@keyframes bp-jump {
+  0% { transform: translateY(0) scale(1, 1); }
+  14% { transform: translateY(0) scale(1.14, 0.82); }
+  45% { transform: translateY(-58%) scale(0.92, 1.1); }
+  72% { transform: translateY(0) scale(1.12, 0.86); }
+  86% { transform: translateY(-10%) scale(0.98, 1.03); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+
+/* ---------- Hạt hiệu ứng ---------- */
+.bp-particle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.bp-float {
+  animation: bp-float 1.6s ease-out forwards;
+}
+
+.bp-burst {
+  font-size: 16px;
+  animation: bp-float 1.1s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes bp-float {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -40px))) scale(0.8) rotate(var(--rot, 0deg));
+  }
+}
+
+.bp-dust {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 7px;
+  height: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 50%;
+  background: rgba(203, 213, 225, 0.85);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+  animation: bp-dust 0.6s ease-out forwards;
+}
+
+@keyframes bp-dust {
+  0% { opacity: 0.9; transform: translate(0, 0) scale(0.6); }
+  100% { opacity: 0; transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(1.8); }
+}
+
+.bp-bubble {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(244, 114, 182, 0.35);
+  box-shadow: 0 4px 14px rgba(236, 72, 153, 0.18);
+  font-family: "Be Vietnam Pro", "Segoe UI", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #db2777;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: bp-pop 0.28s cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+
+.bp-bubble > * {
+  animation: none;
+}
+
+@keyframes bp-pop {
+  from { opacity: 0; filter: blur(2px); }
+  to { opacity: 1; filter: blur(0); }
+}
+
+.bp-zzz {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 30px;
+  height: 30px;
+  pointer-events: none;
+  font-family: "Be Vietnam Pro", "Segoe UI", sans-serif;
+  font-weight: 800;
+  color: #6366f1;
+  text-shadow: 0 0 3px #fff, 0 0 2px #fff;
+}
+
+.bp-zzz span {
+  position: absolute;
+  left: 40%;
+  top: 60%;
+  opacity: 0;
+  animation: bp-zzz 2.4s ease-out infinite;
+}
+
+.bp-zzz span:nth-child(1) { font-size: 10px; animation-delay: 0s; }
+.bp-zzz span:nth-child(2) { font-size: 12px; animation-delay: 0.8s; }
+.bp-zzz span:nth-child(3) { font-size: 15px; animation-delay: 1.6s; }
+
+@keyframes bp-zzz {
+  0% { opacity: 0; transform: translate(0, 0); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(12px, -22px); }
+}
+
+@media print {
+  .bp-layer { display: none !important; }
+}
+
+/* ---------- Kéo & thả ---------- */
+.bp-mover {
+  touch-action: none;
+  cursor: grab;
+}
+
+.bp-mover.bp-grabbing {
+  cursor: grabbing;
+  transform-origin: 50% 22%;
+}
+
+.bp-mover.bp-grabbing .bp-shadow {
+  opacity: 0;
+}
+
+html.bp-is-dragging,
+html.bp-is-dragging * {
+  cursor: grabbing !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* Bé giãy chân khi bị nhấc lên */
+.bp-drag {
+  --bp-step: 0.11s;
+}
+
+.bp-drag .bp-leg-a {
+  animation: bp-swing-run var(--bp-step) ease-in-out infinite alternate;
+}
+
+.bp-drag .bp-leg-b {
+  animation: bp-swing-run var(--bp-step) ease-in-out infinite alternate;
+  animation-delay: calc(var(--bp-step) * -1);
+}
+
+.bp-drag .bp-tail {
+  animation: bp-wag 0.16s ease-in-out infinite alternate;
+}
+
+.bp-drag .bp-ears {
+  animation: bp-ear-bounce 0.24s ease-in-out infinite;
+}
+
+.bp-drag .bp-eyes {
+  animation: none;
+  transform: scale(1.15);
+}
+
+.bp-biped.bp-drag .bp-wing {
+  animation: bp-flap-fast 0.1s ease-in-out infinite alternate;
+}
+
+.bp-biped.bp-drag .bp-leg-a,
+.bp-biped.bp-drag .bp-leg-b {
+  animation-name: bp-step-biped;
+}
+
+/* Điểm đáp gợi ý trên viền */
+.bp-snap-marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 46px;
+  height: 14px;
+  pointer-events: none;
+}
+
+.bp-snap-marker span {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px dashed rgba(236, 72, 153, 0.85);
+  background: rgba(252, 231, 243, 0.55);
+  box-shadow: 0 0 12px rgba(236, 72, 153, 0.35);
+  animation: bp-marker-pulse 0.9s ease-in-out infinite;
+}
+
+@keyframes bp-marker-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ==========================================================================
+   Modal chọn thú cưng — Toàn màn hình
+   ========================================================================== */
+.bp-modal {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  z-index: 100500;
+  display: none;
+  flex-direction: column;
+  background: linear-gradient(180deg, #fff7fb 0%, #f8fafc 45%, #f8fafc 100%);
+  border: none;
+  border-radius: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  font-family: "Be Vietnam Pro", "Segoe UI", sans-serif;
+  color: #0f172a;
+}
+
+.bp-modal.is-open {
+  display: flex;
+  animation: bp-modal-in 0.22s ease both;
+}
+
+@keyframes bp-modal-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.bp-modal .fi {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.bp-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 24px;
+  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+.bp-modal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.bp-modal-title-icon {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fbcfe8, #fde68a);
+  color: #be185d;
+  font-size: 18px;
+}
+
+.bp-modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.bp-modal-subtitle {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.bp-modal-close {
+  flex: 0 0 auto;
+  position: static;
+  top: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  font-size: 22px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.bp-modal-close:hover {
+  background: #fdf2f8;
+  color: #db2777;
+  border-color: #fbcfe8;
+}
+
+.bp-modal-body {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 20px 24px calc(48px + env(safe-area-inset-bottom, 0px));
+  box-sizing: border-box;
+}
+
+.bp-section {
+  margin-bottom: 22px;
+}
+
+.bp-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.bp-section-title .fi {
+  color: #ec4899;
+}
+
+.bp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 12px;
+}
+
+.bp-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 10px 12px;
+  border-radius: 16px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bp-card:hover {
+  border-color: #f9a8d4;
+  background: #fffafd;
+}
+
+.bp-card.is-active {
+  border-color: #ec4899;
+  background: #fdf2f8;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.14);
+}
+
+.bp-card-preview {
+  width: 76px;
+  height: 58px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.bp-card-preview .bp-pet {
+  width: 72px;
+  height: 54px;
+}
+
+.bp-card-none .bp-card-preview {
+  align-items: center;
+  font-size: 30px;
+  color: #94a3b8;
+}
+
+.bp-card-none .bp-card-preview .fi {
+  top: 0;
+}
+
+.bp-card-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.bp-card.is-active .bp-card-name {
+  color: #be185d;
+}
+
+.bp-segment {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.bp-segment button {
+  min-width: 78px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bp-segment button:hover {
+  color: #0f172a;
+}
+
+.bp-segment button.is-active {
+  background: #ffffff;
+  color: #db2777;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
+}
+
+.bp-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  position: relative;
+}
+
+.bp-toggle-row + .bp-toggle-row {
+  margin-top: 10px;
+}
+
+.bp-toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bp-toggle-text strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.bp-toggle-text small {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.bp-toggle-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bp-toggle {
+  flex: 0 0 auto;
+  position: relative;
+  width: 46px;
+  height: 26px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: background 0.2s ease;
+}
+
+.bp-toggle::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25);
+  transition: left 0.2s ease;
+}
+
+.bp-toggle-input:checked + .bp-toggle {
+  background: #ec4899;
+}
+
+.bp-toggle-input:checked + .bp-toggle::after {
+  left: 23px;
+}
+
+.bp-toggle-input:focus-visible + .bp-toggle {
+  outline: 2px solid #f9a8d4;
+  outline-offset: 2px;
+}
+
+.bp-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 2px 0;
+  font-size: 12.5px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.bp-hint .fi {
+  color: #a855f7;
+  margin-top: 2px;
+}
+
+@media (max-width: 640px) {
+  .bp-modal-header {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .bp-modal-body {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .bp-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .bp-card {
+    padding: 12px 6px 10px;
+  }
+
+  .bp-card-preview {
+    width: 64px;
+    height: 50px;
+  }
+
+  .bp-card-preview .bp-pet {
+    width: 62px;
+    height: 46px;
+  }
+
+  .bp-segment {
+    display: flex;
+  }
+
+  .bp-segment button {
+    flex: 1;
+    min-width: 0;
+  }
+}
+

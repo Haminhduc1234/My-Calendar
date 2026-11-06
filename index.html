@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="style.css?v=20260929_date_icon_center_v9" />
   <link rel="stylesheet" href="family-cookbook.css?v=20260917_search_pos" />
   <link rel="stylesheet" href="family-health.css?v=20260918_cards_layout" />
+  <link rel="stylesheet" href="border-pet.css?v=20261106_pet_v1" />
   <link rel="icon" type="image/png" href="public/favicon.png" />
   <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -490,6 +491,10 @@
             <span>Dự Án</span>
           </button>
           <div class="dropdown-divider"></div>
+          <button class="dropdown-item item-border-pet"
+            onclick="event.stopPropagation(); openBorderPetModal(); closeMoreMenu();" role="menuitem"><span
+              class="menu-icon-wrap" style="color: #ec4899;"><i class="fi fi-rr-paw"></i></span><span>Thú
+              Cưng</span></button>
           <button id="menuAuthBtn" class="dropdown-item item-logout danger"
             onclick="logoutProfileSession(); closeMoreMenu();" role="menuitem">
             <span class="menu-icon-wrap"><i class="fi fi-rr-sign-out-alt"></i></span>
@@ -1411,12 +1416,12 @@
               <span>Real time</span>
             </button>
 
-            <button type="button" class="gold-range-chip" data-range="1h"
-              onclick="setGoldChartRange('1h')">1 Giờ</button>
-            <button type="button" class="gold-range-chip" data-range="1d"
-              onclick="setGoldChartRange('1d')">1 Ngày</button>
-            <button type="button" class="gold-range-chip" data-range="3d"
-              onclick="setGoldChartRange('3d')">3 Ngày</button>
+            <button type="button" class="gold-range-chip" data-range="1h" onclick="setGoldChartRange('1h')">1
+              Giờ</button>
+            <button type="button" class="gold-range-chip" data-range="1d" onclick="setGoldChartRange('1d')">1
+              Ngày</button>
+            <button type="button" class="gold-range-chip" data-range="3d" onclick="setGoldChartRange('3d')">3
+              Ngày</button>
             <button type="button" class="gold-range-chip" data-range="7d" onclick="setGoldChartRange('7d')">7
               Ngày</button>
             <button type="button" class="gold-range-chip active" data-range="30d" onclick="setGoldChartRange('30d')">1
@@ -4562,6 +4567,7 @@
   <script src="family-cookbook.js?v=20260917_search_pos"></script>
   <script src="family-health.js?v=20260918_latest_log_sync"></script>
   <script src="script.js?v=20260929_fix_icons_v13"></script>
+  <script src="border-pet.js?v=20261106_pet_v1"></script>
   <!-- <script src="MapSearch.js"></script> -->
 
   <!-- <script>

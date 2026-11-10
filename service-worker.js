@@ -1,4 +1,4 @@
-importScripts("./firebase-config.js");
+importScripts("./src/firebase/firebase-config.js");
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
 
@@ -136,17 +136,21 @@ const CACHE_NAME = "calendar-pwa-v12-" + Date.now();
 const FILES_TO_CACHE = [
     "./",
     "./index.html",
-    "./firebase-config.js",
+    "./src/firebase/firebase-config.js",
     "./firebase-messaging-sw.js",
-    "./style.css",
-    "./family-cookbook.css",
-    "./family-cookbook.js",
-    "./family-health.css",
-    "./family-health.js",
-    "./senior-mode.js",
-    "./learn-en-data.js",
-    "./learn-zh-data.js",
-    "./script.js",
+    "./src/core/style.css",
+    "./src/family-cookbook/family-cookbook.css",
+    "./src/family-cookbook/family-cookbook.js",
+    "./src/family-health/family-health.css",
+    "./src/family-health/family-health.js",
+    "./src/border-pet/border-pet.css",
+    "./src/border-pet/border-pet.js",
+    "./src/senior-mode/senior-mode.js",
+    "./src/learn-en/learn-en-data.js",
+    "./src/chinese-tutor/learn-zh-data.js",
+    "./src/chinese-tutor/chinese-tutor.js",
+    "./src/chinese-tutor/zh-data-loader.js",
+    "./src/core/script.js",
     "./manifest.json",
     "./public/favicon.png",
     "./public/quote.png",

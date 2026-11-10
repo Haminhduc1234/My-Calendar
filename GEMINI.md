@@ -8,7 +8,7 @@ Tài liệu này chứa các quy chuẩn bắt buộc của dự án khi xây d�
 - **Vấn đề**: Ký tự glyph của font biểu tượng Flaticon (`fi`, `fi-rr-*`, `fi-sr-*`) có baseline và trọng tâm quang học cao hơn chữ văn bản tiếng Việt ('Be Vietnam Pro').
 - **Quy tắc**:
   - Khi icon đứng ngang hàng với chữ (trong Button, Tab, Pill, Badge, Card, Label...): bắt buộc áp dụng `position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;`.
-  - Quy tắc này đã được cấu hình toàn cục trong file [style.css](file:///c:/Users/Admin/Desktop/calendar/style.css) và [family-cookbook.css](file:///c:/Users/Admin/Desktop/calendar/family-cookbook.css).
+  - Quy tắc này đã được cấu hình toàn cục trong file [style.css](file:///c:/Users/Admin/Desktop/calendar/src/core/style.css) và [family-cookbook.css](file:///c:/Users/Admin/Desktop/calendar/src/family-cookbook/family-cookbook.css).
   - Khi tạo mới các component hoặc style, luôn duy trì quy tắc này, không để icon bị lệch cao hơn chữ.
   - Các nút icon độc lập (không kèm chữ, như nút close `×`, nút favorite, nút back) giữ `position: static; top: 0;` để cân đúng tâm.
 

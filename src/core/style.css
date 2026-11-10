@@ -1543,6 +1543,7 @@ body::before {
   /* Mở rộng ra ngoài để sau khi xoay 90° vẫn phủ full ô */
   inset: -60%;
   background: url("public/vietnam.png") center / cover no-repeat;
+  background: url("../../public/vietnam.png") center / cover no-repeat;
   transform: rotate(90deg);
   z-index: 0;
   border-radius: 0;

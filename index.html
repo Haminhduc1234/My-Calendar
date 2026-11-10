@@ -22,12 +22,11 @@
   <link rel="stylesheet" href="src/family-cookbook/family-cookbook.css?v=20260917_search_pos" />
   <link rel="stylesheet" href="src/family-health/family-health.css?v=20260918_cards_layout" />
   <link rel="stylesheet" href="src/border-pet/border-pet.css?v=20261106_pet_v1" />
+  <link rel="stylesheet" href="src/map-search/map-search.css?v=20261110_map3d_v1" />
   <link rel="icon" type="image/png" href="public/favicon.png" />
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-  <script defer src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+  <!-- MapLibre GL 3D -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <!-- Cropper.js -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" />
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
@@ -491,6 +490,11 @@
             <span>Dự Án</span>
           </button>
           <div class="dropdown-divider"></div>
+          <button class="dropdown-item item-map-search"
+            onclick="event.stopPropagation(); openMapSearchModal(); closeMoreMenu();" role="menuitem">
+            <span class="menu-icon-wrap" style="color: #38bdf8;"><i class="fi fi-rr-globe"></i></span>
+            <span>Bản Đồ 3D</span>
+          </button>
           <button class="dropdown-item item-border-pet"
             onclick="event.stopPropagation(); openBorderPetModal(); closeMoreMenu();" role="menuitem"><span
               class="menu-icon-wrap" style="color: #ec4899;"><i class="fi fi-rr-paw"></i></span><span>Thú
@@ -504,17 +508,6 @@
       </div>
     </nav>
 
-    <!-- <div class="map-section">
-            <div class="map-search">
-                <input type="text" id="addressInput" placeholder="Nhập địa chỉ cần tìm..." autocomplete="off" />
-            </div>
-
-
-            <div id="searchResults" class="search-results"></div>
-
-            <div id="map"></div>
-
-        </div> -->
     <!-- News Modal -->
     <div id="newsModal" class="modal">
       <div class="news-modal-content">
@@ -4568,15 +4561,7 @@
   <script src="src/family-health/family-health.js?v=20260918_latest_log_sync"></script>
   <script src="src/core/script.js?v=20260929_fix_icons_v13"></script>
   <script src="src/border-pet/border-pet.js?v=20261106_pet_v1"></script>
-  <!-- <script src="src/map-search/MapSearch.js"></script> -->
-
-  <!-- <script>
-        MapSearch.init({
-            mapId: "map",
-            inputId: "addressInput",
-            resultsId: "searchResults"
-        });
-    </script> -->
+  <script src="src/map-search/MapSearch.js?v=20261110_map3d_v1"></script>
 
   <div id="cloudSyncedBadge">
     <i class="fi fi-rr-cloud-check"></i>
@@ -5220,6 +5205,143 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+  <!-- ==================== BẢN ĐỒ 3D THẾ GIỚI THỰC MODAL ==================== -->
+  <div id="mapSearchModal" class="modal map-search-modal" style="display: none;" role="dialog" aria-modal="true"
+    aria-labelledby="map3dTitle">
+    <!-- Nút thoát Chế độ Toàn Cảnh (Zen Mode) -->
+    <button type="button" id="map3dZenExitBtn" class="map3d-zen-exit-btn" onclick="MapSearch.toggleZenMode()"
+      title="Hiện lại bảng điều khiển">
+      <i class="fi fi-rr-eye"></i>
+      <span>Hiện Giao Diện</span>
+    </button>
+
+    <!-- Header Sticky Top - Chế Độ Vệ Tinh Gọn Gàng -->
+    <header class="map3d-header">
+      <div class="map3d-header-left">
+        <div class="map3d-header-icon">
+          <i class="fi fi-rr-globe"></i>
+        </div>
+        <div class="map3d-header-text">
+          <h3 class="map3d-header-title" id="map3dTitle">
+            Bản Đồ 3D Vệ Tinh
+            <span class="map3d-header-badge">Esri HD</span>
+          </h3>
+        </div>
+      </div>
+
+      <!-- Nút đóng chuẩn 34px x 34px bo góc 9px -->
+      <button type="button" class="map3d-close-btn" onclick="closeMapSearchModal()" aria-label="Đóng bản đồ">
+        <i class="fi fi-rr-cross"></i>
+      </button>
+    </header>
+
+    <!-- Map Body -->
+    <div class="map3d-body">
+      <!-- WebGL Canvas Container -->
+      <div id="map3dContainer"></div>
+
+      <!-- Khung Tìm Kiếm Nổi Ở Giữa Phía Trên (Mở ra khi nhấn nút Tìm Kiếm) -->
+      <div id="map3dSearchModalBox" class="map3d-floating-search-modal">
+        <div class="map3d-search-box">
+          <i class="fi fi-rr-search map3d-search-icon"></i>
+          <input type="text" id="map3dSearchInput" class="map3d-search-input"
+            placeholder="Tìm kiếm địa chỉ, nhà cửa, đường phố..." autocomplete="off" />
+          <div id="map3dSearchSpinner" class="map3d-search-spinner"></div>
+          <button type="button" id="map3dSearchClearBtn" class="map3d-search-clear-btn" style="display: none;"
+            title="Xóa tìm kiếm">
+            <i class="fi fi-rr-cross-small"></i>
+          </button>
+          <button type="button" class="map3d-search-close-btn" onclick="MapSearch.toggleSearch(false)"
+            title="Đóng tìm kiếm">
+            <i class="fi fi-rr-cross"></i>
+          </button>
+        </div>
+        <div id="map3dSearchResults" class="map3d-search-results"></div>
+      </div>
+
+      <!-- Cụm Nút Nổi Điều Khiển Ở Cạnh Phải (Cách Đều Nhau & Có Thể Ẩn/Hiện) -->
+      <div id="map3dFloatingActions" class="map3d-floating-actions">
+        <!-- Nút Ẩn / Hiện Toàn Bộ Khối Nút Chức Năng -->
+        <button type="button" id="map3dFabToggle" class="map3d-fab-toggle-btn"
+          onclick="MapSearch.toggleFloatingActions()" title="Ẩn / hiện danh sách nút">
+          <i class="fi fi-rr-apps"></i>
+        </button>
+
+        <!-- Danh Sách Các Nút Chức Năng Xếp Cách Đều Nhau -->
+        <div class="map3d-actions-list" id="map3dActionsList">
+          <!-- 1. Nút Tìm Kiếm -->
+          <button type="button" id="map3dFabSearch" class="map3d-fab-btn" onclick="MapSearch.toggleSearch()"
+            title="Tìm kiếm địa điểm">
+            <i class="fi fi-rr-search"></i>
+          </button>
+          <!-- 2. Nút Zoom In -->
+          <button type="button" class="map3d-fab-btn" onclick="MapSearch.zoomIn()" title="Phóng to bản đồ">
+            <i class="fi fi-rr-plus"></i>
+          </button>
+          <!-- 3. Nút Zoom Out -->
+          <button type="button" class="map3d-fab-btn" onclick="MapSearch.zoomOut()" title="Thu nhỏ bản đồ">
+            <i class="fi fi-rr-minus"></i>
+          </button>
+          <!-- 4. Nút GPS Vị Trí Của Tôi -->
+          <button type="button" id="map3dFabGps" class="map3d-fab-btn" onclick="MapSearch.locateUser(true)"
+            title="Về vị trí GPS của tôi">
+            <i class="fi fi-rr-target"></i>
+          </button>
+          <!-- 5. Nút Đổi Góc Nhìn 2D / 3D -->
+          <button type="button" id="map3dFabView" class="map3d-fab-btn" onclick="MapSearch.resetView()"
+            title="Đổi góc nhìn 2D / 3D">
+            <i class="fi fi-rr-layers"></i>
+          </button>
+          <!-- 6. Nút Xoay 360° -->
+          <button type="button" id="map3dFabOrbit" class="map3d-fab-btn" onclick="MapSearch.toggleOrbit()"
+            title="Tự động xoay vòng 360° ngắm cảnh">
+            <i class="fi fi-rr-refresh"></i>
+          </button>
+          <!-- 7. Nút Toàn Cảnh (Zen Mode) -->
+          <button type="button" id="map3dFabZen" class="map3d-fab-btn" onclick="MapSearch.toggleZenMode()"
+            title="Chế độ toàn cảnh ngắm nhìn (Ẩn giao diện)">
+            <i class="fi fi-rr-eye"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Thẻ Chi Tiết Địa Điểm (Có thể thu nhỏ thành mini bar) -->
+      <div id="map3dLocationCard" class="map3d-location-card">
+        <div class="map3d-card-header">
+          <div class="map3d-card-title-group" onclick="MapSearch.toggleLocationCardMinimize()">
+            <i class="fi fi-rr-marker map3d-card-icon"></i>
+            <h4 class="map3d-card-title" id="map3dCardTitle">Địa Điểm</h4>
+          </div>
+          <div class="map3d-card-btns">
+            <button type="button" id="map3dCardMinimizeBtn" class="map3d-card-tool-btn"
+              onclick="MapSearch.toggleLocationCardMinimize()" title="Thu gọn / Mở rộng">
+              <i class="fi fi-rr-angle-small-down"></i>
+            </button>
+            <button type="button" class="map3d-card-tool-btn" onclick="MapSearch.closeLocationCard()"
+              title="Đóng thẻ địa chỉ">
+              <i class="fi fi-rr-cross-small"></i>
+            </button>
+          </div>
+        </div>
+        <div class="map3d-card-body">
+          <div class="map3d-card-address" id="map3dCardAddress"></div>
+          <div class="map3d-card-coords" id="map3dCardCoords"></div>
+        </div>
+        <div class="map3d-card-actions">
+          <button type="button" class="map3d-btn-route"
+            onclick="MapSearch.draw3DRoute(selectedDestination.lng, selectedDestination.lat)">
+            <i class="fi fi-rr-navigation"></i> Chỉ Đường
+          </button>
+          <button type="button" class="map3d-btn-streetview" onclick="MapSearch.openStreetView()">
+            <i class="fi fi-rr-street-view"></i> Street View
+          </button>
+          <button type="button" class="map3d-btn-orbit" onclick="MapSearch.toggleOrbit()">
+            <i class="fi fi-rr-refresh"></i> Xoay
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </body>

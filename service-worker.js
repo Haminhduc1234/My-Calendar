@@ -145,6 +145,8 @@ const FILES_TO_CACHE = [
     "./src/family-health/family-health.js",
     "./src/border-pet/border-pet.css",
     "./src/border-pet/border-pet.js",
+    "./src/map-search/map-search.css",
+    "./src/map-search/MapSearch.js",
     "./src/senior-mode/senior-mode.js",
     "./src/learn-en/learn-en-data.js",
     "./src/chinese-tutor/learn-zh-data.js",

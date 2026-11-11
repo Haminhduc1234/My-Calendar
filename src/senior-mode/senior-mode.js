@@ -137,33 +137,6 @@
   // Khởi tạo mặc định mẫu khi người dùng chưa có dữ liệu
   function getDefaultSeedContacts() {
     return [
-      {
-        id: "sc_seed_1",
-        name: "Con trai",
-        phone: "",
-        presetAvatar: "son",
-        avatar: "",
-        order: 1,
-        updatedAt: Date.now()
-      },
-      {
-        id: "sc_seed_2",
-        name: "Con gái",
-        phone: "",
-        presetAvatar: "daughter",
-        avatar: "",
-        order: 2,
-        updatedAt: Date.now()
-      },
-      {
-        id: "sc_seed_3",
-        name: "Bác sĩ gia đình",
-        phone: "115",
-        presetAvatar: "doctor",
-        avatar: "",
-        order: 3,
-        updatedAt: Date.now()
-      }
     ];
   }
 
@@ -431,9 +404,8 @@
         <div class="senior-settings-empty-card">
           <div class="senior-empty-icon"><i class="fi fi-rr-users"></i></div>
           <div class="senior-empty-title">Chưa có người thân trong danh bạ</div>
-          <p class="senior-empty-desc">Nhấn vào nút bên dưới để thêm thông tin người thân đầu tiên.</p>
           <button type="button" class="senior-btn-add-quick" onclick="openSeniorFormModal()">
-            <i class="fi fi-rr-user-add"></i> + Thêm Người Thân Ngay
+            <i class="fi fi-rr-user-add"></i> Thêm
           </button>
         </div>
       `;

@@ -31732,6 +31732,7 @@ img[src=""] {
 
 .senior-btn-add-quick {
   padding: 12px 22px;
+  margin-top: 12px;
   border-radius: 14px;
   background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: #ffffff;

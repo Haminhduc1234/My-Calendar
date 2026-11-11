@@ -8,8 +8,8 @@
   'use strict';
 
   const STORAGE_KEY = 'borderPet.settings.v1';
-  // stay: ở yên tại vị trí đã kéo thả; pos: vị trí trên viền (tỉ lệ 0..1) hoặc null
-  const DEFAULTS = { pet: 'cat', speed: 'normal', size: 'medium', effects: true, stay: true, pos: null };
+  // stay: ở yên tại vị trí đã kéo thả; pos: vị trí trên viền (tỉ lệ 0..1) hoặc null; hidden: ẩn thú cưng
+  const DEFAULTS = { pet: 'cat', speed: 'normal', size: 'medium', effects: true, stay: true, pos: null, hidden: false };
 
   const SPEEDS = { slow: 36, normal: 60, fast: 92 }; // px / giây
   const SIZES = { small: 44, medium: 56, large: 72 }; // chiều rộng px
@@ -89,6 +89,7 @@
       s.effects = s.effects !== false;
       s.stay = s.stay !== false;
       s.pos = (typeof s.pos === 'number' && s.pos >= 0 && s.pos <= 1) ? s.pos : null;
+      s.hidden = !!s.hidden;
       return s;
     } catch (_) {
       return { ...DEFAULTS };
@@ -643,6 +644,7 @@
   const DRAG_THRESHOLD = 6;
 
   function onPointerDown(e) {
+    closeContextMenu();
     e.stopPropagation();
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     state.drag = {
@@ -772,6 +774,7 @@
 
   function buildLayer() {
     destroyLayer();
+    if (settings.hidden) return;
     const p = PET_MAP[settings.pet];
     if (!p) return;
 
@@ -809,6 +812,11 @@
     layer.appendChild(mover);
 
     mover.addEventListener('click', onClickCapture);
+    mover.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openContextMenu(e.clientX, e.clientY);
+    });
     mover.addEventListener('pointerdown', onPointerDown);
     mover.addEventListener('pointermove', onPointerMove);
     mover.addEventListener('pointerup', onPointerUp);
@@ -840,6 +848,7 @@
   }
 
   function destroyLayer() {
+    closeContextMenu();
     if (state.rafId) cancelAnimationFrame(state.rafId);
     state.rafId = 0;
     if (state.layer) state.layer.remove();
@@ -848,6 +857,83 @@
     state.drag = state.drop = null;
     state.dragging = false;
     document.documentElement.classList.remove('bp-is-dragging');
+  }
+
+  /* ----------------------------------------------------------------------
+     Menu ngữ cảnh (chuột phải) nhanh trên thú cưng
+     ---------------------------------------------------------------------- */
+  let menuEl = null;
+
+  function closeContextMenu() {
+    if (menuEl) {
+      menuEl.remove();
+      menuEl = null;
+      document.removeEventListener('click', onDocClickCloseMenu, true);
+      document.removeEventListener('keydown', onDocKeyCloseMenu, true);
+    }
+  }
+
+  function onDocClickCloseMenu(e) {
+    if (menuEl && !menuEl.contains(e.target)) {
+      closeContextMenu();
+    }
+  }
+
+  function onDocKeyCloseMenu(e) {
+    if (e.key === 'Escape') closeContextMenu();
+  }
+
+  function openContextMenu(x, y) {
+    closeContextMenu();
+    const m = document.createElement('div');
+    m.className = 'bp-context-menu';
+    m.setAttribute('role', 'menu');
+    m.innerHTML = `
+      <button type="button" class="bp-context-menu-item" data-action="hide" role="menuitem">
+        <i class="fi fi-rr-eye-crossed"></i><span>Ẩn thú cưng</span>
+      </button>
+      <button type="button" class="bp-context-menu-item" data-action="settings" role="menuitem">
+        <i class="fi fi-rr-settings"></i><span>Cài đặt thú cưng...</span>
+      </button>
+    `;
+    document.body.appendChild(m);
+    menuEl = m;
+
+    const rect = m.getBoundingClientRect();
+    const pad = 10;
+    let left = x;
+    let top = y;
+    if (left + rect.width > window.innerWidth - pad) {
+      left = window.innerWidth - rect.width - pad;
+    }
+    if (top + rect.height > window.innerHeight - pad) {
+      top = window.innerHeight - rect.height - pad;
+    }
+    m.style.left = Math.max(pad, left) + 'px';
+    m.style.top = Math.max(pad, top) + 'px';
+
+    m.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const act = btn.dataset.action;
+      closeContextMenu();
+      if (act === 'hide') {
+        settings.hidden = true;
+        saveSettings();
+        syncModal();
+        destroyLayer();
+        if (typeof showToast === 'function') {
+          showToast('Đã ẩn thú cưng. Bạn có thể bật lại trong Menu > Thú Cưng.');
+        }
+      } else if (act === 'settings') {
+        openBorderPetModal();
+      }
+    });
+
+    setTimeout(() => {
+      document.addEventListener('click', onDocClickCloseMenu, true);
+      document.addEventListener('keydown', onDocKeyCloseMenu, true);
+    }, 10);
   }
 
   /* ----------------------------------------------------------------------
@@ -898,6 +984,14 @@
         <section class="bp-section">
           <label class="bp-toggle-row">
             <span class="bp-toggle-text">
+              <strong>Ẩn thú cưng</strong>
+              <small>Tạm thời ẩn bé thú cưng khỏi viền màn hình</small>
+            </span>
+            <input type="checkbox" id="bpHiddenToggle" class="bp-toggle-input" />
+            <span class="bp-toggle" aria-hidden="true"></span>
+          </label>
+          <label class="bp-toggle-row">
+            <span class="bp-toggle-text">
               <strong>Hiệu ứng lấp lánh</strong>
               <small>Thả tim, bụi khi chạy, bong bóng cảm xúc</small>
             </span>
@@ -912,7 +1006,7 @@
             <input type="checkbox" id="bpStayToggle" class="bp-toggle-input" />
             <span class="bp-toggle" aria-hidden="true"></span>
           </label>
-          <p class="bp-hint"><i class="fi fi-rr-info"></i><span>Chạm 1 lần để bé nhảy và thả tim. Gõ 2 lần liên tiếp (double click/tap) để bé chạy tiếp. Kéo thả để đặt bé vào vị trí viền bất kỳ.</span></p>
+          <p class="bp-hint"><i class="fi fi-rr-info"></i><span>Chạm 1 lần để bé nhảy và thả tim. Gõ 2 lần liên tiếp (double click/tap) để bé chạy tiếp. Kéo thả để đặt bé vào vị trí viền bất kỳ. Nhấp chuột phải vào bé để mở menu ẩn nhanh.</span></p>
         </section>
       </div>`;
     document.body.appendChild(modalEl);
@@ -935,10 +1029,17 @@
       const card = e.target.closest('.bp-card');
       if (!card) return;
       settings.pet = card.dataset.pet;
+      if (settings.pet !== 'none') {
+        settings.hidden = false;
+      }
       saveSettings();
       syncModal();
-      buildLayer();
-      if (settings.pet !== 'none') setTimeout(() => showBubble('💕', 1.8), 200);
+      if (settings.pet === 'none' || settings.hidden) {
+        destroyLayer();
+      } else {
+        buildLayer();
+        setTimeout(() => showBubble('💕', 1.8), 200);
+      }
     });
 
     modalEl.querySelectorAll('.bp-segment').forEach((seg) => {
@@ -951,6 +1052,21 @@
         syncModal();
         if (group === 'size') buildLayer();
       });
+    });
+
+    modalEl.querySelector('#bpHiddenToggle').addEventListener('change', (e) => {
+      settings.hidden = e.target.checked;
+      if (!settings.hidden && settings.pet === 'none') {
+        settings.pet = 'cat';
+      }
+      saveSettings();
+      syncModal();
+      if (settings.hidden || settings.pet === 'none') {
+        destroyLayer();
+      } else {
+        buildLayer();
+        setTimeout(() => showBubble('Bé đã trở lại! 💕', 1.8), 200);
+      }
     });
 
     modalEl.querySelector('#bpEffectsToggle').addEventListener('change', (e) => {
@@ -991,6 +1107,8 @@
       const val = settings[seg.dataset.bpGroup];
       seg.querySelectorAll('button').forEach((b) => b.classList.toggle('is-active', b.dataset.value === val));
     });
+    const hiddenToggle = modalEl.querySelector('#bpHiddenToggle');
+    if (hiddenToggle) hiddenToggle.checked = !!settings.hidden;
     modalEl.querySelector('#bpEffectsToggle').checked = !!settings.effects;
     modalEl.querySelector('#bpStayToggle').checked = !!settings.stay;
   }
@@ -1019,7 +1137,7 @@
      Khởi tạo
      ---------------------------------------------------------------------- */
   function init() {
-    if (settings.pet !== 'none') buildLayer();
+    if (settings.pet !== 'none' && !settings.hidden) buildLayer();
     let resizeTimer = 0;
     const onResize = () => {
       clearTimeout(resizeTimer);
@@ -1032,7 +1150,7 @@
       if (e.key !== STORAGE_KEY) return;
       settings = loadSettings();
       syncModal();
-      if (settings.pet === 'none') destroyLayer(); else buildLayer();
+      if (settings.pet === 'none' || settings.hidden) destroyLayer(); else buildLayer();
     });
   }
 
@@ -1043,9 +1161,21 @@
     getSettings: () => ({ ...settings }),
     setPet(id) {
       if (id !== 'none' && !PET_MAP[id]) return;
-      settings.pet = id; saveSettings(); syncModal();
-      if (id === 'none') destroyLayer(); else buildLayer();
+      settings.pet = id;
+      if (id !== 'none') settings.hidden = false;
+      saveSettings();
+      syncModal();
+      if (id === 'none' || settings.hidden) destroyLayer(); else buildLayer();
     },
+    setHidden(hidden) {
+      settings.hidden = !!hidden;
+      if (!settings.hidden && settings.pet === 'none') settings.pet = 'cat';
+      saveSettings();
+      syncModal();
+      if (settings.hidden || settings.pet === 'none') destroyLayer(); else buildLayer();
+    },
+    hide() { this.setHidden(true); },
+    show() { this.setHidden(false); },
   };
 
   if (document.readyState === 'loading') {

@@ -15039,23 +15039,64 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
-let cashflowFilterDate = ""; // Ngày đang lọc (YYYY-MM-DD), rỗng = xem tất cả
+let cashflowFilterStartDate = ""; // YYYY-MM-DD, rỗng = không lọc
+let cashflowFilterEndDate = "";   // YYYY-MM-DD, rỗng = không lọc
+let tempRangeStart = "";
+let tempRangeEnd = "";
+let isSelectingRangeEnd = false;
 let cfCalViewingYear = new Date().getFullYear();
 let cfCalViewingMonth = new Date().getMonth();
+
+// Tương thích ngược nếu biến cũ được gọi
+Object.defineProperty(window, "cashflowFilterDate", {
+  get() { return cashflowFilterStartDate; },
+  set(val) {
+    cashflowFilterStartDate = val || "";
+    cashflowFilterEndDate = val || "";
+  },
+  configurable: true
+});
+
+function formatCashflowDateRangeLabel(startIso, endIso) {
+  if (!startIso && !endIso) return "Lọc khoảng ngày";
+  if (startIso && !endIso) return formatCashflowDate(startIso);
+  if (!startIso && endIso) return formatCashflowDate(endIso);
+  if (startIso === endIso) return formatCashflowDate(startIso);
+
+  const [y1, m1, d1] = startIso.split("-");
+  const [y2, m2, d2] = endIso.split("-");
+
+  if (y1 === y2) {
+    return `${d1}/${m1} - ${d2}/${m2}/${y1}`;
+  }
+  return `${d1}/${m1}/${y1} - ${d2}/${m2}/${y2}`;
+}
 
 function syncCashflowDateFilterUI() {
   const box = document.getElementById("cashflowDateFilterBox");
   const label = document.getElementById("cashflowDateFilterLabel");
+  const btn = document.getElementById("cashflowDateFilterBtn");
   const clearBtn = document.getElementById("cashflowDateFilterClearBtn");
   if (!box || !label) return;
 
-  if (cashflowFilterDate) {
+  if (cashflowFilterStartDate || cashflowFilterEndDate) {
+    const start = cashflowFilterStartDate || cashflowFilterEndDate;
+    const end = cashflowFilterEndDate || cashflowFilterStartDate;
+    const minDate = start <= end ? start : end;
+    const maxDate = start <= end ? end : start;
+
     box.classList.add("is-active");
-    label.innerText = formatCashflowDate(cashflowFilterDate) || cashflowFilterDate;
+    label.innerText = formatCashflowDateRangeLabel(minDate, maxDate);
+    if (btn) {
+      btn.title = minDate === maxDate
+        ? `Lọc ngày ${formatCashflowDate(minDate)}`
+        : `Lọc từ ${formatCashflowDate(minDate)} đến ${formatCashflowDate(maxDate)}`;
+    }
     if (clearBtn) clearBtn.style.display = "inline-flex";
   } else {
     box.classList.remove("is-active");
-    label.innerText = "Lọc ngày";
+    label.innerText = "Lọc khoảng ngày";
+    if (btn) btn.title = "Lọc khoảng ngày";
     if (clearBtn) clearBtn.style.display = "none";
   }
 }
@@ -15064,18 +15105,19 @@ function openCashflowDateFilterModal() {
   const modal = document.getElementById("cashflowDateFilterModal");
   if (!modal) return;
 
-  if (cashflowFilterDate) {
-    const parts = cashflowFilterDate.split("-").map(Number);
-    if (parts.length === 3) {
-      cfCalViewingYear = parts[0];
-      cfCalViewingMonth = parts[1] - 1;
-    }
-  } else {
-    const now = new Date();
-    cfCalViewingYear = now.getFullYear();
-    cfCalViewingMonth = now.getMonth();
+  tempRangeStart = cashflowFilterStartDate;
+  tempRangeEnd = cashflowFilterEndDate;
+  isSelectingRangeEnd = false;
+
+  const targetDate = tempRangeStart || getTodayIsoDate();
+  const parts = targetDate.split("-").map(Number);
+  if (parts.length === 3) {
+    cfCalViewingYear = parts[0];
+    cfCalViewingMonth = parts[1] - 1;
   }
 
+  syncCashflowRangeInputsFromTemp();
+  updateCashflowRangeHint();
   renderCashflowCalendar();
   modal.style.display = "flex";
 }
@@ -15095,6 +15137,177 @@ function changeCashflowCalendarMonth(offset) {
     cfCalViewingYear++;
   }
   renderCashflowCalendar();
+}
+
+function syncCashflowRangeInputsFromTemp() {
+  const startInput = document.getElementById("cfRangeStartDateInput");
+  const endInput = document.getElementById("cfRangeEndDateInput");
+  if (startInput) startInput.value = tempRangeStart || "";
+  if (endInput) endInput.value = tempRangeEnd || "";
+}
+
+function updateCashflowRangeHint() {
+  const hintEl = document.getElementById("cfRangeStatusHintText");
+  const hintBox = document.getElementById("cfRangeStatusHint");
+  if (!hintEl) return;
+
+  if (!tempRangeStart && !tempRangeEnd) {
+    hintEl.innerText = "Chạm vào lịch để chọn ngày bắt đầu và kết thúc";
+    if (hintBox) hintBox.classList.remove("is-complete", "is-picking");
+  } else if (tempRangeStart && !tempRangeEnd) {
+    hintEl.innerHTML = `Đã chọn từ ngày <strong>${formatCashflowDate(tempRangeStart)}</strong>. Hãy chọn ngày kết thúc (hoặc bấm Áp dụng để lọc 1 ngày).`;
+    if (hintBox) {
+      hintBox.classList.remove("is-complete");
+      hintBox.classList.add("is-picking");
+    }
+  } else if (tempRangeStart && tempRangeEnd) {
+    const minD = tempRangeStart <= tempRangeEnd ? tempRangeStart : tempRangeEnd;
+    const maxD = tempRangeStart <= tempRangeEnd ? tempRangeEnd : tempRangeStart;
+    const d1 = new Date(minD);
+    const d2 = new Date(maxD);
+    const diffDays = Math.round(Math.abs((d2 - d1) / (1000 * 60 * 60 * 24))) + 1;
+    if (minD === maxD) {
+      hintEl.innerHTML = `Lọc riêng ngày <strong>${formatCashflowDate(minD)}</strong> (1 ngày)`;
+    } else {
+      hintEl.innerHTML = `Khoảng ngày: <strong>${formatCashflowDate(minD)}</strong> đến <strong>${formatCashflowDate(maxD)}</strong> (${diffDays} ngày)`;
+    }
+    if (hintBox) {
+      hintBox.classList.remove("is-picking");
+      hintBox.classList.add("is-complete");
+    }
+  }
+}
+
+function setCashflowRangePreset(preset) {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const d = now.getDate();
+
+  const toIso = (dateObj) => {
+    const py = dateObj.getFullYear();
+    const pm = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const pd = String(dateObj.getDate()).padStart(2, "0");
+    return `${py}-${pm}-${pd}`;
+  };
+
+  let start = "";
+  let end = "";
+
+  if (preset === "today") {
+    const iso = toIso(now);
+    start = iso;
+    end = iso;
+  } else if (preset === "yesterday") {
+    const yDay = new Date(y, m, d - 1);
+    const iso = toIso(yDay);
+    start = iso;
+    end = iso;
+  } else if (preset === "this_week") {
+    const dayOfWeek = now.getDay();
+    const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const mon = new Date(y, m, d + diffToMon);
+    const sun = new Date(y, m, d + diffToMon + 6);
+    start = toIso(mon);
+    end = toIso(sun);
+  } else if (preset === "7_days") {
+    const past7 = new Date(y, m, d - 6);
+    start = toIso(past7);
+    end = toIso(now);
+  } else if (preset === "this_month") {
+    const firstDay = new Date(y, m, 1);
+    const lastDay = new Date(y, m + 1, 0);
+    start = toIso(firstDay);
+    end = toIso(lastDay);
+  } else if (preset === "last_month") {
+    const firstDay = new Date(y, m - 1, 1);
+    const lastDay = new Date(y, m, 0);
+    start = toIso(firstDay);
+    end = toIso(lastDay);
+  }
+
+  tempRangeStart = start;
+  tempRangeEnd = end;
+  isSelectingRangeEnd = false;
+
+  if (tempRangeStart) {
+    const parts = tempRangeStart.split("-").map(Number);
+    if (parts.length === 3) {
+      cfCalViewingYear = parts[0];
+      cfCalViewingMonth = parts[1] - 1;
+    }
+  }
+
+  syncCashflowRangeInputsFromTemp();
+  updateCashflowRangeHint();
+  renderCashflowCalendar();
+}
+
+function handleCashflowRangeInputChange() {
+  const startInput = document.getElementById("cfRangeStartDateInput");
+  const endInput = document.getElementById("cfRangeEndDateInput");
+  if (!startInput || !endInput) return;
+
+  let start = startInput.value;
+  let end = endInput.value;
+
+  if (start && end && start > end) {
+    end = start;
+    endInput.value = end;
+  }
+
+  tempRangeStart = start;
+  tempRangeEnd = end;
+  isSelectingRangeEnd = false;
+
+  if (tempRangeStart) {
+    const parts = tempRangeStart.split("-").map(Number);
+    if (parts.length === 3) {
+      cfCalViewingYear = parts[0];
+      cfCalViewingMonth = parts[1] - 1;
+    }
+  }
+
+  updateCashflowRangeHint();
+  renderCashflowCalendar();
+}
+
+function handleCashflowCalendarCellClick(isoDate) {
+  if (!tempRangeStart || (tempRangeStart && tempRangeEnd)) {
+    // Bắt đầu chọn một khoảng mới
+    tempRangeStart = isoDate;
+    tempRangeEnd = null;
+    isSelectingRangeEnd = true;
+  } else if (tempRangeStart && !tempRangeEnd) {
+    // Đang chờ ngày kết thúc
+    if (isoDate < tempRangeStart) {
+      tempRangeEnd = tempRangeStart;
+      tempRangeStart = isoDate;
+    } else {
+      tempRangeEnd = isoDate;
+    }
+    isSelectingRangeEnd = false;
+  }
+
+  syncCashflowRangeInputsFromTemp();
+  updateCashflowRangeHint();
+  renderCashflowCalendar();
+}
+
+function highlightHoverRange(startDate, hoverDate) {
+  const gridEl = document.getElementById("cfCalDaysGrid");
+  if (!gridEl) return;
+  const min = startDate <= hoverDate ? startDate : hoverDate;
+  const max = startDate <= hoverDate ? hoverDate : startDate;
+
+  gridEl.querySelectorAll(".cf-cal-cell[data-date]").forEach((cell) => {
+    const d = cell.dataset.date;
+    if (d > min && d < max) {
+      cell.classList.add("is-hover-range");
+    } else {
+      cell.classList.remove("is-hover-range");
+    }
+  });
 }
 
 function renderCashflowCalendar() {
@@ -15133,6 +15346,13 @@ function renderCashflowCalendar() {
     gridEl.appendChild(cell);
   }
 
+  const rStart = (tempRangeStart && tempRangeEnd)
+    ? (tempRangeStart <= tempRangeEnd ? tempRangeStart : tempRangeEnd)
+    : (tempRangeStart || tempRangeEnd);
+  const rEnd = (tempRangeStart && tempRangeEnd)
+    ? (tempRangeStart <= tempRangeEnd ? tempRangeEnd : tempRangeStart)
+    : (tempRangeStart || tempRangeEnd);
+
   // 2. Ngày của tháng hiện tại
   for (let d = 1; d <= totalDays; d++) {
     const cell = document.createElement("div");
@@ -15142,10 +15362,8 @@ function renderCashflowCalendar() {
     const mStr = String(cfCalViewingMonth + 1).padStart(2, "0");
     const dStr = String(d).padStart(2, "0");
     const isoDate = `${cfCalViewingYear}-${mStr}-${dStr}`;
+    cell.dataset.date = isoDate;
 
-    if (isoDate === cashflowFilterDate) {
-      cell.classList.add("is-selected");
-    }
     if (isoDate === todayIso) {
       cell.classList.add("is-today");
     }
@@ -15153,12 +15371,36 @@ function renderCashflowCalendar() {
       cell.classList.add("has-cashflow");
     }
 
+    if (rStart && rEnd) {
+      if (rStart === rEnd && isoDate === rStart) {
+        cell.classList.add("is-selected");
+      } else {
+        if (isoDate === rStart) cell.classList.add("is-range-start");
+        else if (isoDate === rEnd) cell.classList.add("is-range-end");
+        else if (isoDate > rStart && isoDate < rEnd) cell.classList.add("in-range");
+      }
+    } else if (rStart && !rEnd) {
+      if (isoDate === rStart) cell.classList.add("is-range-start");
+    }
+
     cell.addEventListener("click", () => {
-      selectCashflowDateFromCalendar(isoDate);
+      handleCashflowCalendarCellClick(isoDate);
+    });
+
+    cell.addEventListener("mouseenter", () => {
+      if (isSelectingRangeEnd && tempRangeStart && !tempRangeEnd) {
+        highlightHoverRange(tempRangeStart, isoDate);
+      }
     });
 
     gridEl.appendChild(cell);
   }
+
+  gridEl.addEventListener("mouseleave", () => {
+    if (isSelectingRangeEnd) {
+      gridEl.querySelectorAll(".is-hover-range").forEach((el) => el.classList.remove("is-hover-range"));
+    }
+  });
 
   // 3. Ngày của tháng sau để tròn lưới
   const totalCellsSoFar = startDay + totalDays;
@@ -15171,21 +15413,46 @@ function renderCashflowCalendar() {
   }
 }
 
-function selectCashflowDateFromCalendar(isoDate) {
-  cashflowFilterDate = isoDate;
+function applyCashflowDateRangeFilter() {
+  if (!tempRangeStart && !tempRangeEnd) {
+    clearCashflowDateFilterAndClose();
+    return;
+  }
+
+  let start = tempRangeStart;
+  let end = tempRangeEnd;
+  if (start && !end) end = start;
+  if (!start && end) start = end;
+
+  if (start > end) {
+    const tmp = start;
+    start = end;
+    end = tmp;
+  }
+
+  cashflowFilterStartDate = start;
+  cashflowFilterEndDate = end;
+
   closeCashflowDateFilterModal();
   syncCashflowDateFilterUI();
   renderCashflowRecentList();
 }
 
+function selectCashflowDateFromCalendar(isoDate) {
+  handleCashflowCalendarCellClick(isoDate);
+}
+
 function selectCashflowCalendarToday() {
-  const todayIso = getTodayIsoDate();
-  selectCashflowDateFromCalendar(todayIso);
+  setCashflowRangePreset("today");
 }
 
 function clearCashflowDateFilter(event) {
   if (event) event.stopPropagation();
-  cashflowFilterDate = "";
+  cashflowFilterStartDate = "";
+  cashflowFilterEndDate = "";
+  tempRangeStart = "";
+  tempRangeEnd = "";
+  isSelectingRangeEnd = false;
   syncCashflowDateFilterUI();
   renderCashflowRecentList();
 }
@@ -15344,9 +15611,14 @@ function renderCashflowRecentList() {
     return;
   }
 
-  // Nếu đang áp dụng lọc theo ngày
-  if (cashflowFilterDate) {
-    const dateEntries = cashflowEntries.filter((e) => e.date === cashflowFilterDate);
+  // Nếu đang áp dụng lọc theo khoảng ngày
+  if (cashflowFilterStartDate || cashflowFilterEndDate) {
+    const start = cashflowFilterStartDate || cashflowFilterEndDate;
+    const end = cashflowFilterEndDate || cashflowFilterStartDate;
+    const minDate = start <= end ? start : end;
+    const maxDate = start <= end ? end : start;
+
+    const dateEntries = cashflowEntries.filter((e) => e.date && e.date >= minDate && e.date <= maxDate);
     if (viewAllBtn) viewAllBtn.style.display = "inline-flex";
 
     let income = 0;
@@ -15363,9 +15635,12 @@ function renderCashflowRecentList() {
       closeCashflowQuickViewModal();
       const empty = document.createElement("div");
       empty.className = "app-empty-state";
+      const rangeText = minDate === maxDate
+        ? `vào ngày ${formatCashflowDate(minDate)}`
+        : `trong khoảng ngày ${formatCashflowDate(minDate)} - ${formatCashflowDate(maxDate)}`;
       empty.innerHTML = `
         <div class="app-empty-icon">📅</div>
-        <div class="app-empty-title">Không có giao dịch nào vào ngày ${formatCashflowDate(cashflowFilterDate)}</div>
+        <div class="app-empty-title">Không có giao dịch nào ${rangeText}</div>
       `;
       listEl.appendChild(empty);
       renderCashflowQuickView();
@@ -15447,8 +15722,12 @@ function filterCashflowRecentList() {
   }
 
   let sourceEntries = cashflowEntries;
-  if (cashflowFilterDate) {
-    sourceEntries = sourceEntries.filter((e) => e.date === cashflowFilterDate);
+  if (cashflowFilterStartDate || cashflowFilterEndDate) {
+    const start = cashflowFilterStartDate || cashflowFilterEndDate;
+    const end = cashflowFilterEndDate || cashflowFilterStartDate;
+    const minDate = start <= end ? start : end;
+    const maxDate = start <= end ? end : start;
+    sourceEntries = sourceEntries.filter((e) => e.date && e.date >= minDate && e.date <= maxDate);
   }
 
   const filtered = sourceEntries.filter((entry) => {
@@ -15469,7 +15748,17 @@ function filterCashflowRecentList() {
   if (filtered.length === 0) {
     const emptyEl = document.createElement("div");
     emptyEl.className = "cashflow-search-empty";
-    emptyEl.textContent = `Không tìm thấy giao dịch nào phù hợp với "${input.value.trim()}"${cashflowFilterDate ? ` trong ngày ${formatCashflowDate(cashflowFilterDate)}` : ""}`;
+    let filterSuffix = "";
+    if (cashflowFilterStartDate || cashflowFilterEndDate) {
+      const start = cashflowFilterStartDate || cashflowFilterEndDate;
+      const end = cashflowFilterEndDate || cashflowFilterStartDate;
+      const minDate = start <= end ? start : end;
+      const maxDate = start <= end ? end : start;
+      filterSuffix = minDate === maxDate
+        ? ` trong ngày ${formatCashflowDate(minDate)}`
+        : ` trong khoảng ${formatCashflowDate(minDate)} - ${formatCashflowDate(maxDate)}`;
+    }
+    emptyEl.textContent = `Không tìm thấy giao dịch nào phù hợp với "${input.value.trim()}"${filterSuffix}`;
     listEl.appendChild(emptyEl);
     return;
   }

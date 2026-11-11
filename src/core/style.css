@@ -15022,7 +15022,7 @@ input[type="datetime-local"] {
 
 /* --- Styles cho Popup Calendar chọn ngày lọc giao dịch --- */
 .cashflow-calendar-filter-dialog {
-  max-width: 370px !important;
+  max-width: 420px !important;
 }
 
 .cashflow-calendar-filter-body {
@@ -15030,6 +15030,141 @@ input[type="datetime-local"] {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* Nhóm nút chọn nhanh khoảng ngày */
+.cf-range-presets-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cf-range-preset-chip {
+  padding: 5px 10px;
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.cf-range-preset-chip:hover {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.45);
+  color: #ffffff;
+}
+
+.cf-range-preset-chip.is-active {
+  background: rgba(59, 130, 246, 0.28);
+  border-color: #3b82f6;
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+/* Khung nhập / hiển thị khoảng ngày (Từ ngày -> Đến ngày) */
+.cf-range-inputs-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cf-range-input-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cf-range-input-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.cf-range-date-input {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  color: #f1f5f9;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 5px 8px;
+  width: 100%;
+  box-sizing: border-box;
+  color-scheme: dark;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.cf-range-date-input:focus {
+  border-color: #3b82f6;
+}
+
+.cf-range-input-arrow {
+  flex-shrink: 0;
+  color: #64748b;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cf-range-input-arrow i {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Thông báo trạng thái chọn khoảng ngày */
+.cf-range-status-hint {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  line-height: 1.4;
+}
+
+.cf-range-status-hint i {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.cf-range-status-hint.is-picking {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fcd34d;
+}
+
+.cf-range-status-hint.is-complete {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
 }
 
 .cf-calendar-widget {
@@ -15155,6 +15290,42 @@ input[type="datetime-local"] {
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
+.cf-cal-cell.is-range-start {
+  background: #3b82f6 !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 10px 0 0 10px !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+}
+
+.cf-cal-cell.is-range-end {
+  background: #3b82f6 !important;
+  border-color: #60a5fa !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 0 10px 10px 0 !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+}
+
+.cf-cal-cell.is-range-start.is-range-end {
+  border-radius: 10px !important;
+}
+
+.cf-cal-cell.in-range {
+  background: rgba(59, 130, 246, 0.22) !important;
+  border-color: rgba(59, 130, 246, 0.35) !important;
+  color: #dbeafe !important;
+  border-radius: 0 !important;
+}
+
+.cf-cal-cell.is-hover-range {
+  background: rgba(59, 130, 246, 0.14) !important;
+  border-color: rgba(59, 130, 246, 0.28) !important;
+  color: #bfdbfe !important;
+  border-radius: 0 !important;
+}
+
 .cf-cal-cell.has-cashflow::after {
   content: '';
   position: absolute;
@@ -15166,7 +15337,9 @@ input[type="datetime-local"] {
   box-shadow: 0 0 4px #34d399;
 }
 
-.cf-cal-cell.is-selected.has-cashflow::after {
+.cf-cal-cell.is-selected.has-cashflow::after,
+.cf-cal-cell.is-range-start.has-cashflow::after,
+.cf-cal-cell.is-range-end.has-cashflow::after {
   background: #ffffff;
   box-shadow: none;
 }
@@ -15177,6 +15350,54 @@ input[type="datetime-local"] {
   justify-content: space-between;
   padding: 12px 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cf-cal-action-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cashflow-submodal-submit-btn {
+  height: 34px;
+  padding: 0 16px;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #ffffff;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: 1px solid rgba(147, 197, 253, 0.35);
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.cashflow-submodal-submit-btn:hover {
+  background: linear-gradient(135deg, #60a5fa, #1d4ed8);
+  border-color: rgba(147, 197, 253, 0.55);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.5);
+}
+
+.cashflow-submodal-submit-btn i {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-size: 12px;
+}
+
+.cf-cal-actions-bar .cashflow-submodal-cancel-btn {
+  height: 34px;
+  padding: 0 14px;
+  font-size: 12.5px;
+  border-radius: 8px;
 }
 
 .cf-cal-quick-group {

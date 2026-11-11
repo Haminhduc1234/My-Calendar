@@ -2133,15 +2133,15 @@
                 <span>Xem tất cả (đầy đủ)</span>
               </button>
               <div class="cashflow-history-right-tools">
-                <!-- Nút Lọc theo ngày -->
+                <!-- Nút Lọc khoảng ngày -->
                 <div class="cashflow-date-filter-box" id="cashflowDateFilterBox">
                   <button type="button" class="cashflow-date-filter-btn" id="cashflowDateFilterBtn"
-                    onclick="openCashflowDateFilterModal()" title="Lọc theo ngày" aria-label="Lọc theo ngày">
+                    onclick="openCashflowDateFilterModal()" title="Lọc khoảng ngày" aria-label="Lọc khoảng ngày">
                     <i class="fi fi-rr-calendar"></i>
-                    <span class="cashflow-date-filter-label" id="cashflowDateFilterLabel">Lọc ngày</span>
+                    <span class="cashflow-date-filter-label" id="cashflowDateFilterLabel">Lọc khoảng ngày</span>
                   </button>
                   <button type="button" class="cashflow-date-filter-clear-btn" id="cashflowDateFilterClearBtn"
-                    onclick="clearCashflowDateFilter(event)" title="Bỏ lọc theo ngày" aria-label="Bỏ lọc theo ngày"
+                    onclick="clearCashflowDateFilter(event)" title="Bỏ lọc khoảng ngày" aria-label="Bỏ lọc khoảng ngày"
                     style="display: none;">
                     <i class="fi fi-rr-cross"></i>
                   </button>
@@ -2175,10 +2175,10 @@
       </div>
     </div>
 
-    <!-- Popup Lịch chọn ngày để lọc giao dịch trong lịch sử -->
+    <!-- Popup Lịch chọn khoảng ngày để lọc giao dịch trong lịch sử -->
     <div id="cashflowDateFilterModal" class="modal cashflow-submodal" style="display: none;"
       onclick="if(event.target===this) closeCashflowDateFilterModal()">
-      <div class="cashflow-submodal-dialog cashflow-calendar-filter-dialog" style="max-width: 380px;">
+      <div class="cashflow-submodal-dialog cashflow-calendar-filter-dialog" style="max-width: 420px;">
         <div class="cashflow-submodal-header">
           <div class="cashflow-submodal-header-left">
             <div class="cashflow-submodal-icon is-history"
@@ -2186,14 +2186,47 @@
               <i class="fi fi-rr-calendar"></i>
             </div>
             <div>
-              <h3 class="cashflow-submodal-title">Chọn ngày lọc</h3>
-              <p class="cashflow-submodal-subtitle">Chạm vào ngày để xem giao dịch</p>
+              <h3 class="cashflow-submodal-title">Lọc khoảng ngày</h3>
+              <p class="cashflow-submodal-subtitle" id="cfCalSubtitle">Chọn khoảng thời gian để lọc giao dịch</p>
             </div>
           </div>
           <button type="button" class="cashflow-submodal-close" onclick="closeCashflowDateFilterModal()"
             aria-label="Đóng">×</button>
         </div>
         <div class="cashflow-submodal-body cashflow-calendar-filter-body">
+          <!-- Nhóm nút chọn nhanh khoảng ngày -->
+          <div class="cf-range-presets-group">
+            <button type="button" class="cf-range-preset-chip" onclick="setCashflowRangePreset('today')">Hôm nay</button>
+            <button type="button" class="cf-range-preset-chip" onclick="setCashflowRangePreset('yesterday')">Hôm qua</button>
+            <button type="button" class="cf-range-preset-chip" onclick="setCashflowRangePreset('this_week')">Tuần này</button>
+            <button type="button" class="cf-range-preset-chip" onclick="setCashflowRangePreset('7_days')">7 ngày qua</button>
+            <button type="button" class="cf-range-preset-chip" onclick="setCashflowRangePreset('this_month')">Tháng này</button>
+            <button type="button" class="cf-range-preset-chip" onclick="setCashflowRangePreset('last_month')">Tháng trước</button>
+          </div>
+
+          <!-- Khung nhập / hiển thị khoảng ngày (Từ ngày -> Đến ngày) -->
+          <div class="cf-range-inputs-card">
+            <div class="cf-range-input-item">
+              <label for="cfRangeStartDateInput" class="cf-range-input-label">Từ ngày</label>
+              <input type="date" id="cfRangeStartDateInput" class="cf-range-date-input"
+                onchange="handleCashflowRangeInputChange()" />
+            </div>
+            <div class="cf-range-input-arrow">
+              <i class="fi fi-rr-arrow-right"></i>
+            </div>
+            <div class="cf-range-input-item">
+              <label for="cfRangeEndDateInput" class="cf-range-input-label">Đến ngày</label>
+              <input type="date" id="cfRangeEndDateInput" class="cf-range-date-input"
+                onchange="handleCashflowRangeInputChange()" />
+            </div>
+          </div>
+
+          <!-- Thông báo hướng dẫn trạng thái chọn khoảng ngày -->
+          <div class="cf-range-status-hint" id="cfRangeStatusHint">
+            <i class="fi fi-rr-info"></i>
+            <span id="cfRangeStatusHintText">Chạm vào lịch để chọn ngày bắt đầu và kết thúc</span>
+          </div>
+
           <!-- Calendar Widget -->
           <div class="cf-calendar-widget">
             <!-- Header chuyển tháng -->
@@ -2220,18 +2253,19 @@
           </div>
         </div>
         <div class="cashflow-submodal-actions-bar cf-cal-actions-bar">
-          <div class="cf-cal-quick-group">
-            <button type="button" class="cf-cal-quick-btn" onclick="selectCashflowCalendarToday()">
-              <i class="fi fi-rr-calendar-day"></i> <span>Hôm nay</span>
+          <button type="button" class="cf-cal-quick-btn is-clear" onclick="clearCashflowDateFilterAndClose()">
+            <i class="fi fi-rr-rotate-left"></i> <span>Bỏ lọc</span>
+          </button>
+          <div class="cf-cal-action-btns">
+            <button type="button" class="cashflow-submodal-cancel-btn" onclick="closeCashflowDateFilterModal()"
+              style="margin: 0;">
+              Đóng
             </button>
-            <button type="button" class="cf-cal-quick-btn is-clear" onclick="clearCashflowDateFilterAndClose()">
-              <i class="fi fi-rr-rotate-left"></i> <span>Bỏ lọc</span>
+            <button type="button" class="cashflow-submodal-submit-btn" id="cfRangeApplyBtn"
+              onclick="applyCashflowDateRangeFilter()" style="margin: 0;">
+              <i class="fi fi-rr-check"></i> <span>Áp dụng</span>
             </button>
           </div>
-          <button type="button" class="cashflow-submodal-cancel-btn" onclick="closeCashflowDateFilterModal()"
-            style="margin: 0;">
-            Đóng
-          </button>
         </div>
       </div>
     </div>

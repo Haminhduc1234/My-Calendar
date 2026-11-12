@@ -6615,7 +6615,6 @@ body::before {
 #cashflowCategoryPickerModal,
 #cashflowWithdrawFundModal,
 #cashflowExceededBalanceModal,
-#cashflowQuickViewModal,
 #cashflowAllTransactionsModal,
 #cashflowHistoryModal,
 #cashflowAnalysisModal,
@@ -6640,6 +6639,10 @@ body::before {
 
 #cashflowDateFilterModal {
   z-index: 2580 !important;
+}
+
+#cashflowQuickViewModal {
+  z-index: 3100 !important;
 }
 
 /* --- Sticky Top Header --- */
@@ -9667,13 +9670,13 @@ input[type="datetime-local"] {
 
 .cashflow-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   grid-template-areas:
-    "topline amount actions"
-    "note note note"
-    "subline subline subline";
-  gap: 10px;
-  align-items: start;
+    "note amount actions"
+    "subline subline actions";
+  row-gap: 4px;
+  column-gap: 10px;
+  align-items: center;
   border: 1px solid rgba(183, 208, 255, 0.16);
   border-radius: 12px;
   padding: 10px 12px;
@@ -9682,7 +9685,6 @@ input[type="datetime-local"] {
   transition:
     border-color 0.18s ease,
     background 0.18s ease,
-    transform 0.18s ease,
     box-shadow 0.18s ease;
 }
 
@@ -9745,15 +9747,59 @@ input[type="datetime-local"] {
   border: 1px solid rgba(163, 196, 255, 0.18);
 }
 
+.cashflow-row-balance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  white-space: nowrap;
+}
+
+.cashflow-row-balance-pill.is-positive {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.28);
+}
+
+.cashflow-row-balance-pill.is-negative {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+.cashflow-row-balance-pill i {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
 .cashflow-row-note {
   grid-area: note;
-  width: 100%;
-  font-size: 13px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+}
+
+.cashflow-row-note-text {
+  font-size: 13.5px;
+  font-weight: 500;
   color: #dbe8ff;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex-shrink: 1;
 }
 
 .cashflow-row-subline {
@@ -9793,7 +9839,7 @@ input[type="datetime-local"] {
   overflow: visible;
   text-align: right;
   line-height: 1.3;
-  align-self: start;
+  align-self: center;
 }
 
 .cashflow-row-amount.is-income {
@@ -9808,6 +9854,7 @@ input[type="datetime-local"] {
   grid-area: actions;
   display: flex;
   align-items: center;
+  align-self: center;
   position: relative;
 }
 
@@ -11040,26 +11087,28 @@ input[type="datetime-local"] {
   }
 
   .cashflow-row {
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas:
-      "topline amount actions"
-      "note note actions"
+      "note amount actions"
       "subline subline actions";
-    align-items: start;
+    row-gap: 4px;
+    column-gap: 10px;
+    align-items: center;
   }
 
   .cashflow-row-note {
     grid-area: note;
-    white-space: normal;
   }
 
   .cashflow-row-amount {
     grid-area: amount;
     text-align: right;
+    align-self: center;
   }
 
   .cashflow-row-actions {
     grid-area: actions;
+    align-self: center;
   }
 
   .cashflow-chart-wrap {
@@ -13080,6 +13129,35 @@ input[type="datetime-local"] {
   color: var(--muted);
   font-size: 11px;
   flex-shrink: 0;
+}
+
+.allocate-history-item-balance {
+  font-size: 11px;
+  color: #38bdf8;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.allocate-history-item-balance.is-negative {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.24);
+}
+
+.allocate-history-item-balance i {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 .allocate-history-dialog-footer {
@@ -16860,22 +16938,21 @@ input[type="datetime-local"] {
 
 .cashflow-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   grid-template-areas:
-    "topline amount actions"
-    "note note note"
-    "subline subline subline";
-  gap: 8px;
-  align-items: start;
+    "note amount actions"
+    "subline subline actions";
+  row-gap: 4px;
+  column-gap: 10px;
+  align-items: center;
   border: 1px solid rgba(183, 208, 255, 0.16);
   border-radius: 9px;
-  padding: 8px;
+  padding: 8px 10px;
   background: rgba(11, 26, 51, 0.62);
   cursor: pointer;
   transition:
     border-color 0.18s ease,
     background 0.18s ease,
-    transform 0.18s ease,
     box-shadow 0.18s ease;
 }
 
@@ -16938,15 +17015,48 @@ input[type="datetime-local"] {
   border: 1px solid rgba(163, 196, 255, 0.18);
 }
 
+.cashflow-row-balance-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  white-space: nowrap;
+}
+
+.cashflow-row-balance-pill.is-positive {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.28);
+}
+
+.cashflow-row-balance-pill.is-negative {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.28);
+}
+
+.cashflow-row-balance-pill i {
+  position: relative;
+  top: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
 .cashflow-row-note {
   grid-area: note;
-  width: 100%;
-  font-size: 12px;
-  color: #dbe8ff;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .cashflow-row-subline {
@@ -16971,7 +17081,7 @@ input[type="datetime-local"] {
   overflow: visible;
   text-align: right;
   line-height: 1.3;
-  align-self: start;
+  align-self: center;
 }
 
 .cashflow-row-amount.is-income {
@@ -16986,6 +17096,7 @@ input[type="datetime-local"] {
   grid-area: actions;
   display: flex;
   align-items: center;
+  align-self: center;
   position: relative;
 }
 
@@ -17429,12 +17540,13 @@ input[type="datetime-local"] {
   }
 
   .cashflow-row {
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     grid-template-areas:
-      "topline amount actions"
-      "note note actions"
+      "note amount actions"
       "subline subline actions";
-    align-items: start;
+    row-gap: 4px;
+    column-gap: 10px;
+    align-items: center;
   }
 
   .cashflow-row-actions {

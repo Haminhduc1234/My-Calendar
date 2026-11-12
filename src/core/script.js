@@ -5504,7 +5504,13 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
       hasImage: !!(eventData.image && eventData.image.startsWith("data:")),
       // Dữ liệu bổ sung cho fund allocation
       fundName: String(eventData.fundName || ""),
-      fundId: String(eventData.fundId || "")
+      fundId: String(eventData.fundId || ""),
+      netDifference: eventData.netDifference !== undefined && eventData.netDifference !== null
+        ? Number(eventData.netDifference)
+        : (eventData.availableBalance !== undefined && eventData.availableBalance !== null ? Number(eventData.availableBalance) : null),
+      availableBalance: eventData.availableBalance !== undefined && eventData.availableBalance !== null
+        ? Number(eventData.availableBalance)
+        : null
     },
     dateKey: String(dateKey || ""),
     url: type === "cashflow"
@@ -5542,6 +5548,13 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
     if (payload.eventData.fundName) {
       bodyParts.push(`Rút từ quỹ: ${payload.eventData.fundName}`);
     }
+    if (payload.eventData.netDifference !== undefined && payload.eventData.netDifference !== null) {
+      const diffVal = Number(payload.eventData.netDifference);
+      bodyParts.push(`Chênh lệch thu/chi: ${diffVal >= 0 ? "+" : ""}${diffVal.toLocaleString("vi-VN")} đ`);
+    } else if (payload.eventData.availableBalance !== undefined && payload.eventData.availableBalance !== null) {
+      const balVal = Number(payload.eventData.availableBalance);
+      bodyParts.push(`Chênh lệch thu/chi: ${balVal >= 0 ? "+" : ""}${balVal.toLocaleString("vi-VN")} đ`);
+    }
     if (dateKey) bodyParts.push(formatNotificationDateString(dateKey));
     const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
     if (cleanText) bodyParts.push(cleanText);
@@ -5570,6 +5583,13 @@ async function queueEventNotification(eventData, dateKey, notificationType) {
     }
     if (payload.eventData.amount) {
       bodyParts.push(`${Number(payload.eventData.amount).toLocaleString("vi-VN")} đ`);
+    }
+    if (payload.eventData.netDifference !== undefined && payload.eventData.netDifference !== null) {
+      const diffVal = Number(payload.eventData.netDifference);
+      bodyParts.push(`Chênh lệch thu/chi: ${diffVal >= 0 ? "+" : ""}${diffVal.toLocaleString("vi-VN")} đ`);
+    } else if (payload.eventData.availableBalance !== undefined && payload.eventData.availableBalance !== null) {
+      const balVal = Number(payload.eventData.availableBalance);
+      bodyParts.push(`Chênh lệch thu/chi: ${balVal >= 0 ? "+" : ""}${balVal.toLocaleString("vi-VN")} đ`);
     }
     if (dateKey) bodyParts.push(formatNotificationDateString(dateKey));
     const cleanText = String(payload.eventData.text || payload.eventData.note || "").replace(/^undefined$/i, "").trim();
@@ -13618,6 +13638,143 @@ document.addEventListener("keydown", function (e) {
   }
 });
 
+/**
+ * Tính toán chênh lệch thu/chi lũy kế (running net difference = cumulative income - cumulative expense)
+ * theo dòng thời gian cho tất cả giao dịch thu chi.
+ * Chênh lệch biến động chính xác theo từng lần giao dịch:
+ * - Khoản thu (+): tăng chênh lệch thu/chi
+ * - Khoản chi (-): giảm chênh lệch thu/chi
+ */
+function getHistoricalRunningCashflowDifference() {
+  const map = new Map();
+
+  const cachedCf = typeof getAllCashflowEntriesFromCache === "function" ? getAllCashflowEntriesFromCache() : [];
+  const allCf = cachedCf && cachedCf.length > 0 ? cachedCf : (Array.isArray(cashflowEntries) ? cashflowEntries : []);
+
+  const events = [];
+  for (let i = 0; i < allCf.length; i++) {
+    const cf = allCf[i];
+    events.push({
+      id: cf.id,
+      date: cf.date || "",
+      createdAt: Number(cf.createdAt) || 0,
+      orderIdx: i,
+      type: cf.type,
+      amount: Number(cf.amount) || 0,
+    });
+  }
+
+  // Sắp xếp tăng dần theo thời gian (cũ nhất -> mới nhất)
+  events.sort((a, b) => {
+    if (a.date !== b.date) return (a.date || "").localeCompare(b.date || "");
+    if ((a.createdAt || 0) !== (b.createdAt || 0)) {
+      return (a.createdAt || 0) - (b.createdAt || 0);
+    }
+    return (a.orderIdx || 0) - (b.orderIdx || 0);
+  });
+
+  let runningDiff = 0;
+  for (const ev of events) {
+    if (ev.type === "income") {
+      runningDiff += ev.amount;
+    } else {
+      runningDiff -= ev.amount;
+    }
+    map.set(ev.id, runningDiff);
+  }
+
+  map.latestDifference = runningDiff;
+  return map;
+}
+
+/**
+ * Tính toán số dư khả dụng chạy (running available balance) theo dòng thời gian
+ * cho tất cả giao dịch thu chi và các khoản phân bổ quỹ độc lập.
+ * Đảm bảo hiển thị chính xác số dư khả dụng ngay tại lịch sử của từng lần giao dịch (kể cả lịch sử cũ).
+ */
+function getHistoricalRunningAvailableBalances() {
+  const map = new Map();
+
+  if (!fundsData || !Array.isArray(fundsData.funds) || fundsData.funds.length === 0) {
+    if (typeof loadFundsFromLocalStorage === "function") {
+      loadFundsFromLocalStorage();
+    }
+  }
+
+  const allCf = typeof getAllCashflowEntriesFromCache === "function" ? getAllCashflowEntriesFromCache() : [];
+  const allAlloc = Array.isArray(fundsData?.allocations) ? fundsData.allocations : [];
+
+  const events = [];
+
+  for (const cf of allCf) {
+    events.push({
+      id: cf.id,
+      kind: "cashflow",
+      date: cf.date || "",
+      createdAt: Number(cf.createdAt) || 0,
+      type: cf.type,
+      amount: Number(cf.amount) || 0,
+      fundId: cf.fundId || null,
+      savedAvailable: typeof cf.availableBalance === "number" ? cf.availableBalance : null,
+    });
+  }
+
+  for (const al of allAlloc) {
+    // Nếu allocation này gắn liền với 1 khoản chi (cashflowEntryId), thì khoản chi đó đã tính rồi
+    if (al.cashflowEntryId) continue;
+    events.push({
+      id: al.id,
+      kind: "allocation",
+      date: al.date || "",
+      createdAt: Number(al.createdAt) || 0,
+      amount: Number(al.amount) || 0,
+      savedAvailable: typeof al.availableBalance === "number" ? al.availableBalance : null,
+    });
+  }
+
+  // Sắp xếp tăng dần theo thời gian (cũ nhất -> mới nhất)
+  events.sort((a, b) => {
+    if (a.date !== b.date) return (a.date || "").localeCompare(b.date || "");
+    return (a.createdAt || 0) - (b.createdAt || 0);
+  });
+
+  let initialFundsTotal = 0;
+  if (Array.isArray(fundsData?.funds)) {
+    for (const f of fundsData.funds) {
+      initialFundsTotal += Number(f.initialAmount) || 0;
+    }
+  }
+
+  let runningBalance = -initialFundsTotal;
+
+  for (const ev of events) {
+    if (ev.kind === "cashflow") {
+      if (ev.type === "income") {
+        runningBalance += ev.amount;
+      } else {
+        // Chi tiêu: nếu không trích từ quỹ thì trừ vào số dư khả dụng
+        // Nếu trích từ quỹ (ev.fundId), quỹ trả tiền nên số dư khả dụng không đổi
+        if (!ev.fundId) {
+          runningBalance -= ev.amount;
+        }
+      }
+    } else if (ev.kind === "allocation") {
+      // ev.amount > 0: nạp tiền vào quỹ -> trừ số dư khả dụng
+      // ev.amount < 0: lấy tiền ra khỏi quỹ -> cộng vào số dư khả dụng
+      runningBalance -= ev.amount;
+    }
+
+    if (ev.savedAvailable !== null) {
+      map.set(ev.id, ev.savedAvailable);
+      runningBalance = ev.savedAvailable;
+    } else {
+      map.set(ev.id, runningBalance);
+    }
+  }
+
+  return map;
+}
+
 function findCashflowEntryLocation(entryId) {
   const dateKeys = getAllDateKeysFromCache();
   for (const dateKey of dateKeys) {
@@ -14011,6 +14168,8 @@ function confirmCashflowWithdrawFund() {
   };
 
   fundsData.allocations.push(withdrawAllocation);
+  const currentAvailable = calculateAvailableFundBalance();
+  withdrawAllocation.availableBalance = currentAvailable;
   saveFundsToFirebase();
 
   // Bắn thông báo đẩy
@@ -14023,6 +14182,7 @@ function confirmCashflowWithdrawFund() {
       note: `Đã lấy ${amount.toLocaleString("vi-VN")} đ từ quỹ ${fund.name} vào số dư khả dụng`,
       fundName: fund.name,
       amount: amount,
+      availableBalance: currentAvailable,
       date: withdrawAllocation.date,
       createdAt: withdrawAllocation.createdAt
     }, "", "fund_withdraw");
@@ -14036,7 +14196,7 @@ function confirmCashflowWithdrawFund() {
   updateCashflowAvailableBalanceUI();
   checkCashflowAmountExceeded();
 
-  showToast(`Đã lấy thành công ${amount.toLocaleString("vi-VN")} ₫ từ "${fund.name}" vào số dư khả dụng!`, 3000);
+  showToast(`Đã lấy thành công ${amount.toLocaleString("vi-VN")} ₫ từ "${fund.name}" vào khả dụng! • Dư khả dụng: ${currentAvailable.toLocaleString("vi-VN")} ₫`, 3500);
 }
 
 function quickSetCashflowAmount(amount) {
@@ -14221,6 +14381,7 @@ function addCashflowEntry() {
     const previousDateKey = located.dateKey;
     const sameDate = previousDateKey === targetDateKey;
 
+    let savedEntryId = located.entry.id;
     if (sameDate) {
       const data = getDateData(targetDateKey);
       const entry = data.cashflowEntries[located.index];
@@ -14254,6 +14415,25 @@ function addCashflowEntry() {
       targetData.cashflowEntries.push(newEntry);
       saveDateData(targetDateKey, targetData);
     }
+
+    reloadCashflowEntriesFromCache();
+    const runningDiffMapEdit = typeof getHistoricalRunningCashflowDifference === "function"
+      ? getHistoricalRunningCashflowDifference()
+      : null;
+    const entryDiffAtTime = runningDiffMapEdit && runningDiffMapEdit.has(savedEntryId)
+      ? runningDiffMapEdit.get(savedEntryId)
+      : (calculateTotalIncome() - calculateTotalExpense());
+    if (savedEntryId) {
+      const loc = findCashflowEntryLocation(savedEntryId);
+      if (loc) {
+        const d = getDateData(loc.dateKey);
+        if (d.cashflowEntries && d.cashflowEntries[loc.index]) {
+          d.cashflowEntries[loc.index].netDifference = entryDiffAtTime;
+          d.cashflowEntries[loc.index].availableBalance = entryDiffAtTime;
+          saveDateData(loc.dateKey, d);
+        }
+      }
+    }
   } else {
     const entry = {
       id: `cf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -14271,6 +14451,25 @@ function addCashflowEntry() {
     const data = getDateData(targetDateKey);
     data.cashflowEntries.push(entry);
     saveDateData(targetDateKey, data);
+
+    reloadCashflowEntriesFromCache();
+    const runningDiffMapNew = typeof getHistoricalRunningCashflowDifference === "function"
+      ? getHistoricalRunningCashflowDifference()
+      : null;
+    const entryDiffAtTime = runningDiffMapNew && runningDiffMapNew.has(entry.id)
+      ? runningDiffMapNew.get(entry.id)
+      : (calculateTotalIncome() - calculateTotalExpense());
+    entry.netDifference = entryDiffAtTime;
+    entry.availableBalance = entryDiffAtTime;
+    const loc = findCashflowEntryLocation(entry.id);
+    if (loc) {
+      const d = getDateData(loc.dateKey);
+      if (d.cashflowEntries && d.cashflowEntries[loc.index]) {
+        d.cashflowEntries[loc.index].netDifference = entryDiffAtTime;
+        d.cashflowEntries[loc.index].availableBalance = entryDiffAtTime;
+        saveDateData(loc.dateKey, d);
+      }
+    }
 
     // Bắn thông báo đẩy đến tất cả thiết bị cùng tài khoản
     let categoryName = category;
@@ -14295,6 +14494,8 @@ function addCashflowEntry() {
           cashflowType: type,
           category: categoryName,
           amount: amount,
+          netDifference: entryDiffAtTime,
+          availableBalance: entryDiffAtTime,
           image: image || "",
           fundId: entry.fundId || (linkedFund ? linkedFund.id : ""),
           fundName: entry.fundName || (linkedFund ? linkedFund.name : ""),
@@ -14311,6 +14512,10 @@ function addCashflowEntry() {
   const wasEditing = Boolean(editingCashflowId);
 
   reloadCashflowEntriesFromCache();
+  const currentDiff = typeof getHistoricalRunningCashflowDifference === "function"
+    ? getHistoricalRunningCashflowDifference().latestDifference
+    : (calculateTotalIncome() - calculateTotalExpense());
+  const diffSign = currentDiff >= 0 ? "+" : "";
 
   resetCashflowForm();
 
@@ -14318,9 +14523,10 @@ function addCashflowEntry() {
   updateCashflowAvailableBalanceUI();
 
   if (wasEditing) {
-    showToast("Đã cập nhật giao dịch thành công!", 2500);
+    showToast(`Đã cập nhật giao dịch! • Chênh lệch: ${diffSign}${currentDiff.toLocaleString("vi-VN")} ₫`, 3200);
   } else {
-    showToast("Đã thêm giao dịch mới!", 2500);
+    const typeLabel = type === "income" ? "khoản thu" : "khoản chi";
+    showToast(`Đã thêm ${typeLabel} mới! • Chênh lệch: ${diffSign}${currentDiff.toLocaleString("vi-VN")} ₫`, 3200);
   }
 }
 
@@ -14613,6 +14819,11 @@ function removeCashflowEntry(id) {
       }
       renderCashflowDashboard();
       updateCashflowAvailableBalanceUI();
+      const currentDiff = typeof getHistoricalRunningCashflowDifference === "function"
+        ? getHistoricalRunningCashflowDifference().latestDifference
+        : (calculateTotalIncome() - calculateTotalExpense());
+      const diffSign = currentDiff >= 0 ? "+" : "";
+      showToast(`Đã xóa giao dịch thành công! • Chênh lệch: ${diffSign}${currentDiff.toLocaleString("vi-VN")} ₫`, 3000);
     }
   );
 }
@@ -15463,6 +15674,10 @@ function clearCashflowDateFilterAndClose() {
 }
 
 function renderCashflowRowItems(entries, listEl, selectedEntry, onClickCallback) {
+  const runningDiffMap = typeof getHistoricalRunningCashflowDifference === "function"
+    ? getHistoricalRunningCashflowDifference()
+    : new Map();
+
   for (const entry of entries) {
     const row = document.createElement("div");
     row.className = "cashflow-row";
@@ -15493,15 +15708,13 @@ function renderCashflowRowItems(entries, listEl, selectedEntry, onClickCallback)
       }
     });
 
-    const metaEl = document.createElement("div");
-    metaEl.className = "cashflow-row-meta";
+    const noteEl = document.createElement("div");
+    noteEl.className = "cashflow-row-note";
 
-    const topLineEl = document.createElement("div");
-    topLineEl.className = "cashflow-row-topline";
-
-    const typeBadgeEl = document.createElement("span");
-    typeBadgeEl.className = `cashflow-row-type ${entry.type === "income" ? "is-income" : "is-expense"}`;
-    typeBadgeEl.innerText = getCashflowTypeLabel(entry.type);
+    const noteTextEl = document.createElement("span");
+    noteTextEl.className = "cashflow-row-note-text";
+    noteTextEl.innerText = entry.note || "Không có ghi chú";
+    noteEl.appendChild(noteTextEl);
 
     const categoryBadgeEl = document.createElement("span");
     categoryBadgeEl.className = "cashflow-row-category";
@@ -15509,19 +15722,27 @@ function renderCashflowRowItems(entries, listEl, selectedEntry, onClickCallback)
       entry.type,
       entry.category,
     );
+    noteEl.appendChild(categoryBadgeEl);
 
-    topLineEl.appendChild(typeBadgeEl);
-    topLineEl.appendChild(categoryBadgeEl);
+    if (entry.fundName) {
+      const fundBadgeEl = document.createElement("span");
+      fundBadgeEl.className = "cashflow-row-category";
+      fundBadgeEl.style.background = "rgba(59, 130, 246, 0.15)";
+      fundBadgeEl.style.color = "#93c5fd";
+      fundBadgeEl.style.borderColor = "rgba(59, 130, 246, 0.35)";
+      fundBadgeEl.innerHTML = `<i class="fi fi-rr-wallet" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; margin-right: 3px;"></i> ${entry.fundName}`;
+      noteEl.appendChild(fundBadgeEl);
+    }
 
-    const noteEl = document.createElement("div");
-    noteEl.className = "cashflow-row-note";
-    noteEl.innerText = entry.note || "Không có ghi chú";
+    const entryDiff = runningDiffMap.has(entry.id)
+      ? runningDiffMap.get(entry.id)
+      : (typeof entry.netDifference === "number" ? entry.netDifference : (typeof entry.availableBalance === "number" ? entry.availableBalance : null));
 
+    const diffSign = (entryDiff !== null && entryDiff >= 0) ? "+" : "";
+    const balSublineText = entryDiff !== null ? ` • Chênh lệch: ${diffSign}${entryDiff.toLocaleString("vi-VN")} ₫` : "";
     const sublineEl = document.createElement("div");
     sublineEl.className = "cashflow-row-subline";
-    sublineEl.innerText = `Ngày giao dịch: ${formatCashflowDate(entry.date)} • Cập nhật: ${formatTimestampForCsv(entry.updatedAt || entry.createdAt) || "Chưa rõ"}`;
-
-    metaEl.appendChild(topLineEl);
+    sublineEl.innerText = `Ngày giao dịch: ${formatCashflowDate(entry.date)}${balSublineText}`;
 
     const amountEl = document.createElement("div");
     amountEl.className = `cashflow-row-amount ${entry.type === "income" ? "is-income" : "is-expense"}`;
@@ -15567,10 +15788,9 @@ function renderCashflowRowItems(entries, listEl, selectedEntry, onClickCallback)
     actionsEl.appendChild(actionBtn);
     actionsEl.appendChild(dropdownEl);
 
-    row.appendChild(topLineEl);
+    row.appendChild(noteEl);
     row.appendChild(amountEl);
     row.appendChild(actionsEl);
-    row.appendChild(noteEl);
     row.appendChild(sublineEl);
 
     if (entry.image && entry.image.trim() && entry.image.startsWith("data:")) {
@@ -16724,6 +16944,10 @@ function renderCashflowAllTransactionsList() {
     return;
   }
 
+  const runningDiffMap = typeof getHistoricalRunningCashflowDifference === "function"
+    ? getHistoricalRunningCashflowDifference()
+    : new Map();
+
   const fragment = document.createDocumentFragment();
   for (const entry of cashflowEntries) {
     const row = document.createElement("div");
@@ -16731,22 +16955,18 @@ function renderCashflowAllTransactionsList() {
     row.tabIndex = 0;
     row.setAttribute("role", "button");
 
-    const metaEl = document.createElement("div");
-    metaEl.className = "cashflow-row-meta";
+    const noteEl = document.createElement("div");
+    noteEl.className = "cashflow-row-note";
 
-    const topLineEl = document.createElement("div");
-    topLineEl.className = "cashflow-row-topline";
-
-    const typeBadgeEl = document.createElement("span");
-    typeBadgeEl.className = `cashflow-row-type ${entry.type === "income" ? "is-income" : "is-expense"}`;
-    typeBadgeEl.innerText = getCashflowTypeLabel(entry.type);
+    const noteTextEl = document.createElement("span");
+    noteTextEl.className = "cashflow-row-note-text";
+    noteTextEl.innerText = entry.note || "Không có ghi chú";
+    noteEl.appendChild(noteTextEl);
 
     const categoryBadgeEl = document.createElement("span");
     categoryBadgeEl.className = "cashflow-row-category";
     categoryBadgeEl.innerText = getCashflowCategoryLabel(entry.type, entry.category);
-
-    topLineEl.appendChild(typeBadgeEl);
-    topLineEl.appendChild(categoryBadgeEl);
+    noteEl.appendChild(categoryBadgeEl);
 
     if (entry.fundName) {
       const fundBadgeEl = document.createElement("span");
@@ -16754,19 +16974,19 @@ function renderCashflowAllTransactionsList() {
       fundBadgeEl.style.background = "rgba(59, 130, 246, 0.15)";
       fundBadgeEl.style.color = "#93c5fd";
       fundBadgeEl.style.borderColor = "rgba(59, 130, 246, 0.35)";
-      fundBadgeEl.innerHTML = `<i class="fi fi-rr-wallet" style="position: relative; top: 1px; margin-right: 3px;"></i> ${entry.fundName}`;
-      topLineEl.appendChild(fundBadgeEl);
+      fundBadgeEl.innerHTML = `<i class="fi fi-rr-wallet" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1; margin-right: 3px;"></i> ${entry.fundName}`;
+      noteEl.appendChild(fundBadgeEl);
     }
 
-    const noteEl = document.createElement("div");
-    noteEl.className = "cashflow-row-note";
-    noteEl.innerText = entry.note || "Không có ghi chú";
+    const entryDiff = runningDiffMap.has(entry.id)
+      ? runningDiffMap.get(entry.id)
+      : (typeof entry.netDifference === "number" ? entry.netDifference : (typeof entry.availableBalance === "number" ? entry.availableBalance : null));
 
+    const diffSign = (entryDiff !== null && entryDiff >= 0) ? "+" : "";
+    const balSublineText = entryDiff !== null ? ` • Chênh lệch: ${diffSign}${entryDiff.toLocaleString("vi-VN")} ₫` : "";
     const sublineEl = document.createElement("div");
     sublineEl.className = "cashflow-row-subline";
-    sublineEl.innerText = `Ngày giao dịch: ${formatCashflowDate(entry.date)} • Cập nhật: ${formatTimestampForCsv(entry.updatedAt || entry.createdAt) || "Chưa rõ"}`;
-
-    metaEl.appendChild(topLineEl);
+    sublineEl.innerText = `Ngày giao dịch: ${formatCashflowDate(entry.date)}${balSublineText}`;
 
     const amountEl = document.createElement("div");
     amountEl.className = `cashflow-row-amount ${entry.type === "income" ? "is-income" : "is-expense"}`;
@@ -16812,10 +17032,9 @@ function renderCashflowAllTransactionsList() {
     actionsEl.appendChild(actionBtn);
     actionsEl.appendChild(dropdownEl);
 
-    row.appendChild(topLineEl);
+    row.appendChild(noteEl);
     row.appendChild(amountEl);
     row.appendChild(actionsEl);
-    row.appendChild(noteEl);
     row.appendChild(sublineEl);
 
     if (entry.image && entry.image.trim() && entry.image.startsWith("data:")) {
@@ -16851,7 +17070,10 @@ function renderCashflowAllTransactionsList() {
 function closeCashflowAllTransactionsModal() {
   closeCashflowExportMenu();
   const modal = document.getElementById("cashflowAllTransactionsModal");
-  if (modal) modal.style.display = "none";
+  if (modal) {
+    modal.style.display = "none";
+    modal.style.pointerEvents = "";
+  }
 }
 
 /* ==================== XUẤT BẢNG GIAO DỊCH HTML ==================== */
@@ -17008,6 +17230,9 @@ function exportCashflowTransactionsHtml(rangeKey) {
   let totalExpense = 0;
   let incomeCount = 0;
   let expenseCount = 0;
+  const runningDiffMap = typeof getHistoricalRunningCashflowDifference === "function"
+    ? getHistoricalRunningCashflowDifference()
+    : new Map();
 
   const rowsHtml = filtered.map((entry, index) => {
     const isIncome = entry.type === "income";
@@ -17024,6 +17249,14 @@ function exportCashflowTransactionsHtml(rangeKey) {
     const dateFormatted = formatCashflowDate(entry.date);
     const createdFormatted = formatTimestampForCsv(entry.createdAt);
     const updatedFormatted = entry.updatedAt ? formatTimestampForCsv(entry.updatedAt) : "—";
+
+    const entryDiff = runningDiffMap.has(entry.id)
+      ? runningDiffMap.get(entry.id)
+      : (typeof entry.netDifference === "number" ? entry.netDifference : (typeof entry.availableBalance === "number" ? entry.availableBalance : null));
+    const isPos = entryDiff !== null && entryDiff >= 0;
+    const diffSign = isPos ? "+" : "";
+    const balDisplay = entryDiff !== null ? `${diffSign}${entryDiff.toLocaleString("vi-VN")} đ` : "—";
+    const balColor = isPos ? "#16a34a" : "#dc2626";
 
     let imageCell = '<span style="color:#94a3b8;">—</span>';
     if (entry.image && entry.image.trim() && entry.image.startsWith("data:")) {
@@ -17047,6 +17280,7 @@ function exportCashflowTransactionsHtml(rangeKey) {
         <td class="${isIncome ? 'amount-income' : 'amount-expense'}">
           ${isIncome ? '+' : '-'}${entry.amount.toLocaleString("vi-VN")} đ
         </td>
+        <td class="text-right" style="color: ${balColor}; font-weight: 600; white-space: nowrap;">${balDisplay}</td>
         <td class="note-cell">${noteSafe || '<span style="color:#94a3b8;font-style:italic;">Không có ghi chú</span>'}</td>
         <td class="text-center">${imageCell}</td>
         <td style="color: #64748b; font-size: 12px; white-space: nowrap;">${createdFormatted}</td>
@@ -17566,6 +17800,7 @@ function exportCashflowTransactionsHtml(rangeKey) {
               <th style="width: 180px;">Phân loại</th>
               <th style="width: 180px;">Danh mục</th>
               <th class="text-right" style="width: 180px;">Số tiền</th>
+              <th class="text-right" style="width: 170px;">Chênh lệch</th>
               <th style="width: 240px;">Ghi chú</th>
               <th class="text-center" style="width: 120px;">Hình ảnh</th>
               <th style="width: 160px;">Tạo lúc</th>
@@ -18452,6 +18687,21 @@ function renderCashflowQuickView() {
     ? `<div class="cashflow-quickview-image"><img src="${entry.image}" alt="Ảnh mô tả" /></div>`
     : "";
 
+  const runningDiffMap = typeof getHistoricalRunningCashflowDifference === "function"
+    ? getHistoricalRunningCashflowDifference()
+    : new Map();
+  const entryDiff = runningDiffMap.has(entry.id)
+    ? runningDiffMap.get(entry.id)
+    : (typeof entry.netDifference === "number" ? entry.netDifference : (typeof entry.availableBalance === "number" ? entry.availableBalance : null));
+  const isPos = entryDiff !== null && entryDiff >= 0;
+  const diffSign = isPos ? "+" : "";
+  const balHtml = entryDiff !== null ? `
+      <div class="cashflow-quickview-item cashflow-quickview-item-full" style="background: ${isPos ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)'}; border: 1px solid ${isPos ? 'rgba(16, 185, 129, 0.22)' : 'rgba(239, 68, 68, 0.22)'}; border-radius: 8px; padding: 9px 12px;">
+        <span class="cashflow-quickview-label" style="color: ${isPos ? '#34d399' : '#f87171'}; font-weight: 600;">Chênh lệch thu - chi sau giao dịch</span>
+        <strong style="color: ${isPos ? '#6ee7b7' : '#fca5a5'}; font-size: 14px; display: inline-flex; align-items: center; gap: 6px;"><i class="fi fi-rr-scale" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i> ${diffSign}${entryDiff.toLocaleString("vi-VN")} ₫</strong>
+      </div>
+  ` : "";
+
   quickViewEl.innerHTML = `
     <div class="cashflow-quickview-head">
       <div>
@@ -18479,6 +18729,7 @@ function renderCashflowQuickView() {
         <span class="cashflow-quickview-label">Cập nhật</span>
         <strong>${updatedLabel}</strong>
       </div>
+      ${balHtml}
       ${entry.fundName ? `
       <div class="cashflow-quickview-item cashflow-quickview-item-full" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 8px 12px;">
         <span class="cashflow-quickview-label" style="color: #60a5fa;">Nguồn tiền trích từ quỹ</span>
@@ -20923,6 +21174,8 @@ function confirmTopupFund() {
     };
 
     fundsData.allocations.push(withdrawAllocation);
+    const currentAvailable = calculateAvailableFundBalance();
+    withdrawAllocation.availableBalance = currentAvailable;
     saveFundsToFirebase();
 
     // Bắn thông báo đẩy
@@ -20935,6 +21188,7 @@ function confirmTopupFund() {
         note: `Đã lấy ${amount.toLocaleString("vi-VN")} đ từ quỹ ${fund.name} vào số dư khả dụng`,
         fundName: fund.name,
         amount: amount,
+        availableBalance: currentAvailable,
         date: withdrawAllocation.date,
         createdAt: withdrawAllocation.createdAt
       }, "", "fund_withdraw");
@@ -20948,7 +21202,7 @@ function confirmTopupFund() {
     if (typeof updateCashflowAvailableBalanceUI === "function") {
       updateCashflowAvailableBalanceUI();
     }
-    showToast(`Đã lấy thành công ${amount.toLocaleString("vi-VN")} ₫ từ quỹ "${fund.name}"!`, 3000);
+    showToast(`Đã lấy ${amount.toLocaleString("vi-VN")} ₫ từ quỹ "${fund.name}" vào khả dụng! • Dư khả dụng: ${currentAvailable.toLocaleString("vi-VN")} ₫`, 3500);
     return;
   }
 
@@ -20985,6 +21239,8 @@ function confirmTopupFund() {
   };
 
   fundsData.allocations.push(topupAllocation);
+  const currentAvailable = calculateAvailableFundBalance();
+  topupAllocation.availableBalance = currentAvailable;
   saveFundsToFirebase();
 
   // Bắn thông báo đẩy
@@ -20997,6 +21253,7 @@ function confirmTopupFund() {
       note: `Đã thêm ${amount.toLocaleString("vi-VN")} đ vào quỹ ${fund.name}`,
       fundName: fund.name,
       amount: amount,
+      availableBalance: currentAvailable,
       date: topupAllocation.date,
       createdAt: topupAllocation.createdAt
     }, "", "fund_topup");
@@ -21010,7 +21267,7 @@ function confirmTopupFund() {
   if (typeof updateCashflowAvailableBalanceUI === "function") {
     updateCashflowAvailableBalanceUI();
   }
-  showToast(`Đã thêm thành công ${amount.toLocaleString("vi-VN")} ₫ vào quỹ "${fund.name}"!`, 3000);
+  showToast(`Đã nạp thêm ${amount.toLocaleString("vi-VN")} ₫ vào quỹ "${fund.name}"! • Dư khả dụng: ${currentAvailable.toLocaleString("vi-VN")} ₫`, 3500);
 }
 
 function openAllocateModal() {
@@ -21139,6 +21396,8 @@ function confirmAllocate() {
   };
 
   fundsData.allocations.push(allocation);
+  const currentAvailable = calculateAvailableFundBalance();
+  allocation.availableBalance = currentAvailable;
   saveFundsToFirebase();
 
   // Bắn thông báo đẩy đến tất cả thiết bị cùng tài khoản
@@ -21151,6 +21410,7 @@ function confirmAllocate() {
     note: `Đã phân bổ ${amount.toLocaleString("vi-VN")} đ vào quỹ ${fundName}`,
     fundName: fundName,
     amount: amount,
+    availableBalance: currentAvailable,
     date: allocation.date,
     createdAt: allocation.createdAt
   }, "", "fund_allocation");
@@ -21165,7 +21425,7 @@ function confirmAllocate() {
   }
 
   closeAllocateModal();
-  showToast(`Đã thêm thành công ${amount.toLocaleString("vi-VN")} ₫ vào quỹ "${fundName}"!`, 3000);
+  showToast(`Đã phân bổ ${amount.toLocaleString("vi-VN")} ₫ vào quỹ "${fundName}"! • Dư khả dụng: ${currentAvailable.toLocaleString("vi-VN")} ₫`, 3500);
   openCelebrationModal(amount, fundName);
 }
 
@@ -21255,6 +21515,9 @@ function renderAllocateHistory() {
     (a, b) => b.createdAt - a.createdAt,
   );
   const recent = sorted.slice(0, 15);
+  const runningMap = typeof getHistoricalRunningAvailableBalances === "function"
+    ? getHistoricalRunningAvailableBalances()
+    : new Map();
 
   for (const alloc of recent) {
     const fund = fundsData.funds.find((f) => f.id === alloc.fundId);
@@ -21268,6 +21531,13 @@ function renderAllocateHistory() {
       ? `<span style="font-size: 11px; padding: 2px 7px; border-radius: 6px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; margin-left: 6px; border: 1px solid rgba(245, 158, 11, 0.3); font-weight: 600;">Lấy ra</span>`
       : "";
 
+    const allocBal = typeof alloc.availableBalance === "number"
+      ? alloc.availableBalance
+      : (runningMap.has(alloc.id) ? runningMap.get(alloc.id) : null);
+    const balBadge = allocBal !== null
+      ? `<span class="allocate-history-item-balance"><i class="fi fi-rr-wallet" style="position: relative; top: 1px; display: inline-flex; align-items: center; justify-content: center; line-height: 1;"></i> Dư KD: ${allocBal.toLocaleString("vi-VN")} đ</span>`
+      : "";
+
     const item = document.createElement("div");
     item.className = "allocate-history-item";
     const noteHtml = alloc.note
@@ -21277,9 +21547,10 @@ function renderAllocateHistory() {
       <div class="allocate-history-item-info">
         <div class="allocate-history-item-color" style="background: ${fund.color}"></div>
         <div style="min-width: 0; flex: 1;">
-          <div style="display: flex; align-items: center; gap: 4px;">
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
             <span class="allocate-history-item-name">${fund.name}</span>
             ${withdrawBadge}
+            ${balBadge}
           </div>
           ${noteHtml}
         </div>
@@ -21533,6 +21804,7 @@ function renderFundDetailHistoryList(fundId) {
       amount: absAmount,
       date: alloc.date,
       createdAt: alloc.createdAt || 0,
+      availableBalance: alloc.availableBalance,
       isInitial: false,
     });
   }
@@ -21585,11 +21857,22 @@ function renderFundDetailHistoryList(fundId) {
     return;
   }
 
+  const runningMap = typeof getHistoricalRunningAvailableBalances === "function"
+    ? getHistoricalRunningAvailableBalances()
+    : new Map();
+
   for (const item of filtered) {
     const sign = item.direction === "out" ? "-" : "+";
     const amountClass = item.isInitial ? "initial" : item.direction;
     const dateFormatted = item.date ? formatCashflowDate(item.date) : "Khởi tạo";
     const noteHtml = item.note ? `<div class="fund-detail-history-item-note">${escapeHtml(item.note)}</div>` : "";
+
+    const allocBal = typeof item.availableBalance === "number"
+      ? item.availableBalance
+      : (runningMap.has(item.id) ? runningMap.get(item.id) : null);
+    const balText = (!item.isInitial && allocBal !== null)
+      ? ` • Dư KD: ${allocBal.toLocaleString("vi-VN")} đ`
+      : "";
 
     const el = document.createElement("div");
     el.className = "fund-detail-history-item";
@@ -21604,7 +21887,7 @@ function renderFundDetailHistoryList(fundId) {
             <span class="fund-detail-history-item-badge ${item.badgeClass}">${item.badgeText}</span>
           </div>
           ${noteHtml}
-          <div class="fund-detail-history-item-date">${dateFormatted}</div>
+          <div class="fund-detail-history-item-date">${dateFormatted}${balText}</div>
         </div>
       </div>
       <div class="fund-detail-history-item-right">

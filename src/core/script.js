@@ -11,6 +11,7 @@ const MY_MUSIC_PREFS_KEY_PREFIX = "myMusicPrefsV1";
 const FIREBASE_EVENTS_PATH = self.FIREBASE_EVENTS_PATH || "calendarEvents";
 const FIREBASE_CLIENT_ID_KEY = "firebaseClientId";
 const FIREBASE_PROFILE_KEY_STORAGE = "calendarProfileKey";
+const AUTH_SESSION_CACHE_KEY = "calendarAuthSessionCacheV1";
 const FIREBASE_USERS_PATH = "users";
 const LEGACY_MIGRATION_FLAG_PREFIX = "calendarLegacyMigrated:";
 const LEGACY_CASHFLOW_MIGRATION_FLAG_PREFIX = "calendarLegacyCashflowMigrated:";
@@ -53,6 +54,109 @@ let quickNotesCache = null;
 let translateHistoryCache = [];
 let syncWriteErrorShown = false;
 let profileSettingsCache = {};
+
+/* ==================== CACHE THÔNG TIN ĐĂNG NHẬP LOCALSTORAGE ==================== */
+function loadAuthSessionCache() {
+  try {
+    let cached = null;
+    const raw = localStorage.getItem(AUTH_SESSION_CACHE_KEY);
+    if (raw) {
+      try {
+        cached = JSON.parse(raw);
+      } catch (e) {
+        cached = null;
+      }
+    }
+    const storedKey = (cached && cached.userProfileKey) || localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE) || "";
+    const storedUser = (cached && cached.username) || localStorage.getItem("calendarUsername") || "";
+    if (!storedKey || !storedUser) return null;
+
+    let profileData = {};
+    const rawProfile = localStorage.getItem(`profileSettingsV1:${storedKey}`);
+    if (rawProfile) {
+      try {
+        profileData = JSON.parse(rawProfile) || {};
+      } catch (e) {
+        profileData = {};
+      }
+    }
+
+    return {
+      userProfileKey: storedKey,
+      username: storedUser,
+      displayName: profileData.displayName !== undefined ? profileData.displayName : ((cached && cached.displayName) || ""),
+      bio: profileData.bio !== undefined ? profileData.bio : ((cached && cached.bio) || ""),
+      avatar: profileData.avatar !== undefined ? profileData.avatar : ((cached && cached.avatar) || null),
+      cover: profileData.cover !== undefined ? profileData.cover : ((cached && cached.cover) || null),
+      updatedAt: profileData.updatedAt || (cached && cached.updatedAt) || Date.now(),
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveAuthSessionCache(partial = {}) {
+  try {
+    const existing = loadAuthSessionCache() || {};
+    const nextKey = partial.userProfileKey !== undefined ? partial.userProfileKey : (userProfileKey || existing.userProfileKey || "");
+    const nextUser = partial.username !== undefined ? partial.username : (currentUsername || existing.username || "");
+    if (!nextKey || !nextUser) return;
+
+    const merged = {
+      userProfileKey: nextKey,
+      username: nextUser,
+      displayName: partial.displayName !== undefined ? partial.displayName : (profileSettingsCache?.displayName ?? existing.displayName ?? ""),
+      bio: partial.bio !== undefined ? partial.bio : (profileSettingsCache?.bio ?? existing.bio ?? ""),
+      avatar: partial.avatar !== undefined ? partial.avatar : (profileSettingsCache?.avatar ?? existing.avatar ?? null),
+      cover: partial.cover !== undefined ? partial.cover : (profileSettingsCache?.cover ?? existing.cover ?? null),
+      updatedAt: Date.now(),
+    };
+
+    localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, nextKey);
+    localStorage.setItem("calendarUsername", nextUser);
+    localStorage.setItem("currentProfileKey", nextKey);
+    localStorage.setItem(AUTH_SESSION_CACHE_KEY, JSON.stringify(merged));
+    window.__cachedAuthSession = merged;
+  } catch (e) {
+    console.warn("[AuthCache] Không thể lưu cache đăng nhập:", e);
+  }
+}
+
+function clearAuthSessionCache() {
+  try {
+    localStorage.removeItem(AUTH_SESSION_CACHE_KEY);
+    localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
+    localStorage.removeItem("calendarUsername");
+    localStorage.removeItem("currentProfileKey");
+    localStorage.removeItem("tutorProfileKey");
+    window.__cachedAuthSession = null;
+  } catch (e) { }
+}
+
+window.loadAuthSessionCache = loadAuthSessionCache;
+window.saveAuthSessionCache = saveAuthSessionCache;
+window.clearAuthSessionCache = clearAuthSessionCache;
+
+// Khởi tạo đồng bộ ngay lập tức từ localStorage khi mở app (không cần chờ Firebase)
+(function hydrateAuthSessionImmediately() {
+  const session = loadAuthSessionCache();
+  if (session && session.userProfileKey && session.username) {
+    userProfileKey = session.userProfileKey;
+    currentUsername = session.username;
+    window.userProfileKey = userProfileKey;
+    window.currentProfileKey = userProfileKey;
+    window.currentUsername = currentUsername;
+    profileSettingsCache = {
+      displayName: session.displayName || "",
+      bio: session.bio || "",
+      avatar: session.avatar || null,
+      cover: session.cover || null,
+      updatedAt: session.updatedAt || Date.now(),
+    };
+    // Đảm bảo đồng bộ ngược lại cache chuẩn
+    saveAuthSessionCache(session);
+  }
+})();
 
 // Modal history management for back-button support
 let _modalHistoryStack = [];
@@ -1284,9 +1388,16 @@ window.showUpgradeForm = showUpgradeForm;
 
 function isUserLoggedIn() {
   if (userProfileKey && currentUsername) return true;
-  const storedKey = localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE);
-  const storedUser = localStorage.getItem("calendarUsername");
-  return !!(storedKey && storedUser);
+  const cached = loadAuthSessionCache();
+  if (cached && cached.userProfileKey && cached.username) {
+    userProfileKey = cached.userProfileKey;
+    currentUsername = cached.username;
+    window.userProfileKey = userProfileKey;
+    window.currentProfileKey = userProfileKey;
+    window.currentUsername = currentUsername;
+    return true;
+  }
+  return false;
 }
 window.isUserLoggedIn = isUserLoggedIn;
 
@@ -1314,10 +1425,12 @@ function updateAuthUI() {
 
   if (loggedIn) {
     document.documentElement.classList.remove("is-guest-mode");
-    document.body.classList.remove("is-guest-mode");
+    document.documentElement.classList.add("has-auth-cache");
+    if (document.body) document.body.classList.remove("is-guest-mode");
   } else {
     document.documentElement.classList.add("is-guest-mode");
-    document.body.classList.add("is-guest-mode");
+    document.documentElement.classList.remove("has-auth-cache");
+    if (document.body) document.body.classList.add("is-guest-mode");
   }
 
   const nameEl = document.getElementById("todayProfileName");
@@ -1325,6 +1438,7 @@ function updateAuthUI() {
   const avatarEl = document.getElementById("todayProfileAvatar");
   const placeholderEl = document.getElementById("todayProfilePlaceholder");
   const badgeEl = document.getElementById("todayProfileBadge");
+  const todayPanel = document.querySelector(".today-panel");
   const menuAuthBtn = document.getElementById("menuAuthBtn");
   const guestBottomSection = document.getElementById("guestBottomLoginSection");
 
@@ -1340,6 +1454,8 @@ function updateAuthUI() {
       bioEl.innerHTML = "";
     }
     if (avatarEl) {
+      avatarEl.onload = null;
+      avatarEl.onerror = null;
       avatarEl.style.display = "none";
       avatarEl.src = "";
     }
@@ -1350,12 +1466,23 @@ function updateAuthUI() {
     if (badgeEl) {
       badgeEl.style.display = "none";
     }
+    if (todayPanel) {
+      todayPanel.classList.remove("has-cover");
+      const bgEl = todayPanel.querySelector(".today-panel-bg");
+      if (bgEl) bgEl.remove();
+    }
   } else {
-    // Khi đã đăng nhập: hiển thị ngay tên và avatar placeholder nếu chưa có ảnh
+    // Khi đã đăng nhập: hiển thị ngay tên, bio, avatar và cover từ cache localStorage
     const storedUsername = currentUsername || localStorage.getItem("calendarUsername") || "";
+    const cached =
+      (profileSettingsCache && Object.keys(profileSettingsCache).length > 0 && profileSettingsCache) ||
+      (typeof loadProfileSettings === "function" && loadProfileSettings()) ||
+      {};
     if (nameEl && !nameEl.textContent.trim()) {
-      const cached = (typeof profileSettingsCache === "object" && profileSettingsCache) || (typeof loadProfileSettings === "function" && loadProfileSettings());
       nameEl.textContent = (cached && cached.displayName) || storedUsername;
+    }
+    if (bioEl && !bioEl.textContent.trim() && cached && cached.bio) {
+      bioEl.textContent = cached.bio;
     }
     if (placeholderEl && (!avatarEl || avatarEl.style.display === "none" || !avatarEl.src)) {
       placeholderEl.style.display = "flex";
@@ -1368,7 +1495,8 @@ function updateAuthUI() {
     if (loggedIn) {
       menuAuthBtn.className = "dropdown-item item-logout danger";
       menuAuthBtn.onclick = () => { logoutProfileSession(); closeMoreMenu(); };
-      const displayUser = currentUsername ? ` (${escapeHtml(currentUsername)})` : "";
+      const activeUser = currentUsername || localStorage.getItem("calendarUsername") || "";
+      const displayUser = activeUser ? ` (${escapeHtml(activeUser)})` : "";
       menuAuthBtn.innerHTML = `
         <span class="menu-icon-wrap"><i class="fi fi-rr-sign-out-alt"></i></span>
         <span>Đăng Xuất${displayUser}</span>
@@ -1515,10 +1643,7 @@ function logoutAndStartFresh() {
         }
       } catch (e) { }
 
-      localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
-      localStorage.removeItem("calendarUsername");
-      localStorage.removeItem("currentProfileKey");
-      localStorage.removeItem("tutorProfileKey");
+      clearAuthSessionCache();
       legacyProfileKey = "";
 
       setTimeout(() => {
@@ -1589,12 +1714,14 @@ async function handleUpgrade() {
     await migrateLegacyData(legacyProfileKey, userId);
 
     // Update local storage with new credentials
-    localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, userId);
-    localStorage.setItem("calendarUsername", username);
     localStorage.setItem("legacyProfileKey", legacyProfileKey); // Keep for reference
     const upgradedFromKey = legacyProfileKey;
     userProfileKey = userId;
     currentUsername = username;
+    window.userProfileKey = userId;
+    window.currentProfileKey = userId;
+    window.currentUsername = username;
+    saveAuthSessionCache({ userProfileKey: userId, username: username });
     legacyProfileKey = ""; // Clear legacy key after successful upgrade
 
     document.getElementById("authModal").style.display = "none";
@@ -1766,12 +1893,20 @@ async function handleRegister() {
       createdAt: firebase.database.ServerValue.TIMESTAMP
     });
 
-    localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, userId);
-    localStorage.setItem("calendarUsername", username);
     userProfileKey = userId;
     currentUsername = username;
     window.userProfileKey = userId;
+    window.currentProfileKey = userId;
     window.currentUsername = username;
+    profileSettingsCache = {};
+    saveAuthSessionCache({
+      userProfileKey: userId,
+      username: username,
+      displayName: "",
+      bio: "",
+      avatar: null,
+      cover: null,
+    });
 
     document.getElementById("authModal").style.display = "none";
 
@@ -1852,12 +1987,21 @@ async function handleLogin() {
       return;
     }
 
-    localStorage.setItem(FIREBASE_PROFILE_KEY_STORAGE, foundUserId);
-    localStorage.setItem("calendarUsername", username);
     userProfileKey = foundUserId;
     currentUsername = username;
     window.userProfileKey = foundUserId;
+    window.currentProfileKey = foundUserId;
     window.currentUsername = username;
+    const cachedProfile = loadProfileSettings();
+    profileSettingsCache = cachedProfile || {};
+    saveAuthSessionCache({
+      userProfileKey: foundUserId,
+      username: username,
+      displayName: cachedProfile?.displayName || "",
+      bio: cachedProfile?.bio || "",
+      avatar: cachedProfile?.avatar || null,
+      cover: cachedProfile?.cover || null,
+    });
 
     document.getElementById("authModal").style.display = "none";
 
@@ -1922,22 +2066,23 @@ window.handleLogin = handleLogin;
 
 async function ensureProfileKey() {
   return new Promise((resolve) => {
-    const storedProfileKey = localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE);
-    const storedUsername = localStorage.getItem("calendarUsername");
+    const cached = loadAuthSessionCache();
+    const storedProfileKey = (cached && cached.userProfileKey) || localStorage.getItem(FIREBASE_PROFILE_KEY_STORAGE);
+    const storedUsername = (cached && cached.username) || localStorage.getItem("calendarUsername");
 
     if (storedProfileKey && storedUsername) {
       userProfileKey = storedProfileKey;
       currentUsername = storedUsername;
       window.userProfileKey = userProfileKey;
+      window.currentProfileKey = userProfileKey;
       window.currentUsername = currentUsername;
+      saveAuthSessionCache({ userProfileKey: storedProfileKey, username: storedUsername });
       const modal = document.getElementById("authModal");
       if (modal) modal.style.display = "none";
-      setTimeout(() => {
-        initProfileOnLoad();
-        if (typeof loadFundsFromLocalStorage === "function") {
-          loadFundsFromLocalStorage();
-        }
-      }, 0);
+      initProfileOnLoad();
+      if (typeof loadFundsFromLocalStorage === "function") {
+        loadFundsFromLocalStorage();
+      }
       updateAuthUI();
       resolve(true);
       return;
@@ -1947,12 +2092,11 @@ async function ensureProfileKey() {
     userProfileKey = "";
     currentUsername = "";
     window.userProfileKey = "";
+    window.currentProfileKey = "";
     window.currentUsername = "";
     const modal = document.getElementById("authModal");
     if (modal) modal.style.display = "none";
-    setTimeout(() => {
-      initProfileOnLoad();
-    }, 0);
+    initProfileOnLoad();
     updateAuthUI();
     resolve(false);
   });
@@ -1993,15 +2137,19 @@ function logoutProfileSession() {
       } catch (e) { }
 
       // 4. Xóa thông tin đăng nhập trong localStorage và bộ nhớ
-      localStorage.removeItem(FIREBASE_PROFILE_KEY_STORAGE);
-      localStorage.removeItem("calendarUsername");
-      localStorage.removeItem("currentProfileKey");
-      localStorage.removeItem("tutorProfileKey");
+      clearAuthSessionCache();
+      for (let i = localStorage.length - 1; i >= 0; i--) {
+        const k = localStorage.key(i);
+        if (k && isDateKey(k)) {
+          localStorage.removeItem(k);
+        }
+      }
       userProfileKey = "";
       currentUsername = "";
       window.userProfileKey = "";
+      window.currentProfileKey = "";
       window.currentUsername = "";
-      profileSettingsCache = null;
+      profileSettingsCache = {};
       dateDataCache = {};
 
       try {
@@ -2012,7 +2160,10 @@ function logoutProfileSession() {
       // 5. Cập nhật UI ngay lập tức sang chế độ Khách (Guest mode)
       updateAuthUI();
       initProfileOnLoad();
+      renderTodayEvents();
       renderCalendar();
+      renderOvertime();
+      renderOvertimeSalary();
 
       // 6. Cuộn mượt lên đầu trang
       window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
@@ -2040,17 +2191,35 @@ function getProfileSettingsKey() {
 function loadProfileSettings() {
   if (!userProfileKey) return {};
   const raw = localStorage.getItem(getProfileSettingsKey());
-  if (!raw) return {};
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return {};
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch { }
   }
+  const session = loadAuthSessionCache();
+  if (session && session.userProfileKey === userProfileKey) {
+    const fallback = {};
+    if (session.displayName) fallback.displayName = session.displayName;
+    if (session.bio) fallback.bio = session.bio;
+    if (session.avatar) fallback.avatar = session.avatar;
+    if (session.cover) fallback.cover = session.cover;
+    return fallback;
+  }
+  return {};
 }
 
 function saveProfileSettingsData(settings) {
   if (!userProfileKey) return;
   localStorage.setItem(getProfileSettingsKey(), JSON.stringify(settings));
+  saveAuthSessionCache({
+    userProfileKey,
+    username: currentUsername || localStorage.getItem("calendarUsername") || "",
+    displayName: settings?.displayName || "",
+    bio: settings?.bio || "",
+    avatar: settings?.avatar || null,
+    cover: settings?.cover || null,
+  });
 }
 
 function openProfileSettingsModal() {
@@ -2546,6 +2715,8 @@ function applyProfileToUI(settings) {
   }
 }
 
+let _profileInputListenersInitialized = false;
+
 function initProfileOnLoad() {
   if (!isUserLoggedIn()) {
     updateAuthUI();
@@ -2555,35 +2726,37 @@ function initProfileOnLoad() {
   if (Object.keys(settings).length > 0) {
     profileSettingsCache = settings;
     applyProfileToUI(settings);
+    saveAuthSessionCache({
+      userProfileKey,
+      username: currentUsername || localStorage.getItem("calendarUsername") || "",
+      displayName: settings.displayName || "",
+      bio: settings.bio || "",
+      avatar: settings.avatar || null,
+      cover: settings.cover || null,
+    });
   } else if (currentUsername) {
-    // If no profile settings, show username
-    const nameEl = document.getElementById("todayProfileName");
-    if (nameEl) {
-      nameEl.textContent = currentUsername;
-    }
-    const badgeEl = document.getElementById("todayProfileBadge");
-    if (badgeEl) badgeEl.style.display = "none";
+    applyProfileToUI({ displayName: currentUsername, bio: "", avatar: null, cover: null });
   } else {
     const badgeEl = document.getElementById("todayProfileBadge");
     if (badgeEl) badgeEl.style.display = "none";
   }
   updateAuthUI();
 
-  // Setup file input listeners
-  document
-    .getElementById("profileAvatarInput")
-    .addEventListener("change", handleAvatarSelect);
-  document
-    .getElementById("profileCoverInput")
-    .addEventListener("change", handleCoverSelect);
+  if (!_profileInputListenersInitialized) {
+    _profileInputListenersInitialized = true;
+    const avatarInputEl = document.getElementById("profileAvatarInput");
+    if (avatarInputEl) avatarInputEl.addEventListener("change", handleAvatarSelect);
+    const coverInputEl = document.getElementById("profileCoverInput");
+    if (coverInputEl) coverInputEl.addEventListener("change", handleCoverSelect);
 
-  // Setup bio character counter
-  const bioInputEl = document.getElementById("profileBio") || document.getElementById("profileBioInput");
-  if (bioInputEl) {
-    bioInputEl.addEventListener("input", function () {
-      const countEl = document.getElementById("profileBioCount");
-      if (countEl) countEl.textContent = this.value.length;
-    });
+    // Setup bio character counter
+    const bioInputEl = document.getElementById("profileBio") || document.getElementById("profileBioInput");
+    if (bioInputEl) {
+      bioInputEl.addEventListener("input", function () {
+        const countEl = document.getElementById("profileBioCount");
+        if (countEl) countEl.textContent = this.value.length;
+      });
+    }
   }
 
   // Setup avatar preview listeners
@@ -22451,9 +22624,24 @@ function loadTodayLunarOnDemand() {
 /* ========================== INIT ========================= */
 (function initApp() {
   const initStartTime = Date.now();
-  setAppInitLoading(true, "");
+  const hasCachedLogin = isUserLoggedIn();
 
-  let appInitDismissed = false;
+  // Hiển thị ngay thông tin đăng nhập & hồ sơ từ cache localStorage không phải chờ load
+  updateAuthUI();
+  initProfileOnLoad();
+  if (hasCachedLogin) {
+    try {
+      if (typeof loadCashflowCategoriesFromStorage === "function") loadCashflowCategoriesFromStorage();
+      if (typeof loadBudgetsFromStorage === "function") loadBudgetsFromStorage();
+      if (typeof loadFundsFromLocalStorage === "function") loadFundsFromLocalStorage();
+      if (typeof loadCountdownFromLocal === "function") loadCountdownFromLocal();
+    } catch (e) { }
+    setAppInitLoading(false);
+  } else {
+    setAppInitLoading(true, "");
+  }
+
+  let appInitDismissed = hasCachedLogin;
   const dismissAppLoading = () => {
     if (appInitDismissed) return;
     appInitDismissed = true;
@@ -22463,39 +22651,38 @@ function loadTodayLunarOnDemand() {
     }
   };
 
-  // Tối đa 2.2 giây tự động tắt loading để đảm bảo người dùng luôn vào được app ngay cả khi mạng chậm hoặc offline
-  const maxLoadingTimer = setTimeout(dismissAppLoading, 1200);
+  // Tối đa 1.2 giây tự động tắt loading để đảm bảo người dùng luôn vào được app ngay cả khi mạng chậm hoặc offline
+  const maxLoadingTimer = hasCachedLogin ? null : setTimeout(dismissAppLoading, 1200);
 
   // Callback đóng loading khi dữ liệu sẵn sàng
   window.notifyAppInitDataReady = () => {
+    if (hasCachedLogin) return;
     const elapsed = Date.now() - initStartTime;
     // Giữ loading tối thiểu 650ms để hiệu ứng chuyển cảnh mượt mà, không chớp giật
     const remaining = Math.max(0, 650 - elapsed);
     setTimeout(() => {
-      clearTimeout(maxLoadingTimer);
+      if (maxLoadingTimer) clearTimeout(maxLoadingTimer);
       dismissAppLoading();
     }, remaining);
   };
 
-  // Nhường frame đầu tiên cho GPU bắt đầu render hiệu ứng 5 cột mượt mà, không bị khựng do nghẽn CPU
+  // Render ngay lập tức thông tin ngày hôm nay, sự kiện và lịch từ cache localStorage
+  showSkeleton('weatherSkeleton');
+  initQuickNoteModal();
+  renderToday();
+  renderTodayEvents();
+  renderCalendar();
+  renderOvertime();
+  renderOvertimeSalary();
+  setInterval(renderTodayEvents, 30000);
+  LAZY_LOAD.calendar = true;
+  if (!userHasScrolledCalendar && typeof jumpToCurrentMonth === "function") {
+    requestAnimationFrame(() => jumpToCurrentMonth(false));
+  }
+
+  // Khởi tạo Firebase và các tác vụ nền bất đồng bộ (không chặn hiển thị)
   requestAnimationFrame(() => {
     setTimeout(() => {
-      // Step 1: Show main page weather skeleton initially for loading state
-      showSkeleton('weatherSkeleton');
-
-      // Step 2: Render UI immediately (no waiting)
-      initQuickNoteModal();
-      renderToday();
-
-      // Step 3: Render calendar immediately
-      console.log("[Init] Rendering calendar...");
-      renderCalendar();
-      renderOvertime();
-      renderOvertimeSalary();
-      setInterval(renderTodayEvents, 30000);
-      console.log("[Init] Calendar rendered");
-
-      // Step 4: Initialize Firebase in background
       initFirebaseServices()
         .then(() => {
           if (typeof window.notifyAppInitDataReady === "function") {
@@ -22509,24 +22696,12 @@ function loadTodayLunarOnDemand() {
           }
         });
 
-      // Step 5: Load essential items on demand in background
       setTimeout(() => loadWeatherOnDemand(), 1000);
       setTimeout(() => loadQuoteOnDemand(), 500);
-      setTimeout(() => loadCountdownOnDemand(), 800);
-      setTimeout(() => loadTodayLunarOnDemand(), 600);
-      LAZY_LOAD.calendar = true;
-
-      console.log("[Init] App started - calendar rendered smoothly");
+      setTimeout(() => loadCountdownOnDemand(), 200);
+      setTimeout(() => loadTodayLunarOnDemand(), 100);
     }, 16);
   });
-
-  // Step 8: Load lunar calendar in background
-  setTimeout(() => loadTodayLunarOnDemand(), 600);
-
-  // Step 9: Mark calendar as loaded (already rendered above)
-  LAZY_LOAD.calendar = true;
-
-  console.log("[Init] App started - calendar rendered immediately");
 
   // Khởi tạo bộ lắng nghe cuộn liên tục các tháng theo chiều dọc
   if (typeof setupCalendarScrollListener === "function") {

@@ -428,6 +428,12 @@ body::before {
   overflow-x: hidden;
 }
 
+/* Chưa đăng nhập (Guest mode): không có bottom-nav nên app-wrapper chiếm trọn màn hình */
+html.is-guest-mode .app-wrapper,
+body.is-guest-mode .app-wrapper {
+  height: 100vh;
+}
+
 /* ========================== APP FULL-SCREEN INIT LOADING ========================== */
 .app-init-loading {
   position: fixed !important;

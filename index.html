@@ -41,6 +41,36 @@
         if (sessionStorage.getItem("appLogoutInProgress") === "true") {
           document.documentElement.classList.add("app-is-logging-out");
         }
+        var cachedRaw = localStorage.getItem("calendarAuthSessionCacheV1");
+        var cachedSession = null;
+        if (cachedRaw) {
+          try { cachedSession = JSON.parse(cachedRaw); } catch (e) { cachedSession = null; }
+        }
+        var pKey = (cachedSession && cachedSession.userProfileKey) || localStorage.getItem("calendarProfileKey") || "";
+        var uName = (cachedSession && cachedSession.username) || localStorage.getItem("calendarUsername") || "";
+        if (pKey && uName) {
+          var profileSettings = {};
+          var rawProfile = localStorage.getItem("profileSettingsV1:" + pKey);
+          if (rawProfile) {
+            try { profileSettings = JSON.parse(rawProfile) || {}; } catch (e) { profileSettings = {}; }
+          }
+          window.userProfileKey = pKey;
+          window.currentProfileKey = pKey;
+          window.currentUsername = uName;
+          window.__cachedAuthSession = {
+            userProfileKey: pKey,
+            username: uName,
+            displayName: profileSettings.displayName || (cachedSession && cachedSession.displayName) || "",
+            bio: profileSettings.bio !== undefined ? profileSettings.bio : ((cachedSession && cachedSession.bio) || ""),
+            avatar: profileSettings.avatar !== undefined ? profileSettings.avatar : ((cachedSession && cachedSession.avatar) || null),
+            cover: profileSettings.cover !== undefined ? profileSettings.cover : ((cachedSession && cachedSession.cover) || null)
+          };
+          document.documentElement.classList.remove("is-guest-mode");
+          document.documentElement.classList.add("has-auth-cache");
+        } else {
+          window.__cachedAuthSession = null;
+          document.documentElement.classList.add("is-guest-mode");
+        }
       } catch (e) { }
     })();
   </script>
@@ -61,7 +91,8 @@
       transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .app-init-loading:not(.is-visible) {
+    .app-init-loading:not(.is-visible),
+    html.has-auth-cache .app-init-loading {
       display: none !important;
     }
 
@@ -220,7 +251,8 @@
             <img class="today-profile-avatar" id="todayProfileAvatar" alt="Profile" style="display: none;"
               onclick="openAvatarPreviewModal(event)" title="Xem ảnh đại diện" />
             <div class="today-profile-placeholder" id="todayProfilePlaceholder" style="display: none;"
-              onclick="handleProfileClick()" title="Cài đặt hồ sơ"></div>
+              onclick="handleProfileClick()" title="Cài đặt hồ sơ"><i class="fi fi-rr-user"
+                style="font-size: 22px; color: #38bdf8;"></i></div>
             <div class="today-profile-badge" id="todayProfileBadge" title="Tài khoản đã xác minh"
               style="display: none;">
               <svg viewBox="0 0 16 16" class="fb-verified-badge-svg" aria-label="Đã xác minh">
@@ -497,12 +529,101 @@
               Cưng</span></button>
           <button id="menuAuthBtn" class="dropdown-item item-logout danger"
             onclick="logoutProfileSession(); closeMoreMenu();" role="menuitem">
-            <span class="menu-icon-wrap"><i class="fi fi-rr-sign-out-alt"></i></span>
-            <span>Đăng Xuất</span>
+            <span class="menu-icon-wrap" id="menuAuthBtnIconWrap"><i id="menuAuthBtnIcon"
+                class="fi fi-rr-sign-out-alt"></i></span>
+            <span id="menuAuthBtnLabel">Đăng Xuất</span>
           </button>
         </div>
       </div>
     </nav>
+    <script>
+      (function () {
+        try {
+          var session = window.__cachedAuthSession;
+          var nameEl = document.getElementById("todayProfileName");
+          var bioEl = document.getElementById("todayProfileBio");
+          var avatarEl = document.getElementById("todayProfileAvatar");
+          var placeholderEl = document.getElementById("todayProfilePlaceholder");
+          var badgeEl = document.getElementById("todayProfileBadge");
+          var todayPanel = document.getElementById("todayPanel");
+          var guestBottomSection = document.getElementById("guestBottomLoginSection");
+          var menuAuthBtn = document.getElementById("menuAuthBtn");
+          var menuIconWrap = document.getElementById("menuAuthBtnIconWrap");
+          var menuIcon = document.getElementById("menuAuthBtnIcon");
+          var menuLabel = document.getElementById("menuAuthBtnLabel");
+          var appLoadingEl = document.getElementById("appInitLoading");
+
+          if (session && session.userProfileKey && session.username) {
+            document.body.classList.remove("is-guest-mode");
+            if (appLoadingEl) {
+              appLoadingEl.classList.remove("is-visible");
+              appLoadingEl.style.display = "none";
+            }
+            if (guestBottomSection) guestBottomSection.style.display = "none";
+            if (nameEl) nameEl.textContent = session.displayName || session.username;
+            if (bioEl) bioEl.textContent = session.bio || "";
+
+            if (session.avatar && avatarEl) {
+              avatarEl.onload = function () {
+                avatarEl.style.display = "block";
+                if (placeholderEl) placeholderEl.style.display = "none";
+                if (badgeEl) badgeEl.style.display = "flex";
+              };
+              avatarEl.onerror = function () {
+                avatarEl.style.display = "none";
+                if (placeholderEl) placeholderEl.style.display = "flex";
+                if (badgeEl) badgeEl.style.display = "none";
+              };
+              avatarEl.src = session.avatar;
+              if (avatarEl.complete && avatarEl.naturalWidth) {
+                avatarEl.style.display = "block";
+                if (placeholderEl) placeholderEl.style.display = "none";
+                if (badgeEl) badgeEl.style.display = "flex";
+              }
+            } else {
+              if (placeholderEl) placeholderEl.style.display = "flex";
+              if (badgeEl) badgeEl.style.display = "none";
+            }
+
+            if (session.cover && todayPanel) {
+              todayPanel.classList.add("has-cover");
+              var bgEl = todayPanel.querySelector(".today-panel-bg");
+              if (!bgEl) {
+                bgEl = document.createElement("div");
+                bgEl.className = "today-panel-bg";
+                todayPanel.insertBefore(bgEl, todayPanel.firstChild);
+              }
+              bgEl.style.backgroundImage = "url(" + session.cover + ")";
+            }
+
+            if (menuAuthBtn) {
+              menuAuthBtn.className = "dropdown-item item-logout danger";
+              if (menuIconWrap) menuIconWrap.style.color = "";
+              if (menuIcon) menuIcon.className = "fi fi-rr-sign-out-alt";
+              if (menuLabel) {
+                menuLabel.style.fontWeight = "";
+                menuLabel.style.color = "";
+                menuLabel.textContent = "Đăng Xuất (" + session.username + ")";
+              }
+            }
+          } else {
+            document.body.classList.add("is-guest-mode");
+            if (guestBottomSection) guestBottomSection.style.display = "";
+            if (menuAuthBtn) {
+              menuAuthBtn.className = "dropdown-item item-login";
+              menuAuthBtn.setAttribute("onclick", "showLoginForm(); closeMoreMenu();");
+              if (menuIconWrap) menuIconWrap.style.color = "#38bdf8";
+              if (menuIcon) menuIcon.className = "fi fi-rr-sign-in-alt";
+              if (menuLabel) {
+                menuLabel.style.fontWeight = "600";
+                menuLabel.style.color = "#38bdf8";
+                menuLabel.textContent = "Đăng Nhập";
+              }
+            }
+          }
+        } catch (e) { }
+      })();
+    </script>
 
     <!-- <div class="map-section">
             <div class="map-search">
